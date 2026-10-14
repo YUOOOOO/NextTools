@@ -6,5 +6,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     FileEntry::export_all_to(dir)?;
     FileContent::export_all_to(dir)?;
     CommandEvent::export_all_to(dir)?;
+    GitStatus::export_all_to(dir)?;
     Ok(())
 }

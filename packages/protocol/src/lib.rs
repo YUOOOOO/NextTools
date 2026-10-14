@@ -45,12 +45,13 @@ pub struct PluginInstall {
     pub enabled: bool,
 }
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct Preferences {
     pub theme: String,
     pub mode: String,
     pub workbench_view: String,
     pub active_workspace_id: Option<String>,
+    pub sidebar_collapsed: bool,
 }
 impl Default for Preferences {
     fn default() -> Self {
@@ -59,6 +60,7 @@ impl Default for Preferences {
             mode: "workbench".into(),
             workbench_view: "home".into(),
             active_workspace_id: None,
+            sidebar_collapsed: false,
         }
     }
 }
@@ -82,6 +84,20 @@ pub struct HostSnapshot {
     pub plugins: Vec<PluginInstall>,
     pub preferences: Preferences,
     pub shortcuts: Vec<ShortcutBinding>,
+}
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct GitChange {
+    pub index_status: String,
+    pub worktree_status: String,
+    pub path: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct GitStatus {
+    pub branch: String,
+    pub changes: Vec<GitChange>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]

@@ -2,6 +2,7 @@ import type {
   CommandEvent,
   FileContent,
   FileEntry,
+  GitStatus,
   HostSnapshot,
   Preferences,
   Workspace,
@@ -20,4 +21,5 @@ export interface HostClient {
   executeCommand(pluginId: string, commandId: string): Promise<CommandEvent>;
   listFiles(workspaceId: string, path: string): Promise<FileEntry[]>;
   readFile(workspaceId: string, path: string): Promise<FileContent>;
+  gitStatus(workspaceId: string): Promise<GitStatus>;
 }

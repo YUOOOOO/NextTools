@@ -3,5 +3,11 @@
   "identifier": "main",
   "description": "Only the trusted bundled application window receives core window and event access. No filesystem, shell, or global-shortcut frontend access.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "core:default",
+    "core:window:allow-close",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-start-dragging"
+  ]
 }

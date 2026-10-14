@@ -14,4 +14,5 @@ export const host: HostClient = {
     invoke("command_execute", { pluginId, commandId }),
   listFiles: (workspaceId, path) => invoke("files_list", { workspaceId, path }),
   readFile: (workspaceId, path) => invoke("files_read", { workspaceId, path }),
+  gitStatus: (workspaceId) => invoke("git_status", { workspaceId }),
 };

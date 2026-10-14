@@ -67,7 +67,7 @@ export function FilesView({
     return (
       <div className="empty-state">
         <h2>选择一个工作区</h2>
-        <p>通过左侧的“打开工作区”授权文件访问。</p>
+        <p>切换到 Agent，通过“打开工作区”授权文件访问，再回到此页面。</p>
       </div>
     );
   return (

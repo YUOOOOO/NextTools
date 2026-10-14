@@ -1,21 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { FilesView } from "@nexttools/workspace-files";
 import { IconButton } from "@nexttools/ui";
 import type {
   CommandEvent,
+  GitStatus,
   HostSnapshot,
   Preferences,
 } from "@nexttools/protocol";
 import {
-  FolderOpen,
-  Home,
+  ChevronRight,
   Files,
-  Settings,
+  GitBranch,
+  Home,
+  Minus,
+  PanelLeft,
   Plus,
   RefreshCw,
+  Settings,
+  Square,
   X,
-  ChevronRight,
 } from "lucide-react";
 import { host, nativeHostAvailable } from "./host";
 
@@ -24,6 +29,10 @@ export function App() {
   const [error, setError] = useState("");
   const [settings, setSettings] = useState(false);
   const [revision, setRevision] = useState(0);
+  const [gitOpen, setGitOpen] = useState(false);
+  const [gitStatus, setGitStatus] = useState<GitStatus | null>(null);
+  const [gitLoading, setGitLoading] = useState(false);
+  const [gitError, setGitError] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
   const refresh = useCallback(async () => {
     const next = await host.snapshot();
@@ -42,6 +51,18 @@ export function App() {
     },
     [refresh],
   );
+  const loadGit = useCallback(async (workspaceId: string) => {
+    setGitLoading(true);
+    setGitError("");
+    try {
+      setGitStatus(await host.gitStatus(workspaceId));
+    } catch (e) {
+      setGitStatus(null);
+      setGitError(String(e));
+    } finally {
+      setGitLoading(false);
+    }
+  }, []);
   useEffect(() => {
     if (nativeHostAvailable) void refresh().catch((e) => setError(String(e)));
   }, [refresh]);
@@ -60,7 +81,7 @@ export function App() {
           });
           await refresh();
         }
-        if (payload.commandId === "refresh") setRevision((v) => v + 1);
+        if (payload.commandId === "refresh") setRevision((value) => value + 1);
       }),
       listen<string>("host:error", ({ payload }) => setError(payload)),
     ]).then((unlisten) => {
@@ -94,92 +115,56 @@ export function App() {
   const mode = preferences?.mode ?? "workbench";
   const view = preferences?.workbenchView ?? "home";
   const workspace =
-    snapshot?.workspaces.find((w) => w.id === preferences?.activeWorkspaceId) ??
+    snapshot?.workspaces.find((item) => item.id === preferences?.activeWorkspaceId) ??
     null;
   const filePlugin = snapshot?.plugins.find(
-    (p) => p.manifest.id === "com.nexttools.workspace-files",
+    (plugin) => plugin.manifest.id === "com.nexttools.workspace-files",
   );
+  useEffect(() => {
+    if (gitOpen && workspace) void loadGit(workspace.id);
+    if (!workspace) setGitStatus(null);
+  }, [gitOpen, loadGit, workspace]);
+  useEffect(() => {
+    if (!gitOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setGitOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [gitOpen]);
   const update = (patch: Partial<Preferences>) =>
     run(async () => {
       if (preferences) await host.setPreferences({ ...preferences, ...patch });
     });
+  const minimizeWindow = () => {
+    if (nativeHostAvailable) void getCurrentWindow().minimize();
+  };
+  const toggleMaximizeWindow = () => {
+    if (nativeHostAvailable) void getCurrentWindow().toggleMaximize();
+  };
+  const closeWindow = () => {
+    if (nativeHostAvailable) void getCurrentWindow().close();
+  };
   return (
     <div className="app">
-      <aside className="sidebar" aria-label="工作区导航">
-        <div className="sidebar-heading">
-          <strong>NextTools</strong>
-          <small>本地工作台</small>
-        </div>
-        <button
-          className="sidebar-button"
+      <header className="titlebar" data-tauri-drag-region>
+        <IconButton
+          className={
+            "titlebar-button " +
+            (preferences?.sidebarCollapsed ? "" : "active")
+          }
+          label={preferences?.sidebarCollapsed ? "展开菜单栏" : "收起菜单栏"}
           disabled={!snapshot}
-          onClick={() => void run(() => host.chooseWorkspace())}
+          onClick={() =>
+            void update({ sidebarCollapsed: !preferences?.sidebarCollapsed })
+          }
         >
-          <FolderOpen size={16} />
-          打开工作区
-        </button>
-        <div className="sidebar-scroll">
-          <div className="sidebar-section">工作区</div>
-          {snapshot?.workspaces.map((w) => (
-            <button
-              key={w.id}
-              className={
-                "sidebar-button " + (workspace?.id === w.id ? "selected" : "")
-              }
-              onClick={() => void update({ activeWorkspaceId: w.id })}
-            >
-              <ChevronRight size={14} />
-              <span>{w.name}</span>
-            </button>
-          ))}
-          {!snapshot?.workspaces.length && (
-            <p className="sidebar-empty">尚未选择工作区</p>
-          )}
-          <div className="sidebar-section">
-            {mode === "agent" ? "会话" : "工作台"}
-          </div>
-          {mode === "workbench" ? (
-            <>
-              <button
-                className={
-                  "sidebar-button " + (view === "home" ? "selected" : "")
-                }
-                onClick={() => void update({ workbenchView: "home" })}
-              >
-                <Home size={16} />
-                首页
-              </button>
-              {filePlugin?.enabled && (
-                <button
-                  className={
-                    "sidebar-button " + (view === "files" ? "selected" : "")
-                  }
-                  onClick={() =>
-                    void run(() =>
-                      host.executeCommand(filePlugin.manifest.id, "open"),
-                    )
-                  }
-                >
-                  <Files size={16} />
-                  工作区文件
-                </button>
-              )}
-            </>
-          ) : (
-            <p className="sidebar-empty">Pi runtime 尚未接入</p>
-          )}
+          <PanelLeft size={17} />
+        </IconButton>
+        <div className="titlebar-drag" data-tauri-drag-region>
+          <span data-tauri-drag-region>NextTools</span>
         </div>
-        <div className="sidebar-footer">
-          <span className="muted">
-            {snapshot ? "本机 · SQLite" : "宿主未连接"}
-          </span>
-          <IconButton label="设置" onClick={() => setSettings(true)}>
-            <Settings size={17} />
-          </IconButton>
-        </div>
-      </aside>
-      <div className="content">
-        <div className="corner-actions">
+        <div className="titlebar-actions">
           <div className="mode-switch" aria-label="页面模式">
             <button
               aria-pressed={mode === "workbench"}
@@ -212,79 +197,217 @@ export function App() {
               <RefreshCw size={17} />
             </IconButton>
           ) : null}
+          {mode === "agent" && (
+            <IconButton
+              className={"titlebar-button " + (gitOpen ? "active" : "")}
+              label={gitOpen ? "关闭 Git 更改" : "打开 Git 更改"}
+              disabled={!workspace}
+              aria-pressed={gitOpen}
+              onClick={() => setGitOpen((open) => !open)}
+            >
+              <GitBranch size={17} />
+            </IconButton>
+          )}
+          {preferences?.sidebarCollapsed && (
+            <IconButton label="设置" onClick={() => setSettings(true)}>
+              <Settings size={17} />
+            </IconButton>
+          )}
         </div>
-        {error && (
-          <div role="alert" className="app-error">
-            {error}
-            <button aria-label="关闭错误" onClick={() => setError("")}>
-              ×
-            </button>
+        {nativeHostAvailable && (
+          <div className="window-controls">
+            <IconButton label="最小化" onClick={minimizeWindow}>
+              <Minus size={16} />
+            </IconButton>
+            <IconButton label="最大化或还原" onClick={toggleMaximizeWindow}>
+              <Square size={13} />
+            </IconButton>
+            <IconButton className="window-close" label="关闭" onClick={closeWindow}>
+              <X size={17} />
+            </IconButton>
           </div>
         )}
-        <main className="main-container">
-          <div className="mode-page" hidden={mode !== "workbench"}>
-            {!nativeHostAvailable ? (
-              <div className="empty-state">
-                <h1>NextTools</h1>
-                <p>请在 Tauri 桌面应用中使用本地工作区。</p>
-                <small>浏览器预览不提供文件访问或模拟 Host。</small>
-              </div>
-            ) : !snapshot ? (
-              <div className="empty-state">
-                <p>{error ? "宿主加载失败" : "正在连接本地宿主…"}</p>
-                <button onClick={() => void run(refresh)}>重新连接</button>
-              </div>
-            ) : view === "files" && filePlugin?.enabled ? (
-              <FilesView
-                host={host}
-                workspace={workspace}
-                revision={revision}
-              />
-            ) : (
-              <div className="workbench-home">
-                <div className="wordmark">NextTools</div>
-                <p className="home-caption">
-                  工作台 · {workspace?.name ?? "选择工作区以开始"}
-                </p>
-                <div className="home-plugins">
-                  {snapshot.plugins
-                    .filter((p) => p.enabled)
-                    .map((p) => (
-                      <section className="plugin-card" key={p.manifest.id}>
-                        <Files size={21} />
-                        <h2>{p.manifest.name}</h2>
-                        <p>浏览已授权工作区的目录和文本文件</p>
-                        <button
-                          onClick={() =>
-                            void run(() =>
-                              host.executeCommand(p.manifest.id, "open"),
-                            )
-                          }
-                        >
-                          打开 <ChevronRight size={14} />
-                        </button>
-                      </section>
-                    ))}
+      </header>
+      <div className="app-body">
+        <aside
+          className={
+            "sidebar " + (preferences?.sidebarCollapsed ? "is-collapsed" : "")
+          }
+          aria-label={mode === "agent" ? "Agent 会话导航" : "工作台插件导航"}
+          inert={preferences?.sidebarCollapsed}
+        >
+          <div className="sidebar-inner">
+            {mode === "workbench" ? (
+              <>
+                <div className="sidebar-heading">
+                  <strong>NextTools</strong>
+                  <small>本地工作台</small>
                 </div>
-                <button
-                  className="text-button"
-                  onClick={() => setSettings(true)}
-                >
-                  管理插件与快捷键
+                <div className="sidebar-scroll">
+                  <div className="sidebar-section">工作台</div>
+                  <button
+                    className={
+                      "sidebar-button " + (view === "home" ? "selected" : "")
+                    }
+                    onClick={() => void update({ workbenchView: "home" })}
+                  >
+                    <Home size={16} />
+                    首页
+                  </button>
+                  {filePlugin?.enabled && (
+                    <button
+                      className={
+                        "sidebar-button " +
+                        (view === "files" ? "selected" : "")
+                      }
+                      onClick={() =>
+                        void run(() =>
+                          host.executeCommand(filePlugin.manifest.id, "open"),
+                        )
+                      }
+                    >
+                      <Files size={16} />
+                      工作区文件
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="sidebar-heading">
+                  <strong>Agent</strong>
+                  <small>本地开发代理</small>
+                </div>
+                <button className="sidebar-button" disabled>
+                  <Plus size={16} />
+                  新建会话
                 </button>
-              </div>
+                <div className="agent-search">
+                  <input aria-label="搜索会话" placeholder="搜索会话" disabled />
+                </div>
+                <div className="sidebar-scroll">
+                  <div className="sidebar-section-row">
+                    <div className="sidebar-section">工作区</div>
+                    <IconButton
+                      className="workspace-add"
+                      label="打开工作区"
+                      disabled={!snapshot}
+                      onClick={() => void run(() => host.chooseWorkspace())}
+                    >
+                      <Plus size={15} />
+                    </IconButton>
+                  </div>
+                  {snapshot?.workspaces.map((item) => (
+                    <button
+                      key={item.id}
+                      className={
+                        "sidebar-button " +
+                        (workspace?.id === item.id ? "selected" : "")
+                      }
+                      onClick={() => void update({ activeWorkspaceId: item.id })}
+                    >
+                      <ChevronRight size={14} />
+                      <span>{item.name}</span>
+                    </button>
+                  ))}
+                  {!snapshot?.workspaces.length && (
+                    <p className="sidebar-empty">尚未选择工作区</p>
+                  )}
+                  <div className="sidebar-section">会话</div>
+                  <p className="sidebar-empty">Pi runtime 尚未接入</p>
+                </div>
+              </>
             )}
-          </div>
-          <div className="mode-page" hidden={mode !== "agent"}>
-            <div className="empty-state">
-              <div className="wordmark">Agent</div>
-              <p>Pi Agent 尚未接入</p>
-              <small>
-                当前初始化提供工作区、文件浏览与宿主设置。此处不创建模拟会话。
-              </small>
+            <div className="sidebar-footer">
+              <span className="muted">
+                {snapshot ? "本机 · SQLite" : "宿主未连接"}
+              </span>
+              <IconButton label="设置" onClick={() => setSettings(true)}>
+                <Settings size={17} />
+              </IconButton>
             </div>
           </div>
-        </main>
+        </aside>
+        <div className="content">
+          {error && (
+            <div role="alert" className="app-error">
+              {error}
+              <button aria-label="关闭错误" onClick={() => setError("")}>
+                ×
+              </button>
+            </div>
+          )}
+          <main className="main-container">
+            <div className="mode-page" hidden={mode !== "workbench"}>
+              {!nativeHostAvailable ? (
+                <div className="empty-state">
+                  <h1>NextTools</h1>
+                  <p>请在 Tauri 桌面应用中使用本地工作区。</p>
+                  <small>浏览器预览不提供文件访问或模拟 Host。</small>
+                </div>
+              ) : !snapshot ? (
+                <div className="empty-state">
+                  <p>{error ? "宿主加载失败" : "正在连接本地宿主…"}</p>
+                  <button onClick={() => void run(refresh)}>重新连接</button>
+                </div>
+              ) : view === "files" && filePlugin?.enabled ? (
+                <FilesView
+                  host={host}
+                  workspace={workspace}
+                  revision={revision}
+                />
+              ) : (
+                <div className="workbench-home">
+                  <div className="wordmark">NextTools</div>
+                  <p className="home-caption">
+                    工作台 · {workspace?.name ?? "选择工作区以开始"}
+                  </p>
+                  <div className="home-plugins">
+                    {snapshot.plugins
+                      .filter((plugin) => plugin.enabled)
+                      .map((plugin) => (
+                        <section className="plugin-card" key={plugin.manifest.id}>
+                          <Files size={21} />
+                          <h2>{plugin.manifest.name}</h2>
+                          <p>浏览已授权工作区的目录和文本文件</p>
+                          <button
+                            onClick={() =>
+                              void run(() =>
+                                host.executeCommand(plugin.manifest.id, "open"),
+                              )
+                            }
+                          >
+                            打开 <ChevronRight size={14} />
+                          </button>
+                        </section>
+                      ))}
+                  </div>
+                  <button className="text-button" onClick={() => setSettings(true)}>
+                    管理插件与快捷键
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="mode-page" hidden={mode !== "agent"}>
+              <div className="empty-state">
+                <div className="wordmark">Agent</div>
+                <p>Pi Agent 尚未接入</p>
+                <small>
+                  当前初始化提供工作区、文件浏览与宿主设置。此处不创建模拟会话。
+                </small>
+              </div>
+            </div>
+          </main>
+          {mode === "agent" && gitOpen && (
+            <GitPanel
+              status={gitStatus}
+              loading={gitLoading}
+              error={gitError}
+              onClose={() => setGitOpen(false)}
+              onRefresh={() => workspace && void loadGit(workspace.id)}
+            />
+          )}
+        </div>
       </div>
       <dialog
         ref={dialog}
@@ -305,6 +428,56 @@ export function App() {
         )}
       </dialog>
     </div>
+  );
+}
+
+function GitPanel({
+  status,
+  loading,
+  error,
+  onClose,
+  onRefresh,
+}: {
+  status: GitStatus | null;
+  loading: boolean;
+  error: string;
+  onClose: () => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <aside className="git-panel" aria-label="Git 更改">
+      <div className="git-panel-heading">
+        <div>
+          <strong>Git 更改</strong>
+          <small>{status?.branch ?? "当前工作区"}</small>
+        </div>
+        <IconButton label="刷新 Git 状态" disabled={loading} onClick={onRefresh}>
+          <RefreshCw size={16} />
+        </IconButton>
+        <IconButton label="关闭 Git 更改" onClick={onClose}>
+          <X size={17} />
+        </IconButton>
+      </div>
+      <div className="git-panel-body">
+        {loading ? (
+          <p className="sidebar-empty">正在读取 Git 状态…</p>
+        ) : error ? (
+          <p className="error">{error}</p>
+        ) : status?.changes.length ? (
+          status.changes.map((change, index) => (
+            <div className="git-change" key={`${change.path}:${index}`}>
+              <code>
+                {change.indexStatus === " " ? "·" : change.indexStatus}
+                {change.worktreeStatus === " " ? "·" : change.worktreeStatus}
+              </code>
+              <span title={change.path}>{change.path}</span>
+            </div>
+          ))
+        ) : (
+          <p className="sidebar-empty">工作区没有未提交更改</p>
+        )}
+      </div>
+    </aside>
   );
 }
 function SettingsContent({

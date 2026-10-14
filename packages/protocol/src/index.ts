@@ -9,3 +9,5 @@ export type { ShortcutBinding } from "./generated/ShortcutBinding";
 export type { FileEntry } from "./generated/FileEntry";
 export type { FileContent } from "./generated/FileContent";
 export type { CommandEvent } from "./generated/CommandEvent";
+export type { GitChange } from "./generated/GitChange";
+export type { GitStatus } from "./generated/GitStatus";

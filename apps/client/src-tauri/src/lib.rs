@@ -81,6 +81,58 @@ fn files_read(
 ) -> Result<FileContent, String> {
     with_host(&state, |h| h.read_file(&workspace_id, &path))
 }
+#[tauri::command]
+fn git_status(state: State<'_, HostState>, workspace_id: String) -> Result<GitStatus, String> {
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    {
+        let snapshot = with_host(&state, |h| h.snapshot())?;
+        let workspace = snapshot
+            .workspaces
+            .iter()
+            .find(|workspace| workspace.id == workspace_id)
+            .ok_or("未知工作区")?;
+        let output = std::process::Command::new("git")
+            .args([
+                "-C",
+                workspace.root.as_str(),
+                "status",
+                "--short",
+                "--branch",
+                "--untracked-files=all",
+            ])
+            .output()
+            .map_err(|error| format!("无法启动 Git：{error}"))?;
+        if !output.status.success() {
+            let message = String::from_utf8_lossy(&output.stderr);
+            return Err(message.trim().to_owned());
+        }
+        let text = String::from_utf8_lossy(&output.stdout);
+        let mut lines = text.lines();
+        let branch = lines
+            .next()
+            .and_then(|line| line.strip_prefix("## "))
+            .unwrap_or("未知分支")
+            .to_owned();
+        let changes = lines
+            .filter_map(|line| {
+                if line.len() < 3 {
+                    return None;
+                }
+                Some(GitChange {
+                    index_status: line[0..1].to_owned(),
+                    worktree_status: line[1..2].to_owned(),
+                    path: line[3..].to_owned(),
+                })
+            })
+            .collect();
+        Ok(GitStatus { branch, changes })
+    }
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    {
+        let _ = (state, workspace_id);
+        Err("Git 状态仅支持桌面端".into())
+    }
+}
 fn dispatch(app: &tauri::AppHandle, plugin: &str, command: &str) -> Result<CommandEvent, String> {
     let event = with_host(&app.state::<HostState>(), |h| h.command(plugin, command))?;
     if event.view_id.is_some() {
@@ -345,6 +397,7 @@ pub fn run() {
             workspace_choose,
             files_list,
             files_read,
+            git_status,
             command_execute,
             plugin_set_enabled,
             shortcut_set

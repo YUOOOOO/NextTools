@@ -22,6 +22,8 @@ NextTools 是基于 Tauri 2 的跨平台、local-first、插件化 Agent 工作�
 - 模式切换必须保留会话和运行中的 Agent；工作台与 Agent 的页面状态分别在当前设备恢复。
 - 设置按钮属于宿主共用框架，在工作台与 Agent 模式始终可见；两边打开同一个设置弹窗并使用同一配置来源。插件主操作隐藏不影响设置入口，打开/关闭设置不得切换模式、重置页面状态或停止 Agent。
 - 工作台首版只将 Percho 的会话主内容容器替换为 `WorkbenchHome`；有页面插件在该容器运行，无页面插件不得占用该容器或创建新的全局布局。
+- 工作区选择与列表只放在 Agent 侧栏；`工作区`标题右侧的加号图标打开目录授权。工作台侧栏只提供首页和插件导航，工作插件复用已授权的当前工作区，不维护第二套工作区选择。
+- Git 更改图标及其按需面板只属于 Agent 顶部操作区；工作台不得显示或打开该入口，Git 状态仍只可经 Rust Host 读取。
 - 全局快捷键只在 Windows/macOS/Linux 由 Rust Host 注册。沿用 `contributes.commands` 与 `contributes.views`，每条命令都可单独绑定；插件不得自行注册、监听、覆盖全局快捷键或绕过 command dispatcher、capability broker、审批和审计。
 
 ## 工程约定
@@ -46,4 +48,4 @@ NextTools 是基于 Tauri 2 的跨平台、local-first、插件化 Agent 工作�
 
 ## 当前状态
 
-仓库当前只包含架构与协作文档，尚未初始化应用代码或构建系统。初始化代码时先建立上述目录与协议边界，不要提前引入微服务、动态 native 插件或移动端本地执行器。
+仓库已初始化 Tauri 2、React/TypeScript、Rust workspace、SQLite、工作区只读文件插件与桌面快捷键；Pi runtime 尚未接入。实现继续遵守上述协议与权限边界，不提前引入微服务、动态 native 插件或移动端本地执行器。
