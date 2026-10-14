@@ -28,11 +28,13 @@ vendor/percho/                     # Git submodule，固定上游 commit
   packages/shared/
   packages/desktop/                # 保留来源；不作为 NextTools 客户端运行
 plugins/pi-agent/
+  manifest.json
   runner/                          # NextTools 薄适配层
-    src/percho-adapter.ts
-    src/host-tools.ts
-    src/host-ui-context.ts
-    src/session-bridge.ts
+    src/index.mjs                 # JSON-RPC 生命周期和 Percho 会话桥接
+    src/percho-host-bridge.mjs
+    src/host-tools.mjs
+    scripts/build.mjs
+    scripts/package-runtime.mjs
 ```
 
 - 不复制后端后在副本内混入 NextTools 功能；差异只落在 `plugins/pi-agent/runner`。
@@ -53,27 +55,26 @@ plugins/pi-agent/
 
 上游 UI 变化和后端升级分开评估。桌面 UI 维持 Percho 布局，但只能有意识地迁移 React 页面和交互，不能复制 Electron 运行时。
 
-## 目录
+## 当前实现目录
 
 ```text
 plugins/pi-agent/
   manifest.json
-  ui/
-    AgentWorkbench.tsx
-    SessionTimeline.tsx
-    ToolCallCard.tsx
-    ApprovalDock.tsx
-    DiffPanel.tsx
-    SubagentPanel.tsx
   runner/
-    src/index.ts
-    src/percho-adapter.ts
-    src/host-tools.ts
-    src/host-ui-context.ts
-    src/session-bridge.ts
+    src/index.mjs                 # JSON-RPC 入口、会话生命周期和模型目录
+    src/percho-host-bridge.mjs    # 对 Percho PiBackend 的唯一兼容层
+    src/host-tools.mjs            # 文件、Git、Shell、Skill 与 MCP 工具代理
+    scripts/build.mjs
+    scripts/package-runtime.mjs   # 打包固定 Node runtime 与许可文件
     package.json
-  NOTICE
+    licenses/
+apps/client/src-tauri/src/
+  agent.rs                        # Runner 生命周期、审批、事件与工具调度
+  agent_settings.rs               # 模型、系统凭据与 Skills
+  agent_mcp.rs                    # stdio/HTTP MCP 生命周期
 ```
+
+Agent 页面当前由 `apps/client/src/App.tsx` 中的宿主 React 页面实现；尚未拆成单独的 `plugins/pi-agent/ui` 包。不得把尚未存在的目标目录写成已实现事实。
 
 ## 进程边界
 
@@ -87,42 +88,40 @@ flowchart LR
   Broker --> Tools[Files / Git / Shell / MCP 插件]
 ```
 
-Pi Runner 的职责：
+当前 Pi Runner 的职责：
 
-- 运行 Node.js、Percho backend 与 Pi SDK。
-- 管理会话、模型、provider、skills、Pi extensions、MCP 和 subagents。
-- 将 Pi 事件投影为 NextTools `AgentEvent`。
-- 将 Pi extension 的 GUI 请求转成 Host UI 请求。
-- 将 Agent 工具调用转交 Host。
+- 运行固定版本的 Node.js、Percho backend 与 Pi SDK。
+- 创建、列出、恢复、提示、取消和持久化会话，并将 Percho 事件投影为 NextTools `agent:event`。
+- 使用 Host 提供的模型凭据、Skill 元数据和 MCP 工具定义组装每个会话。
+- 将所有工作区、Git、Shell、Skill 和 MCP 调用通过 `tool.invoke` 交回 Host。
 
-Pi Runner 不拥有文件、Git、Shell、系统凭据或远控的最终权限。
+Rust Host 负责 Runner 进程生命周期、90 秒单次审批、能力校验、审计、系统凭据和实际工具执行。当前实现关闭 Percho 自动加载的 extensions、内建 MCP、项目上下文文件和其他本地资源入口，避免 Runner 绕过 Host。Pi Runner 不拥有文件、Git、Shell、系统凭据或远控的最终权限。
 
 ## Host 与 Runner 协议
 
-所有消息均为版本化 JSON-RPC，通过 stdin/stdout 传输；不复用 Electron IPC，也不打开本地 HTTP 监听端口。
+所有消息均为带 `version: 1` 的单行 JSON-RPC 风格消息，通过 stdin/stdout 传输；不复用 Electron IPC，也不打开本地 HTTP 监听端口。当前方法为：
 
 ```ts
 type HostToRunner =
-  | { method: "session.create"; params: CreateSession }
+  | { method: "runner.health" }
+  | { method: "models.list" }
+  | { method: "session.list"; params: ListSessions }
+  | { method: "session.create"; params: OpenSession }
+  | { method: "session.resume"; params: OpenSession }
   | { method: "session.prompt"; params: PromptSession }
   | { method: "session.abort"; params: { sessionId: string } }
-  | { method: "approval.resolve"; params: ApprovalResolution }
-  | { method: "ui.resolve"; params: ExtensionUiResolution }
-  | { method: "tool.result"; params: ToolResult };
+  | { method: "session.dispose"; params: { sessionId: string } };
 
 type RunnerToHost =
-  | { method: "agent.event"; params: AgentEvent }
-  | { method: "approval.request"; params: ApprovalRequest }
-  | { method: "ui.request"; params: ExtensionUiRequest }
-  | { method: "tool.invoke"; params: ToolInvocation }
-  | { method: "runner.health"; params: RunnerHealth };
+  | { method: "agent.event"; params: { sessionId: string; event: unknown } }
+  | { id: string; method: "tool.invoke"; params: ToolInvocation };
 ```
 
-每个请求必须带协议版本、会话 ID、工作区 ID、请求 ID 和超时。Host 要在 Runner 异常退出时使未完成审批失效，并将会话标为可恢复或失败。
+Host 生成 live session ID，并把工作区、会话目录、provider、model、内存中的 API key 及受控资源定义发送给 Runner。Runner 回调工具时必须携带 live session ID；Host 由该 ID 重新取得工作区，不能信任 Runner 自报路径或权限。Runner 请求、Host 工具请求和审批均有超时；Runner 异常退出时 Host 清空 live session 与未完成审批，持久化会话仍可重新恢复。
 
 ## Pi Extension UI
 
-应使用 Pi 的 `rpc` 语义，而不是冒充 `tui`：
+当前 Runner 明确设置 `noExtensions`，尚未向 Agent 暴露 Pi Extension UI。后续启用时必须使用 Pi 的 `rpc` 语义，而不是冒充 `tui`：
 
 - 支持 `select`、`input`、`editor`、`confirm`、`notify`。
 - 正确传递取消、超时和 `AbortSignal`。

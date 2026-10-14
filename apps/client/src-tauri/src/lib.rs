@@ -1,3 +1,20 @@
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+mod agent;
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[path = "agent_mobile.rs"]
+mod agent;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+mod agent_mcp;
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[path = "agent_mcp_mobile.rs"]
+mod agent_mcp;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+mod agent_settings;
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[path = "agent_settings_mobile.rs"]
+mod agent_settings;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+use agent_settings::SettingsState;
 use host_core::Host;
 use nexttools_protocol::*;
 use std::{
@@ -379,6 +396,15 @@ pub fn run() {
                 shortcuts: Mutex::new(HashMap::new()),
                 shortcut_update: Mutex::new(()),
             });
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
+            {
+                app.manage(SettingsState::default());
+                app.manage(agent_mcp::McpState::default());
+                agent_mcp::initialize(app.handle()).map_err(std::io::Error::other)?;
+                agent_settings::initialize(app.handle()).map_err(std::io::Error::other)?;
+            }
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
+            app.manage(agent::AgentState::default());
             let handle = app.handle().clone();
             tauri::async_runtime::spawn_blocking(move || {
                 let state = handle.state::<HostState>();
@@ -400,7 +426,22 @@ pub fn run() {
             git_status,
             command_execute,
             plugin_set_enabled,
-            shortcut_set
+            shortcut_set,
+            agent::agent_session_create,
+            agent::agent_sessions_list,
+            agent::agent_session_resume,
+            agent::agent_prompt,
+            agent::agent_abort,
+            agent::agent_approval_respond,
+            agent_settings::agent_settings_snapshot,
+            agent_settings::agent_configure,
+            agent_settings::agent_skill_import,
+            agent_settings::agent_skill_toggle,
+            agent_settings::agent_skill_remove,
+            agent_mcp::agent_mcp_save,
+            agent_mcp::agent_mcp_connect,
+            agent_mcp::agent_mcp_disconnect,
+            agent_mcp::agent_mcp_remove
         ])
         .run(tauri::generate_context!())
         .expect("NextTools Host 启动失败");

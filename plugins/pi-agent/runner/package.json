@@ -1,0 +1,30 @@
+{
+  "name": "@nexttools/pi-agent-runner",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "package:runtime": "node scripts/package-runtime.mjs"
+  },
+  "dependencies": {
+    "@earendil-works/pi-ai": "1.0.4",
+    "@earendil-works/pi-coding-agent": "1.0.4",
+    "@percho/backend": "file:../../../vendor/percho/packages/backend",
+    "@percho/shared": "file:../../../vendor/percho/packages/shared",
+    "typebox": "1.3.27"
+  },
+  "overrides": {
+    "@earendil-works/chord": "1.0.4",
+    "@earendil-works/pi-agent-core": "1.0.4",
+    "@earendil-works/pi-ai": "1.0.4",
+    "@earendil-works/pi-codemode": "1.0.4",
+    "@earendil-works/pi-mcp": "1.0.4",
+    "@earendil-works/pi-telemetry": "1.0.4",
+    "@earendil-works/pi-tui": "1.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.19",
+    "esbuild": "0.28.2"
+  }
+}

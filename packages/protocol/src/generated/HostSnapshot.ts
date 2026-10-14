@@ -4,4 +4,12 @@ import type { Preferences } from "./Preferences";
 import type { ShortcutBinding } from "./ShortcutBinding";
 import type { Workspace } from "./Workspace";
 
-export type HostSnapshot = { protocolVersion: number, platform: string, databasePath: string, workspaces: Array<Workspace>, plugins: Array<PluginInstall>, preferences: Preferences, shortcuts: Array<ShortcutBinding>, };
+export type HostSnapshot = {
+  protocolVersion: number;
+  platform: string;
+  databasePath: string;
+  workspaces: Array<Workspace>;
+  plugins: Array<PluginInstall>;
+  preferences: Preferences;
+  shortcuts: Array<ShortcutBinding>;
+};

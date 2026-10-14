@@ -119,3 +119,73 @@ pub struct CommandEvent {
     pub command_id: String,
     pub view_id: Option<String>,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentSessionInfo {
+    pub session_id: String,
+    pub workspace_id: String,
+    pub model: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentSessionSummary {
+    pub session_id: String,
+    pub title: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentProviderInfo {
+    pub id: String,
+    pub has_api_key: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentModelInfo {
+    pub provider: String,
+    pub id: String,
+    pub name: String,
+    pub context_window: Option<u64>,
+    pub max_tokens: Option<u64>,
+    pub reasoning: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentSkillConfig {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub enabled: bool,
+    pub file_path: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct McpServerConfig {
+    pub id: String,
+    pub name: String,
+    pub transport: String,
+    pub command: Option<String>,
+    pub args: Vec<String>,
+    pub url: Option<String>,
+    pub enabled: bool,
+    pub connected: bool,
+    pub error: Option<String>,
+    pub tools: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentSettingsSnapshot {
+    pub provider: String,
+    pub model: String,
+    pub providers: Vec<AgentProviderInfo>,
+    pub models: Vec<AgentModelInfo>,
+    pub skills: Vec<AgentSkillConfig>,
+    pub mcp_servers: Vec<McpServerConfig>,
+}

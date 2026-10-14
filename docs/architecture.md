@@ -63,7 +63,7 @@ flowchart TB
 | 控制平面 | TypeScript + Fastify | HTTP API、WebSocket、中继、认证边界 |
 | 云端存储 | PostgreSQL、Redis、S3 兼容对象存储 | 元数据、连接状态、事件路由、加密附件 |
 
-## 仓库结构
+## 目标仓库结构
 
 ```text
 apps/
@@ -93,6 +93,8 @@ plugins/
 vendor/
   percho/                  # Git submodule；固定且已验证的上游 commit
 ```
+
+以上是完整产品的目标结构，并非当前目录清单。当前已实装 `apps/client`、`crates/{host-core,workspace-core,local-store,capability-broker}`、`packages/{protocol,plugin-sdk,ui}`、`plugins/{pi-agent,workspace-files}` 与 `vendor/percho`；控制平面、同步、设备身份、远控及其余工作插件仍在后续阶段。
 
 ## 客户端责任边界
 

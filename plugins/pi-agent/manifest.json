@@ -1,0 +1,29 @@
+{
+  "id": "com.nexttools.pi-agent",
+  "name": "Pi Agent",
+  "version": "0.1.0",
+  "kind": "agent-runtime",
+  "platforms": ["windows", "macos", "linux"],
+  "mobileMode": "remote-controller",
+  "capabilities": ["agent.session", "workspace.read", "workspace.write", "shell.execute", "git.commit", "git.push", "mcp.invoke", "workspace.tool.invoke"],
+  "contributes": {
+    "views": ["agent-workbench"],
+    "commands": [
+      {
+        "id": "pi.newSession",
+        "title": "新建 Agent 会话",
+        "execution": "foreground",
+        "viewId": "agent-workbench",
+        "requiredCapabilities": ["agent.session"]
+      },
+      {
+        "id": "pi.continueSession",
+        "title": "继续 Agent 会话",
+        "execution": "foreground",
+        "viewId": "agent-workbench",
+        "requiredCapabilities": ["agent.session"]
+      }
+    ]
+  },
+  "runtime": { "kind": "desktop-sidecar", "entry": "runner/dist/runner.mjs" }
+}

@@ -4,6 +4,14 @@
 
 先实现可信本地 Host 和单设备完整闭环，再增加 Pi、账号、远控和同步。不要让服务端或移动端抢在本地权限边界之前决定执行行为。
 
+## 当前落地状态
+
+- 已有：Tauri/React/Rust workspace、SQLite 迁移、工作区选择与只读浏览、插件清单与启停、设备本地全局快捷键、Rust capability broker 和本地审计。
+- 已有：固定 Percho submodule、可打包 Node runtime、Host↔Runner 协议、模型目录与系统凭据、会话创建/列出/恢复、流式事件、取消、工作区/Git/Shell 工具审批、Skills 和显式连接的 stdio/HTTP MCP。
+- 尚未达到阶段一完成标准：通用 `workspace-files` 写入/创建/删除/diff 用户路径与对应审批尚未完成。
+- 尚未达到阶段二完成标准：项目可信任、Pi extensions、subagents、完整 diff/待办体验，以及一次使用真实 provider 的端到端本地开发任务仍待验证。
+- 阶段三和阶段四的账号、设备、远控、同步、DeepSeek 与签名第三方插件尚未实现。
+
 ## 阶段一：宿主与工作区
 
 1. 初始化 Tauri 2、React、TypeScript 和 Rust workspace。

@@ -1,3 +1,5 @@
+mod agent_tools;
+pub use agent_tools::tool_capability;
 use local_store::Store;
 use nexttools_protocol::*;
 use std::{
@@ -8,6 +10,7 @@ use std::{
 use thiserror::Error;
 
 pub const FILE_PLUGIN: &str = "com.nexttools.workspace-files";
+pub const AGENT_PLUGIN: &str = "com.nexttools.pi-agent";
 #[derive(Debug, Error)]
 pub enum HostError {
     #[error(transparent)]
@@ -26,6 +29,7 @@ pub enum HostError {
 pub struct Host {
     pub store: Store,
     manifest: PluginManifest,
+    agent_manifest: PluginManifest,
     database: PathBuf,
 }
 impl Host {
@@ -34,6 +38,9 @@ impl Host {
             store: Store::open(path)?,
             manifest: serde_json::from_str(include_str!(
                 "../../../plugins/workspace-files/manifest.json"
+            ))?,
+            agent_manifest: serde_json::from_str(include_str!(
+                "../../../plugins/pi-agent/manifest.json"
             ))?,
             database: path.to_path_buf(),
         })
@@ -44,10 +51,16 @@ impl Host {
             platform: std::env::consts::OS.into(),
             database_path: self.database.to_string_lossy().into_owned(),
             workspaces: self.store.workspaces()?,
-            plugins: vec![PluginInstall {
-                manifest: self.manifest.clone(),
-                enabled: self.store.plugin_enabled(FILE_PLUGIN)?,
-            }],
+            plugins: vec![
+                PluginInstall {
+                    manifest: self.manifest.clone(),
+                    enabled: self.store.plugin_enabled(FILE_PLUGIN)?,
+                },
+                PluginInstall {
+                    manifest: self.agent_manifest.clone(),
+                    enabled: self.store.plugin_enabled(AGENT_PLUGIN)?,
+                },
+            ],
             preferences: self.store.preferences()?,
             shortcuts: self.store.shortcuts()?,
         })
@@ -177,11 +190,12 @@ impl Host {
         result
     }
     pub fn command(&self, plugin: &str, command: &str) -> Result<CommandEvent, HostError> {
-        if plugin != FILE_PLUGIN {
-            return Err(HostError::Invalid("未知插件".into()));
-        }
-        let cmd = self
-            .manifest
+        let manifest = match plugin {
+            FILE_PLUGIN => &self.manifest,
+            AGENT_PLUGIN => &self.agent_manifest,
+            _ => return Err(HostError::Invalid("未知插件".into())),
+        };
+        let cmd = manifest
             .contributes
             .commands
             .iter()
@@ -190,11 +204,7 @@ impl Host {
         let workspace = self.store.preferences()?.active_workspace_id;
         let authorized = (|| {
             for cap in &cmd.required_capabilities {
-                capability_broker::authorize(
-                    &self.manifest,
-                    self.store.plugin_enabled(plugin)?,
-                    cap,
-                )?;
+                capability_broker::authorize(manifest, self.store.plugin_enabled(plugin)?, cap)?;
             }
             self.workspace(
                 workspace
@@ -221,7 +231,7 @@ impl Host {
         })
     }
     pub fn set_plugin_enabled(&self, plugin: &str, enabled: bool) -> Result<(), HostError> {
-        if plugin != FILE_PLUGIN {
+        if plugin != FILE_PLUGIN && plugin != AGENT_PLUGIN {
             return Err(HostError::Invalid("未知插件".into()));
         }
         self.store.set_plugin_enabled(plugin, enabled)?;

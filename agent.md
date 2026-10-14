@@ -48,4 +48,4 @@ NextTools 是基于 Tauri 2 的跨平台、local-first、插件化 Agent 工作�
 
 ## 当前状态
 
-仓库已初始化 Tauri 2、React/TypeScript、Rust workspace、SQLite、工作区只读文件插件与桌面快捷键；Pi runtime 尚未接入。实现继续遵守上述协议与权限边界，不提前引入微服务、动态 native 插件或移动端本地执行器。
+仓库已初始化 Tauri 2、React/TypeScript、Rust workspace、SQLite、工作区只读文件插件、桌面快捷键和桌面 Pi Runner。Runner 复用固定的 Percho/Pi 依赖，通过 stdin/stdout JSON-RPC 接入 Rust Host；移动端仅保留远程控制边界。

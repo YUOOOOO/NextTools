@@ -16,7 +16,11 @@ tauri = { version = "2", features = [] }
 host-core.workspace = true
 nexttools-protocol.workspace = true
 serde_json.workspace = true
+serde.workspace = true
+uuid.workspace = true
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 rfd = "0.15"
 tauri-plugin-global-shortcut = "2"
+keyring = { version = "3", features = ["windows-native", "apple-native", "sync-secret-service", "crypto-rust"] }
