@@ -2,6 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 export function IconButton({
   label,
   children,
+  className,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   label: string;
@@ -9,7 +10,7 @@ export function IconButton({
 }) {
   return (
     <button
-      className="icon-button"
+      className={className ? `icon-button ${className}` : "icon-button"}
       type="button"
       title={label}
       aria-label={label}
