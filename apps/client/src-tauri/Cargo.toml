@@ -1,0 +1,22 @@
+[package]
+name = "nexttools-client"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "nexttools_client"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+host-core.workspace = true
+nexttools-protocol.workspace = true
+serde_json.workspace = true
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+rfd = "0.15"
+tauri-plugin-global-shortcut = "2"

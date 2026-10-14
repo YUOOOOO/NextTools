@@ -1,0 +1,13 @@
+{
+  "name": "@nexttools/plugin-sdk",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "@nexttools/protocol": "*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

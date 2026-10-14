@@ -1,0 +1,25 @@
+{
+  "name": "nexttools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/client",
+    "packages/*",
+    "plugins/workspace-files"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @nexttools/client",
+    "dev:desktop": "npm run tauri:dev --workspace @nexttools/client",
+    "build": "npm run build --workspace @nexttools/client",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "format": "prettier --write apps/client packages plugins/workspace-files package.json tsconfig.json",
+    "check:rust": "cargo test --workspace",
+    "protocol:generate": "cargo run -p nexttools-protocol --example export",
+    "build:desktop": "npm run tauri:build --workspace @nexttools/client"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3"
+  }
+}

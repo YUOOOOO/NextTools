@@ -1,0 +1,9 @@
+[package]
+name = "workspace-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+nexttools-protocol.workspace = true
+thiserror.workspace = true
+uuid.workspace = true

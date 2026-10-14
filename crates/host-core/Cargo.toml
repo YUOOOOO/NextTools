@@ -1,0 +1,12 @@
+[package]
+name = "host-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+nexttools-protocol.workspace = true
+workspace-core.workspace = true
+local-store.workspace = true
+capability-broker.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
