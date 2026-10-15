@@ -14,6 +14,8 @@ export const host: HostClient = {
     invoke("command_execute", { pluginId, commandId }),
   listFiles: (workspaceId, path) => invoke("files_list", { workspaceId, path }),
   readFile: (workspaceId, path) => invoke("files_read", { workspaceId, path }),
+  writeFile: (workspaceId, path, content, expectedContent) =>
+    invoke("files_write", { workspaceId, path, content, expectedContent }),
   gitStatus: (workspaceId) => invoke("git_status", { workspaceId }),
   agentSessionCreate: (workspaceId) =>
     invoke("agent_session_create", { workspaceId }),
@@ -23,10 +25,15 @@ export const host: HostClient = {
     invoke("agent_session_resume", { workspaceId, persistedSessionId }),
   agentPrompt: (sessionId, text) => invoke("agent_prompt", { sessionId, text }),
   agentAbort: (sessionId) => invoke("agent_abort", { sessionId }),
-  agentApprovalRespond: (requestId, approved) =>
-    invoke("agent_approval_respond", { requestId, approved }),
-  agentConfigure: (provider, model, apiKey) =>
-    invoke("agent_configure", { provider, model, apiKey }),
+  agentSessionRename: (sessionId, title) => invoke("agent_session_rename", { sessionId, title }),
+  agentSessionThinking: (sessionId, level) => invoke("agent_session_thinking", { sessionId, level }),
+  agentSessionDispose: (sessionId) => invoke("agent_session_dispose", { sessionId }),
+  agentFiles: (sessionId, query) => invoke("agent_files", { sessionId, query }),
+  agentDiff: (sessionId, turnId, path) => invoke("agent_diff", { sessionId, turnId, path }),
+  agentApprovalRespond: (requestId, approved, scope) =>
+    invoke("agent_approval_respond", { requestId, approved, scope }),
+  agentConfigure: (provider, model, apiKey, options) =>
+    invoke("agent_configure", { provider, model, apiKey, options }),
   agentSettingsSnapshot: () => invoke("agent_settings_snapshot"),
   agentSkillImport: () => invoke("agent_skill_import"),
   agentSkillSetEnabled: (id, enabled) =>

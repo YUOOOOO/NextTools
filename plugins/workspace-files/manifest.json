@@ -5,7 +5,7 @@
   "kind": "workspace-tool",
   "platforms": ["windows", "macos", "linux"],
   "mobileMode": "unavailable",
-  "capabilities": ["workspace.read"],
+  "capabilities": ["workspace.read", "workspace.write"],
   "contributes": {
     "views": ["files"],
     "commands": [

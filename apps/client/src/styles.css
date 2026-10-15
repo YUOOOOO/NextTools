@@ -83,8 +83,21 @@ textarea:focus-visible {
   width: 100%;
   height: 100%;
   display: flex;
-  flex-direction: column;
   background: var(--canvas);
+}
+.app-sidebar {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex: 0 0 auto;
+  background: var(--sidebar);
+}
+.app-main {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 .titlebar {
   height: 44px;
@@ -117,6 +130,76 @@ textarea:focus-visible {
 }
 .titlebar > .titlebar-button {
   margin-left: 8px;
+}
+.agent-session-tabs {
+  min-width: 0;
+  max-width: min(52vw, 620px);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.agent-session-tab {
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 190px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--hover);
+}
+.agent-session-tab.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--canvas));
+}
+.agent-session-tab > [role="tab"] {
+  min-width: 0;
+  max-width: 160px;
+  height: 28px;
+  padding: 0 5px 0 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+.agent-session-tab > [role="tab"] span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.agent-session-tab > [role="tab"] small {
+  flex: 0 0 auto;
+  min-width: 15px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  text-align: center;
+  line-height: 15px;
+}
+.session-tab-close {
+  width: 22px;
+  height: 26px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+.agent-session-tab button:hover:not(:disabled) {
+  color: var(--accent);
+}
+.session-tab-close:hover:not(:disabled) {
+  color: var(--danger, #c2413f);
 }
 .titlebar-drag {
   min-width: 90px;
@@ -172,10 +255,61 @@ textarea:focus-visible {
   background: transparent;
 }
 .app-body {
+  min-width: 0;
   min-height: 0;
   flex: 1;
   display: flex;
 }
+.agent-activity-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 44px;
+  padding: 10px 0;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+}
+.agent-activity-bar .active {
+  color: var(--accent);
+  background: var(--hover);
+}
+.agent-explorer {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.explorer-tree {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.explorer-tree .explorer-tree { padding-left: 14px; }
+.explorer-entry {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  min-height: 28px;
+  padding: 4px;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  font-size: 12px;
+}
+.explorer-entry svg { flex-shrink: 0; }
+.explorer-entry span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.explorer-entry:hover, .explorer-entry.selected { background: var(--hover); }
+.explorer-entry .is-expanded { transform: rotate(90deg); }
+.agent-file-preview { height: 100%; display: flex; flex-direction: column; }
+.agent-file-preview > header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.agent-file-preview .file-preview { flex: 1; min-height: 0; }
 .sidebar {
   width: 240px;
   flex: 0 0 240px;
@@ -431,19 +565,12 @@ textarea:focus-visible {
   gap: 7px;
 }
 .git-overlay {
-  position: absolute;
-  z-index: 4;
-  top: 10px;
-  right: 10px;
-  width: min(360px, calc(100% - 20px));
-  max-height: calc(100% - 20px);
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
-  box-shadow: 0 16px 44px var(--shadow);
+  background: transparent;
 }
 .git-overlay > header {
   min-height: 44px;

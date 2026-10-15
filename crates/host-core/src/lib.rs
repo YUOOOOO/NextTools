@@ -113,6 +113,70 @@ impl Host {
         result?;
         self.workspace(workspace)
     }
+    pub fn authorize_write(&self, workspace: &str, action: &str) -> Result<Workspace, HostError> {
+        let result = capability_broker::authorize(
+            &self.manifest,
+            self.store.plugin_enabled(FILE_PLUGIN)?,
+            "workspace.write",
+        );
+        if result.is_err() {
+            self.store
+                .audit(Some(workspace), FILE_PLUGIN, action, "denied")?;
+        }
+        result?;
+        self.workspace(workspace)
+    }
+    pub fn write_file(
+        &self,
+        workspace: &str,
+        relative: &str,
+        content: &str,
+        expected_content: &str,
+    ) -> Result<(), HostError> {
+        let root = self.authorize_write(workspace, "files.write")?;
+        let result = (|| {
+            if content.len() > 1_048_576
+                || expected_content.len() > 1_048_576
+                || content.as_bytes().contains(&0)
+            {
+                return Err(HostError::Invalid(
+                    "仅支持写入 1 MiB 内的 UTF-8 文本文件".into(),
+                ));
+            }
+            let relative_path = Path::new(relative);
+            let parent = relative_path
+                .parent()
+                .and_then(Path::to_str)
+                .unwrap_or("");
+            let parent_path = workspace_core::resolve(Path::new(&root.root), parent)?;
+            let file_name = relative_path
+                .file_name()
+                .ok_or_else(|| HostError::Invalid("无效文件路径".into()))?;
+            let target = parent_path.join(file_name);
+            if !target.exists() || !target.is_file() {
+                return Err(HostError::Invalid("仅支持写入已存在的普通文件".into()));
+            }
+            let canonical_root = Path::new(&root.root).canonicalize()?;
+            let canonical_target = target.canonicalize()?;
+            if !canonical_target.starts_with(&canonical_root) {
+                return Err(HostError::Invalid("路径越界".into()));
+            }
+            let current = fs::read_to_string(&canonical_target)
+                .map_err(|_| HostError::Invalid("文件不是 UTF-8 文本".into()))?;
+            if current != expected_content {
+                return Err(HostError::Invalid("文件已在外部发生变化，请重新加载后再保存".into()));
+            }
+            fs::write(canonical_target, content)?;
+            Ok(())
+        })();
+        self.store.audit(
+            Some(workspace),
+            FILE_PLUGIN,
+            "files.write",
+            if result.is_ok() { "allowed" } else { "failed" },
+        )?;
+        result
+    }
     pub fn list_files(&self, workspace: &str, relative: &str) -> Result<Vec<FileEntry>, HostError> {
         let root = self.authorize_read(workspace, "files.list")?;
         let result = (|| {

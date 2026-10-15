@@ -99,6 +99,16 @@ fn files_read(
     with_host(&state, |h| h.read_file(&workspace_id, &path))
 }
 #[tauri::command]
+fn files_write(
+    state: State<'_, HostState>,
+    workspace_id: String,
+    path: String,
+    content: String,
+    expected_content: String,
+) -> Result<(), String> {
+    with_host(&state, |h| h.write_file(&workspace_id, &path, &content, &expected_content))
+}
+#[tauri::command]
 fn git_status(state: State<'_, HostState>, workspace_id: String) -> Result<GitStatus, String> {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
@@ -423,6 +433,7 @@ pub fn run() {
             workspace_choose,
             files_list,
             files_read,
+            files_write,
             git_status,
             command_execute,
             plugin_set_enabled,
@@ -433,6 +444,11 @@ pub fn run() {
             agent::agent_prompt,
             agent::agent_abort,
             agent::agent_approval_respond,
+            agent::agent_session_rename,
+            agent::agent_session_thinking,
+            agent::agent_session_dispose,
+            agent::agent_files,
+            agent::agent_diff,
             agent_settings::agent_settings_snapshot,
             agent_settings::agent_configure,
             agent_settings::agent_skill_import,

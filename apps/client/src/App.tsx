@@ -37,169 +37,18 @@ import {
   X,
 } from "lucide-react";
 import { host, nativeHostAvailable } from "./host";
+import { AgentExplorer, AgentFilePreview } from "./agent-explorer";
 
-type AgentTimelineKind = "user" | "assistant" | "thinking" | "tool";
-type AgentTimelineStatus = "running" | "done" | "error";
-
-interface AgentTimelineItem {
-  id: string;
-  kind: AgentTimelineKind;
-  title: string;
-  text: string;
-  status?: AgentTimelineStatus;
-}
-
-interface AgentApproval {
-  requestId: string;
-  sessionId: string;
-  toolName: string;
-  input: unknown;
-}
-
-type UnknownRecord = Record<string, unknown>;
-
-function asRecord(value: unknown): UnknownRecord | null {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-    ? (value as UnknownRecord)
-    : null;
-}
-
-function stringField(value: UnknownRecord | null, key: string) {
-  const field = value?.[key];
-  return typeof field === "string" ? field : "";
-}
-
-function displayJson(value: unknown) {
-  if (value === undefined) return "";
-  if (typeof value === "string") return value;
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
-}
-
-function contentText(
-  value: unknown,
-  kind: "text" | "thinking" = "text",
-): string {
-  if (typeof value === "string") return kind === "text" ? value : "";
-  if (!Array.isArray(value)) {
-    const record = asRecord(value);
-    if (!record) return "";
-    const type = stringField(record, "type").toLowerCase();
-    const isThinking = type.includes("thinking") || type.includes("reasoning");
-    if ((kind === "thinking") !== isThinking && type) return "";
-    const candidate =
-      record.text ?? record.thinking ?? record.reasoning ?? record.content;
-    return typeof candidate === "string" ? candidate : "";
-  }
-  return value
-    .map((part: unknown): string => contentText(part, kind))
-    .filter(Boolean)
-    .join("\n");
-}
-
-function eventDelta(event: UnknownRecord) {
-  const candidate = event.delta ?? event.text ?? event.content;
-  return typeof candidate === "string" ? candidate : "";
-}
-
-function upsertTimeline(
-  items: AgentTimelineItem[],
-  next: AgentTimelineItem,
-  append = false,
-) {
-  const index = items.findIndex((item) => item.id === next.id);
-  if (index < 0) return [...items, next];
-  const current = items[index];
-  const updated = [...items];
-  updated[index] = {
-    ...current,
-    ...next,
-    text: append ? current.text + next.text : next.text,
-  };
-  return updated;
-}
-
-function restoredTimeline(messages: unknown): AgentTimelineItem[] {
-  if (!Array.isArray(messages)) return [];
-  const timeline: AgentTimelineItem[] = [];
-  messages.forEach((unknownMessage, messageIndex) => {
-    const message = asRecord(unknownMessage);
-    if (!message) return;
-    const role = stringField(message, "role").toLowerCase();
-    const baseId = stringField(message, "id") || `restored-${messageIndex}`;
-    if (role === "user") {
-      const text = contentText(message.content);
-      if (text)
-        timeline.push({
-          id: `${baseId}:user`,
-          kind: "user",
-          title: "你",
-          text,
-          status: "done",
-        });
-      return;
-    }
-    if (role === "assistant") {
-      const thinking = contentText(message.content, "thinking");
-      if (thinking)
-        timeline.push({
-          id: `${baseId}:thinking`,
-          kind: "thinking",
-          title: "思考",
-          text: thinking,
-          status: "done",
-        });
-      const text = contentText(message.content);
-      if (text)
-        timeline.push({
-          id: `${baseId}:assistant`,
-          kind: "assistant",
-          title: "Pi",
-          text,
-          status: "done",
-        });
-      if (Array.isArray(message.content)) {
-        message.content.forEach((unknownPart, partIndex) => {
-          const part = asRecord(unknownPart);
-          const type = stringField(part, "type").toLowerCase();
-          if (
-            !part ||
-            (!type.includes("toolcall") && !type.includes("tool_call"))
-          )
-            return;
-          timeline.push({
-            id: `${baseId}:tool:${partIndex}`,
-            kind: "tool",
-            title: stringField(part, "name") || "工具调用",
-            text: displayJson(part.arguments ?? part.input),
-            status: "done",
-          });
-        });
-      }
-      return;
-    }
-    if (role === "toolresult" || role === "tool_result" || role === "tool") {
-      timeline.push({
-        id: `${baseId}:tool-result`,
-        kind: "tool",
-        title: stringField(message, "toolName") || "工具结果",
-        text: contentText(message.content) || displayJson(message.content),
-        status: message.isError === true ? "error" : "done",
-      });
-    }
-  });
-  return timeline;
-}
+import { asRecord, stringField, displayJson, createLiveSession, reduceAgentEvent, type LiveAgentSession, type AgentTimelineItem, type AgentApproval } from "./agent-sessions";
 
 export function App() {
   const [snapshot, setSnapshot] = useState<HostSnapshot | null>(null);
   const [error, setError] = useState("");
   const [settings, setSettings] = useState(false);
   const [revision, setRevision] = useState(0);
-  const [gitOpen, setGitOpen] = useState(false);
+  const [agentPanel, setAgentPanel] = useState<"explorer" | "chat" | "git">("chat");
+  const [fileSelection, setFileSelection] = useState<{ workspaceId: string; path: string } | null>(null);
+  const gitRequestVersion = useRef(0);
   const [gitStatus, setGitStatus] = useState<GitStatus | null>(null);
   const [gitLoading, setGitLoading] = useState(false);
   const [gitError, setGitError] = useState("");
@@ -208,28 +57,23 @@ export function App() {
   >(null);
   const [agentSessions, setAgentSessions] = useState<AgentSessionSummary[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
-  const [agentSession, setAgentSession] = useState<AgentSessionInfo | null>(
-    null,
-  );
-  const [activePersistedSessionId, setActivePersistedSessionId] = useState<
-    string | null
-  >(null);
-  const [agentMessages, setAgentMessages] = useState<AgentTimelineItem[]>([]);
-  const [agentInput, setAgentInput] = useState("");
-  const [agentRunning, setAgentRunning] = useState(false);
-  const [agentCreating, setAgentCreating] = useState(false);
-  const [agentStopping, setAgentStopping] = useState(false);
-  const [agentError, setAgentError] = useState("");
-  const [agentApprovals, setAgentApprovals] = useState<AgentApproval[]>([]);
-  const [resolvingApprovals, setResolvingApprovals] = useState<Set<string>>(
-    () => new Set(),
-  );
-  const currentSessionId = useRef("");
-  const activeAssistantId = useRef("");
-  const activeThinkingId = useRef("");
-  const sessionVersion = useRef(0);
-  const autoWorkspace = useRef("");
-  const pendingRestoredEvents = useRef(new Map<string, unknown>());
+  const [liveSessions, setLiveSessions] = useState<LiveAgentSession[]>([]);
+  const liveSessionsRef = useRef(liveSessions);
+  const [activeSessions, setActiveSessions] = useState<Record<string, string>>({});
+  const selectionVersions = useRef(new Map<string, number>());
+  const [creatingWorkspaces, setCreatingWorkspaces] = useState<Set<string>>(() => new Set());
+  const openingSessions = useRef(new Map<string, Promise<void>>());
+  const initializedWorkspaces = useRef(new Set<string>());
+  const pendingEvents = useRef(new Map<string, unknown[]>());
+  const closedSessions = useRef(new Set<string>());
+  const changeSessions = useCallback((change: (items: LiveAgentSession[]) => LiveAgentSession[]) => {
+    const next = change(liveSessionsRef.current);
+    liveSessionsRef.current = next;
+    setLiveSessions(next);
+  }, []);
+  const changeSession = useCallback((id: string, change: (session: LiveAgentSession) => LiveAgentSession) => {
+    changeSessions((items) => items.map((item) => item.info.sessionId === id ? change(item) : item));
+  }, [changeSessions]);
   const currentWorkspaceId = useRef("");
   const sessionsRequestVersion = useRef(0);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -253,214 +97,19 @@ export function App() {
     },
     [refresh],
   );
-  const consumeAgentEvent = useCallback((event: unknown) => {
-    const value = asRecord(event);
-    if (!value) return;
-    const type = stringField(value, "type").toLowerCase().replace(/[.-]/g, "_");
-    if (!type) return;
-    if (type === "session_restored") {
-      setAgentMessages(restoredTimeline(value.messages));
-      setAgentStopping(false);
-      setAgentRunning(false);
+  const consumeAgentEvent = useCallback((sessionId: string, event: unknown) => {
+    const session = liveSessionsRef.current.find((item) => item.info.sessionId === sessionId);
+    if (!session) {
+      if (!closedSessions.current.has(sessionId) && openingSessions.current.size) {
+        pendingEvents.current.set(sessionId, [...(pendingEvents.current.get(sessionId) ?? []), event]);
+      }
       return;
     }
-
-    if (type === "agent_start" || type === "turn_start") setAgentRunning(true);
-    if (type === "agent_end" || type === "agent_settled") {
-      setAgentStopping(false);
-      setAgentRunning(false);
-      setAgentMessages((items) =>
-        items.map((item) =>
-          item.status === "running" ? { ...item, status: "done" } : item,
-        ),
-      );
-      const workspaceId = currentWorkspaceId.current;
-      if (workspaceId) loadAgentSessionsRef.current(workspaceId);
-    }
-    if (type.includes("error")) {
-      setAgentStopping(false);
-      const detail = value.error ?? value.message;
-      if (detail !== undefined) setAgentError(displayJson(detail));
-      setAgentMessages((items) =>
-        items.map((item) =>
-          item.status === "running" ? { ...item, status: "error" } : item,
-        ),
-      );
-    }
-
-    const message = asRecord(value.message);
-    const role = stringField(message, "role").toLowerCase();
-    const suppliedMessageId =
-      stringField(message, "id") || stringField(value, "messageId");
-
-    if (type === "message_start" && role === "assistant") {
-      activeAssistantId.current =
-        suppliedMessageId || `assistant-${Date.now()}`;
-      setAgentMessages((items) =>
-        upsertTimeline(items, {
-          id: `${activeAssistantId.current}:assistant`,
-          kind: "assistant",
-          title: "Pi",
-          text: "",
-          status: "running",
-        }),
-      );
-    }
-
-    if (
-      (type === "message_start" || type === "message_end") &&
-      role === "user"
-    ) {
-      const text = contentText(message?.content);
-      if (text) {
-        setAgentMessages((items) => {
-          const last = items.at(-1);
-          if (last?.kind === "user" && last.text === text) return items;
-          return [
-            ...items,
-            {
-              id: `${suppliedMessageId || `user-${Date.now()}`}:user`,
-              kind: "user",
-              title: "你",
-              text,
-              status: "done",
-            },
-          ];
-        });
-      }
-    }
-
-    const nested =
-      asRecord(value.assistantMessageEvent) ?? asRecord(value.event) ?? value;
-    const nestedType = stringField(nested, "type")
-      .toLowerCase()
-      .replace(/[.-]/g, "_");
-    const delta = eventDelta(nested);
-    if (
-      delta &&
-      nestedType.includes("thinking") &&
-      nestedType.includes("delta")
-    ) {
-      const baseId =
-        suppliedMessageId ||
-        activeAssistantId.current ||
-        `assistant-${Date.now()}`;
-      activeAssistantId.current ||= baseId;
-      activeThinkingId.current = `${baseId}:thinking`;
-      setAgentMessages((items) =>
-        upsertTimeline(
-          items,
-          {
-            id: activeThinkingId.current,
-            kind: "thinking",
-            title: "思考",
-            text: delta,
-            status: "running",
-          },
-          true,
-        ),
-      );
-    } else if (
-      delta &&
-      (nestedType.includes("text_delta") || type === "assistant_delta")
-    ) {
-      const baseId =
-        suppliedMessageId ||
-        activeAssistantId.current ||
-        `assistant-${Date.now()}`;
-      activeAssistantId.current ||= baseId;
-      setAgentMessages((items) =>
-        upsertTimeline(
-          items,
-          {
-            id: `${baseId}:assistant`,
-            kind: "assistant",
-            title: "Pi",
-            text: delta,
-            status: "running",
-          },
-          true,
-        ),
-      );
-    }
-
-    if (type === "message_end" && role === "assistant") {
-      const baseId = suppliedMessageId || activeAssistantId.current;
-      const text = contentText(message?.content);
-      const thinking = contentText(message?.content, "thinking");
-      if (baseId && text) {
-        setAgentMessages((items) =>
-          upsertTimeline(items, {
-            id: `${baseId}:assistant`,
-            kind: "assistant",
-            title: "Pi",
-            text,
-            status: "done",
-          }),
-        );
-      } else if (baseId) {
-        setAgentMessages((items) =>
-          items.map((item) =>
-            item.id === `${baseId}:assistant`
-              ? { ...item, status: "done" }
-              : item,
-          ),
-        );
-      }
-      if (baseId && thinking) {
-        setAgentMessages((items) =>
-          upsertTimeline(items, {
-            id: `${baseId}:thinking`,
-            kind: "thinking",
-            title: "思考",
-            text: thinking,
-            status: "done",
-          }),
-        );
-      }
-      activeAssistantId.current = "";
-      activeThinkingId.current = "";
-    }
-
-    if (type === "tool_execution_start") {
-      const id =
-        stringField(value, "toolCallId") ||
-        stringField(value, "id") ||
-        `tool-${Date.now()}`;
-      const title = stringField(value, "toolName") || "工具调用";
-      setAgentMessages((items) =>
-        upsertTimeline(items, {
-          id: `${id}:tool`,
-          kind: "tool",
-          title,
-          text: displayJson(value.args ?? value.input),
-          status: "running",
-        }),
-      );
-    }
-    if (type === "tool_execution_update" || type === "tool_execution_end") {
-      const id = stringField(value, "toolCallId") || stringField(value, "id");
-      if (id) {
-        const failed = value.isError === true || value.error !== undefined;
-        const result =
-          value.result ?? value.partialResult ?? value.error ?? value.output;
-        setAgentMessages((items) =>
-          upsertTimeline(items, {
-            id: `${id}:tool`,
-            kind: "tool",
-            title: stringField(value, "toolName") || "工具调用",
-            text: displayJson(result),
-            status:
-              type === "tool_execution_update"
-                ? "running"
-                : failed
-                  ? "error"
-                  : "done",
-          }),
-        );
-      }
-    }
-  }, []);
+    if (session.unavailable) return;
+    changeSession(sessionId, (item) => reduceAgentEvent(item, event));
+    const type = stringField(asRecord(event), "type");
+    if (type === "agent_end" || type === "agent_settled") loadAgentSessionsRef.current(session.info.workspaceId);
+  }, [changeSession]);
   useEffect(() => {
     if (nativeHostAvailable) void refresh().catch((e) => setError(String(e)));
   }, [refresh]);
@@ -513,14 +162,7 @@ export function App() {
         if (!envelope) return;
         const sessionId = stringField(envelope, "sessionId");
         if (!sessionId) return;
-        if (sessionId !== currentSessionId.current) {
-          const event = asRecord(envelope.event);
-          if (stringField(event, "type") === "session_restored") {
-            pendingRestoredEvents.current.set(sessionId, envelope.event);
-          }
-          return;
-        }
-        consumeAgentEvent(envelope.event);
+        consumeAgentEvent(sessionId, envelope.event);
       }),
       listen<unknown>("agent:approval", ({ payload }) => {
         const request = asRecord(payload);
@@ -528,41 +170,22 @@ export function App() {
         const requestId = stringField(request, "requestId");
         const sessionId = stringField(request, "sessionId");
         const toolName = stringField(request, "toolName");
-        if (!requestId || !sessionId || sessionId !== currentSessionId.current)
-          return;
-        setAgentApprovals((items) => {
-          const next = { requestId, sessionId, toolName, input: request.input };
-          const index = items.findIndex((item) => item.requestId === requestId);
-          if (index < 0) return [...items, next];
-          return items.map((item, itemIndex) =>
-            itemIndex === index ? next : item,
-          );
-        });
+        if (!requestId || !sessionId) return;
+        consumeAgentEvent(sessionId, { ...request, type: "approval", toolName });
       }),
       listen<unknown>("agent:error", ({ payload }) => {
         const value = asRecord(payload);
         const detail = value?.error ?? payload;
-        setAgentError(displayJson(detail));
-        setAgentStopping(false);
-        setAgentRunning(false);
-        setAgentMessages((items) =>
-          items.map((item) =>
-            item.status === "running" ? { ...item, status: "error" } : item,
-          ),
-        );
+        const sessionId = stringField(value, "sessionId");
+        if (sessionId) consumeAgentEvent(sessionId, { type: "error", error: detail });
+        else setError(displayJson(detail));
       }),
       listen<unknown>("agent:approval-resolved", ({ payload }) => {
         const request = asRecord(payload);
         const requestId = request && stringField(request, "requestId");
         if (!requestId) return;
-        setAgentApprovals((items) =>
-          items.filter((item) => item.requestId !== requestId),
-        );
-        setResolvingApprovals((items) => {
-          const next = new Set(items);
-          next.delete(requestId);
-          return next;
-        });
+        const sessionId = stringField(request, "sessionId");
+        consumeAgentEvent(sessionId, { type: "approval_resolved", requestId });
       }),
     ]).then((unlisten) => {
       if (stopped) unlisten.forEach((fn) => fn());
@@ -572,7 +195,7 @@ export function App() {
       stopped = true;
       cleanup.forEach((fn) => fn());
     };
-  }, [consumeAgentEvent]);
+  }, [consumeAgentEvent, changeSession, changeSessions]);
   useEffect(() => {
     const media = matchMedia("(prefers-color-scheme: dark)");
     const apply = () => {
@@ -599,9 +222,24 @@ export function App() {
       (item) => item.id === preferences?.activeWorkspaceId,
     ) ?? null;
   currentWorkspaceId.current = workspace?.id ?? "";
+  const selectedFile = fileSelection?.workspaceId === workspace?.id ? fileSelection?.path ?? null : null;
   const filePlugin = snapshot?.plugins.find(
     (plugin) => plugin.manifest.id === "com.nexttools.workspace-files",
   );
+  const workspaceSessions = liveSessions.filter((item) => item.info.workspaceId === workspace?.id);
+  const activeSession = workspaceSessions.find((item) => item.info.sessionId === activeSessions[workspace?.id ?? ""]);
+  const agentSession = activeSession?.info ?? null;
+  const activePersistedSessionId = agentSession?.persistedSessionId ?? null;
+  const agentMessages = activeSession?.messages ?? [];
+  const agentInput = activeSession?.input ?? "";
+  const agentRunning = activeSession?.running ?? false;
+  const agentStopping = activeSession?.stopping ?? false;
+  const agentCreating = creatingWorkspaces.has(workspace?.id ?? "");
+  const agentError = activeSession?.error ?? "";
+  const agentApprovals = activeSession?.approvals ?? [];
+  const resolvingApprovals = activeSession?.resolving ?? new Set<string>();
+  const setAgentInput = (input: string) => { if (agentSession) changeSession(agentSession.sessionId, (item) => ({ ...item, input })); };
+  const setAgentError = (error: string) => { if (agentSession) changeSession(agentSession.sessionId, (item) => ({ ...item, error })); };
   const loadAgentSessions = useCallback(async (workspaceId: string) => {
     if (currentWorkspaceId.current !== workspaceId) return;
     const version = ++sessionsRequestVersion.current;
@@ -620,7 +258,7 @@ export function App() {
         currentWorkspaceId.current === workspaceId
       ) {
         setAgentSessions([]);
-        setAgentError(String(cause));
+        setError(String(cause));
       }
     } finally {
       if (version === sessionsRequestVersion.current) setSessionsLoading(false);
@@ -629,97 +267,84 @@ export function App() {
   loadAgentSessionsRef.current = (workspaceId) =>
     void loadAgentSessions(workspaceId);
   const loadGit = useCallback(async (workspaceId: string) => {
+    const version = ++gitRequestVersion.current;
     setGitLoading(true);
     setGitError("");
     try {
       const status = await host.gitStatus(workspaceId);
-      if (currentWorkspaceId.current === workspaceId) setGitStatus(status);
+      if (version === gitRequestVersion.current && currentWorkspaceId.current === workspaceId) setGitStatus(status);
     } catch (cause) {
-      if (currentWorkspaceId.current === workspaceId)
+      if (version === gitRequestVersion.current && currentWorkspaceId.current === workspaceId)
         setGitError(String(cause));
     } finally {
-      setGitLoading(false);
+      if (version === gitRequestVersion.current) setGitLoading(false);
     }
   }, []);
   useEffect(() => {
     setGitStatus(null);
     setGitError("");
-    if (gitOpen && workspace) void loadGit(workspace.id);
-  }, [gitOpen, loadGit, workspace?.id]);
-  const beginAgentSession = useCallback(
-    async (workspaceId: string) => {
-      const version = ++sessionVersion.current;
-      currentSessionId.current = "";
-      activeAssistantId.current = "";
-      activeThinkingId.current = "";
-      setAgentSession(null);
-      setActivePersistedSessionId(null);
-      setAgentMessages([]);
-      setAgentApprovals([]);
-      setAgentError("");
-      setAgentRunning(false);
-      setAgentStopping(false);
-      setAgentCreating(true);
+    setGitLoading(false);
+    if (mode === "agent" && agentPanel === "git" && workspace) void loadGit(workspace.id);
+    return () => { gitRequestVersion.current += 1; };
+  }, [mode, agentPanel, loadGit, workspace?.id]);
+  const openSession = useCallback((workspaceId: string, persistedSessionId?: string): Promise<void> => {
+    const existing = persistedSessionId && liveSessionsRef.current.find((item) => item.info.workspaceId === workspaceId && item.info.persistedSessionId === persistedSessionId);
+    if (existing) {
+      selectionVersions.current.set(workspaceId, (selectionVersions.current.get(workspaceId) ?? 0) + 1);
+      setActiveSessions((items) => ({ ...items, [workspaceId]: existing.info.sessionId }));
+      return Promise.resolve();
+    }
+    const opening = openingSessions.current.get(workspaceId);
+    if (opening) return opening;
+    const selectionVersion = selectionVersions.current.get(workspaceId) ?? 0;
+    initializedWorkspaces.current.add(workspaceId);
+    setCreatingWorkspaces((items) => new Set(items).add(workspaceId));
+    const task = Promise.resolve().then(async () => {
       try {
-        const next = await host.agentSessionCreate(workspaceId);
-        if (version !== sessionVersion.current) return;
-        currentSessionId.current = next.sessionId;
-        setAgentSession(next);
+        const info = persistedSessionId ? await host.resumeAgentSession(workspaceId, persistedSessionId) : await host.agentSessionCreate(workspaceId);
+        let session = createLiveSession(info);
+        for (const event of pendingEvents.current.get(info.sessionId) ?? []) session = reduceAgentEvent(session, event);
+        pendingEvents.current.delete(info.sessionId);
+        changeSessions((items) => [...items, session]);
+        if ((selectionVersions.current.get(workspaceId) ?? 0) === selectionVersion)
+          setActiveSessions((items) => ({ ...items, [workspaceId]: info.sessionId }));
         void loadAgentSessions(workspaceId);
       } catch (cause) {
-        if (version === sessionVersion.current) setAgentError(String(cause));
+        setError(String(cause));
       } finally {
-        if (version === sessionVersion.current) setAgentCreating(false);
+        openingSessions.current.delete(workspaceId);
+        if (!openingSessions.current.size) pendingEvents.current.clear();
+        setCreatingWorkspaces((items) => { const next = new Set(items); next.delete(workspaceId); return next; });
       }
-    },
-    [loadAgentSessions],
-  );
-  const resumeAgentSession = useCallback(
-    async (workspaceId: string, persistedSessionId: string) => {
-      const version = ++sessionVersion.current;
-      currentSessionId.current = "";
-      activeAssistantId.current = "";
-      activeThinkingId.current = "";
-      setAgentSession(null);
-      setAgentMessages([]);
-      setAgentApprovals([]);
-      setActivePersistedSessionId(persistedSessionId);
-      setAgentError("");
-      setAgentRunning(false);
-      setAgentCreating(true);
-      setAgentStopping(false);
-      try {
-        const next = await host.resumeAgentSession(
-          workspaceId,
-          persistedSessionId,
-        );
-        if (version !== sessionVersion.current) return;
-        currentSessionId.current = next.sessionId;
-        setAgentSession(next);
-        const restored = pendingRestoredEvents.current.get(next.sessionId);
-        if (restored !== undefined) {
-          pendingRestoredEvents.current.delete(next.sessionId);
-          consumeAgentEvent(restored);
-        }
-      } catch (cause) {
-        if (version === sessionVersion.current) setAgentError(String(cause));
-      } finally {
-        if (version === sessionVersion.current) setAgentCreating(false);
-      }
-    },
-    [consumeAgentEvent],
-  );
+    });
+    openingSessions.current.set(workspaceId, task);
+    return task;
+  }, [changeSessions, loadAgentSessions]);
+  const beginAgentSession = useCallback((workspaceId: string) => openSession(workspaceId), [openSession]);
+  const resumeAgentSession = useCallback((workspaceId: string, persistedSessionId: string) => openSession(workspaceId, persistedSessionId), [openSession]);
+  const closeAgentSession = async (session: LiveAgentSession) => {
+    const { sessionId, workspaceId } = session.info;
+    if (session.closing) return;
+    changeSession(sessionId, (item) => ({ ...item, closing: true, error: "" }));
+    try {
+      if (!session.unavailable) await host.agentSessionDispose(sessionId);
+      const siblings = liveSessionsRef.current.filter((item) => item.info.workspaceId === workspaceId);
+      const index = siblings.findIndex((item) => item.info.sessionId === sessionId);
+      const next = siblings[index + 1] ?? siblings[index - 1];
+      selectionVersions.current.set(workspaceId, (selectionVersions.current.get(workspaceId) ?? 0) + 1);
+      closedSessions.current.add(sessionId);
+      changeSessions((items) => items.filter((item) => item.info.sessionId !== sessionId));
+      setActiveSessions((items) => items[workspaceId] === sessionId ? { ...items, [workspaceId]: next?.info.sessionId ?? "" } : items);
+    } catch (cause) {
+      changeSession(sessionId, (item) => ({ ...item, closing: false, unavailable: true, running: false, stopping: false, approvals: [], error: `关闭失败，会话已停用。可再次关闭标签并从历史恢复：${String(cause)}` }));
+    }
+  };
   useEffect(() => {
     if (!pendingAgentCommand || mode !== "agent" || !workspace || agentCreating)
       return;
-    if (agentRunning) {
-      setAgentError("请先停止当前运行，再切换会话。");
-      setPendingAgentCommand(null);
-      return;
-    }
     const command = pendingAgentCommand;
     setPendingAgentCommand(null);
-    autoWorkspace.current = workspace.id;
+    initializedWorkspaces.current.add(workspace.id);
     if (command === "new") {
       void beginAgentSession(workspace.id);
     } else {
@@ -732,16 +357,15 @@ export function App() {
             b.updatedAt.localeCompare(a.updatedAt),
           )[0];
           if (latest) void resumeAgentSession(workspaceId, latest.sessionId);
-          else setAgentError("此工作区没有可继续的会话，请新建会话。");
+          else setError("此工作区没有可继续的会话，请新建会话。");
         })
-        .catch((cause) => setAgentError(String(cause)));
+        .catch((cause) => setError(String(cause)));
     }
   }, [
     pendingAgentCommand,
     mode,
     workspace,
     agentCreating,
-    agentRunning,
     beginAgentSession,
     resumeAgentSession,
   ]);
@@ -755,89 +379,51 @@ export function App() {
     void loadAgentSessions(workspace.id);
   }, [loadAgentSessions, mode, workspace]);
   useEffect(() => {
-    if (mode !== "agent" || pendingAgentCommand) return;
-    if (!workspace) {
-      autoWorkspace.current = "";
-      currentSessionId.current = "";
-      setAgentSession(null);
-      setAgentMessages([]);
-      setAgentApprovals([]);
-      setActivePersistedSessionId(null);
-      return;
-    }
-    if (
-      agentSession?.workspaceId !== workspace.id &&
-      autoWorkspace.current !== workspace.id
-    ) {
-      autoWorkspace.current = workspace.id;
-      void beginAgentSession(workspace.id);
-    }
-  }, [
-    agentSession?.workspaceId,
-    beginAgentSession,
-    mode,
-    workspace,
-    pendingAgentCommand,
-  ]);
+    if (!nativeHostAvailable || mode !== "agent" || pendingAgentCommand || !workspace || initializedWorkspaces.current.has(workspace.id)) return;
+    void beginAgentSession(workspace.id);
+  }, [beginAgentSession, mode, workspace?.id, pendingAgentCommand]);
   const sendAgentPrompt = async () => {
+    if (!activeSession || activeSession.running || activeSession.closing || activeSession.unavailable || !agentInput.trim()) return;
+    const id = activeSession.info.sessionId;
     const text = agentInput.trim();
-    const session = agentSession;
-    if (!text || !session || agentRunning) return;
-    setAgentInput("");
-    setAgentError("");
-    setAgentMessages((items) => [
-      ...items,
-      {
-        id: `local-user-${Date.now()}`,
-        kind: "user",
-        title: "你",
-        text,
-        status: "done",
-      },
-    ]);
-    setAgentRunning(true);
+    changeSession(id, (item) => ({ ...item, input: "", error: "", running: true, messages: [...item.messages, { id: `local-user-${Date.now()}`, kind: "user", title: "你", text, status: "done" }] }));
     try {
-      await host.agentPrompt(session.sessionId, text);
+      const response = await host.agentPrompt(id, text);
+      if (response.exportText !== undefined) {
+        const url = URL.createObjectURL(new Blob([response.exportText], { type: "text/plain;charset=utf-8" }));
+        const link = document.createElement("a"); link.href = url; link.download = "agent-session.jsonl"; link.click(); URL.revokeObjectURL(url);
+      }
+      changeSession(id, (item) => ({ ...item, running: false, stopping: false }));
     } catch (cause) {
-      setAgentError(String(cause));
-      if (currentSessionId.current === session.sessionId)
-        setAgentRunning(false);
+      changeSession(id, (item) => reduceAgentEvent(item, { type: "error", error: String(cause) }));
     }
   };
   const stopAgent = async () => {
-    const session = agentSession;
-    if (!session || agentStopping) return;
-    setAgentStopping(true);
-    setAgentError("");
-    try {
-      await host.agentAbort(session.sessionId);
-    } catch (cause) {
-      setAgentError(String(cause));
-      setAgentStopping(false);
-    }
+    if (!activeSession || !activeSession.running || activeSession.stopping || activeSession.closing || activeSession.unavailable) return;
+    const id = activeSession.info.sessionId;
+    changeSession(id, (item) => ({ ...item, stopping: true, error: "" }));
+    try { await host.agentAbort(id); }
+    catch (cause) { changeSession(id, (item) => ({ ...item, stopping: false, error: String(cause) })); }
   };
   const resolveAgentApproval = async (requestId: string, approved: boolean) => {
-    setResolvingApprovals((items) => new Set(items).add(requestId));
-    setAgentError("");
+    const session = liveSessionsRef.current.find((item) => item.approvals.some((approval) => approval.requestId === requestId));
+    if (!session || session.closing || session.unavailable || session.resolving.has(requestId)) return;
+    const id = session.info.sessionId;
+    changeSession(id, (item) => ({ ...item, error: "", resolving: new Set(item.resolving).add(requestId) }));
     try {
       await host.agentApprovalRespond(requestId, approved);
-      setAgentApprovals((items) =>
-        items.filter((item) => item.requestId !== requestId),
-      );
-    } catch (cause) {
-      setAgentError(String(cause));
-    } finally {
-      setResolvingApprovals((items) => {
-        const next = new Set(items);
-        next.delete(requestId);
-        return next;
-      });
-    }
+      changeSession(id, (item) => ({ ...item, approvals: item.approvals.filter((approval) => approval.requestId !== requestId) }));
+    } catch (cause) { changeSession(id, (item) => ({ ...item, error: String(cause) })); }
+    finally { changeSession(id, (item) => { const resolving = new Set(item.resolving); resolving.delete(requestId); return { ...item, resolving }; }); }
   };
   const update = (patch: Partial<Preferences>) =>
     run(async () => {
       if (preferences) await host.setPreferences({ ...preferences, ...patch });
     });
+  const openAgentPanel = (panel: "explorer" | "chat" | "git") => {
+    setAgentPanel(panel);
+    if (preferences?.sidebarCollapsed) void update({ sidebarCollapsed: false });
+  };
   const minimizeWindow = () => {
     if (nativeHostAvailable) void getCurrentWindow().minimize();
   };
@@ -849,96 +435,14 @@ export function App() {
   };
   return (
     <div className="app">
-      <header className="titlebar" data-tauri-drag-region>
-        <IconButton
-          className={
-            "titlebar-button " + (preferences?.sidebarCollapsed ? "" : "active")
-          }
-          label={preferences?.sidebarCollapsed ? "展开菜单栏" : "收起菜单栏"}
-          disabled={!snapshot}
-          onClick={() =>
-            void update({ sidebarCollapsed: !preferences?.sidebarCollapsed })
-          }
-        >
-          <PanelLeft size={17} />
-        </IconButton>
-        <div className="titlebar-drag" data-tauri-drag-region>
-          <span data-tauri-drag-region>NextTools</span>
-        </div>
-        <div className="titlebar-actions">
-          <div className="mode-switch" aria-label="页面模式">
-            <button
-              aria-pressed={mode === "workbench"}
-              disabled={!snapshot}
-              onClick={() => void update({ mode: "workbench" })}
-            >
-              工作台
-            </button>
-            <button
-              aria-pressed={mode === "agent"}
-              disabled={!snapshot}
-              onClick={() => void update({ mode: "agent" })}
-            >
-              Agent
-            </button>
-          </div>
-          {mode === "agent" ? (
-            <>
-              <IconButton
-                className={gitOpen ? "active" : ""}
-                label={gitOpen ? "关闭 Git 状态" : "查看 Git 状态"}
-                disabled={!workspace}
-                onClick={() => setGitOpen((value) => !value)}
-              >
-                <GitBranch size={17} />
-              </IconButton>
-              <IconButton
-                label="新建会话"
-                disabled={!workspace || agentCreating || agentRunning}
-                onClick={() =>
-                  workspace && void beginAgentSession(workspace.id)
-                }
-              >
-                <Plus size={18} />
-              </IconButton>
-            </>
-          ) : view === "files" && filePlugin?.enabled ? (
-            <IconButton
-              label="刷新文件列表"
-              onClick={() =>
-                void run(() =>
-                  host.executeCommand(filePlugin.manifest.id, "refresh"),
-                )
-              }
-            >
-              <RefreshCw size={17} />
-            </IconButton>
-          ) : null}
-          {preferences?.sidebarCollapsed && (
-            <IconButton label="设置" onClick={() => setSettings(true)}>
-              <Settings size={17} />
-            </IconButton>
-          )}
-        </div>
-        {nativeHostAvailable && (
-          <div className="window-controls">
-            <IconButton label="最小化" onClick={minimizeWindow}>
-              <Minus size={16} />
-            </IconButton>
-            <IconButton label="最大化或还原" onClick={toggleMaximizeWindow}>
-              <Square size={13} />
-            </IconButton>
-            <IconButton
-              className="window-close"
-              label="关闭"
-              onClick={closeWindow}
-            >
-              <X size={17} />
-            </IconButton>
-          </div>
+      <div className="app-sidebar">
+        {mode === "agent" && (
+          <nav className="agent-activity-bar" aria-label="Agent 工具">
+            <IconButton label="资源管理器" className={agentPanel === "explorer" ? "active" : ""} onClick={() => openAgentPanel("explorer")}><Files size={20} /></IconButton>
+            <IconButton label="Chat" className={agentPanel === "chat" ? "active" : ""} onClick={() => openAgentPanel("chat")}><Bot size={20} /></IconButton>
+            <IconButton label="Git" className={agentPanel === "git" ? "active" : ""} onClick={() => openAgentPanel("git")}><GitBranch size={20} /></IconButton>
+          </nav>
         )}
-      </header>
-      <div className="app-body">
         <aside
           className={
             "sidebar " + (preferences?.sidebarCollapsed ? "is-collapsed" : "")
@@ -964,23 +468,18 @@ export function App() {
                     <Home size={16} />
                     首页
                   </button>
-                  {filePlugin?.enabled && (
-                    <button
-                      className={
-                        "sidebar-button " + (view === "files" ? "selected" : "")
-                      }
-                      onClick={() =>
-                        void run(() =>
-                          host.executeCommand(filePlugin.manifest.id, "open"),
-                        )
-                      }
-                    >
-                      <Files size={16} />
-                      工作区文件
+                  {snapshot?.plugins.filter((plugin) => plugin.enabled).flatMap((plugin) => plugin.manifest.contributes.commands.filter((command) => command.execution === "foreground" && command.viewId && plugin.manifest.contributes.views.includes(command.viewId)).map((command) => (
+                    <button key={plugin.manifest.id + "/" + command.id} className={"sidebar-button " + (view === command.viewId ? "selected" : "")} disabled={!workspace} onClick={() => void run(() => host.executeCommand(plugin.manifest.id, command.id))}>
+                      {plugin.manifest.kind === "agent-runtime" ? <Bot size={16} /> : <Files size={16} />}
+                      <span>{command.title}</span>
                     </button>
-                  )}
+                  )))}
                 </div>
               </>
+            ) : agentPanel === "explorer" ? (
+              <AgentExplorer workspace={workspace} selected={selectedFile} onSelect={(path) => { if (workspace) setFileSelection({ workspaceId: workspace.id, path }); }} />
+            ) : agentPanel === "git" ? (
+              workspace ? <GitOverlay status={gitStatus} loading={gitLoading} error={gitError} onClose={() => setAgentPanel("chat")} onRefresh={() => void loadGit(workspace.id)} /> : <p className="sidebar-empty">请先在 Chat 中选择工作区。</p>
             ) : (
               <>
                 <div className="sidebar-heading">
@@ -989,7 +488,7 @@ export function App() {
                 </div>
                 <button
                   className="sidebar-button"
-                  disabled={!workspace || agentCreating || agentRunning}
+                  disabled={!workspace || agentCreating}
                   onClick={() =>
                     workspace && void beginAgentSession(workspace.id)
                   }
@@ -1003,7 +502,7 @@ export function App() {
                     <IconButton
                       className="workspace-add"
                       label="打开工作区"
-                      disabled={!snapshot || agentCreating || agentRunning}
+                      disabled={!snapshot}
                       onClick={() => void run(() => host.chooseWorkspace())}
                     >
                       <Plus size={15} />
@@ -1016,7 +515,6 @@ export function App() {
                         "sidebar-button " +
                         (workspace?.id === item.id ? "selected" : "")
                       }
-                      disabled={agentCreating || agentRunning}
                       onClick={() =>
                         void update({ activeWorkspaceId: item.id })
                       }
@@ -1046,7 +544,7 @@ export function App() {
                           (selected ? "selected" : "")
                         }
                         aria-current={selected ? "page" : undefined}
-                        disabled={agentCreating || agentRunning || selected}
+                        disabled={agentCreating || selected}
                         onClick={() =>
                           workspace &&
                           void resumeAgentSession(workspace.id, item.sessionId)
@@ -1080,6 +578,101 @@ export function App() {
             </div>
           </div>
         </aside>
+        </div>
+        <div className="app-main">
+      <header className="titlebar" data-tauri-drag-region>
+        <IconButton
+          className={
+            "titlebar-button " + (preferences?.sidebarCollapsed ? "" : "active")
+          }
+          label={preferences?.sidebarCollapsed ? "展开菜单栏" : "收起菜单栏"}
+          disabled={!snapshot}
+          onClick={() =>
+            void update({ sidebarCollapsed: !preferences?.sidebarCollapsed })
+          }
+        >
+          <PanelLeft size={17} />
+        </IconButton>
+        {mode === "agent" && (
+          <div className="agent-session-tabs" role="tablist" aria-label="已打开会话">
+            {workspaceSessions.map((session) => (
+              <div key={session.info.sessionId} className={"agent-session-tab " + (agentSession?.sessionId === session.info.sessionId ? "selected" : "")}>
+                <button role="tab" aria-selected={agentSession?.sessionId === session.info.sessionId} title={session.info.title || "新会话"} onClick={() => { selectionVersions.current.set(session.info.workspaceId, (selectionVersions.current.get(session.info.workspaceId) ?? 0) + 1); setActiveSessions((items) => ({ ...items, [session.info.workspaceId]: session.info.sessionId })); setAgentPanel("chat"); }}>
+                  {session.running ? <LoaderCircle size={13} className="spin" /> : <Bot size={13} />}
+                  <span>{session.info.title || "新会话"}</span>
+                  {session.approvals.length > 0 && <small aria-label="待审批">{session.approvals.length}</small>}
+                  {session.error && <CircleAlert size={13} aria-label="会话错误" />}
+                </button>
+                <button className="session-tab-close" aria-label={"关闭会话 " + (session.info.title || "新会话")} disabled={session.closing} onClick={() => void closeAgentSession(session)}>{session.closing ? <LoaderCircle size={12} className="spin" /> : <X size={12} />}</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="titlebar-drag" data-tauri-drag-region>
+          <span data-tauri-drag-region>NextTools</span>
+        </div>
+        <div className="titlebar-actions">
+          <div className="mode-switch" aria-label="页面模式">
+            <button
+              aria-pressed={mode === "workbench"}
+              disabled={!snapshot}
+              onClick={() => void update({ mode: "workbench" })}
+            >
+              工作台
+            </button>
+            <button
+              aria-pressed={mode === "agent"}
+              disabled={!snapshot}
+              onClick={() => void update({ mode: "agent" })}
+            >
+              Agent
+            </button>
+          </div>
+          {mode === "agent" ? (
+            <>
+              <IconButton
+                label="新建会话"
+                disabled={!workspace || agentCreating}
+                onClick={() => {
+                  openAgentPanel("chat");
+                  if (workspace) void beginAgentSession(workspace.id);
+                }}
+              >
+                <Plus size={18} />
+              </IconButton>
+            </>
+          ) : view === "files" && filePlugin?.enabled ? (
+            <IconButton
+              label="刷新文件列表"
+              onClick={() =>
+                void run(() =>
+                  host.executeCommand(filePlugin.manifest.id, "refresh"),
+                )
+              }
+            >
+              <RefreshCw size={17} />
+            </IconButton>
+          ) : null}
+        </div>
+        {nativeHostAvailable && (
+          <div className="window-controls">
+            <IconButton label="最小化" onClick={minimizeWindow}>
+              <Minus size={16} />
+            </IconButton>
+            <IconButton label="最大化或还原" onClick={toggleMaximizeWindow}>
+              <Square size={13} />
+            </IconButton>
+            <IconButton
+              className="window-close"
+              label="关闭"
+              onClick={closeWindow}
+            >
+              <X size={17} />
+            </IconButton>
+          </div>
+        )}
+      </header>
+        <div className="app-body">
         <div className="content">
           {error && (
             <div role="alert" className="app-error">
@@ -1088,15 +681,6 @@ export function App() {
                 ×
               </button>
             </div>
-          )}
-          {mode === "agent" && gitOpen && (
-            <GitOverlay
-              status={gitStatus}
-              loading={gitLoading}
-              error={gitError}
-              onClose={() => setGitOpen(false)}
-              onRefresh={() => workspace && void loadGit(workspace.id)}
-            />
           )}
           <main className="main-container">
             <div className="mode-page" hidden={mode !== "workbench"}>
@@ -1146,6 +730,7 @@ export function App() {
                               (command) => (
                                 <button
                                   key={command.id}
+                                  disabled={!workspace}
                                   onClick={() =>
                                     void run(() =>
                                       host.executeCommand(
@@ -1173,9 +758,14 @@ export function App() {
               )}
             </div>
             <div className="mode-page" hidden={mode !== "agent"}>
+              <div className="mode-page" hidden={agentPanel !== "explorer"}>
+                {agentPanel === "explorer" && <AgentFilePreview workspaceId={workspace?.id ?? null} path={selectedFile} />}
+              </div>
+              <div className="mode-page" hidden={agentPanel === "explorer"}>
               <AgentPage
                 workspaceName={workspace?.name ?? null}
                 session={agentSession}
+                unavailable={activeSession?.unavailable || activeSession?.closing || false}
                 messages={agentMessages}
                 input={agentInput}
                 running={agentRunning}
@@ -1187,26 +777,18 @@ export function App() {
                 onInput={setAgentInput}
                 onSend={() => void sendAgentPrompt()}
                 onStop={() => void stopAgent()}
-                onRetry={() => {
-                  if (!workspace) return;
-                  if (activePersistedSessionId) {
-                    void resumeAgentSession(
-                      workspace.id,
-                      activePersistedSessionId,
-                    );
-                  } else {
-                    void beginAgentSession(workspace.id);
-                  }
-                }}
+                onRetry={() => { if (workspace) void beginAgentSession(workspace.id); }}
                 onOpenWorkspace={() => void run(() => host.chooseWorkspace())}
                 onDismissError={() => setAgentError("")}
                 onResolveApproval={(requestId, approved) =>
                   void resolveAgentApproval(requestId, approved)
                 }
               />
+              </div>
             </div>
           </main>
         </div>
+      </div>
       </div>
       <dialog
         ref={dialog}
@@ -1294,6 +876,7 @@ function GitOverlay({
 function AgentPage({
   workspaceName,
   session,
+  unavailable,
   messages,
   input,
   running,
@@ -1312,6 +895,7 @@ function AgentPage({
 }: {
   workspaceName: string | null;
   session: AgentSessionInfo | null;
+  unavailable: boolean;
   messages: AgentTimelineItem[];
   input: string;
   running: boolean;
@@ -1353,9 +937,9 @@ function AgentPage({
         ) : (
           <CircleAlert size={26} />
         )}
-        <h2>{creating ? "正在启动 Pi Agent" : "无法创建会话"}</h2>
-        <p>{creating ? `正在连接 ${workspaceName}…` : error}</p>
-        {!creating && <button onClick={onRetry}>重试</button>}
+        <h2>{creating ? "正在启动 Pi Agent" : "尚未打开会话"}</h2>
+        <p>{creating ? `正在连接 ${workspaceName}…` : "新建会话或从左侧继续历史会话。"}</p>
+        {!creating && <button onClick={onRetry}>新建会话</button>}
       </div>
     );
   }
@@ -1473,7 +1057,7 @@ function AgentPage({
             placeholder="给 Pi 一项任务…"
             rows={1}
             value={input}
-            disabled={creating || running}
+            disabled={creating || running || unavailable}
             onChange={(event) => onInput(event.target.value)}
             onKeyDown={(event) => {
               if (
@@ -1505,7 +1089,7 @@ function AgentPage({
               className="composer-action"
               type="submit"
               aria-label="发送消息"
-              disabled={!input.trim()}
+              disabled={!input.trim() || unavailable}
             >
               <Send size={17} />
             </button>
