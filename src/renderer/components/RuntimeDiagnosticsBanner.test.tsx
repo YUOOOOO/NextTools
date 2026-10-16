@@ -82,7 +82,7 @@ describe('RuntimeDiagnosticsBanner i18n', () => {
           no: 'localhost,127.0.0.1',
         },
         proxyPolicy: 'terminal',
-        myagentsProxyInjected: false,
+        nexttoolsProxyInjected: false,
         hasOpenaiApiKey: false,
         hasAnthropicApiKey: true,
         hasCodexHome: true,

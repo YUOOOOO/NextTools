@@ -23,12 +23,12 @@ describe('extractTitleTextFromSdkMessage', () => {
       type: 'assistant',
       message: {
         content: [
-          { type: 'text', text: 'MyAgents ' },
+          { type: 'text', text: 'NextTools ' },
           { type: 'tool_use', id: 'toolu_1' },
           { type: 'text', text: '标题修复' },
         ],
       },
-    })).toBe('MyAgents 标题修复');
+    })).toBe('NextTools 标题修复');
   });
 
   it('falls back to the last assistant message from a success result', () => {

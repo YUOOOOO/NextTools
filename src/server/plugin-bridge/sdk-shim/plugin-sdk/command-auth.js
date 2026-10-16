@@ -4,14 +4,14 @@
 export * from "./command-auth.auto.js";
 // === END AUTO-AUGMENT ===
 
-// OpenClaw plugin-sdk/command-auth shim for MyAgents Plugin Bridge
+// OpenClaw plugin-sdk/command-auth shim for NextTools Plugin Bridge
 // Provides command authorization resolution for channel plugins.
-// MyAgents handles access control at the Rust layer, so these are permissive defaults.
+// NextTools handles access control at the Rust layer, so these are permissive defaults.
 
 /**
  * Resolve control command gate.
  * In real OpenClaw: checks access groups, authorizers, and gating modes.
- * Our shim: always allows — MyAgents Rust layer handles whitelist/permissions.
+ * Our shim: always allows — NextTools Rust layer handles whitelist/permissions.
  */
 export function resolveControlCommandGate(params) {
   return { commandAuthorized: true, shouldBlock: false };
@@ -33,7 +33,7 @@ export function resolveCommandAuthorizedFromAuthorizers(params) {
 
 /**
  * Resolve direct DM authorization outcome.
- * MyAgents always allows DMs (Rust layer handles filtering).
+ * NextTools always allows DMs (Rust layer handles filtering).
  */
 export function resolveDirectDmAuthorizationOutcome(params) {
   return 'allowed';
@@ -41,7 +41,7 @@ export function resolveDirectDmAuthorizationOutcome(params) {
 
 /**
  * Resolve sender command authorization (full check with runtime).
- * Returns a permissive result — MyAgents access control is at Rust layer.
+ * Returns a permissive result — NextTools access control is at Rust layer.
  */
 export async function resolveSenderCommandAuthorizationWithRuntime(params) {
   const effectiveAllowFrom = params.configuredAllowFrom || [];

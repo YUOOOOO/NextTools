@@ -132,7 +132,7 @@ export function TaskDocBlock({
     };
   }, [loaded, content]);
 
-  // The on-disk path is deterministic (`~/.myagents/tasks/<id>/<doc>.md`)
+  // The on-disk path is deterministic (`~/.nexttools/tasks/<id>/<doc>.md`)
   // so we can surface it + an opener button above the content without
   // repeating a redundant section title. Declared before the
   // hideWhenEmpty short-circuit so the useCallback hook call order
@@ -143,7 +143,7 @@ export function TaskDocBlock({
       ? task.docs?.verifyMd
       : task.docs?.progressMd;
   const displayPath = compactTaskDocPath(
-    path ?? `~/.myagents/tasks/${task.id}/${doc}.md`,
+    path ?? `~/.nexttools/tasks/${task.id}/${doc}.md`,
   );
   const handleOpenFile = useCallback(() => {
     if (!path) return;
@@ -248,8 +248,8 @@ export function TaskDocBlock({
 
 export function compactTaskDocPath(path: string): string {
   const normalized = path.replace(/\\/g, '/');
-  const myAgentsRoot = '/.myagents/';
-  const markerIndex = normalized.lastIndexOf(myAgentsRoot);
+  const nextToolsRoot = '/.nexttools/';
+  const markerIndex = normalized.lastIndexOf(nextToolsRoot);
   return markerIndex >= 0 ? `~${normalized.slice(markerIndex)}` : normalized;
 }
 

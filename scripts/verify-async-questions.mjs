@@ -8,7 +8,7 @@ import { createServer } from 'vite';
 import { chromium, webkit } from 'playwright';
 
 const repo = resolve(import.meta.dirname, '..');
-const output = await mkdtemp(resolve(tmpdir(), 'myagents-questions-verification-'));
+const output = await mkdtemp(resolve(tmpdir(), 'nexttools-questions-verification-'));
 const engine = process.argv[2] ?? 'webkit';
 assert.ok(['webkit', 'chrome', 'chromium'].includes(engine));
 const entryId = repo + '/src/renderer/__questions_audit.tsx';

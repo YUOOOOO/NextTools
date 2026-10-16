@@ -222,12 +222,12 @@ impl HeartbeatRunner {
                         });
                         let msg = if let Some(detail) = error_detail {
                             format!(
-                                "[MyAgents] {} 心跳连续 {} 次失败，已暂停。\n\n错误: {}\n\n请在客户端重启该 Channel 或开始新对话以恢复。",
+                                "[NextTools] {} 心跳连续 {} 次失败，已暂停。\n\n错误: {}\n\n请在客户端重启该 Channel 或开始新对话以恢复。",
                                 self.bot_label, MAX_CONSECUTIVE_ERRORS, detail
                             )
                         } else {
                             format!(
-                                "[MyAgents] {} 心跳连续 {} 次失败，已暂停。请在客户端重启该 Channel 或开始新对话以恢复。",
+                                "[NextTools] {} 心跳连续 {} 次失败，已暂停。请在客户端重启该 Channel 或开始新对话以恢复。",
                                 self.bot_label, MAX_CONSECUTIVE_ERRORS
                             )
                         };

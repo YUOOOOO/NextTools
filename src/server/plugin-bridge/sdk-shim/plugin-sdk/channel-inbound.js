@@ -34,7 +34,7 @@ export function createChannelInboundDebouncer(opts) {
 
 export function shouldDebounceTextInbound() { return false; }
 
-// Bridge mode doesn't use the plugin's own session-envelope path — MyAgents
+// Bridge mode doesn't use the plugin's own session-envelope path — NextTools
 // hands inbound text to its own AI runtime (compat-runtime.ts forwards to
 // /api/im-bridge/message) and `core.channel.session.recordInboundSession`
 // is a no-op stub. Plugin callers destructure {storePath, envelopeOptions,

@@ -78,7 +78,7 @@ export interface InputOptionFields {
   /** PRD 0.2.17 — Claude plugin ids enabled at the workspace level. Mirrors
    *  mcpEnabledServers exactly (project + agent + snapshot dual-write). */
   enabledPluginIds?: string[];
-  /** MyAgents official CLI tool ids enabled at the workspace level. */
+  /** NextTools official CLI tool ids enabled at the workspace level. */
   enabledOfficialToolIds?: OfficialToolId[];
 }
 
@@ -144,7 +144,7 @@ export interface PersistInputOptionParams {
    *  session restart picks up the new plugin selection immediately. */
   pushPluginsToSidecar?: (enabledIds: string[]) => Promise<unknown>;
 
-  /** Live sidecar push for MyAgents official CLI tool enabled set. */
+  /** Live sidecar push for NextTools official CLI tool enabled set. */
   pushOfficialToolsToSidecar?: (enabledIds: OfficialToolId[]) => Promise<unknown>;
 
   /** Live sidecar push for external runtime model / permission-mode changes.

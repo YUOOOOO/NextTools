@@ -63,7 +63,7 @@ title in a list, would the user think "oh, that's the time I did X"?
 
 MUST keep — preserve the most distinctive anchor from the conversation,
 verbatim, whenever one exists:
-  - proper noun / project / product name  (高考, 知乎2077, MyAgents, 望京北路)
+  - proper noun / project / product name  (高考, 知乎2077, NextTools, 望京北路)
   - issue / PR / version number           (#215, #223, 0.2.22)
   - specific file, API, library, error code (教宗通谕.docx, SSE, Cron, 402)
 These exact strings are what make the session findable — keeping them matters
@@ -232,7 +232,7 @@ async function generateTitleInner(
 
   try {
     const cliPath = resolveClaudeCodeCli();
-    const cwd = join(homedir(), '.myagents', 'projects');
+    const cwd = join(homedir(), '.nexttools', 'projects');
     ensureDirSync(cwd);
 
     // Pass `model` as the override so CLAUDE_CODE_AUTO_COMPACT_WINDOW is

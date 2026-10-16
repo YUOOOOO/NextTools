@@ -2,7 +2,7 @@
  * Sidecar-side config read/write for Admin API
  *
  * Equivalent to the frontend's appConfigService.ts, but using native fs
- * instead of Tauri plugin-fs. Both read/write the same ~/.myagents/config.json.
+ * instead of Tauri plugin-fs. Both read/write the same ~/.nexttools/config.json.
  * Atomicity is guaranteed by write-to-tmp → rename pattern.
  */
 
@@ -96,7 +96,7 @@ import {
 function getConfigDir(): string {
   const home = getHomeDirOrNull();
   if (!home) throw new Error('Cannot determine home directory');
-  return resolve(home, '.myagents');
+  return resolve(home, '.nexttools');
 }
 
 function getConfigPath(): string {
@@ -171,12 +171,12 @@ export interface AdminAppConfig {
   mcpServerEnv?: Record<string, Record<string, string>>;
   mcpServerArgs?: Record<string, string[]>;
   // CLI tool registry (PRD 0.2.36): per-tool env (API keys etc.), same shape as
-  // mcpServerEnv. Read at launch by the ~/.myagents/bin shims — env changes
+  // mcpServerEnv. Read at launch by the ~/.nexttools/bin shims — env changes
   // need no shim rewrite.
   cliToolEnv?: Record<string, Record<string, string>>;
   // Experimental gate for user-registered CLI tools. Omitted means disabled.
   cliToolRegistryEnabled?: boolean;
-  // MyAgents official CLI tools
+  // NextTools official CLI tools
   enabledOfficialToolIds?: OfficialToolId[];
   officialToolSettings?: OfficialToolSettings;
   // Provider
@@ -527,7 +527,7 @@ function getPresetMcpServers(): McpServerDefinition[] {
   // Filter out presets whose `platforms` field doesn't include the host —
   // keeps platform-specific presets invisible
   // everywhere on unsupported hosts (catalogue, validation, effective
-  // MCP lists, `myagents mcp list`).
+  // MCP lists, `nexttools mcp list`).
   return (PRESET_MCP_SERVERS as McpServerDefinition[]).filter(
     (p) => !p.platforms || p.platforms.includes(process.platform),
   );
@@ -894,7 +894,7 @@ export function redactSecret(value: string): string {
 export function getProvidersDir(): string {
   const home = getHomeDirOrNull();
   if (!home) throw new Error('Cannot determine home directory');
-  return resolve(home, '.myagents', 'providers');
+  return resolve(home, '.nexttools', 'providers');
 }
 
 function lstatIfPresent(
@@ -998,7 +998,7 @@ export async function deleteCustomProviderFile(
   );
 }
 
-/** Find a provider by ID: checks PRESET_PROVIDERS first, then custom files in ~/.myagents/providers/ */
+/** Find a provider by ID: checks PRESET_PROVIDERS first, then custom files in ~/.nexttools/providers/ */
 export function findProvider(id: string): Record<string, unknown> | null {
   // Check presets first (statically imported — see top of file).
   // Cast via `unknown` because Provider lacks a string index signature.
@@ -1023,7 +1023,7 @@ export function findProvider(id: string): Record<string, unknown> | null {
   return null;
 }
 
-/** Load all custom provider files from ~/.myagents/providers/ */
+/** Load all custom provider files from ~/.nexttools/providers/ */
 export function loadCustomProviderFiles(): Array<Record<string, unknown>> {
   try {
     const dir = getProvidersDir();
@@ -1822,7 +1822,7 @@ export function resolveWorkspaceConfig(
       : '[config] mcpResolution=skipped',
   );
 
-  // --- Resolve MyAgents official CLI tools ---
+  // --- Resolve NextTools official CLI tools ---
   const globalOfficialTools = new Set(
     getGloballyEnabledOfficialToolIds(config),
   );

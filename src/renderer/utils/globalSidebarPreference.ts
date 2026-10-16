@@ -1,7 +1,7 @@
 import { normalizeWorkspacePathIdentity } from '../../shared/workspacePath';
 
-export const GLOBAL_SIDEBAR_PREFERENCE_KEY = 'myagents.globalSidebar.v1';
-export const LEGACY_AUTOMATION_HISTORY_KEY = 'myagents.launcher.showAutomationHistorySessions';
+export const GLOBAL_SIDEBAR_PREFERENCE_KEY = 'nexttools.globalSidebar.v1';
+export const LEGACY_AUTOMATION_HISTORY_KEY = 'nexttools.launcher.showAutomationHistorySessions';
 
 export type GlobalSidebarPreferredMode = 'expanded' | 'rail';
 

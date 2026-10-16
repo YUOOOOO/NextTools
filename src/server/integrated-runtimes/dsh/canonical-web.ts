@@ -203,7 +203,7 @@ export class DshCanonicalWebHost {
       headers: Object.freeze({
         accept: 'text/html,text/plain,text/markdown,application/xhtml+xml,application/pdf,application/json',
         'accept-encoding': 'gzip, deflate, br',
-        'user-agent': 'MyAgents/DSH-Host-Web-v1',
+        'user-agent': 'NextTools/DSH-Host-Web-v1',
       }),
       signal,
     });

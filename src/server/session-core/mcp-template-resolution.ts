@@ -25,7 +25,7 @@ export function resolveMcpTemplateValue(
   return missing ? null : resolved;
 }
 
-/** Resolve MyAgents-owned placeholders before handing a remote MCP to a transport. */
+/** Resolve NextTools-owned placeholders before handing a remote MCP to a transport. */
 export function resolveRemoteMcpTransportConfig(
   server: Pick<McpServerDefinition, 'id' | 'url' | 'headers' | 'env'>,
 ): { url: string; headers: Record<string, string> } {

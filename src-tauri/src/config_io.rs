@@ -1,4 +1,4 @@
-//! Shared `~/.myagents/config.json` read-modify-write helper.
+//! Shared `~/.nexttools/config.json` read-modify-write helper.
 //!
 //! The renderer, Node sidecar, and Rust commands coordinate on the same
 //! `config.json.lock` directory. Directory creation is atomic across processes
@@ -55,12 +55,12 @@ fn normalize_theme_fields(config: &mut serde_json::Value) {
         object
             .get("themeSelectionExplicit")
             .and_then(serde_json::Value::as_bool)
-            .unwrap_or(theme_id != "myagents-default")
+            .unwrap_or(theme_id != "nexttools-default")
     });
     let theme_id = if theme_selection_explicit {
-        stored_theme_id.unwrap_or_else(|| "myagents-light".to_owned())
+        stored_theme_id.unwrap_or_else(|| "nexttools-light".to_owned())
     } else {
-        "myagents-light".to_owned()
+        "nexttools-light".to_owned()
     };
 
     object.insert(
@@ -332,7 +332,7 @@ mod theme_tests {
         assert_eq!(
             config,
             json!({
-                "themeId": "myagents-light",
+                "themeId": "nexttools-light",
                 "themeSelectionExplicit": false,
                 "appearanceMode": "dark",
                 "other": 42
@@ -356,15 +356,15 @@ mod theme_tests {
         let mut invalid = json!({ "theme": "sepia", "themeId": "" });
         normalize_theme_fields(&mut invalid);
         assert_eq!(invalid["appearanceMode"], "system");
-        assert_eq!(invalid["themeId"], "myagents-light");
+        assert_eq!(invalid["themeId"], "nexttools-light");
         assert_eq!(invalid["themeSelectionExplicit"], false);
 
         let mut explicit_canonical = json!({
-            "themeId": "myagents-default",
+            "themeId": "nexttools-default",
             "themeSelectionExplicit": true
         });
         normalize_theme_fields(&mut explicit_canonical);
-        assert_eq!(explicit_canonical["themeId"], "myagents-default");
+        assert_eq!(explicit_canonical["themeId"], "nexttools-default");
         assert_eq!(explicit_canonical["themeSelectionExplicit"], true);
     }
 

@@ -813,7 +813,7 @@ function tabCorrelationHeaders(
   sessionId?: string | null,
 ): Record<string, string> {
   return {
-    'X-MyAgents-Tab-Id': tabId,
+    'X-NextTools-Tab-Id': tabId,
     ...(sessionId ? { [LOG_SESSION_HEADER]: sessionId } : {}),
   };
 }
@@ -5360,7 +5360,7 @@ export default function TabProvider({
         // converge on the same refresh trigger.
         case 'plugin:install-progress': {
           window.dispatchEvent(
-            new CustomEvent('myagents:plugin-install-progress', {
+            new CustomEvent('nexttools:plugin-install-progress', {
               detail: data,
             }),
           );
@@ -5368,7 +5368,7 @@ export default function TabProvider({
         }
         case 'plugins:changed': {
           window.dispatchEvent(
-            new CustomEvent('myagents:plugins-changed', { detail: data }),
+            new CustomEvent('nexttools:plugins-changed', { detail: data }),
           );
           // Plugins live on AppConfig.{plugins, enabledPlugins} —
           // also nudge ConfigProvider to re-read so consumers like

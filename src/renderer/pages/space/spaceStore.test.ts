@@ -157,12 +157,12 @@ import {
 
 const fakeSession: SpaceSession = {
   sessionBindingId: "binding-old",
-  baseUrl: "https://space.myagents.test",
+  baseUrl: "https://space.nexttools.test",
   user: { id: "user-1", email: "user@example.com" },
   space: {
     id: "space-1",
     slug: "official",
-    name: "MyAgents社区",
+    name: "NextTools社区",
     joinPolicy: "open",
   },
   membership: { id: "membership-1", role: "owner" },
@@ -249,7 +249,7 @@ const fakeTool: SpaceTool = {
 
 const fakeAgent: LocalRegisteredAgent = {
   id: "rag_123",
-  baseUrl: "https://space.myagents.test",
+  baseUrl: "https://space.nexttools.test",
   spaceId: "space-1",
   workspaceId: "project-1",
   displayName: "Frontend Agent",
@@ -896,7 +896,7 @@ describe("spaceStore boot", () => {
   it("clears cached space data when the service origin changes with the same slug", async () => {
     __setSpaceStoreStateForTest({
       boot: "ready",
-      serviceBaseUrl: "https://space.myagents.test",
+      serviceBaseUrl: "https://space.nexttools.test",
       session: fakeSession,
       spaceId: "official",
       issuesByKey: {
@@ -923,7 +923,7 @@ describe("spaceStore boot", () => {
     });
     const devSession: SpaceSession = {
       ...fakeSession,
-      baseUrl: "https://space-dev.myagents.test",
+      baseUrl: "https://space-dev.nexttools.test",
     };
     apiMocks.spaceGetCapability.mockResolvedValueOnce({
       available: true,
@@ -956,7 +956,7 @@ describe("spaceStore boot", () => {
   it("invalidates in-flight requests when the service origin changes with the same slug", async () => {
     __setSpaceStoreStateForTest({
       boot: "ready",
-      serviceBaseUrl: "https://space.myagents.test",
+      serviceBaseUrl: "https://space.nexttools.test",
       session: fakeSession,
       spaceId: "official",
     });
@@ -970,7 +970,7 @@ describe("spaceStore boot", () => {
     const staleRefresh = actions.refreshIssues({ limit: 50 }, { force: true });
     const devSession: SpaceSession = {
       ...fakeSession,
-      baseUrl: "https://space-dev.myagents.test",
+      baseUrl: "https://space-dev.nexttools.test",
     };
     apiMocks.spaceGetCapability.mockResolvedValueOnce({
       available: true,
@@ -1067,20 +1067,20 @@ describe("spaceStore boot", () => {
   });
 
   it.each([undefined, "user"])("refreshes official authority instead of inferring it from a cached slug with kind %s", async (spaceKind) => {
-    const cached = { ...fakeSession, space: { ...fakeSession.space, id: "space-community", slug: "myagents", spaceKind }, lastActiveSpaceId: "official" };
+    const cached = { ...fakeSession, space: { ...fakeSession.space, id: "space-community", slug: "nexttools", spaceKind }, lastActiveSpaceId: "official" };
     const community = { ...cached.space, spaceKind: "official" };
-    __setSpaceStoreStateForTest({ boot: "ready", session: cached, spaceId: "myagents" });
+    __setSpaceStoreStateForTest({ boot: "ready", session: cached, spaceId: "nexttools" });
     apiMocks.spaceGetSession.mockResolvedValueOnce({ state: "authenticated", session: cached });
     apiMocks.spaceGetOfficial.mockResolvedValueOnce({ space: community, membership: fakeSession.membership, goals: [] });
     await actions.switchSpace("official");
     expect(apiMocks.spaceGetOfficial).toHaveBeenCalledWith("official");
     expect(getSnapshot().session?.space.spaceKind).toBe("official");
-    expect(getSnapshot().spaceId).toBe("myagents");
+    expect(getSnapshot().spaceId).toBe("nexttools");
   });
 
   it("rejects a non-official response for the official alias even if its name resembles the community", async () => {
-    const wrong = { ...fakeSession.space, id: "space-team", slug: "myagents", name: "MyAgents社区", spaceKind: "user" };
-    __setSpaceStoreStateForTest({ boot: "ready", session: { ...fakeSession, space: wrong }, spaceId: "myagents" });
+    const wrong = { ...fakeSession.space, id: "space-team", slug: "nexttools", name: "NextTools社区", spaceKind: "user" };
+    __setSpaceStoreStateForTest({ boot: "ready", session: { ...fakeSession, space: wrong }, spaceId: "nexttools" });
     apiMocks.spaceGetSession.mockResolvedValueOnce({ state: "authenticated", session: { ...fakeSession, space: wrong, lastActiveSpaceId: "official" } });
     apiMocks.spaceGetOfficial.mockResolvedValueOnce({ space: wrong, membership: fakeSession.membership, goals: [] });
     await expect(actions.switchSpace("official")).rejects.toMatchObject({ code: "SPACE_NOT_FOUND" });
@@ -1362,7 +1362,7 @@ describe("spaceStore issue refresh", () => {
     });
     apiMocks.spaceListIssues.mockRejectedValueOnce({
       code: "SPACE_REAUTH_REQUIRED",
-      message: "MyAgents Space login is required.",
+      message: "NextTools Space login is required.",
       sessionBindingId: "binding-old",
     });
 
@@ -1642,7 +1642,7 @@ describe("spaceStore issue refresh", () => {
       user: {
         ...fakeSession.user,
         name: "I Ethan",
-        avatarUrl: "https://r2-public.myagents.test/avatar.png",
+        avatarUrl: "https://r2-public.nexttools.test/avatar.png",
       },
     };
     const staleCurrentUser = {
@@ -2278,9 +2278,9 @@ describe("spaceStore issue refresh", () => {
     apiMocks.spaceDownloadIssueAttachment.mockResolvedValueOnce({
       name: "trace.log",
       relativePath:
-        "myagents_files/space/issues/iss_123/attachments/att_1/trace.log",
+        "nexttools_files/space/issues/iss_123/attachments/att_1/trace.log",
       fullPath:
-        "/tmp/workspace/myagents_files/space/issues/iss_123/attachments/att_1/trace.log",
+        "/tmp/workspace/nexttools_files/space/issues/iss_123/attachments/att_1/trace.log",
       sizeBytes: 42,
     });
 
@@ -2298,7 +2298,7 @@ describe("spaceStore issue refresh", () => {
       fileName: "trace.log",
     });
     expect(result.relativePath).toBe(
-      "myagents_files/space/issues/iss_123/attachments/att_1/trace.log",
+      "nexttools_files/space/issues/iss_123/attachments/att_1/trace.log",
     );
   });
 
@@ -2310,7 +2310,7 @@ describe("spaceStore issue refresh", () => {
     });
     apiMocks.spaceDownloadIssueAttachment.mockRejectedValueOnce({
       code: "SPACE_REAUTH_REQUIRED",
-      message: "MyAgents Space login is required.",
+      message: "NextTools Space login is required.",
       sessionBindingId: "binding-old",
     });
 
@@ -2488,7 +2488,7 @@ describe("spaceStore profile actions", () => {
       user: {
         ...fakeSession.user,
         name: "Updated User",
-        avatarUrl: "https://r2-public.myagents.test/avatar.png",
+        avatarUrl: "https://r2-public.nexttools.test/avatar.png",
       },
       updatedAt: "2026-07-05T00:00:00.000Z",
     };

@@ -1,11 +1,11 @@
 [package]
-name = "myagents"
+name = "nexttools"
 version = "0.5.3"
-description = "MyAgents - Desktop Claude Code for everyone"
+description = "NextTools - Desktop Claude Code for everyone"
 authors = ["MyAgents Team <myagents.io@gmail.com>"]
 license = "AGPL-3.0-only"
-repository = "https://github.com/hAcKlyc/MyAgents"
-homepage = "https://myagents.io"
+repository = "https://github.com/YU0000/NextTools"
+homepage = "https://github.com/YU0000/NextTools"
 edition = "2021"
 # Protocol validation and the audited JWT dependency require Rust 1.88; the
 # pinned root toolchain remains the build authority. Windows paths that replace an
@@ -33,7 +33,7 @@ serde = { version = "1.0", features = ["derive"] }
 url = "2"
 percent-encoding = "2"
 log = "0.4"
-myagents-media-worker-protocol = { path = "media-worker-protocol" }
+nexttools-media-worker-protocol = { path = "media-worker-protocol" }
 myagents-agent-network-protocol = { path = "agent-network-protocol" }
 rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std"] }
 rustls-pemfile = "2.2"

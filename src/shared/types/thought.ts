@@ -1,6 +1,6 @@
 // Thought types (v0.1.69 Task Center)
 // User-level freeform notes that may later be dispatched as tasks.
-// Storage: ~/.myagents/thoughts/<YYYY-MM>/<id>.md (frontmatter + body)
+// Storage: ~/.nexttools/thoughts/<YYYY-MM>/<id>.md (frontmatter + body)
 
 /**
  * A Thought — user-level note, not bound to any workspace.

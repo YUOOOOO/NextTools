@@ -6,8 +6,8 @@ import {
   effectiveProxyScopeKey,
   normalizeProxyScope,
   removeProviderFromProxySettingsScope,
-  shouldUseMyAgentsProxyForGeneralRequests,
-  shouldUseMyAgentsProxyForProvider,
+  shouldUseNextToolsProxyForGeneralRequests,
+  shouldUseNextToolsProxyForProvider,
 } from './proxyScope';
 
 function proxy(scope?: ProxySettings['scope'], enabled = true): ProxySettings {
@@ -50,17 +50,17 @@ describe('proxy scope normalization', () => {
 
 describe('general request proxy decision', () => {
   it('requires the global switch and defaults legacy scopes to enabled', () => {
-    expect(shouldUseMyAgentsProxyForGeneralRequests(proxy(undefined, false))).toBe(false);
-    expect(shouldUseMyAgentsProxyForGeneralRequests(proxy())).toBe(true);
-    expect(shouldUseMyAgentsProxyForGeneralRequests(proxy({ mode: 'custom', providerIds: ['deepseek'] })))
+    expect(shouldUseNextToolsProxyForGeneralRequests(proxy(undefined, false))).toBe(false);
+    expect(shouldUseNextToolsProxyForGeneralRequests(proxy())).toBe(true);
+    expect(shouldUseNextToolsProxyForGeneralRequests(proxy({ mode: 'custom', providerIds: ['deepseek'] })))
       .toBe(true);
   });
 
   it('honors explicit custom general selection independently from providers', () => {
-    expect(shouldUseMyAgentsProxyForGeneralRequests(proxy({
+    expect(shouldUseNextToolsProxyForGeneralRequests(proxy({
       mode: 'custom', generalRequests: false, providerIds: ['deepseek'],
     }))).toBe(false);
-    expect(shouldUseMyAgentsProxyForGeneralRequests(proxy({
+    expect(shouldUseNextToolsProxyForGeneralRequests(proxy({
       mode: 'custom', generalRequests: true, providerIds: [],
     }))).toBe(true);
   });
@@ -71,29 +71,29 @@ describe('general request proxy decision', () => {
     expect(effectiveGeneralProxyScopeKey(generalOff))
       .toBe(effectiveGeneralProxyScopeKey(generalOffOtherProvider));
     expect(effectiveGeneralProxyScopeKey(proxy()))
-      .toBe('myagents-proxy:general:http://127.0.0.1:7897');
+      .toBe('nexttools-proxy:general:http://127.0.0.1:7897');
   });
 });
 
 describe('provider-owned proxy decision', () => {
-  it('does not use MyAgents proxy when disabled', () => {
-    expect(shouldUseMyAgentsProxyForProvider(proxy(undefined, false), 'deepseek')).toBe(false);
+  it('does not use NextTools proxy when disabled', () => {
+    expect(shouldUseNextToolsProxyForProvider(proxy(undefined, false), 'deepseek')).toBe(false);
   });
 
-  it('uses MyAgents proxy for all providers by default', () => {
-    expect(shouldUseMyAgentsProxyForProvider(proxy(), 'deepseek')).toBe(true);
+  it('uses NextTools proxy for all providers by default', () => {
+    expect(shouldUseNextToolsProxyForProvider(proxy(), 'deepseek')).toBe(true);
   });
 
-  it('uses MyAgents proxy only for selected custom providers', () => {
+  it('uses NextTools proxy only for selected custom providers', () => {
     const settings = proxy({ mode: 'custom', providerIds: ['anthropic-sub'] });
-    expect(shouldUseMyAgentsProxyForProvider(settings, 'anthropic-sub')).toBe(true);
-    expect(shouldUseMyAgentsProxyForProvider(settings, 'deepseek')).toBe(false);
+    expect(shouldUseNextToolsProxyForProvider(settings, 'anthropic-sub')).toBe(true);
+    expect(shouldUseNextToolsProxyForProvider(settings, 'deepseek')).toBe(false);
   });
 
   it('includes provider and proxy url in the effective restart key', () => {
-    expect(effectiveProxyScopeKey(proxy(), 'deepseek')).toBe('myagents-proxy:deepseek:http://127.0.0.1:7897');
+    expect(effectiveProxyScopeKey(proxy(), 'deepseek')).toBe('nexttools-proxy:deepseek:http://127.0.0.1:7897');
     expect(effectiveProxyScopeKey(proxy({ mode: 'custom', providerIds: ['anthropic-sub'] }), 'deepseek'))
-      .toBe('myagents-proxy:disabled-for-provider:deepseek');
+      .toBe('nexttools-proxy:disabled-for-provider:deepseek');
   });
 
   it('removes deleted provider ids while preserving custom general scope', () => {

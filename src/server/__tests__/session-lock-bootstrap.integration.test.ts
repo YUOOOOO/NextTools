@@ -32,11 +32,11 @@ async function exitedChildPid(): Promise<number> {
 }
 
 function transcriptPath(sessionId: string): string {
-  return join(testHome, '.myagents', 'sessions', `${sessionId}.jsonl`);
+  return join(testHome, '.nexttools', 'sessions', `${sessionId}.jsonl`);
 }
 
 function transcriptLockPath(sessionId: string): string {
-  return join(testHome, '.myagents', 'session-locks', `${sessionId}.jsonl.lock`);
+  return join(testHome, '.nexttools', 'session-locks', `${sessionId}.jsonl.lock`);
 }
 
 async function createSeededSession(): Promise<{ id: string; transcript: string }> {
@@ -54,7 +54,7 @@ async function createSeededSession(): Promise<{ id: string; transcript: string }
 }
 
 beforeAll(async () => {
-  testHome = mkdtempSync(join(tmpdir(), 'myagents-issue-522-bootstrap-'));
+  testHome = mkdtempSync(join(tmpdir(), 'nexttools-issue-522-bootstrap-'));
   originalHome = process.env.HOME;
   originalUserProfile = process.env.USERPROFILE;
   process.env.HOME = testHome;

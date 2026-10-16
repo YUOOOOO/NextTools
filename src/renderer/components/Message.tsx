@@ -364,7 +364,7 @@ const Message = memo(function Message({ message, citationSources, isLoading = fa
       .replace(/<\/?FLOATING_BALL_CONTEXT>/g, '')
       .replace(/<\/?GOAL_CONTINUATION>/g, '')
       .replace(/<\/?GOAL_CONTEXT>/g, '')
-      .replace(/<\/?myagents-space-issue>/g, '')
+      .replace(/<\/?nexttools-space-issue>/g, '')
       .trim();
     const attachmentItems =
       message.attachments?.map((attachment) => ({

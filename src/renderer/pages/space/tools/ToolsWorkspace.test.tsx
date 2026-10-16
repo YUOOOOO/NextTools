@@ -166,7 +166,7 @@ function renderTools(
       <ToolsWorkspace
         admin={input.admin ?? true}
         spaceId="official"
-        spaceName="MyAgents Community"
+        spaceName="NextTools Community"
         config={input.config ?? config}
         toolsState={input.tools ? { ...toolsState, items: input.tools } : toolsState}
         selectedToolId={input.selectedToolId ?? null}
@@ -625,7 +625,7 @@ describe("Space Tools workspace", () => {
           <ToolsWorkspace
             admin
             spaceId="official"
-            spaceName="MyAgents Community"
+            spaceName="NextTools Community"
             config={config}
             toolsState={toolsState}
             selectedToolId={customTool.id}
@@ -843,7 +843,7 @@ describe("Space Tools workspace", () => {
         <ToolsWorkspace
           admin
           spaceId="official"
-          spaceName="MyAgents Community"
+          spaceName="NextTools Community"
           config={config}
           toolsState={{ ...toolsState, error: "offline" }}
           selectedToolId={null}

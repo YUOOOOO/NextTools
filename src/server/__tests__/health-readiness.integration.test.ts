@@ -43,7 +43,7 @@ describe('Pattern 4 — readiness state machine', () => {
   it('keeps DeferredInitState as the only startup gate and failure signal', () => {
     const source = readFileSync(resolve('src/server/index.ts'), 'utf8');
 
-    expect(source).not.toContain('__myagentsDeferredInit');
+    expect(source).not.toContain('__nexttoolsDeferredInit');
     expect(source).not.toContain('deferredInitPromise');
     expect(source).not.toContain('resolveDeferredInit');
     expect(source).not.toContain('rejectDeferredInit');

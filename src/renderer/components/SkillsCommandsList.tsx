@@ -242,7 +242,7 @@ export default function SkillsCommandsList({
     }, [scope, loadData, onSelectSkill, api]);
 
     // 从 URL 安装 skill — 走 Tab-scoped API，scope 来自 props，
-    // 所以工作区入口会装到 <workspace>/.claude/skills/ 而不是全局 ~/.myagents/skills/
+    // 所以工作区入口会装到 <workspace>/.claude/skills/ 而不是全局 ~/.nexttools/skills/
     const handleInstallFromUrl = useCallback(
         async (
             url: string,

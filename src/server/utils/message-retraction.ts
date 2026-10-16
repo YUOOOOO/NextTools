@@ -15,7 +15,7 @@
  * Receivers must evict the named messages on arrival; eviction is idempotent
  * (unknown or already-removed uuids are a no-op).
  *
- * MyAgents mapping caveats:
+ * NextTools mapping caveats:
  *
  * - One MessageWire bubble absorbs MULTIPLE SDK assistant messages within a
  *   turn, and `sdkUuid` keeps only the LATEST one (see `chat:message-sdk-uuid`

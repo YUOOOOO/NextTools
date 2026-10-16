@@ -10,7 +10,7 @@ export interface ExitPlanModeAllowedPrompt {
 
 export interface ExitPlanModeRequest {
   requestId: string;
-  /** Owning MyAgents session id; absent only for legacy/replayed payloads. */
+  /** Owning NextTools session id; absent only for legacy/replayed payloads. */
   sessionId?: string | null;
   plan?: string;
   allowedPrompts?: ExitPlanModeAllowedPrompt[];
@@ -31,7 +31,7 @@ export interface ExitPlanModeResponse {
 
 export interface EnterPlanModeRequest {
   requestId: string;
-  /** Owning MyAgents session id; absent only for legacy/replayed payloads. */
+  /** Owning NextTools session id; absent only for legacy/replayed payloads. */
   sessionId?: string | null;
   resolved?: 'approved' | 'rejected';
   autoApproved?: boolean; // SDK auto-allowed EnterPlanMode (no user confirmation needed)

@@ -17,21 +17,21 @@ use zip::ZipArchive;
 use crate::ulog_warn;
 use crate::utils::file_lock::{with_file_lock_blocking, FileLockError, FileLockOptions};
 
-pub const REQUIRED_RUNTIME_SET: &str = env!("MYAGENTS_BROWSER_RUNTIME_SET");
-pub const REQUIRED_CHROMIUM_REVISION: &str = env!("MYAGENTS_BROWSER_REVISION");
-const REQUIRED_CHROMIUM_BROWSER_VERSION: &str = env!("MYAGENTS_BROWSER_VERSION");
+pub const REQUIRED_RUNTIME_SET: &str = env!("NEXTTOOLS_BROWSER_RUNTIME_SET");
+pub const REQUIRED_CHROMIUM_REVISION: &str = env!("NEXTTOOLS_BROWSER_REVISION");
+const REQUIRED_CHROMIUM_BROWSER_VERSION: &str = env!("NEXTTOOLS_BROWSER_VERSION");
 #[cfg(test)]
-const REQUIRED_PLAYWRIGHT_MCP_VERSION: &str = env!("MYAGENTS_BROWSER_PLAYWRIGHT_MCP_VERSION");
+const REQUIRED_PLAYWRIGHT_MCP_VERSION: &str = env!("NEXTTOOLS_BROWSER_PLAYWRIGHT_MCP_VERSION");
 #[cfg(test)]
-const REQUIRED_PLAYWRIGHT_CORE_VERSION: &str = env!("MYAGENTS_BROWSER_PLAYWRIGHT_CORE_VERSION");
-const REQUIRED_ARTIFACT_SOURCE_URL: &str = env!("MYAGENTS_BROWSER_ARTIFACT_SOURCE_URL");
-const REQUIRED_ARTIFACT_URL: &str = env!("MYAGENTS_BROWSER_ARTIFACT_URL");
-const REQUIRED_ARTIFACT_SHA256: &str = env!("MYAGENTS_BROWSER_ARTIFACT_SHA256");
-const REQUIRED_ARTIFACT_SIZE: &str = env!("MYAGENTS_BROWSER_ARTIFACT_SIZE");
-const REQUIRED_UNPACKED_SIZE: &str = env!("MYAGENTS_BROWSER_UNPACKED_SIZE");
-const REQUIRED_ENTRY_COUNT: &str = env!("MYAGENTS_BROWSER_ENTRY_COUNT");
-const REQUIRED_ARCHIVE_ROOT: &str = env!("MYAGENTS_BROWSER_ARCHIVE_ROOT");
-const REQUIRED_EXECUTABLE_RELATIVE_PATH: &str = env!("MYAGENTS_BROWSER_EXECUTABLE_RELATIVE_PATH");
+const REQUIRED_PLAYWRIGHT_CORE_VERSION: &str = env!("NEXTTOOLS_BROWSER_PLAYWRIGHT_CORE_VERSION");
+const REQUIRED_ARTIFACT_SOURCE_URL: &str = env!("NEXTTOOLS_BROWSER_ARTIFACT_SOURCE_URL");
+const REQUIRED_ARTIFACT_URL: &str = env!("NEXTTOOLS_BROWSER_ARTIFACT_URL");
+const REQUIRED_ARTIFACT_SHA256: &str = env!("NEXTTOOLS_BROWSER_ARTIFACT_SHA256");
+const REQUIRED_ARTIFACT_SIZE: &str = env!("NEXTTOOLS_BROWSER_ARTIFACT_SIZE");
+const REQUIRED_UNPACKED_SIZE: &str = env!("NEXTTOOLS_BROWSER_UNPACKED_SIZE");
+const REQUIRED_ENTRY_COUNT: &str = env!("NEXTTOOLS_BROWSER_ENTRY_COUNT");
+const REQUIRED_ARCHIVE_ROOT: &str = env!("NEXTTOOLS_BROWSER_ARCHIVE_ROOT");
+const REQUIRED_EXECUTABLE_RELATIVE_PATH: &str = env!("NEXTTOOLS_BROWSER_EXECUTABLE_RELATIVE_PATH");
 
 const OFFICIAL_RUNTIME_SOURCE: &str = "playwright-official";
 const MAX_ARCHIVE_BYTES: u64 = 512 * 1024 * 1024;
@@ -201,9 +201,9 @@ fn required_artifact() -> Option<OfficialBrowserArtifact> {
 }
 
 fn runtime_root() -> Result<PathBuf, String> {
-    crate::app_dirs::myagents_data_dir()
+    crate::app_dirs::nexttools_data_dir()
         .map(|path| path.join("runtimes").join("browser"))
-        .ok_or_else(|| "[browser-resource] Cannot determine MyAgents data directory".to_string())
+        .ok_or_else(|| "[browser-resource] Cannot determine NextTools data directory".to_string())
 }
 
 fn installed_json_path() -> Result<PathBuf, String> {
@@ -1600,11 +1600,11 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires MYAGENTS_BROWSER_OFFICIAL_ARCHIVE pointing at the locked official ZIP"]
+    #[ignore = "requires NEXTTOOLS_BROWSER_OFFICIAL_ARCHIVE pointing at the locked official ZIP"]
     fn locked_official_archive_extracts_to_the_expected_executable() {
         let archive_path = PathBuf::from(
-            std::env::var("MYAGENTS_BROWSER_OFFICIAL_ARCHIVE")
-                .expect("MYAGENTS_BROWSER_OFFICIAL_ARCHIVE"),
+            std::env::var("NEXTTOOLS_BROWSER_OFFICIAL_ARCHIVE")
+                .expect("NEXTTOOLS_BROWSER_OFFICIAL_ARCHIVE"),
         );
         let artifact = required_artifact().expect("official artifact for supported test platform");
         assert_eq!(

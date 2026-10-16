@@ -7,7 +7,7 @@ import { createGuardedSdkQuery } from './sdk-child-launch-guard';
 const scratchDirs: string[] = [];
 
 function executableFixture(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'myagents-sdk-child-'));
+  const dir = mkdtempSync(join(tmpdir(), 'nexttools-sdk-child-'));
   scratchDirs.push(dir);
   const path = join(dir, 'claude');
   writeFileSync(path, 'fixture');
@@ -60,8 +60,8 @@ describe('createGuardedSdkQuery', () => {
   });
 
   it('keeps mixed-version Sidecars usable when launch-guard identity is absent', async () => {
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', '');
-    vi.stubEnv('MYAGENTS_MANAGEMENT_PORT', '31415');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', '');
+    vi.stubEnv('NEXTTOOLS_MANAGEMENT_PORT', '31415');
     const executablePath = executableFixture();
     const query = {};
     const createQuery = vi.fn(() => query);

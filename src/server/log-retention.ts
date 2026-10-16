@@ -1,5 +1,5 @@
 /**
- * Unified log retention policy for `~/.myagents/logs/`.
+ * Unified log retention policy for `~/.nexttools/logs/`.
  *
  * Single source of truth for retention across all log sources the Sidecar
  * writes. Replaces v0.2.7's split between `UnifiedLogger.cleanupOldUnifiedLogs`
@@ -20,7 +20,7 @@
  *                  user with hundreds of sessions could fill disk silently.
  *                  Now bounded.
  *
- * Crash artifacts (`~/.myagents/logs/crash/*.log`) have a separate policy
+ * Crash artifacts (`~/.nexttools/logs/crash/*.log`) have a separate policy
  * owned by the always-present Tauri application process. Node Sidecars only
  * own their individual lazy writer and single-file ceiling; they never race
  * to evict files from the shared directory.
@@ -155,7 +155,7 @@ export interface SweepOptions {
   activeFilePaths?: ReadonlySet<string>;
   /**
    * Override the logs directory. Defaults to the project's LOGS_DIR
-   * (`~/.myagents/logs/`). Tests pass a scratch dir.
+   * (`~/.nexttools/logs/`). Tests pass a scratch dir.
    */
   logsDir?: string;
   /**

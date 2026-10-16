@@ -597,7 +597,7 @@ export function getToolBadgeConfig(toolName: string): ToolBadgeConfig {
 // Generic override: if parsedInput has `_displayName`, use it verbatim — this lets
 // external runtimes surface their real tool identifier (e.g.
 // "run_shell_command") in the UI while internally still routing tool.name to a
-// MyAgents-native component (BashTool/GrepTool/...) for rich body rendering.
+// NextTools-native component (BashTool/GrepTool/...) for rich body rendering.
 export { isSubagentContainerTool } from './subagentActivity';
 
 // Human-readable label for a Codex collab-agent card by its action + model.

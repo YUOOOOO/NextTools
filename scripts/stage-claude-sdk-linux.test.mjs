@@ -14,7 +14,7 @@ function put(path, bytes) {
 }
 
 test('Linux SDK staging follows the pinned package and preserves the prior binary on mismatch', t => {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-linux-sdk-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-linux-sdk-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const version = '0.3.284';
   put(join(root, 'package.json'), JSON.stringify({ dependencies: { [wrapper]: version }, optionalDependencies: { [native]: version } }));

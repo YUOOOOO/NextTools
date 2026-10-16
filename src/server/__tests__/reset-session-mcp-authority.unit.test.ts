@@ -40,9 +40,9 @@ function writeJson(path: string, value: unknown): void {
 describe('#513 — reset uses current MCP authority before pre-warm', () => {
   beforeEach(async () => {
     vi.useFakeTimers();
-    scratch = mkdtempSync(join(tmpdir(), 'myagents-reset-mcp-'));
+    scratch = mkdtempSync(join(tmpdir(), 'nexttools-reset-mcp-'));
     workspacePath = join(scratch, 'workspace');
-    mkdirSync(join(scratch, '.myagents'), { recursive: true });
+    mkdirSync(join(scratch, '.nexttools'), { recursive: true });
     mkdirSync(workspacePath, { recursive: true });
 
     previousHome = process.env.HOME;
@@ -50,7 +50,7 @@ describe('#513 — reset uses current MCP authority before pre-warm', () => {
     process.env.HOME = scratch;
     process.env.USERPROFILE = scratch;
 
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpServers: [
         {
           id: 'current',
@@ -69,7 +69,7 @@ describe('#513 — reset uses current MCP authority before pre-warm', () => {
       ],
       mcpEnabledServers: ['current'],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project',
       name: 'Project',
       path: workspacePath,

@@ -13,7 +13,7 @@
 运行：
 
 ```powershell
-.\src-tauri\target\x86_64-pc-windows-msvc\debug\myagents.exe
+.\src-tauri\target\x86_64-pc-windows-msvc\debug\nexttools.exe
 ```
 
 若本机 target 目录不同，以构建脚本最后打印的 exe 路径为准。Debug build 带 DevTools，但本清单不依赖前端手工重连。
@@ -34,7 +34,7 @@ cargo test --manifest-path src-tauri\Cargo.toml sse_owner_resolver --lib
 使用 Microsoft Sysinternals TCPView（或能关闭单条 TCP connection 的等价工具）：
 
 1. 打开一个真实 existing Chat Session，等待 SSE 正常连接；统一日志中会出现 `Subscription <tabId> transport connected`。
-2. 在 TCPView 找到 `myagents.exe` 到 `node.exe` loopback 端口的长期 `ESTABLISHED` connection。普通 HTTP 很短暂；持续存在的是 SSE。
+2. 在 TCPView 找到 `nexttools.exe` 到 `node.exe` loopback 端口的长期 `ESTABLISHED` connection。普通 HTTP 很短暂；持续存在的是 SSE。
 3. 右键该 connection，选择 **Close Connection**。这会让 reqwest 进入 Windows reset/close 等价分支；无需精确复现最初未确认的根因。
 4. 在自动重连前后继续当前 turn，或立即发送一条可辨识但不含隐私的测试消息。
 5. 不做 reload/Session 切换。等待日志出现旧 generation disconnected、retry 和更大的 transport generation connected。
@@ -67,13 +67,13 @@ Stop-Process -Id <SIDE_CAR_PID> -Force
 统一日志位于：
 
 ```text
-%USERPROFILE%\.myagents\logs\unified-YYYY-MM-DD.log
+%USERPROFILE%\.nexttools\logs\unified-YYYY-MM-DD.log
 ```
 
 可提取 SSE 行：
 
 ```powershell
-Select-String -Path "$env:USERPROFILE\.myagents\logs\unified-$(Get-Date -Format yyyy-MM-dd).log" -Pattern '\[sse-proxy\]|session-sidecar:restarted'
+Select-String -Path "$env:USERPROFILE\.nexttools\logs\unified-$(Get-Date -Format yyyy-MM-dd).log" -Pattern '\[sse-proxy\]|session-sidecar:restarted'
 ```
 
 请回传：Windows/WebView2 版本、A1/A2/A3/A10/A11 逐项通过/失败，以及从 subscription start 前一行到恢复 connected 后一行的最小日志片段。可遮盖 workspace、消息正文和其它不相关字段；SSE proxy 本身不记录消息正文或 credential。

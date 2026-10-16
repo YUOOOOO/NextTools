@@ -1,4 +1,4 @@
-# MyAgents Cloud Space 架构
+# NextTools Cloud Space 架构
 
 > 本文只描述 Desktop 侧的 Cloud Space owner、身份、Connector、Session 注入与安全边界。Cloud API、D1/R2/KV、配额与运营逻辑以平级仓库 `../MyAgents_space/specs/ARCHITECTURE.md` 为准；逐字 IssueDelivery prompt 见 [`space_issue_delivery_protocol.md`](space_issue_delivery_protocol.md)。
 
@@ -8,14 +8,14 @@ Cloud Space（中文入口“协作空间”，英文 Team Space）是 Desktop �
 
 | 事实 | Authority |
 |---|---|
-| Cloud 用户、Space、Issue、Goal、Skill、Tool、Registered Agent、Delivery、plan/quota | MyAgents Space Cloud API |
+| Cloud 用户、Space、Issue、Goal、Skill、Tool、Registered Agent、Delivery、plan/quota | NextTools Space Cloud API |
 | build capability 与 service origin | Rust build/runtime capability |
 | 用户 credential 与 redacted account cache | Rust `space_cloud` root facade |
 | 本地 device id | `src-tauri/src/device_identity.rs` |
 | 本地 Registered Agent mapping/token | Rust `space_cloud::registered_agents` |
 | Delivery polling、presence 与 Session 注入 | Rust `space_cloud::delivery` |
 | UI cache 与导航 | Renderer `spaceStore` / Space pages |
-| AI automation surface | `myagents space ...` CLI，经 Sidecar Admin API 与 Rust Management API |
+| AI automation surface | `nexttools space ...` CLI，经 Sidecar Admin API 与 Rust Management API |
 
 Renderer 不持有 session/agent token，不直接访问 Cloud Worker。跨两个仓库的契约变化必须同步更新 Cloud serializer/tests 与 Desktop types/wrapper/tests；部署状态只以对应环境的健康端点和发布系统为准，不写进本文。
 
@@ -23,14 +23,14 @@ Renderer 不持有 session/agent token，不直接访问 Cloud Worker。跨两�
 
 Space 是 build-time capability：
 
-- `src-tauri/build.rs` 只转发 `MYAGENTS_SPACE_*` 白名单；
+- `src-tauri/build.rs` 只转发 `NEXTTOOLS_SPACE_*` 白名单；
 - production origin 必须是无 credential、无 path/query/fragment 的 HTTPS origin；
 - release build 不携带 Dev origin；
 - `cmd_space_get_capability` 返回 Rust 当前可用的 baked origin，Renderer 还要叠加隐藏开发者开关 `config.teamSpaceDevGate !== false`；该开关默认开启，Rust Connector 使用相同的显式 false 才关闭语义。旧实验室字段 `teamSpaceEnabled` 不再读取，升级用户无需手动开启；显式开发者关闭继续由 config.json 持久化；
 - `config.spaceEnvironment` 只能在构建中已经烘焙的 production/dev origin 间选择；
 - 所有请求通过 `space_build_capability()` / `space_base_url()` 解析 origin，不能硬编码或让用户输入任意 URL。
 
-debug/test 可以通过 `MYAGENTS_SPACE_MOCK_DATA=true` 使用 Rust owner 的 deterministic mock。mock 不读取真实 Space session、不访问生产服务，也不能在 Renderer 建第二套假数据路径。
+debug/test 可以通过 `NEXTTOOLS_SPACE_MOCK_DATA=true` 使用 Rust owner 的 deterministic mock。mock 不读取真实 Space session、不访问生产服务，也不能在 Renderer 建第二套假数据路径。
 
 ## 3. Desktop 模块边界
 
@@ -53,9 +53,9 @@ debug/test 可以通过 `MYAGENTS_SPACE_MOCK_DATA=true` 使用 Rust owner 的 de
 
 ### 3.1 官方工具市集入口
 
-技能与工具页的本地横幅通过 App 的 `CapabilitiesRenderBinding.onOpenToolMarket` 发出 `space.tools` AppRoute，固定目标为 `DEFAULT_SPACE_ID`（`official`）。对应外部深链为 `myagents://open/v1/spaces/official/tools`；TS 与 Rust parser 共用测试样例，外部入口继续使用现有 Rust AppRouteQueue。
+技能与工具页的本地横幅通过 App 的 `CapabilitiesRenderBinding.onOpenToolMarket` 发出 `space.tools` AppRoute，固定目标为 `DEFAULT_SPACE_ID`（`official`）。对应外部深链为 `nexttools://open/v1/spaces/official/tools`；TS 与 Rust parser 共用测试样例，外部入口继续使用现有 Rust AppRouteQueue。
 
-`official` 是 Cloud API 保留的官方空间别名，不是资源的实际 slug。`spaceStore` 的统一匹配同时接受精确 id/slug，以及 `official` 对 Cloud 返回 `spaceKind: official` 的资源；当前空间、列表目标与 bootstrap 到达校验共用该判断。实际官方 slug（通常为 `myagents`）和 opaque id 仍由 Cloud 拥有，不能硬编码或从名称推断；旧缓存缺少 kind 时通过现有 bootstrap 刷新确认。
+`official` 是 Cloud API 保留的官方空间别名，不是资源的实际 slug。`spaceStore` 的统一匹配同时接受精确 id/slug，以及 `official` 对 Cloud 返回 `spaceKind: official` 的资源；当前空间、列表目标与 bootstrap 到达校验共用该判断。实际官方 slug（通常为 `nexttools`）和 opaque id 仍由 Cloud 拥有，不能硬编码或从名称推断；旧缓存缺少 kind 时通过现有 bootstrap 刷新确认。
 
 App 复用协作空间单实例 Tab，并持有导航 generation；Space 等待 boot/auth ready 后通过 `spaceStore.switchSpace` 切换，再显示 Tools 列表、清除资源详情并消费当前 generation。未登录或需重新认证时保留目标，瞬时切换错误沿已有 routeFailure 重试；过时 intent 不消费新目标。本地横幅同时遵循 config readiness、build capability 与开发者门控。工具列表、详情和安装继续由现有 ToolsWorkspace 与 Rust tools 模块处理。
 
@@ -67,12 +67,12 @@ App 复用协作空间单实例 Tab，并持有导航 generation；Space 等待 
 
 | URL | 路由与行为 |
 |---|---|
-| `myagents://open/v1/spaces` | `space.home`：等同左侧「Space 协作空间」入口，打开/聚焦单实例 Tab，保留当前 Space、页面和详情；新 Tab 走正常恢复/登录。 |
-| `myagents://open/v1/spaces/<spaceId或slug>/issues` | `space.issues`：切换目标 Space，清除旧资源详情、Goal 与搜索，显示 Issue 列表。 |
-| `myagents://open/v1/spaces/<spaceId或slug>/issues/<issueId>` | `space.issue`：切换目标 Space 并打开 exact Issue Drawer；Issue ID 来自服务端，不使用展示编号。 |
-| `myagents://open/v1/spaces/<spaceId或slug>/tools` | `space.tools`：切换目标 Space 并显示工具列表。 |
+| `nexttools://open/v1/spaces` | `space.home`：等同左侧「Space 协作空间」入口，打开/聚焦单实例 Tab，保留当前 Space、页面和详情；新 Tab 走正常恢复/登录。 |
+| `nexttools://open/v1/spaces/<spaceId或slug>/issues` | `space.issues`：切换目标 Space，清除旧资源详情、Goal 与搜索，显示 Issue 列表。 |
+| `nexttools://open/v1/spaces/<spaceId或slug>/issues/<issueId>` | `space.issue`：切换目标 Space 并打开 exact Issue Drawer；Issue ID 来自服务端，不使用展示编号。 |
+| `nexttools://open/v1/spaces/<spaceId或slug>/tools` | `space.tools`：切换目标 Space 并显示工具列表。 |
 
-官方社区导航推荐 `.../spaces/official/issues`；`official` 由 `spaceStore` 映射至 Cloud 的 `spaceKind: official`，不假定实际 slug。CLI 提交使用 `space list` 返回的 canonical slug（当前社区为 `myagents`）。
+官方社区导航推荐 `.../spaces/official/issues`；`official` 由 `spaceStore` 映射至 Cloud 的 `spaceKind: official`，不假定实际 slug。CLI 提交使用 `space list` 返回的 canonical slug（当前社区为 `nexttools`）。
 
 聊天 Markdown/HTML anchor 经过 sanitize 与 `parseAppRouteUrl` 的严格校验才保留 href；`ContentLink` 点击提交 `CUSTOM_EVENTS.OPEN_APP_ROUTE` typed intent，App 再次验证并交给同一单实例 Tab/navigation generation owner。App 链接始终走产品导航，不送入网页 BrowserPanel 或系统浏览器；图片 src 不允许导航 scheme。OS 外部链接继续使用 Rust AppRouteQueue 与已有 Tauri deep-link/single-instance 生命周期，不新增队列。配置 readiness、build capability、显式开发者关闭、Tab 上限仍生效。
 
@@ -82,7 +82,7 @@ App 复用协作空间单实例 Tab，并持有导航 generation；Space 等待 
 
 ### 4.1 Device
 
-Space 与 Analytics 共用 `~/.myagents/device_id`。`device_identity.rs` 在文件锁内读取/创建，避免并发启动生成两个 identity；Renderer只通过 typed invoke/cache 消费。
+Space 与 Analytics 共用 `~/.nexttools/device_id`。`device_identity.rs` 在文件锁内读取/创建，避免并发启动生成两个 identity；Renderer只通过 typed invoke/cache 消费。
 
 Cloud 的 `user_devices` 以 `(userId, deviceId)` 表示账号在某台设备上的记录。普通 `lastSeenAt` 是账号/设备活动，不能解释为 Connector 在线。在线状态由独立 presence lease产生，Renderer只展示服务端返回的 `online/offline` 与时间，不复制 lease 阈值自行计算。
 
@@ -135,7 +135,7 @@ Cloud pending delivery
 4. Rust按照 run mode选择或创建 Session，并持久化 exact Registered Agent origin；不能复用同 workspace 的普通 Session或其它 Agent。
 5. 注入经既有 SessionEngine Inbox admission，专用 prompt envelope在本地组装；Cloud不下发完整 system prompt。
 6. Runtime接纳后先写本地 receipt，再ACK Cloud。ACK只结算自己的 transport row，不代表 claim、处理或完成。
-7. AI后续通过 `myagents space issue ...` 读取和修改 Issue；不行动是合法业务决策，不需要“ignore Delivery” mutation。
+7. AI后续通过 `nexttools space issue ...` 读取和修改 Issue；不行动是合法业务决策，不需要“ignore Delivery” mutation。
 
 Delivery mode：
 

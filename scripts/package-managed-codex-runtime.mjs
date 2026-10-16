@@ -332,7 +332,7 @@ function signFile(filePath, allowUnsigned, label) {
   if (!key) {
     throw new Error(`TAURI_SIGNING_PRIVATE_KEY is required to sign Managed Codex ${label}`);
   }
-  const keyPath = join(tmpdir(), `myagents-managed-codex-key-${randomUUID()}`);
+  const keyPath = join(tmpdir(), `nexttools-managed-codex-key-${randomUUID()}`);
   writeFileSync(keyPath, key);
   chmodSync(keyPath, 0o600);
   try {
@@ -590,7 +590,7 @@ function prepareMacHelperSigning(platform, packageDir, allowUnsigned) {
     helperSigningByPath.set(relativePath, expectedSigning);
     preparations.push({
       relativePath,
-      action: identity === '-' ? 'added-local-ad-hoc-signature' : 'added-myagents-developer-id-signature',
+      action: identity === '-' ? 'added-local-ad-hoc-signature' : 'added-nexttools-developer-id-signature',
       teamId: verification.teamId,
       signingIdentity: verification.signingIdentity,
     });
@@ -670,7 +670,7 @@ function main() {
   const runtimeSetOutDir = join(args.outDir, 'sets', args.runtimeSet);
   rmSync(runtimeSetOutDir, { recursive: true, force: true });
 
-  const tmpRoot = mkdtempSync(join(tmpdir(), 'myagents-managed-codex-'));
+  const tmpRoot = mkdtempSync(join(tmpdir(), 'nexttools-managed-codex-'));
   try {
     for (const platform of args.platforms) {
       const platformOutDir = join(runtimeSetOutDir, platform);

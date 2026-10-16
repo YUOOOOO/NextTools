@@ -266,7 +266,7 @@ export function UnifiedLogsPanel({ tabId, sessionId, isVisible, onClose }: Unifi
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `myagents-logs-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+        a.download = `nexttools-logs-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
         a.click();
         URL.revokeObjectURL(url);
     }, [filteredLogs]);

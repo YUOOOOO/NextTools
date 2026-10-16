@@ -2,9 +2,9 @@
 //!
 //! Sources, in dedup priority order (first wins):
 //! 1. `<workspace>/.claude/commands/*.md`        — project commands
-//! 2. `~/.myagents/commands/*.md`                — user commands
+//! 2. `~/.nexttools/commands/*.md`                — user commands
 //! 3. `<workspace>/.claude/skills/*/SKILL.md`    — project skills
-//! 4. `~/.myagents/skills/*/SKILL.md`            — user skills (respects skills config disabled list)
+//! 4. `~/.nexttools/skills/*/SKILL.md`            — user skills (respects skills config disabled list)
 //! 5. Built-in commands (compact, context, …)
 //!
 //! Returned shape exactly matches the sidecar `/api/commands` response
@@ -93,9 +93,9 @@ pub async fn cmd_list_slash_commands(workspace: String) -> Result<SlashCommandsR
     let workspace_exists = workspace_root.is_dir();
 
     let home_dir = dirs::home_dir().ok_or_else(|| "home dir unavailable".to_string())?;
-    let myagents_root = home_dir.join(".myagents");
+    let nexttools_root = home_dir.join(".nexttools");
 
-    let disabled = disabled_skill_names_for_slash(&myagents_root);
+    let disabled = disabled_skill_names_for_slash(&nexttools_root);
 
     let mut commands: Vec<SlashCommand> = Vec::new();
 
@@ -108,23 +108,23 @@ pub async fn cmd_list_slash_commands(workspace: String) -> Result<SlashCommandsR
         );
     }
     // 2. User commands
-    scan_commands_dir(&myagents_root.join("commands"), "user", &mut commands);
+    scan_commands_dir(&nexttools_root.join("commands"), "user", &mut commands);
     // 3. Project skills
     if workspace_exists {
         scan_skills_dir(
             &workspace_root.join(".claude").join("skills"),
             "project",
             &disabled,
-            &myagents_root.join("skills"),
+            &nexttools_root.join("skills"),
             &mut commands,
         );
     }
     // 4. User skills
     scan_skills_dir(
-        &myagents_root.join("skills"),
+        &nexttools_root.join("skills"),
         "user",
         &disabled,
-        &myagents_root.join("skills"),
+        &nexttools_root.join("skills"),
         &mut commands,
     );
 
@@ -164,9 +164,9 @@ pub async fn cmd_list_slash_commands(workspace: String) -> Result<SlashCommandsR
     })
 }
 
-fn disabled_skill_names_for_slash(myagents_root: &Path) -> Vec<String> {
-    let mut disabled = read_disabled_list(myagents_root);
-    if !read_cli_tool_registry_enabled(myagents_root)
+fn disabled_skill_names_for_slash(nexttools_root: &Path) -> Vec<String> {
+    let mut disabled = read_disabled_list(nexttools_root);
+    if !read_cli_tool_registry_enabled(nexttools_root)
         && !disabled.iter().any(|name| name == "tool-creator")
     {
         disabled.push("tool-creator".to_string());
@@ -319,7 +319,7 @@ fn scan_skills_dir(
         let folder_path = entry.path();
 
         // Launcher scans the project surface before the global surface. A
-        // MyAgents-managed projection must not be mislabelled as a project
+        // NextTools-managed projection must not be mislabelled as a project
         // Skill and win that priority race; its canonical global entry is
         // classified below by the same evidence contract as Node.
         if scope == "project" && canonical_path_is_within(&folder_path, global_skills_root) {
@@ -945,7 +945,7 @@ mod tests {
 
     #[test]
     fn disabled_skill_names_include_tool_creator_when_cli_tool_registry_gate_is_off() {
-        let root = make_test_workspace("slash_gate_off_home").join(".myagents");
+        let root = make_test_workspace("slash_gate_off_home").join(".nexttools");
         fs::create_dir_all(&root).unwrap();
 
         let disabled = disabled_skill_names_for_slash(&root);
@@ -956,7 +956,7 @@ mod tests {
 
     #[test]
     fn disabled_skill_names_do_not_include_tool_creator_when_cli_tool_registry_gate_is_on() {
-        let root = make_test_workspace("slash_gate_on_home").join(".myagents");
+        let root = make_test_workspace("slash_gate_on_home").join(".nexttools");
         fs::create_dir_all(&root).unwrap();
         fs::write(
             root.join("config.json"),
@@ -972,23 +972,23 @@ mod tests {
 
     #[test]
     fn disabled_skill_names_keep_required_system_skills_available() {
-        let root = make_test_workspace("slash_required_home").join(".myagents");
+        let root = make_test_workspace("slash_required_home").join(".nexttools");
         fs::create_dir_all(&root).unwrap();
         fs::write(
             root.join("skills-config.json"),
-            r#"{"disabled":["myagents-memory-update","myagents-memory-gardener","myagents-memory-molt","myagents-cli","myagents-task-automation","myagents-docs","prompt-writer"]}"#,
+            r#"{"disabled":["nexttools-memory-update","nexttools-memory-gardener","nexttools-memory-molt","nexttools-cli","nexttools-task-automation","nexttools-docs","prompt-writer"]}"#,
         )
         .unwrap();
 
         let disabled = disabled_skill_names_for_slash(&root);
 
         for name in [
-            "myagents-memory-update",
-            "myagents-memory-gardener",
-            "myagents-memory-molt",
-            "myagents-cli",
-            "myagents-task-automation",
-            "myagents-docs",
+            "nexttools-memory-update",
+            "nexttools-memory-gardener",
+            "nexttools-memory-molt",
+            "nexttools-cli",
+            "nexttools-task-automation",
+            "nexttools-docs",
         ] {
             assert!(!disabled.iter().any(|candidate| candidate == name));
         }

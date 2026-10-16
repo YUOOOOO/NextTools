@@ -94,7 +94,7 @@ describe('SDK Smoke Tests', () => {
 
       // Response should mention the project name from package.json
       expect(result.assistantResponse).toBeTruthy();
-      assertResponseContains(result, 'myagents');
+      assertResponseContains(result, 'nexttools');
     }, TEST_TIMEOUT * TOOL_TIMEOUT_MULTIPLIER + TIMEOUT_BUFFER);
   });
 

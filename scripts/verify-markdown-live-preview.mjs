@@ -47,7 +47,7 @@ window.setOptions=value=>{options=value;render()};
 
 const compiler=await compile(await readFile(resolve(root,'src/renderer/index.css'),'utf8'),{base:resolve(root,'src/renderer'),onDependency(){}});
 const appCss=compiler.build(['overflow-x-auto','max-w-full','min-w-0','break-words','text-xs','italic','overflow-hidden','rounded-lg','border','border-[var(--line)]','bg-[var(--paper-elevated)]','shadow-xl']);
-const themeCss=await readFile(resolve(root,'src/renderer/theme/themes/myagents-default.css'),'utf8');
+const themeCss=await readFile(resolve(root,'src/renderer/theme/themes/nexttools-default.css'),'utf8');
 let mathCss=await readFile(resolve(root,'node_modules/katex/dist/katex.min.css'),'utf8');
 for(const font of new Set([...mathCss.matchAll(/url\((fonts\/[^)]+)\)/g)].map(match=>match[1]))) {
  const bytes=await readFile(resolve(root,'node_modules/katex/dist',font));
@@ -218,7 +218,7 @@ try {
  await page.evaluate(()=>document.querySelector('.md-editor-shell').style.width='300px');
  await trigger.click();await page.getByRole('navigation',{name:'目录'}).waitFor();await page.waitForTimeout(150);
  assert.ok(await page.locator('.md-outline-popover').evaluate(el=>{const b=el.getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&b.top>=0&&b.bottom<=innerHeight}),'Outline overflowed narrow viewport');
- await page.screenshot({path:'/tmp/myagents-markdown-outline-'+(process.argv[2]??'chromium')+'.png'});
+ await page.screenshot({path:'/tmp/nexttools-markdown-outline-'+(process.argv[2]??'chromium')+'.png'});
  await page.setViewportSize({width:900,height:700});
  const prefixed='# Top\n\n'+('body\n\n'.repeat(25))+'  ## Indented\n\n'+('body\n\n'.repeat(25))+'> Quoted\n> ===\n\n'+('body\n\n'.repeat(30));
  await page.evaluate(doc=>window.mount(doc),prefixed);

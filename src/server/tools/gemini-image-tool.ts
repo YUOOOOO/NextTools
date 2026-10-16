@@ -67,17 +67,17 @@ export function clearGeminiImageConfig(): void {
 function getGeneratedDir(): string {
   const workspace = geminiImageConfig?.workspace;
   const dir = workspace
-    ? join(workspace, 'myagents_files', 'generated_images')
-    : join(homedir(), '.myagents', 'generated');
+    ? join(workspace, 'nexttools_files', 'generated_images')
+    : join(homedir(), '.nexttools', 'generated');
   if (!existsSync(dir)) {
     ensureDirSync(dir);
-    if (workspace) ensureGitignorePattern(workspace, 'myagents_files/');
+    if (workspace) ensureGitignorePattern(workspace, 'nexttools_files/');
   }
   return dir;
 }
 
 function getContextsDir(): string {
-  const dir = join(homedir(), '.myagents', 'image-contexts');
+  const dir = join(homedir(), '.nexttools', 'image-contexts');
   ensureDirSync(dir);
   return dir;
 }

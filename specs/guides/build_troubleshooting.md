@@ -422,7 +422,7 @@ let client = reqwest::Client::builder()
 - [ ] TypeScript 类型检查通过（`npm run typecheck`）
 - [ ] CSP 配置完整（`connect-src` 包含 `http://ipc.localhost`）
 - [ ] 清理旧的 resources 缓存
-- [ ] 杀死残留进程（node sidecar, MyAgents）
+- [ ] 杀死残留进程（node sidecar, NextTools）
 
 ### 构建后验证
 

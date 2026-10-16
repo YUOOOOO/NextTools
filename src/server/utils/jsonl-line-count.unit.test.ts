@@ -8,7 +8,7 @@ import { countNonEmptyJsonlLines } from './jsonl-line-count';
 let scratch: string | null = null;
 
 function tempFile(content: string): string {
-  scratch = mkdtempSync(join(tmpdir(), 'myagents-jsonl-count-'));
+  scratch = mkdtempSync(join(tmpdir(), 'nexttools-jsonl-count-'));
   const file = join(scratch, 'session.jsonl');
   writeFileSync(file, content, 'utf-8');
   return file;
@@ -42,6 +42,6 @@ describe('countNonEmptyJsonlLines', () => {
   });
 
   it('returns 0 for a missing file', () => {
-    expect(countNonEmptyJsonlLines(join(tmpdir(), 'missing-myagents-jsonl-count.jsonl'))).toBe(0);
+    expect(countNonEmptyJsonlLines(join(tmpdir(), 'missing-nexttools-jsonl-count.jsonl'))).toBe(0);
   });
 });

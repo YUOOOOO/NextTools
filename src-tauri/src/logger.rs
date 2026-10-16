@@ -162,8 +162,8 @@ pub fn cmd_record_renderer_boot_event(
 // Wrap an async unit-of-work with `LOG_CONTEXT.scope(LogContext { ... },
 // async { ... }).await` and any nested `ulog_*!` call inside picks up
 // those fields automatically. Used by the HTTP request handler in
-// `local_http.rs` to propagate `X-MyAgents-Request-Id /
-// X-MyAgents-Session-Id / X-MyAgents-Tab-Id` from inbound headers.
+// `local_http.rs` to propagate `X-NextTools-Request-Id /
+// X-NextTools-Session-Id / X-NextTools-Tab-Id` from inbound headers.
 
 #[derive(Debug, Clone, Default)]
 pub struct LogContext {
@@ -239,13 +239,13 @@ pub fn with_sync_log_context<R>(ctx: LogContext, f: impl FnOnce() -> R) -> R {
     })
 }
 
-/// Get logs directory path (~/.myagents/logs/)
+/// Get logs directory path (~/.nexttools/logs/)
 fn get_logs_dir() -> PathBuf {
     static LOGS_DIR: OnceLock<PathBuf> = OnceLock::new();
     LOGS_DIR
         .get_or_init(|| {
             let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-            home.join(".myagents").join("logs")
+            home.join(".nexttools").join("logs")
         })
         .clone()
 }
@@ -429,7 +429,7 @@ fn format_line(entry: &LogEntry) -> String {
 /// Append log entry to unified log file (via buffered writer).
 const fn should_persist_logs() -> bool {
     // Rust unit tests share the developer's real HOME by default. Persisting
-    // their synthetic failures into ~/.myagents/logs makes production triage
+    // their synthetic failures into ~/.nexttools/logs makes production triage
     // indistinguishable from test activity. Test output still reaches the
     // normal Rust log capture; only the user-owned unified file sink is off.
     !cfg!(test)

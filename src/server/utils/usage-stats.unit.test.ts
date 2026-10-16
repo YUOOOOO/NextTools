@@ -137,7 +137,7 @@ describe('aggregateGlobalUsageStats', () => {
         message(
           'space-user',
           'user',
-          '<system-reminder><myagents-space-issue>secret</myagents-space-issue></system-reminder>Visible issue update',
+          '<system-reminder><nexttools-space-issue>secret</nexttools-space-issue></system-reminder>Visible issue update',
           '2026-07-11T00:00:01.000Z',
         ),
       ], { origin: { kind: 'registered-agent', surface: 'space_issue_delivery', context: { spaceId: 'space-1', registeredAgentId: 'ra-1' } } }),
@@ -158,7 +158,7 @@ describe('buildSessionDetailedUsageStats', () => {
       message(
         'hidden-user',
         'user',
-        '<system-reminder><myagents-space-issue>secret issue instructions</myagents-space-issue></system-reminder>',
+        '<system-reminder><nexttools-space-issue>secret issue instructions</nexttools-space-issue></system-reminder>',
         '2026-07-11T00:00:00.000Z',
       ),
       message('hidden-answer', 'assistant', 'done', '2026-07-11T00:00:01.000Z', {
@@ -173,7 +173,7 @@ describe('buildSessionDetailedUsageStats', () => {
       message(
         'visible-space-user',
         'user',
-        '<system-reminder><myagents-space-issue>more secrets</myagents-space-issue></system-reminder>Visible issue update',
+        '<system-reminder><nexttools-space-issue>more secrets</nexttools-space-issue></system-reminder>Visible issue update',
         '2026-07-11T00:00:04.000Z',
       ),
       message('visible-answer', 'assistant', 'updated', '2026-07-11T00:00:05.000Z', {

@@ -13,7 +13,7 @@ const original = source => source
   .replace('Math.abs(contentWidth - oldContentWidth) > oracle.charWidth', 'Math.abs(contentWidth - this.contentDOMWidth) > oracle.charWidth')
   .replace(' || lineWrapping && this.lineLength != lineLength;', ';');
 function fixture(run) {
-  const directory = mkdtempSync(resolve(tmpdir(), 'myagents-cm-patch-'));
+  const directory = mkdtempSync(resolve(tmpdir(), 'nexttools-cm-patch-'));
   try {
     mkdirSync(resolve(directory, 'dist'));
     writeFileSync(resolve(directory, 'package.json'), JSON.stringify({ name: '@codemirror/view', version: '6.43.11' }));

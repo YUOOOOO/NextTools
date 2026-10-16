@@ -26,7 +26,7 @@ vi.mock('@/utils/markdownChunks', async (importOriginal) => {
 import Markdown from './Markdown';
 
 function Theme({ children }: { children: ReactNode }) {
-  return <ThemeRuntimeProvider selection={{ themeId: 'myagents-default', appearanceMode: 'light' }} persistBootstrapSnapshot={false}>{children}</ThemeRuntimeProvider>;
+  return <ThemeRuntimeProvider selection={{ themeId: 'nexttools-default', appearanceMode: 'light' }} persistBootstrapSnapshot={false}>{children}</ThemeRuntimeProvider>;
 }
 
 function report(sections: number): string {

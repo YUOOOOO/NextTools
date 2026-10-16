@@ -30,7 +30,7 @@
 
 本地 Dev 的 effective lock 和 compatibility 由 handoff 派生，写入 ignored 的 `dsh-build-selection-v1.json`；Vite、Sidecar esbuild 与 Rust build.rs 在同一次构建读取该身份。打包 Dev App 与正式 App 都运行这个 Sidecar bundle，只有 `tauri dev` 运行源码。它不改动已提交的版本选择。每个目标有自己的原生 DSH 资产，因此 macOS 双目标构建在目标循环中分别准备 DSH 并重建业务 bundle。`npm run tauri:build:prepared` 只供已调用 prepare 的平台脚本使用；通用直接入口负责自己准备。若绑定版本的 GitHub Release 尚不可用，默认构建会在请求清单时失败；需打 Dev 包时可显式使用 `--dsh-source local --dsh-handoff /absolute/path`（Windows 为 `-DshSource local -DshHandoff`）。本地 handoff 由 MyAgents-dsh 的 `scripts/build-local-handoff.mjs` 生成，先在其仓库完成 setup 并提交源代码即可；本地 Dev 不要求模型密钥或原生模型验收，handoff 标记为待原生验证。该仓库的 `specs/tech_docs/assurance/development-and-local-integration.md` 维护完整入口。
 
-升级正式绑定的 DSH 版本时只编辑 `dsh-release.json` 的版本号。MyAgents 通过 `https://github.com/hAcKlyc/MyAgents-dsh/releases/download/v<version>/manifest.json` 读取发布方维护的四平台清单，按目标核对包大小、archive/handoff/Runtime/compatibility 摘要、共同源码提交、原生模块和 Host 契约，再派生本次 effective lock。Release 的完整字节校验以归档摘要为界，暂存复制失败会回滚旧目录，但不对复制后的每个文件重新计算摘要；本地 handoff 仍逐文件验证。客户端静态生成文件保留为未准备的 source-mode 编译快照，不用旧版本中嵌入的版本号和摘要阻止选定的新 Runtime。运行时检查必要文件和路径，并在进程握手中核对协议身份与 Host 方法表面，不重新遍历交付清单。`dsh-lock.json` 保留未准备的 source-mode 开发身份快照；显式本地 Dev 构建以 handoff 派生的 effective lock 为准。未打包的 `tauri:dev` 沿用 staged Runtime 与 source-mode 路径；`local` 覆盖范围是 `build_dev*` 的打包构建。
+升级正式绑定的 DSH 版本时只编辑 `dsh-release.json` 的版本号。NextTools 通过 `https://github.com/hAcKlyc/MyAgents-dsh/releases/download/v<version>/manifest.json` 读取发布方维护的四平台清单，按目标核对包大小、archive/handoff/Runtime/compatibility 摘要、共同源码提交、原生模块和 Host 契约，再派生本次 effective lock。Release 的完整字节校验以归档摘要为界，暂存复制失败会回滚旧目录，但不对复制后的每个文件重新计算摘要；本地 handoff 仍逐文件验证。客户端静态生成文件保留为未准备的 source-mode 编译快照，不用旧版本中嵌入的版本号和摘要阻止选定的新 Runtime。运行时检查必要文件和路径，并在进程握手中核对协议身份与 Host 方法表面，不重新遍历交付清单。`dsh-lock.json` 保留未准备的 source-mode 开发身份快照；显式本地 Dev 构建以 handoff 派生的 effective lock 为准。未打包的 `tauri:dev` 沿用 staged Runtime 与 source-mode 路径；`local` 覆盖范围是 `build_dev*` 的打包构建。
 
 `setup.sh` / `setup_windows.ps1` 准备开发依赖与 host 资源；平台 build 脚本检查本次目标并准备安装包。不能把“以前运行过 setup”作为资源就绪依据。两类入口复用资源 helper，由 helper 校验版本、目标、完整性后决定复用或补齐。
 
@@ -114,7 +114,7 @@ Cuse 的原始 ZIP 使用同一 `acquireLockedResource` helper，缓存到 `reso
 
 ### AgentNet 部署身份
 
-`src-tauri/build.rs` 的 Space 构建配置同时读取公开的 `MYAGENTS_AGENT_NETWORK_SERVICE_ID` / `MYAGENTS_AGENT_NETWORK_DEV_SERVICE_ID`。官方值内置，开发者无需新增密钥。Dev service ID 与 Space dev origin 只在 debug 构建生效；release 清空 dev 配置。开发构建需设置 `MYAGENTS_SPACE_DEV_BASE_URL=https://space-dev.myagents.io`，客户端原开发者功能切换 Space 环境时，网络连接沿同一账号 owner 重建。CA / JWS 私钥仅配置在 Space Worker，禁止放进客户端构建环境。
+`src-tauri/build.rs` 的 Space 构建配置同时读取公开的 `NEXTTOOLS_AGENT_NETWORK_SERVICE_ID` / `NEXTTOOLS_AGENT_NETWORK_DEV_SERVICE_ID`。官方值内置，开发者无需新增密钥。Dev service ID 与 Space dev origin 只在 debug 构建生效；release 清空 dev 配置。开发构建需设置 `NEXTTOOLS_SPACE_DEV_BASE_URL=https://space-dev.myagents.io`，客户端原开发者功能切换 Space 环境时，网络连接沿同一账号 owner 重建。CA / JWS 私钥仅配置在 Space Worker，禁止放进客户端构建环境。
 
 ### AgentNet 固定协议产物
 

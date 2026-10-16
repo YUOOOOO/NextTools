@@ -12,7 +12,7 @@ description: >
   (8) search Chinese cloud drives for resources, or (9) any task involving finding or downloading
   digital content from the internet.
 metadata:
-  author: MyAgents
+  author: NextTools
 ---
 
 # Download Anything

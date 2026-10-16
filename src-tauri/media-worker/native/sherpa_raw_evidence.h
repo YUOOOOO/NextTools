@@ -1,7 +1,7 @@
-// MyAgents' bounded raw-evidence extension to the pinned sherpa-onnx source.
+// NextTools' bounded raw-evidence extension to the pinned sherpa-onnx source.
 // This is copied into csrc by the verified source-preparation step.
-#ifndef MYAGENTS_SHERPA_RAW_EVIDENCE_H_
-#define MYAGENTS_SHERPA_RAW_EVIDENCE_H_
+#ifndef NEXTTOOLS_SHERPA_RAW_EVIDENCE_H_
+#define NEXTTOOLS_SHERPA_RAW_EVIDENCE_H_
 
 #include <algorithm>
 #include <cstdint>
@@ -103,4 +103,4 @@ std::vector<RawSpeechInterval> RawActivityIntervals(
 }
 
 }  // namespace sherpa_onnx
-#endif  // MYAGENTS_SHERPA_RAW_EVIDENCE_H_
+#endif  // NEXTTOOLS_SHERPA_RAW_EVIDENCE_H_

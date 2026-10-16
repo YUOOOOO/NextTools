@@ -2,7 +2,7 @@
 //
 // 由 Rust 端 `cmd_inbox_deliver` 在 push pending_inbox_messages 后调用,把同样
 // 的 message payload 直接 POST 过来。Drain handler 取出 messages → 包裹
-// MyAgents Session Event Protocol v1 prompt → 调用 enqueueUserMessage /
+// NextTools Session Event Protocol v1 prompt → 调用 enqueueUserMessage /
 // sendExternalMessage 注入。Space issue delivery is the exception: Rust
 // already renders the final <system-reminder> prompt so the UI can hide the
 // operational payload and show a Space issue badge.
@@ -13,7 +13,7 @@
 //     persistTurnResult hook 中)。
 //   - Reply 类型的 replyBack 恒为 false——避免 reply 的 reply 形成无限往返。
 //   - 注入时统一走 session-event renderer,避免 prompt injection
-//     (`</myagents-session-event>` 闭合标签注入等)。
+//     (`</nexttools-session-event>` 闭合标签注入等)。
 
 import { renderSessionEventPrompt } from './session-event';
 import { buildInReplyToSnippet } from './types';

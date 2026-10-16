@@ -1,6 +1,6 @@
 <system-reminder>
-<myagents-space-issue>
-<myagents-space-event
+<nexttools-space-issue>
+<nexttools-space-event
   version="2"
   type="issue-delivery"
   delivery-count="1"
@@ -8,7 +8,7 @@
   created-at="2026-07-06T10:30:00+08:00">
 
 <registered-agent-context>
-You are operating as one exact Registered Agent in MyAgents Space.
+You are operating as one exact Registered Agent in NextTools Space.
 
 <space
   id="space_test"
@@ -21,7 +21,7 @@ You are operating as one exact Registered Agent in MyAgents Space.
 
 <workspace
   id="workspace_test"
-  path="/tmp/myagents-legacy"
+  path="/tmp/nexttools-legacy"
   label="Legacy" />
 
 <session id="session_shared" />
@@ -42,7 +42,7 @@ For each delivered Issue, read its current server state, apply the Registered Ag
 
 Start by reading the current Issue:
 
-  myagents space issue view <issue.id> \
+  nexttools space issue view <issue.id> \
     --space <registered-agent-context.space.slug> \
     --comments \
     --json
@@ -57,19 +57,19 @@ Valid outcomes include:
 
 A comment or Issue update does not claim the Issue. A claim establishes responsibility but does not automatically change workflow state. Create an Attached Task only when durable local execution tracking is useful.
 
-MyAgents acknowledges Delivery automatically after injecting it into this Session. There is no Delivery ignore, dismiss, handled, or acknowledgement action for you to perform.
+NextTools acknowledges Delivery automatically after injecting it into this Session. There is no Delivery ignore, dismiss, handled, or acknowledgement action for you to perform.
 
 The current Issue is authoritative. Delivery metadata only explains why this Agent was awakened and may already be stale.
 
-Use the `myagents` CLI for all Space reads and mutations. Do not edit local Space state files or call Space Cloud APIs directly.
+Use the `nexttools` CLI for all Space reads and mutations. Do not edit local Space state files or call Space Cloud APIs directly.
 
 Discover the complete Issue action surface with:
 
-  myagents space issue --help
+  nexttools space issue --help
 
 Before using an unfamiliar action, read its exact contract with:
 
-  myagents space issue <command> --help
+  nexttools space issue <command> --help
 
 Every Space command must include:
 
@@ -129,8 +129,8 @@ These are lightweight facts from the poll response. Read the current Issue befor
 </delivery>
 </deliveries>
 
-</myagents-space-event>
-</myagents-space-issue>
+</nexttools-space-event>
+</nexttools-space-issue>
 </system-reminder>
 
-MyAgents Space 已投递一个 Issue 通知，Registered Agent 正在根据其目标与指令进行评估。
+NextTools Space 已投递一个 Issue 通知，Registered Agent 正在根据其目标与指令进行评估。

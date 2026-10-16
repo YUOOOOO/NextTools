@@ -61,7 +61,7 @@ fn error(code: &str) -> TokenDanceError {
 }
 
 fn config_path() -> Result<PathBuf, TokenDanceError> {
-    crate::app_dirs::myagents_data_dir()
+    crate::app_dirs::nexttools_data_dir()
         .map(|p| p.join("config.json"))
         .ok_or_else(|| error("config_unavailable"))
 }
@@ -263,13 +263,13 @@ async fn callback(
         let Some(flow) = state.as_mut().filter(|f| f.view.id == context.id) else {
             return (
                 StatusCode::GONE,
-                Html("Authorization is no longer active. Return to MyAgents."),
+                Html("Authorization is no longer active. Return to NextTools."),
             );
         };
         let Some(accepted_verifier) = flow.accept_callback(Instant::now()) else {
             return (
                 StatusCode::GONE,
-                Html("Authorization is no longer active. Return to MyAgents."),
+                Html("Authorization is no longer active. Return to NextTools."),
             );
         };
         verifier = accepted_verifier;
@@ -307,7 +307,7 @@ async fn callback(
         }
         save_key(context.app, context.id).await;
     });
-    (StatusCode::OK, Html("<!doctype html><meta charset=utf-8><title>MyAgents</title><p>授权已接收，请返回 MyAgents 查看连接结果。<br>Authorization received. Return to MyAgents to finish connecting.</p>"))
+    (StatusCode::OK, Html("<!doctype html><meta charset=utf-8><title>NextTools</title><p>授权已接收，请返回 NextTools 查看连接结果。<br>Authorization received. Return to NextTools to finish connecting.</p>"))
 }
 
 fn persist_key(
@@ -426,7 +426,7 @@ pub async fn cmd_tokendance_auth_open(
         .append_pair("code_challenge", &challenge)
         .append_pair("code_challenge_method", "S256")
         .append_pair("app_url", APP_URL)
-        .append_pair("key_name", "MyAgents");
+        .append_pair("key_name", "NextTools");
     let view = AuthView {
         id: id.clone(),
         phase: AuthPhase::Waiting,

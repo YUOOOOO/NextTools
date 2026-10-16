@@ -206,7 +206,7 @@ Function PageReinstall
   ${EndIf}
   ${IfThen} $R0 == "" ${|} StrCpy $R4 "$(unknown)" ${|}
 
-  ; MyAgents: Save old version string before comparison overwrites $R0
+  ; NextTools: Save old version string before comparison overwrites $R0
   StrCpy $R5 $R0
 
   nsis_tauri_utils::SemverCompare "${VERSION}" $R0
@@ -217,7 +217,7 @@ Function PageReinstall
     StrCpy $R2 "$(addOrReinstall)"
     StrCpy $R3 "$(uninstallApp)"
     !insertmacro MUI_HEADER_TEXT "$(alreadyInstalled)" "$(chooseMaintenanceOption)"
-  ; Upgrading - MyAgents: swapped options so "overwrite upgrade" is default
+  ; Upgrading - NextTools: swapped options so "overwrite upgrade" is default
   ${ElseIf} $R0 = 1
     StrCpy $R1 "$(olderOrUnknownVersionInstalled)"
     StrCpy $R2 "$(dontUninstall)"
@@ -309,7 +309,7 @@ Function PageLeaveReinstall
     ${Else}                    ; User chose to uninstall
       Goto reinst_uninstall
     ${EndIf}
-  ${ElseIf} $R0 = 1 ; Upgrading - MyAgents: inverted logic due to swapped options
+  ${ElseIf} $R0 = 1 ; Upgrading - NextTools: inverted logic due to swapped options
     ${If} $R1 = 1              ; User chose 覆盖升级 (do NOT uninstall)
       Goto reinst_done
     ${Else}                    ; User chose 安装前卸载 (uninstall first)
@@ -614,7 +614,7 @@ Section WebView2
   ${EndIf}
 SectionEnd
 
-; MyAgents: Git for Windows installation section
+; NextTools: Git for Windows installation section
 ; Claude Agent SDK requires Git Bash on Windows
 Section GitForWindows
   ; Check if Git is already installed

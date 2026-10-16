@@ -75,9 +75,9 @@ pub fn augmented_path() -> std::ffi::OsString {
         if let Some(home) = dirs::home_dir() {
             push_path_part(
                 &mut parts,
-                home.join(".myagents").join("npm-global").join("bin"),
+                home.join(".nexttools").join("npm-global").join("bin"),
             );
-            push_path_part(&mut parts, home.join(".myagents").join("bin"));
+            push_path_part(&mut parts, home.join(".nexttools").join("bin"));
             for rel in USER_RELATIVE_DIRS {
                 push_path_part(&mut parts, home.join(rel));
             }
@@ -208,13 +208,13 @@ fn push_env_dir(parts: &mut Vec<String>, key: &str, rel: &[&str]) {
 #[cfg(target_os = "windows")]
 fn append_windows_runtime_dirs(parts: &mut Vec<String>) {
     if let Some(home) = dirs::home_dir() {
-        push_path_part(parts, home.join(".myagents").join("npm-global"));
-        push_path_part(parts, home.join(".myagents").join("bin"));
+        push_path_part(parts, home.join(".nexttools").join("npm-global"));
+        push_path_part(parts, home.join(".nexttools").join("bin"));
         push_path_part(parts, home.join(".bun").join("bin"));
         push_path_part(parts, home.join("AppData").join("Roaming").join("npm"));
     }
 
-    push_env_dir(parts, "LOCALAPPDATA", &["MyAgents", "nodejs"]);
+    push_env_dir(parts, "LOCALAPPDATA", &["NextTools", "nodejs"]);
     push_env_dir(parts, "LOCALAPPDATA", &["Volta", "bin"]);
     push_env_dir(parts, "LOCALAPPDATA", &["bun", "bin"]);
     push_env_dir(parts, "LOCALAPPDATA", &["Programs", "Git", "cmd"]);
@@ -251,7 +251,7 @@ fn detect_shell_path() -> Option<String> {
     CACHED
         .get_or_init(|| {
             let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string());
-            let marker = format!("__MYAGENTS_PATH_{}__", std::process::id());
+            let marker = format!("__NEXTTOOLS_PATH_{}__", std::process::id());
             // NOTE: ${PATH} (braced) is required — unbraced $PATH__MARKER__ would be
             // parsed as a single variable name because underscores are valid identifiers.
             let script = format!("echo \"{marker}${{PATH}}{marker}\"");

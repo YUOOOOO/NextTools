@@ -39,7 +39,7 @@ import {
 
 let scratch: string;
 let idSequence: number;
-const ORIGINAL_REFS_DIR = process.env.MYAGENTS_REFS_DIR;
+const ORIGINAL_REFS_DIR = process.env.NEXTTOOLS_REFS_DIR;
 
 function uuidFromHex(
   hex: string,
@@ -48,8 +48,8 @@ function uuidFromHex(
 }
 
 beforeEach(() => {
-  scratch = mkdtempSync(join(tmpdir(), "myagents-refs-"));
-  process.env.MYAGENTS_REFS_DIR = scratch;
+  scratch = mkdtempSync(join(tmpdir(), "nexttools-refs-"));
+  process.env.NEXTTOOLS_REFS_DIR = scratch;
   idSequence = 0;
   randomUUIDMock.mockReset();
   randomUUIDMock.mockImplementation(() => {
@@ -61,9 +61,9 @@ beforeEach(() => {
 afterEach(() => {
   rmSync(scratch, { recursive: true, force: true });
   if (ORIGINAL_REFS_DIR === undefined) {
-    delete process.env.MYAGENTS_REFS_DIR;
+    delete process.env.NEXTTOOLS_REFS_DIR;
   } else {
-    process.env.MYAGENTS_REFS_DIR = ORIGINAL_REFS_DIR;
+    process.env.NEXTTOOLS_REFS_DIR = ORIGINAL_REFS_DIR;
   }
 });
 

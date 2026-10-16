@@ -18,7 +18,7 @@ pub mod record_preprocessing;
 pub mod record_resampler;
 pub mod record_source;
 
-pub use myagents_media_worker_protocol as protocol;
+pub use nexttools_media_worker_protocol as protocol;
 
 pub mod record_echo_evidence;
 pub mod record_identity;

@@ -89,7 +89,7 @@ export function resolveFileActionTarget(
  * relative path escapes the workspace via `..`).
  *
  * Why: model-authored chat text usually contains workspace-relative paths
- * (e.g. `myagents_files/generated_audio/tts_x.mp3`). Absolute-path-only
+ * (e.g. `nexttools_files/generated_audio/tts_x.mp3`). Absolute-path-only
  * consumers — notably the audio player's `cmd_read_file_base64`, which rejects
  * any non-absolute path with "Path must be absolute" — need them resolved
  * first. Joins with `/`; Rust `PathBuf` normalizes mixed separators on Windows.

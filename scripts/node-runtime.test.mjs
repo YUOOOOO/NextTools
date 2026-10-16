@@ -15,7 +15,7 @@ function put(path, content, executable = false) {
   if (executable) chmodSync(path, 0o755);
 }
 function fixture(t) {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-node-runtime-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-node-runtime-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, 'scripts'));
   for (const name of ['node-runtime.json', 'download_nodejs.sh', 'download_nodejs.ps1', 'download-build-file.ps1']) {
@@ -125,9 +125,9 @@ for (const scenario of ['empty', 'valid-cache', 'wrong-npm', 'missing-npx', 'old
     if (!['empty', 'bad-download'].includes(scenario)) {
       const tree = scenario === 'stale-staging' ? staging : cache;
       unixTree(tree, ['wrong-npm', 'stale-staging'].includes(scenario) ? '12.0.2' : versions.npm);
-      put(join(tree, '.myagents-nodejs-version'), scenario === 'old-node' ? '24.14.0' : versions.node);
-      put(join(tree, '.myagents-nodejs-platform'), 'darwin');
-      put(join(tree, '.myagents-nodejs-arch'), scenario === 'wrong-arch' ? 'x64' : 'arm64');
+      put(join(tree, '.nexttools-nodejs-version'), scenario === 'old-node' ? '24.14.0' : versions.node);
+      put(join(tree, '.nexttools-nodejs-platform'), 'darwin');
+      put(join(tree, '.nexttools-nodejs-arch'), scenario === 'wrong-arch' ? 'x64' : 'arm64');
       if (scenario === 'missing-npx') rmSync(join(tree, 'lib/node_modules/npm/bin/npx-cli.js'));
     }
     // No network or real runtime required: run the whole preparation pipeline
@@ -157,7 +157,7 @@ for (const scenario of ['empty', 'valid-cache', 'wrong-npm', 'missing-npx', 'old
 // Optional local PowerShell path allows running the Windows preparation logic
 // on macOS too. Network, archive extraction and robocopy are isolated fixtures;
 // this does not replace Windows OS / real long-path copying acceptance.
-const powershell = process.env.MYAGENTS_TEST_PWSH || (process.platform === 'win32' ? 'powershell.exe' : 'pwsh');
+const powershell = process.env.NEXTTOOLS_TEST_PWSH || (process.platform === 'win32' ? 'powershell.exe' : 'pwsh');
 const hasPowershell = spawnSync(powershell, ['-NoProfile', '-Command', 'exit 0']).status === 0;
 for (const scenario of ['valid', 'wrong-npm', 'missing-npx', 'bad-download', 'copy-failure']) {
   test(`Windows preparation with isolated IO: ${scenario}`, { skip: !hasPowershell }, (t) => {

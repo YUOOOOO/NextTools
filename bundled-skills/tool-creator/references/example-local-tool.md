@@ -76,7 +76,7 @@ remediation 会指出是哪个）。退出码 1：写出失败（目标目录不
 ## 产物回流
 产物（合并后文件）的绝对路径打印在 stdout。调用方（Agent）必须在回复中
 以 Markdown 链接引用该文件让用户看到；IM 会话中用
-\`myagents im send-media --file <path>\` 发送。`;
+\`nexttools im send-media --file <path>\` 发送。`;
 
 function fail(code, errCode, message, remediation) {
   process.stderr.write(JSON.stringify({ error: message, code: errCode, remediation }) + '\n');

@@ -25,7 +25,7 @@ const ARCHIVE_BASE64 =
   'H4sIAFoPlGoAA+2a3W7TMBiGC5z1KnIDS/0bJweTKGXSKjq0MQmJw6gzNCxNqiSFimMuhDNuZZfEIV4ZyxrqVGldIyXfcxI1P7Ib633f+LMvw9W5DG9kNshnMluEJx+jVbHMZM8gCCHBubM+en+Oir9HhAhGDuaE8fv7KHEQ9ghiPWdlshM6lnkRZqor32bRbFlz39eZlHHN9c0/5Rju5dGgyJkX0VyeYuH7yPcxZy5lGIkAC9LnwpmMXw3fjc7H78/cVVgUmTtN5264WMTSXWTpF5mEyVSeDq/Gw6s3w9ezi8/jxeBTnwXOtXpo8qHuoWfPey9/vPh+d/fzV/9/v4eusqn6wVHa2KX/+x+b+mcUK/3zo/SmQsf1Xxn/y8c4GF2Et3IS5UXuFqvioDbU+/AYa+D/6gT2wP9tsN3/UeAzwn3w/9ZT0b9B1Zfs0j9CvOL/AjHRc5Ch9mvpuP6zNC1AfN1Fm/+T8ejs7fWZiTYa57+aengU8t8GmvkfJgH3If/bT0X/BlVfsjP//9E/pxhB/tsgjqYyySXor6No8386VzMBM200r/+q/If6rxU0+U8QowLyv/1U9L9WvekqcPP6L6cC6r9W0Pr/w4U0SQ624cb+r9yHQf3XChr/p4T5wgP/bz0V/T9RvbkUaO7/Huce+L8NtP6/TDIZh4W8ObyNPfwfewL83wbb/Z8KNRQMg/+3nor+H1Vvcg6wh/8TIcD/baAd/zIJHkqEJ3GU3O7VRnP/J5xB/ccKGv/3Ah9RCv7ferT6P1j1JY39n6gPQNRziOseZ0HqKR3Xf838z9heQNR4/x8lHgL/t4Gu/iMIYQH4f+up0b+xvYC79K9OV/f/Ukxh/d8GicxV2oP8usrW9b8y+Ys0jaezMErcA/YDNM9/9QEA+W8F3fo/xyRgkP+tZ6v+jai+ZHf+e9X6P+UE8t8G6wEG9QEAAHSO30qJaQkAQgAA';
 
 test('selectively extracts the Sherpa build tree without unrelated symlinks', () => {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-sherpa-extract-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-sherpa-extract-'));
   try {
     const archive = join(root, 'sherpa-fixture.tar.gz');
     const destination = join(root, 'source');
@@ -52,7 +52,7 @@ test('selectively extracts the Sherpa build tree without unrelated symlinks', ()
 });
 
 test('rejects an archive root that could escape the extraction destination', () => {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-sherpa-lock-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-sherpa-lock-'));
   try {
     const archive = join(root, 'source.tar.gz');
     writeFileSync(archive, Buffer.from(ARCHIVE_BASE64, 'base64'));
@@ -71,7 +71,7 @@ test('rejects an archive root that could escape the extraction destination', () 
 });
 
 test('patches the locked Sherpa Windows CPU import to use the DLL and import library pair', () => {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-sherpa-ort-import-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-sherpa-ort-import-'));
   const cmakeRoot = join(root, 'cmake');
   const cmakePath = join(cmakeRoot, 'onnxruntime.cmake');
   mkdirSync(cmakeRoot, { recursive: true });
@@ -109,7 +109,7 @@ after\n`,
 });
 
 test('rejects Sherpa CMake drift instead of applying an ambiguous patch', () => {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-sherpa-ort-drift-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-sherpa-ort-drift-'));
   const cmakeRoot = join(root, 'cmake');
   const cmakePath = join(cmakeRoot, 'onnxruntime.cmake');
   mkdirSync(cmakeRoot, { recursive: true });
@@ -130,7 +130,7 @@ test('rejects Sherpa CMake drift instead of applying an ambiguous patch', () => 
 });
 
 test('guards only the unsupported hclust pragma on MSVC and is idempotent', () => {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-hclust-pragma-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-hclust-pragma-'));
   const sourcePath = join(root, 'fastcluster_dm.cpp');
   const source = 'before\n#pragma STDC FENV_ACCESS on\n#include <fenv.h>\nafter\n';
   writeFileSync(sourcePath, source);
@@ -147,7 +147,7 @@ test('guards only the unsupported hclust pragma on MSVC and is idempotent', () =
 });
 
 test('rejects missing or ambiguous hclust pragmas without changing the source', () => {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-hclust-drift-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-hclust-drift-'));
   const sourcePath = join(root, 'fastcluster_dm.cpp');
   try {
     for (const source of [
@@ -168,7 +168,7 @@ test('rejects missing or ambiguous hclust pragmas without changing the source', 
 
 
 test('raw speaker extension rejects an unverified upstream before writing files', () => {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-sherpa-raw-drift-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-sherpa-raw-drift-'));
   try {
     const core = join(root, 'sherpa-onnx/csrc');
     mkdirSync(core, { recursive: true });
@@ -177,14 +177,14 @@ test('raw speaker extension rejects an unverified upstream before writing files'
     writeFileSync(header, unknown);
     assert.throws(() => patchSherpaRawEvidence(root), /does not match/);
     assert.equal(readFileSync(header, 'utf8'), unknown);
-    assert.equal(existsSync(join(core, 'myagents-raw-evidence.h')), false);
+    assert.equal(existsSync(join(core, 'nexttools-raw-evidence.h')), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
 test('VAD flush-boundary fix rejects unverified Sherpa source without changing it', () => {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-sherpa-vad-drift-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-sherpa-vad-drift-'));
   try {
     const core = join(root, 'sherpa-onnx/csrc');
     mkdirSync(core, { recursive: true });

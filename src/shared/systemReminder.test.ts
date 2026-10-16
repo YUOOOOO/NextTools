@@ -20,21 +20,21 @@ import {
 describe('systemReminder', () => {
   it('builds Task discussion context while keeping only the user request visible', () => {
     const raw = buildTaskDiscussionReminder({
-      candidatesDir: '/Users/me/.myagents/task-discussions/discussion-1/candidates',
+      candidatesDir: '/Users/me/.nexttools/task-discussions/discussion-1/candidates',
       workspaceId: 'workspace-1',
       workspacePath: '/Users/me/project<&',
       sourceRecordId: 'record-1',
       sourceRecordAudioPaths: [
         {
           track: 'microphone',
-          path: '/Users/me/.myagents/records/a<&/audio/microphone.opus',
+          path: '/Users/me/.nexttools/records/a<&/audio/microphone.opus',
         },
         {
           track: 'system',
-          path: '/Users/me/.myagents/records/a<&/audio/system.opus',
+          path: '/Users/me/.nexttools/records/a<&/audio/system.opus',
         },
       ],
-      sourceRecordDocumentPath: '/Users/me/.myagents/records/a<&/content.md',
+      sourceRecordDocumentPath: '/Users/me/.nexttools/records/a<&/content.md',
       visibleUserMessage: '每周整理一次发布记录',
     });
 
@@ -42,12 +42,12 @@ describe('systemReminder', () => {
     expect(parsed.kind).toBe(TASK_DISCUSSION_TAG);
     expect(parsed.body).toContain('workspacePath: /Users/me/project&lt;&amp;');
     expect(parsed.body).toContain(
-      '- microphone: /Users/me/.myagents/records/a&lt;&amp;/audio/microphone.opus',
+      '- microphone: /Users/me/.nexttools/records/a&lt;&amp;/audio/microphone.opus',
     );
     expect(parsed.body).toContain(
-      '- system: /Users/me/.myagents/records/a&lt;&amp;/audio/system.opus',
+      '- system: /Users/me/.nexttools/records/a&lt;&amp;/audio/system.opus',
     );
-    expect(parsed.body).toContain('sourceRecordDocumentPath: /Users/me/.myagents/records/a&lt;&amp;/content.md');
+    expect(parsed.body).toContain('sourceRecordDocumentPath: /Users/me/.nexttools/records/a&lt;&amp;/content.md');
     expect(parsed.body.indexOf('sourceRecordId:')).toBeLessThan(
       parsed.body.indexOf('sourceRecordAudioPaths:'),
     );
@@ -96,10 +96,10 @@ describe('systemReminder', () => {
     expect(parsed.body).toContain('taskMdPath: /tmp/a&amp;b/task.md');
     expect(parsed.body).toContain('author: Agent &lt;one&gt;');
     expect(parsed.body).toContain(
-      '`myagents task comment task-1 --body-file <reply-file> --reply-to comment-1 --json`',
+      '`nexttools task comment task-1 --body-file <reply-file> --reply-to comment-1 --json`',
     );
     expect(parsed.visibleText).toBe('只处理第一个问题');
-    expect(parsed.body).not.toContain('<myagents-session-event');
+    expect(parsed.body).not.toContain('<nexttools-session-event');
   });
 
   it('builds floating-ball context as a plain system-reminder envelope', () => {
@@ -114,7 +114,7 @@ describe('systemReminder', () => {
     expect(reminder).toContain(`<${FLOATING_BALL_CONTEXT_TAG}>`);
     expect(reminder).toContain('<application>Safari</application>');
     expect(reminder).toContain('<window-title>Docs</window-title>');
-    expect(reminder).toContain('This message comes from the MyAgents floating window.');
+    expect(reminder).toContain('This message comes from the NextTools floating window.');
     expect(reminder).toContain('<selected-text>\nraw &lt;text&gt; stays raw\n</selected-text>');
     expect(reminder).toContain('<screenshot attached="true" />');
   });
@@ -151,7 +151,7 @@ describe('systemReminder', () => {
     const raw = [
       '<system-reminder>',
       '<CRON_TASK>',
-      'You are running inside a MyAgents scheduled task execution.',
+      'You are running inside a NextTools scheduled task execution.',
       'cronTaskId: cron_123',
       '</CRON_TASK>',
       '</system-reminder>',
@@ -169,19 +169,19 @@ describe('systemReminder', () => {
     const raw = [
       '<system-reminder>',
       `<${SPACE_ISSUE_CONTEXT_TAG}>`,
-      '<myagents-space-event version="1" type="issue-delivery">',
+      '<nexttools-space-event version="1" type="issue-delivery">',
       '<issue-instruction>hidden instructions</issue-instruction>',
-      '</myagents-space-event>',
+      '</nexttools-space-event>',
       `</${SPACE_ISSUE_CONTEXT_TAG}>`,
       '</system-reminder>',
-      'MyAgents Space 已投递一个 Issue 通知，Registered Agent 开始处理。',
+      'NextTools Space 已投递一个 Issue 通知，Registered Agent 开始处理。',
     ].join('\n');
 
     const parsed = parseLeadingSystemReminder(raw);
     expect(parsed.kind).toBe(SPACE_ISSUE_CONTEXT_TAG);
     expect(parsed.body).toContain('<issue-instruction>hidden instructions</issue-instruction>');
-    expect(parsed.visibleText).toBe('MyAgents Space 已投递一个 Issue 通知，Registered Agent 开始处理。');
-    expect(stripLeadingSystemReminder(raw)).toBe('MyAgents Space 已投递一个 Issue 通知，Registered Agent 开始处理。');
+    expect(parsed.visibleText).toBe('NextTools Space 已投递一个 Issue 通知，Registered Agent 开始处理。');
+    expect(stripLeadingSystemReminder(raw)).toBe('NextTools Space 已投递一个 Issue 通知，Registered Agent 开始处理。');
   });
 
   it('treats a pure floating-ball context reminder as non-visible text', () => {
@@ -193,9 +193,9 @@ describe('systemReminder', () => {
     const raw = [
       '<system-reminder>',
       `<${SPACE_ISSUE_CONTEXT_TAG}>`,
-      '<myagents-space-event version="1" type="issue-delivery">',
+      '<nexttools-space-event version="1" type="issue-delivery">',
       '<issue-instruction>hidden instructions</issue-instruction>',
-      '</myagents-space-event>',
+      '</nexttools-space-event>',
       `</${SPACE_ISSUE_CONTEXT_TAG}>`,
       '</system-reminder>',
     ].join('\n');
@@ -279,7 +279,7 @@ describe('systemReminder', () => {
     const parsed = parseLeadingSystemReminder(raw);
 
     expect(parsed.body).toContain('disabled autonomous Goal termination');
-    expect(parsed.body).not.toContain('myagents goal update --status');
+    expect(parsed.body).not.toContain('nexttools goal update --status');
     expect(parsed.visibleText).toBe('Continue');
   });
 
@@ -287,13 +287,13 @@ describe('systemReminder', () => {
     const request = parseLeadingSystemReminder(
       [
         '<system-reminder>',
-        '<myagents-session-event',
+        '<nexttools-session-event',
         '  version="1"',
         '  type="send.request"',
         '  source_label="Planning &amp; Review">',
         '<event-summary>hidden operational context</event-summary>',
         '<payload>Please review &lt;/system-reminder&gt; safely.</payload>',
-        '</myagents-session-event>',
+        '</nexttools-session-event>',
         '</system-reminder>',
       ].join('\n'),
     );
@@ -307,9 +307,9 @@ describe('systemReminder', () => {
     const automaticResult = parseLeadingSystemReminder(
       [
         '<system-reminder>',
-        '<myagents-session-event type="send.result">',
+        '<nexttools-session-event type="send.result">',
         '<payload>must stay hidden</payload>',
-        '</myagents-session-event>',
+        '</nexttools-session-event>',
         '</system-reminder>',
       ].join('\n'),
     );

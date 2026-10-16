@@ -19,7 +19,7 @@ const original = source => previous(source)
   .replace('scrollBy:cancelOnScrollBy,', '')
   .replace('Y(cancelOnScrollBy,S);', '');
 function fixture(run) {
-  const directory = mkdtempSync(resolve(tmpdir(), 'myagents-virtuoso-patch-'));
+  const directory = mkdtempSync(resolve(tmpdir(), 'nexttools-virtuoso-patch-'));
   try {
     mkdirSync(resolve(directory, 'dist'));
     writeFileSync(resolve(directory, 'package.json'), JSON.stringify({ name: 'react-virtuoso', version: '4.18.3' }));

@@ -27,7 +27,7 @@ const context = {
 };
 
 describe('Managed Codex external-path attachments', () => {
-  const managedHome = path.join(TEST_HOME, '.myagents', 'codex');
+  const managedHome = path.join(TEST_HOME, '.nexttools', 'codex');
   const generatedImage = path.join(managedHome, 'generated_images', 'thread', 'call.png');
   const authFile = path.join(managedHome, 'auth.json');
 

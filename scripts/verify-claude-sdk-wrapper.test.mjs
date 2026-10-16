@@ -14,7 +14,7 @@ function put(path, data) {
 }
 
 test('SDK wrapper verification rejects a stale installed package after a version change', t => {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-sdk-wrapper-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-sdk-wrapper-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   put(join(root, 'package.json'), { dependencies: { [name]: '0.3.284' }, optionalDependencies: Object.fromEntries(platforms.map(platform => [`${name}-${platform}`, '0.3.284'])) });
   put(join(root, 'package-lock.json'), { packages: Object.fromEntries([name, ...platforms.map(platform => `${name}-${platform}`)].map(packageName => [`node_modules/${packageName}`, { version: '0.3.284' }])) });

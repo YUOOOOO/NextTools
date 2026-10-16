@@ -42,11 +42,11 @@ export function parseNativeInferenceArgs(args, env = process.env) {
     checkPrerequisites,
     offlineRequested,
     documentOffline:
-      offlineRequested || env.MYAGENTS_DOCUMENT_RESOURCES_OFFLINE === '1',
+      offlineRequested || env.NEXTTOOLS_DOCUMENT_RESOURCES_OFFLINE === '1',
     speechOffline:
       offlineRequested ||
-      env.MYAGENTS_NATIVE_RESOURCES_OFFLINE === '1' ||
-      env.MYAGENTS_DOCUMENT_RESOURCES_OFFLINE === '1',
+      env.NEXTTOOLS_NATIVE_RESOURCES_OFFLINE === '1' ||
+      env.NEXTTOOLS_DOCUMENT_RESOURCES_OFFLINE === '1',
   });
 }
 

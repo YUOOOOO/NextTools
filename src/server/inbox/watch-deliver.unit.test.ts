@@ -35,11 +35,11 @@ describe('deliverSessionWatchEvents', () => {
     clearPendingSessionWatchesForTest();
     fetchMock.cancellableFetch.mockReset();
     fetchMock.networkReturn.mockReset();
-    delete process.env.MYAGENTS_MANAGEMENT_PORT;
+    delete process.env.NEXTTOOLS_MANAGEMENT_PORT;
   });
 
   it('acks a watch only after confirmed delivery', async () => {
-    process.env.MYAGENTS_MANAGEMENT_PORT = '8123';
+    process.env.NEXTTOOLS_MANAGEMENT_PORT = '8123';
     registerWatch();
     fetchMock.cancellableFetch.mockResolvedValue(new Response(
       JSON.stringify({ ok: true, outcome: { status: 'delivered', message_id: 'msg-1' } }),
@@ -52,7 +52,7 @@ describe('deliverSessionWatchEvents', () => {
   });
 
   it('keeps a watch pending when delivery fails', async () => {
-    process.env.MYAGENTS_MANAGEMENT_PORT = '8123';
+    process.env.NEXTTOOLS_MANAGEMENT_PORT = '8123';
     registerWatch();
     fetchMock.cancellableFetch.mockResolvedValue(new Response(
       JSON.stringify({ ok: false, outcome: { status: 'delivery_failed', reason: 'starting' } }),
@@ -64,7 +64,7 @@ describe('deliverSessionWatchEvents', () => {
     expect(pendingSessionWatchCount()).toBe(1);
   });
   it.each([true, false])('shares local automatic reply admission with its watch, delivered=%s', async delivered => {
-    process.env.MYAGENTS_MANAGEMENT_PORT = '8123';
+    process.env.NEXTTOOLS_MANAGEMENT_PORT = '8123';
     registerPendingSessionWatch({ watchId: 'same-turn', watcherSessionId: 'caller', targetSessionId: 'target-session',
       targetLabel: 'Target', targetStateAtRegistration: 'running', registeredAt: 'now', turnId: 'turn' });
     registerPendingSessionWatch({ watchId: 'other-caller', watcherSessionId: 'other', targetSessionId: 'target-session',
@@ -86,7 +86,7 @@ describe('deliverSessionWatchEvents', () => {
   });
 
   it('returns each same-turn request independently and never replies to notifications', async () => {
-    process.env.MYAGENTS_MANAGEMENT_PORT = '8123';
+    process.env.NEXTTOOLS_MANAGEMENT_PORT = '8123';
     fetchMock.cancellableFetch.mockImplementation(async () => new Response(JSON.stringify({ ok: true, outcome: { status: 'delivered' } })));
     const metas = ['one', 'two', 'notification'].map(id => ({ fromSessionId: 'caller', fromLabel: 'caller',
       originalMessageId: id, originalSnippet: id, replyBack: id !== 'notification' }));
@@ -97,7 +97,7 @@ describe('deliverSessionWatchEvents', () => {
   });
 
   it('settles a remote watch once without treating the remote source as a local Session', async () => {
-    process.env.MYAGENTS_MANAGEMENT_PORT = '8123';
+    process.env.NEXTTOOLS_MANAGEMENT_PORT = '8123';
     const reference = { opId: 'op', returnRouteId: 'route' };
     registerPendingSessionWatch({ watchId: 'remote-watch', watcherSessionId: 'remote-source',
       targetSessionId: 'target-session', targetLabel: 'Target', targetStateAtRegistration: 'running',
@@ -114,7 +114,7 @@ describe('deliverSessionWatchEvents', () => {
     expect(fetchMock.networkReturn).toHaveBeenCalledTimes(1);
   });
   it('never settles a watch from an unknown or different turn and does not serialize remote returns', async () => {
-    process.env.MYAGENTS_MANAGEMENT_PORT = '8123';
+    process.env.NEXTTOOLS_MANAGEMENT_PORT = '8123';
     for (const id of ['one', 'two']) registerPendingSessionWatch({ watchId: id, watcherSessionId: id,
       targetSessionId: 'target-session', targetLabel: 'Target', targetStateAtRegistration: 'running',
       registeredAt: 'now', turnId: 'turn', networkReturn: { opId: id, returnRouteId: id } });

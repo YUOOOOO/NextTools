@@ -1,6 +1,6 @@
 # LLM Provider 架构
 
-MyAgents 把“用户选择哪个 Provider / model”与“执行时如何取得 credential 和构造 transport”分开。Provider 定义、模型表和当前 endpoint 以 `src/shared/config-types.ts` 及配置 resolver 为准；本文不复制易变的预设列表。
+NextTools 把“用户选择哪个 Provider / model”与“执行时如何取得 credential 和构造 transport”分开。Provider 定义、模型表和当前 endpoint 以 `src/shared/config-types.ts` 及配置 resolver 为准；本文不复制易变的预设列表。
 
 ## 核心表示
 
@@ -65,7 +65,7 @@ OAuth `app_url` 与请求头 `X-App-URL` 同时固定为 `https://myagents.io`�
 
 `opencode-go` 是 API Provider；官网 Endpoints 表的模型和唯一协议随 App 预设于 `src/shared/opencode-go.ts`。公开 `/zen/go/v1/models` 目录用于发现 ID，当前响应不提供协议；预设之外且目录没有唯一可信协议的模型必须在原有 `ModelSettingsEditor` 选择 Protocol 才能保存。用户手选执行协议存于 `ModelEntity.executionProtocol`，与目录声明的 `supportedProtocols` 分离；前者优先于后来新增的官方映射，冲突在编辑器提示。普通固定 Provider 不显示 Protocol 设置，TokenDance 也不要求用户手选。
 
-执行路径仍是现有 SDK Anthropic 直连或 OpenAI Bridge 的 Responses / Chat Completions 转换。SDK child 环境使用 `ANTHROPIC_CUSTOM_HEADERS` 与 `CLAUDE_AGENT_SDK_CLIENT_APP` 发送 MyAgents 身份；Bridge 和独立诊断从各自出站入口设置。`x-opencode-session` 是 Product Session ID 的不透明稳定摘要，标题和视觉等关联调用沿用该 Session ID，验证调用使用独立临时身份。它不是 Provider 静态配置，也不写入会话元数据、日志或分析。三协议不互相试错；同一 SDK Query 中显式跨协议子代理仍不支持。
+执行路径仍是现有 SDK Anthropic 直连或 OpenAI Bridge 的 Responses / Chat Completions 转换。SDK child 环境使用 `ANTHROPIC_CUSTOM_HEADERS` 与 `CLAUDE_AGENT_SDK_CLIENT_APP` 发送 NextTools 身份；Bridge 和独立诊断从各自出站入口设置。`x-opencode-session` 是 Product Session ID 的不透明稳定摘要，标题和视觉等关联调用沿用该 Session ID，验证调用使用独立临时身份。它不是 Provider 静态配置，也不写入会话元数据、日志或分析。三协议不互相试错；同一 SDK Query 中显式跨协议子代理仍不支持。
 
 ### SDK child 环境
 
@@ -88,12 +88,12 @@ Provider model aliases 同时影响主 Query 和 SDK sub-agent 选择。Context 
 
 `anthropic-sub` 使用 Claude Code native OAuth / keychain：
 
-- 不通过 MyAgents `getOAuthToken` 注入；
+- 不通过 NextTools `getOAuthToken` 注入；
 - 不重定向 `CLAUDE_CONFIG_DIR`；
 - 清空 inherited third-party routing/auth variables后让 native client读取其 credential；
 - 跳过 `CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST`，避免把 native subscription误标为 host-managed Provider。
 
-MyAgents 仍拥有 Session、permission、proxy scope 和 tool surface，但不拥有 OAuth refresh。
+NextTools 仍拥有 Session、permission、proxy scope 和 tool surface，但不拥有 OAuth refresh。
 
 ## Grok subscription
 
@@ -116,7 +116,7 @@ One-shot verification 必须在完整 SDK / translator terminal success 后才�
 
 `antigravity-sub` 可由 builtin SDK 或 DSH 消费同一 CLIProxy binding。Rust `CliProxyManager` 管理原版组件、active/candidate 目录、浏览器回调运输和 Query lease；OAuth/refresh 与协议转换归 CLIProxy。统一 `prepareProviderBinding()` 覆盖主 Query、pre-warm、标题、vision 及后台 Session。登录由原版账号摘要确认后即完整可用，无模型测试；模型从原版接口读取，不加白名单。binding 携带原生模型元数据，SDK env builder 拒绝未准备或持久化拷贝的 endpoint reference。
 
-客户端普通升版不改组件资源；CLIProxy 更新按最低 MyAgents 版本策略分发。账号清理、更新 draining、稳定 history、资源发布操作手册与原版接口合同见 [托管 CLIProxy](./managed_cliproxy.md)。Grok 继续使用自己的 Rust OAuth + Responses Bridge，不做迁移。
+客户端普通升版不改组件资源；CLIProxy 更新按最低 NextTools 版本策略分发。账号清理、更新 draining、稳定 history、资源发布操作手册与原版接口合同见 [托管 CLIProxy](./managed_cliproxy.md)。Grok 继续使用自己的 Rust OAuth + Responses Bridge，不做迁移。
 
 ## OpenAI Bridge
 

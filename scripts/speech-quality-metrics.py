@@ -10,7 +10,7 @@
 """Content-redacted speech quality metrics for the release benchmark.
 
 This script intentionally delegates edit-distance metrics to JiWER and DER to
-MeetEval. MyAgents only owns corpus normalization, grouping, and the release
+MeetEval. NextTools only owns corpus normalization, grouping, and the release
 threshold contract.
 """
 

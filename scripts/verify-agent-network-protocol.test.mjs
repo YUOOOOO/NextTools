@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { verifyAgentNetworkProtocol } from './verify-agent-network-protocol.mjs';
 
 async function fixture(run) {
-  const root = await mkdtemp(join(tmpdir(), 'myagents-protocol-'));
+  const root = await mkdtemp(join(tmpdir(), 'nexttools-protocol-'));
   const name = '@myagents/agent-network-protocol';
   const bytes = Buffer.from('isolated artifact integrity fixture');
   const sha256 = createHash('sha256').update(bytes).digest('hex');

@@ -421,7 +421,7 @@ export default function App() {
   // initial picker selection + persist on pick. The LAUNCH_BUG_REPORT handler
   // intentionally does NOT read this: when no explicit hint is supplied, the
   // helper Tab autoSend resolves provider/model via currentAgent (= helper
-  // Agent) — same path as opening ~/.myagents from the Launcher.
+  // Agent) — same path as opening ~/.nexttools from the Launcher.
   const helperAgentDefaults = useHelperAgentModelDefaults();
 
   // Bug report overlay state (triggered from titlebar feedback button)
@@ -845,7 +845,7 @@ export default function App() {
     // Rust (Issue #232). flushOpenTabsNow() writes localStorage (the fast path),
     // but WebKit/WebView2 persist localStorage to disk ASYNCHRONOUSLY, so the
     // abrupt NSIS exit(0) (Windows) / relaunch() (macOS) can drop that last
-    // write. persistOpenTabsDurable() additionally fsyncs a ~/.myagents/
+    // write. persistOpenTabsDurable() additionally fsyncs a ~/.nexttools/
     // open-tabs.json backstop and is AWAITED here, so the tabs the user had
     // open at the click are committed to disk before the process dies; boot
     // consumes the backstop and adopts it only if localStorage came up empty.
@@ -4305,7 +4305,7 @@ export default function App() {
           return;
         }
 
-        // Ensure ~/.myagents registered as internal project
+        // Ensure ~/.nexttools registered as internal project
         // (CLAUDE.md + skills are synced at startup via cmd_sync_admin_agent)
         const project = await ensureSelfAwarenessWorkspace(
           configProjectsRef.current,
@@ -4542,7 +4542,6 @@ export default function App() {
     [tabWorkspaceController],
   );
 
-  const handleOpenBugReport = useCallback(() => setShowBugReport(true), []);
 
   const handleOpenSidebarSession = useCallback(
     (session: SessionMetadata, project: Project) =>
@@ -4933,11 +4932,9 @@ export default function App() {
             onOpenTaskCenter={handleOpenTaskCenter}
             onCreateTask={handleSidebarCreateTask}
             onOpenSpace={handleOpenSpace}
-            onOpenAgentNetwork={() => tabWorkspaceController.open('agentnetwork', { title: t('tabs.agentNetwork') })}
             onOpenAppRoute={handleOpenAppRoute}
             onOpenCapabilities={handleOpenCapabilities}
             onOpenSettings={handleOpenSettings}
-            onOpenBugReport={handleOpenBugReport}
             onOpenWorkspace={handleOpenWorkspaceFromSidebar}
             onOpenSession={handleOpenSidebarSession}
             onRenameSession={renamePersistedSession}

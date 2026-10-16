@@ -4,7 +4,7 @@
 export * from "./text-runtime.auto.js";
 // === END AUTO-AUGMENT ===
 
-// OpenClaw plugin-sdk/text-runtime shim for MyAgents Plugin Bridge
+// OpenClaw plugin-sdk/text-runtime shim for NextTools Plugin Bridge
 // Provides stripMarkdown() and text utilities.
 
 /**

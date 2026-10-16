@@ -28,8 +28,8 @@ import { absolutelyThemeManifest } from './themes/absolutely';
 import { codexThemeManifest } from './themes/codex';
 import { defaultBlackThemeManifest } from './themes/default-black';
 import { linearThemeManifest } from './themes/linear';
-import { myAgentsLightThemeManifest } from './themes/myagents-light';
-import { myAgentsDefaultTheme } from './themes/myagents-default';
+import { nextToolsLightThemeManifest } from './themes/nexttools-light';
+import { nextToolsDefaultTheme } from './themes/nexttools-default';
 import { createPresetTheme, type PresetThemeManifest } from './themes/preset-theme';
 import { proofThemeManifest } from './themes/proof';
 import { raycastThemeManifest } from './themes/raycast';
@@ -729,18 +729,18 @@ const defaultBlackFactory: OptionalThemeFactory = {
   id: defaultBlackThemeManifest.id,
   create: () => ({
     ...defaultBlackThemeManifest,
-    hero: myAgentsDefaultTheme.hero,
-    schemes: myAgentsDefaultTheme.schemes,
+    hero: nextToolsDefaultTheme.hero,
+    schemes: nextToolsDefaultTheme.schemes,
   }),
 };
 
 /** Production catalog order is also the product order shown by Settings. */
 export const themeRegistry = new ThemeRegistry(
-  [myAgentsDefaultTheme],
+  [nextToolsDefaultTheme],
   [
     defaultBlackFactory,
     ...[
-      myAgentsLightThemeManifest,
+      nextToolsLightThemeManifest,
       sageThemeManifest,
       absolutelyThemeManifest,
       linearThemeManifest,
@@ -750,8 +750,8 @@ export const themeRegistry = new ThemeRegistry(
     ].map(presetFactory),
   ],
   [
-    myAgentsLightThemeManifest.id,
-    myAgentsDefaultTheme.id,
+    nextToolsLightThemeManifest.id,
+    nextToolsDefaultTheme.id,
     defaultBlackThemeManifest.id,
     sageThemeManifest.id,
     absolutelyThemeManifest.id,

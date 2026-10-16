@@ -49,7 +49,7 @@ describe('spaceCloud API errors', () => {
     const { normalizeSpaceError } = await loadSpaceCloud();
     const normalized = normalizeSpaceError(
       new Error(
-        'Space API request failed: Bearer secret.token /Users/ethan/.myagents/space/session.json https://space.myagents.io/api/issues',
+        'Space API request failed: Bearer secret.token /Users/ethan/.nexttools/space/session.json https://space.myagents.io/api/issues',
       ),
       { method: 'POST', path: '/api/issues/iss_123/comments' },
     );
@@ -74,14 +74,14 @@ describe('spaceCloud API errors', () => {
       error: 'Not authenticated',
       code: 'NOT_AUTHENTICATED',
       requestId: 'req_123',
-      recoveryHint: { message: 'Login with Google from MyAgents Cloud Space.' },
+      recoveryHint: { message: 'Login with Google from NextTools Cloud Space.' },
     };
     mocks.invoke.mockRejectedValueOnce(envelope);
 
-    await expect(spaceCommentIssue('iss_123', 'hello')).rejects.toThrow('评论发送失败：请重新登录 MyAgents 社区');
+    await expect(spaceCommentIssue('iss_123', 'hello')).rejects.toThrow('评论发送失败：请重新登录 NextTools 社区');
 
     const normalized = normalizeSpaceError(envelope, { method: 'POST', path: '/api/issues/iss_123/comments' });
-    expect(normalized.userMessage).toBe('评论发送失败：请重新登录 MyAgents 社区');
+    expect(normalized.userMessage).toBe('评论发送失败：请重新登录 NextTools 社区');
     expect(normalized.debugMessage).toContain('NOT_AUTHENTICATED');
     expect(normalized.debugMessage).toContain('req_123');
   });
@@ -94,7 +94,7 @@ describe('spaceCloud API errors', () => {
     } = await loadSpaceCloud();
     mocks.invoke.mockRejectedValueOnce({
       code: 'SPACE_REAUTH_REQUIRED',
-      message: 'MyAgents Space login is required.',
+      message: 'NextTools Space login is required.',
       cloudCode: 'SESSION_EXPIRED',
       httpStatus: 401,
       retryable: false,
@@ -114,7 +114,7 @@ describe('spaceCloud API errors', () => {
     expect(spaceErrorSessionBindingId(thrown)).toBe('binding-old');
     expect(thrown).toBeInstanceOf(Error);
     expect((thrown as Error).message).toBe(
-      'Space 请求失败：请重新登录 MyAgents 社区',
+      'Space 请求失败：请重新登录 NextTools 社区',
     );
     expect(thrown).toMatchObject({
       spaceCode: 'SPACE_REAUTH_REQUIRED',

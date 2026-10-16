@@ -1,5 +1,5 @@
 #!/bin/bash
-# MyAgents 版本回滚脚本
+# NextTools 版本回滚脚本
 # 从 R2 上已有的旧版本数据重建更新清单，实现版本回滚
 #
 # 原理：R2 上 releases/v{VERSION}/ 目录保留了所有历史版本的完整产物
@@ -19,7 +19,7 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="${PROJECT_DIR}/.env"
 
 # 配置
-R2_BUCKET="myagents-releases"
+R2_BUCKET="nexttools-releases"
 DOWNLOAD_BASE_URL="https://download.myagents.io"
 
 # 人类可读文件大小（兼容 macOS，无需 numfmt）
@@ -46,7 +46,7 @@ NC='\033[0m'
 
 echo ""
 echo -e "${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║${NC}  ${YELLOW}⏪ MyAgents 版本回滚${NC}                                  ${CYAN}║${NC}"
+echo -e "${CYAN}║${NC}  ${YELLOW}⏪ NextTools 版本回滚${NC}                                  ${CYAN}║${NC}"
 echo -e "${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -295,12 +295,12 @@ if [ $ROLLBACK_MAC -eq 1 ] && [ "$TARGET_VERSION" != "$CURRENT_MAC_VERSION" ]; t
     # darwin-aarch64.json
     ARM_SIG_FILE=""
     ARM_TAR_NAME=""
-    if [ -f "${SIG_DIR}/MyAgents_${TARGET_VERSION}_aarch64.app.tar.gz.sig" ]; then
-        ARM_SIG_FILE="${SIG_DIR}/MyAgents_${TARGET_VERSION}_aarch64.app.tar.gz.sig"
-        ARM_TAR_NAME="MyAgents_${TARGET_VERSION}_aarch64.app.tar.gz"
-    elif [ -f "${SIG_DIR}/MyAgents_aarch64.app.tar.gz.sig" ]; then
-        ARM_SIG_FILE="${SIG_DIR}/MyAgents_aarch64.app.tar.gz.sig"
-        ARM_TAR_NAME="MyAgents_aarch64.app.tar.gz"
+    if [ -f "${SIG_DIR}/NextTools_${TARGET_VERSION}_aarch64.app.tar.gz.sig" ]; then
+        ARM_SIG_FILE="${SIG_DIR}/NextTools_${TARGET_VERSION}_aarch64.app.tar.gz.sig"
+        ARM_TAR_NAME="NextTools_${TARGET_VERSION}_aarch64.app.tar.gz"
+    elif [ -f "${SIG_DIR}/NextTools_aarch64.app.tar.gz.sig" ]; then
+        ARM_SIG_FILE="${SIG_DIR}/NextTools_aarch64.app.tar.gz.sig"
+        ARM_TAR_NAME="NextTools_aarch64.app.tar.gz"
     fi
 
     if [ -n "$ARM_SIG_FILE" ]; then
@@ -308,7 +308,7 @@ if [ $ROLLBACK_MAC -eq 1 ] && [ "$TARGET_VERSION" != "$CURRENT_MAC_VERSION" ]; t
         cat > "${MANIFEST_DIR}/darwin-aarch64.json" << EOFMANIFEST
 {
   "version": "${TARGET_VERSION}",
-  "notes": "MyAgents v${TARGET_VERSION}",
+  "notes": "NextTools v${TARGET_VERSION}",
   "pub_date": "${PUB_DATE}",
   "signature": "${ARM_SIGNATURE}",
   "url": "${DOWNLOAD_BASE_URL}/releases/v${TARGET_VERSION}/${ARM_TAR_NAME}"
@@ -322,15 +322,15 @@ EOFMANIFEST
     # darwin-x86_64.json
     INTEL_SIG_FILE=""
     INTEL_TAR_NAME=""
-    if [ -f "${SIG_DIR}/MyAgents_${TARGET_VERSION}_x86_64.app.tar.gz.sig" ]; then
-        INTEL_SIG_FILE="${SIG_DIR}/MyAgents_${TARGET_VERSION}_x86_64.app.tar.gz.sig"
-        INTEL_TAR_NAME="MyAgents_${TARGET_VERSION}_x86_64.app.tar.gz"
-    elif [ -f "${SIG_DIR}/MyAgents_x86_64.app.tar.gz.sig" ]; then
-        INTEL_SIG_FILE="${SIG_DIR}/MyAgents_x86_64.app.tar.gz.sig"
-        INTEL_TAR_NAME="MyAgents_x86_64.app.tar.gz"
-    elif [ -f "${SIG_DIR}/MyAgents_${TARGET_VERSION}_x64.app.tar.gz.sig" ]; then
-        INTEL_SIG_FILE="${SIG_DIR}/MyAgents_${TARGET_VERSION}_x64.app.tar.gz.sig"
-        INTEL_TAR_NAME="MyAgents_${TARGET_VERSION}_x64.app.tar.gz"
+    if [ -f "${SIG_DIR}/NextTools_${TARGET_VERSION}_x86_64.app.tar.gz.sig" ]; then
+        INTEL_SIG_FILE="${SIG_DIR}/NextTools_${TARGET_VERSION}_x86_64.app.tar.gz.sig"
+        INTEL_TAR_NAME="NextTools_${TARGET_VERSION}_x86_64.app.tar.gz"
+    elif [ -f "${SIG_DIR}/NextTools_x86_64.app.tar.gz.sig" ]; then
+        INTEL_SIG_FILE="${SIG_DIR}/NextTools_x86_64.app.tar.gz.sig"
+        INTEL_TAR_NAME="NextTools_x86_64.app.tar.gz"
+    elif [ -f "${SIG_DIR}/NextTools_${TARGET_VERSION}_x64.app.tar.gz.sig" ]; then
+        INTEL_SIG_FILE="${SIG_DIR}/NextTools_${TARGET_VERSION}_x64.app.tar.gz.sig"
+        INTEL_TAR_NAME="NextTools_${TARGET_VERSION}_x64.app.tar.gz"
     fi
 
     if [ -n "$INTEL_SIG_FILE" ]; then
@@ -338,7 +338,7 @@ EOFMANIFEST
         cat > "${MANIFEST_DIR}/darwin-x86_64.json" << EOFMANIFEST
 {
   "version": "${TARGET_VERSION}",
-  "notes": "MyAgents v${TARGET_VERSION}",
+  "notes": "NextTools v${TARGET_VERSION}",
   "pub_date": "${PUB_DATE}",
   "signature": "${INTEL_SIGNATURE}",
   "url": "${DOWNLOAD_BASE_URL}/releases/v${TARGET_VERSION}/${INTEL_TAR_NAME}"
@@ -354,7 +354,7 @@ EOFMANIFEST
     INTEL_DMG_NAME=$(echo "$R2_FILES" | awk '{print $NF}' | grep -i "x64.*\.dmg$" | head -1 || echo "")
 
     if [ -n "$ARM_DMG_NAME" ] || [ -n "$INTEL_DMG_NAME" ]; then
-        LATEST_JSON="{\n  \"version\": \"${TARGET_VERSION}\",\n  \"pub_date\": \"${PUB_DATE}\",\n  \"release_notes\": \"MyAgents v${TARGET_VERSION}\",\n  \"downloads\": {"
+        LATEST_JSON="{\n  \"version\": \"${TARGET_VERSION}\",\n  \"pub_date\": \"${PUB_DATE}\",\n  \"release_notes\": \"NextTools v${TARGET_VERSION}\",\n  \"downloads\": {"
 
         DOWNLOADS_ADDED=0
         if [ -n "$ARM_DMG_NAME" ]; then
@@ -384,9 +384,9 @@ if [ $ROLLBACK_WIN -eq 1 ] && [ "$TARGET_VERSION" != "$CURRENT_WIN_VERSION" ]; t
     # windows-x86_64.json
     WIN_SIG_FILE=""
     WIN_ZIP_NAME=""
-    if [ -f "${SIG_DIR}/MyAgents_${TARGET_VERSION}_x86_64.nsis.zip.sig" ]; then
-        WIN_SIG_FILE="${SIG_DIR}/MyAgents_${TARGET_VERSION}_x86_64.nsis.zip.sig"
-        WIN_ZIP_NAME="MyAgents_${TARGET_VERSION}_x86_64.nsis.zip"
+    if [ -f "${SIG_DIR}/NextTools_${TARGET_VERSION}_x86_64.nsis.zip.sig" ]; then
+        WIN_SIG_FILE="${SIG_DIR}/NextTools_${TARGET_VERSION}_x86_64.nsis.zip.sig"
+        WIN_ZIP_NAME="NextTools_${TARGET_VERSION}_x86_64.nsis.zip"
     else
         # fallback: 查找任意 nsis.zip.sig
         WIN_SIG_FILE=$(find "$SIG_DIR" -name "*.nsis.zip.sig" 2>/dev/null | head -1)
@@ -400,7 +400,7 @@ if [ $ROLLBACK_WIN -eq 1 ] && [ "$TARGET_VERSION" != "$CURRENT_WIN_VERSION" ]; t
         cat > "${MANIFEST_DIR}/windows-x86_64.json" << EOFMANIFEST
 {
   "version": "${TARGET_VERSION}",
-  "notes": "MyAgents v${TARGET_VERSION}",
+  "notes": "NextTools v${TARGET_VERSION}",
   "pub_date": "${PUB_DATE}",
   "signature": "${WIN_SIGNATURE}",
   "url": "${DOWNLOAD_BASE_URL}/releases/v${TARGET_VERSION}/${WIN_ZIP_NAME}"
@@ -419,7 +419,7 @@ EOFMANIFEST
 {
   "version": "${TARGET_VERSION}",
   "pub_date": "${PUB_DATE}",
-  "release_notes": "MyAgents v${TARGET_VERSION}",
+  "release_notes": "NextTools v${TARGET_VERSION}",
   "downloads": {
     "win_x64": {
       "name": "Windows x64",

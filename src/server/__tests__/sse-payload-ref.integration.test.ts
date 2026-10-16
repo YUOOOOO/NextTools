@@ -8,7 +8,7 @@ import { SSE_PAYLOAD_INLINE_MAX_BYTES, isSsePayloadRef } from '../../shared/sseP
 let scratch: string;
 beforeEach(async () => {
   scratch = await mkdtemp(join(tmpdir(), 'sse-ref-'));
-  vi.stubEnv('MYAGENTS_REFS_DIR', join(scratch, 'refs'));
+  vi.stubEnv('NEXTTOOLS_REFS_DIR', join(scratch, 'refs'));
 });
 afterEach(async () => { vi.unstubAllEnvs(); await rm(scratch, { recursive: true, force: true }); });
 
@@ -35,7 +35,7 @@ describe('SSE complete transcript payload transport', () => {
   it('fails the stream on spill IO failure without admitting later deltas', async () => {
     const blocked = join(scratch, 'file');
     await writeFile(blocked, 'not a directory');
-    vi.stubEnv('MYAGENTS_REFS_DIR', blocked);
+    vi.stubEnv('NEXTTOOLS_REFS_DIR', blocked);
     const closed = vi.fn();
     const { client, response } = createSseClient(closed);
     const reading = response.text();

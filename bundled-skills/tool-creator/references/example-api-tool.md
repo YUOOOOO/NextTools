@@ -10,7 +10,7 @@
 {
   "name": "video-brief",
   "version": "1.0.0",
-  "description": "用多模态大模型 API 理解视频内容并产出摘要。用户给一个视频文件要\"总结/理解/提取要点/这视频讲了什么\"时使用；也适用于批量为视频生成文字简介。仅支持本地视频文件路径输入；纯图片理解不要用这个（图片场景另有方案）。快速参考：video-brief input.mp4 --question \"总结要点\" --json。需要先配置 VIDEO_API_KEY（myagents tool env video-brief set VIDEO_API_KEY=...）。处理时长与视频长度相关，分钟级视频约需 1-3 分钟。首次使用前先运行 `video-brief readme`；机器可读输出加 --json。",
+  "description": "用多模态大模型 API 理解视频内容并产出摘要。用户给一个视频文件要\"总结/理解/提取要点/这视频讲了什么\"时使用；也适用于批量为视频生成文字简介。仅支持本地视频文件路径输入；纯图片理解不要用这个（图片场景另有方案）。快速参考：video-brief input.mp4 --question \"总结要点\" --json。需要先配置 VIDEO_API_KEY（nexttools tool env video-brief set VIDEO_API_KEY=...）。处理时长与视频长度相关，分钟级视频约需 1-3 分钟。首次使用前先运行 `video-brief readme`；机器可读输出加 --json。",
   "entry": "run.mjs",
   "runtime": "node",
   "envKeys": ["VIDEO_API_KEY"],
@@ -51,7 +51,7 @@ const HELP = `video-brief — 用多模态大模型理解视频并产出摘要
   --json         以 JSON 输出 {summary, durationSec, model}
 
 环境变量:
-  VIDEO_API_KEY  必需。设置: myagents tool env video-brief set VIDEO_API_KEY=<key>
+  VIDEO_API_KEY  必需。设置: nexttools tool env video-brief set VIDEO_API_KEY=<key>
 
 示例:
   video-brief demo.mp4
@@ -68,7 +68,7 @@ const README = `# video-brief
 不适用：纯图片理解、需要逐帧时间戳的精细分析、在线视频 URL（先下载）。
 
 ## 快速开始
-myagents tool env video-brief set VIDEO_API_KEY=<key>   # 仅首次
+nexttools tool env video-brief set VIDEO_API_KEY=<key>   # 仅首次
 video-brief demo.mp4 --question "总结要点"
 
 ## 参数
@@ -119,7 +119,7 @@ if (args.values.help) { console.log(HELP); process.exit(0); }
 // ① 环境自检（缺 key = 退出码 3 + 可行动 remediation，绝不裸崩）
 const apiKey = process.env.VIDEO_API_KEY;
 if (!apiKey) fail(3, 'MISSING_ENV', '未配置 VIDEO_API_KEY',
-  '运行: myagents tool env video-brief set VIDEO_API_KEY=<key>（key 由用户提供）');
+  '运行: nexttools tool env video-brief set VIDEO_API_KEY=<key>（key 由用户提供）');
 
 // ② 本地先验证（发任何网络请求之前）
 const file = args.positionals[0];
@@ -135,7 +135,7 @@ const auth = { Authorization: `Bearer ${apiKey}` };
 // 统一的上游错误翻译：HTTP 状态 → 可行动建议
 function upstreamFail(res, body) {
   const map = {
-    401: ['INVALID_KEY', 'key 无效或过期。重新设置: myagents tool env video-brief set VIDEO_API_KEY=<新key>'],
+    401: ['INVALID_KEY', 'key 无效或过期。重新设置: nexttools tool env video-brief set VIDEO_API_KEY=<新key>'],
     429: ['RATE_LIMITED', '上游限流。等待 1 分钟后重试'],
   };
   const [code, remediation] = map[res.status] ?? ['UPSTREAM_ERROR', `上游返回 ${res.status}，原文: ${body.slice(0, 200)}`];
@@ -186,7 +186,7 @@ try {
 
 | 要点 | 体现在 |
 |------|--------|
-| 缺 key = 退出码 3 + 完整修复命令 | `MISSING_ENV` 分支，remediation 直接给 `myagents tool env ...` 原文 |
+| 缺 key = 退出码 3 + 完整修复命令 | `MISSING_ENV` 分支，remediation 直接给 `nexttools tool env ...` 原文 |
 | 本地先验证 | 存在性/格式/大小检查全部发生在第一个 fetch 之前 |
 | 一切 fetch 有界 | `AbortSignal.timeout` 三处；轮询 60 次封顶 |
 | 上游错误翻译 | `upstreamFail`：401/429 映射到**可行动**建议，不是裸状态码 |

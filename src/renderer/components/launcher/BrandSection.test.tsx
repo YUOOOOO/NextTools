@@ -8,7 +8,7 @@ import { MANAGED_CODEX_PROVIDER, type Project } from '@/config/types';
 import { i18n } from '@/i18n';
 import { ThemeRegistry, ThemeRuntimeProvider } from '@/theme';
 import { syntheticTheme } from '@/theme/__tests__/syntheticTheme';
-import { myAgentsDefaultTheme } from '@/theme/themes/myagents-default';
+import { nextToolsDefaultTheme } from '@/theme/themes/nexttools-default';
 
 import BrandSection from './BrandSection';
 
@@ -189,9 +189,9 @@ function renderBrandSection(
   );
   const view = render(
     <ThemeRuntimeProvider
-      registry={new ThemeRegistry([myAgentsDefaultTheme, syntheticTheme])}
+      registry={new ThemeRegistry([nextToolsDefaultTheme, syntheticTheme])}
       selection={{
-        themeId: themeId ?? 'myagents-default',
+        themeId: themeId ?? 'nexttools-default',
         appearanceMode: 'light',
       }}
     >

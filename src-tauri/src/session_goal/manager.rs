@@ -54,7 +54,7 @@ pub struct SessionGoalManager {
 
 impl SessionGoalManager {
     pub fn new() -> Self {
-        let storage_path = crate::app_dirs::myagents_data_dir()
+        let storage_path = crate::app_dirs::nexttools_data_dir()
             .unwrap_or_else(|| PathBuf::from("."))
             .join("session_goals.json");
         let state = store::load(&storage_path);

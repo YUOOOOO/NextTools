@@ -1,5 +1,5 @@
 [package]
-name = "myagents-media-worker"
+name = "nexttools-media-worker"
 version = "0.4.10"
 edition = "2024"
 rust-version = "1.92"
@@ -7,16 +7,16 @@ license = "AGPL-3.0-only"
 publish = false
 
 [lib]
-name = "myagents_media_worker"
+name = "nexttools_media_worker"
 path = "src/lib.rs"
 
 [[bin]]
-name = "myagents-media-worker"
+name = "nexttools-media-worker"
 path = "src/main.rs"
 
 [dependencies]
 libloading = "0.9.0"
-myagents-media-worker-protocol = { path = "../media-worker-protocol" }
+nexttools-media-worker-protocol = { path = "../media-worker-protocol" }
 opus2 = { version = "=0.4.0", default-features = false, features = ["backend-libopus", "bundled", "static"] }
 rubato = { version = "=0.16.2", default-features = false }
 serde = { version = "1", features = ["derive"] }

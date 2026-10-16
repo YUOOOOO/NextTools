@@ -14,15 +14,15 @@ import {
 describe('required system skill contract', () => {
   it('contains exactly the nine product-required global skills', () => {
     expect(REQUIRED_SYSTEM_SKILLS).toEqual([
-      'myagents-task-alignment',
-      'myagents-memory-update',
-      'myagents-memory-gardener',
-      'myagents-memory-molt',
-      'myagents-cli',
-      'myagents-anydoc',
-      'myagents-speech-recognition',
-      'myagents-task-automation',
-      'myagents-docs',
+      'nexttools-task-alignment',
+      'nexttools-memory-update',
+      'nexttools-memory-gardener',
+      'nexttools-memory-molt',
+      'nexttools-cli',
+      'nexttools-anydoc',
+      'nexttools-speech-recognition',
+      'nexttools-task-automation',
+      'nexttools-docs',
     ]);
     for (const name of REQUIRED_SYSTEM_SKILLS) {
       expect(isRequiredSystemSkill(name)).toBe(true);
@@ -32,20 +32,20 @@ describe('required system skill contract', () => {
 
   it('removes required and malformed entries without disturbing optional disabled skills', () => {
     expect(withoutRequiredSystemSkills([
-      'myagents-cli',
-      'myagents-anydoc',
-      'myagents-speech-recognition',
-      'myagents-task-alignment',
+      'nexttools-cli',
+      'nexttools-anydoc',
+      'nexttools-speech-recognition',
+      'nexttools-task-alignment',
       'prompt-writer',
       null,
-      'myagents-docs',
+      'nexttools-docs',
       'user-skill',
     ])).toEqual(['prompt-writer', 'user-skill']);
   });
 
   it('binds Task discussion to the exact bundled Skill content', () => {
     const content = readFileSync(
-      resolve(process.cwd(), 'bundled-skills/myagents-task-alignment/SKILL.md'),
+      resolve(process.cwd(), 'bundled-skills/nexttools-task-alignment/SKILL.md'),
       'utf8',
     );
     expect(TASK_ALIGNMENT_SKILL_REQUIREMENT.systemSkillsVersion).toBe(SYSTEM_SKILLS_VERSION);

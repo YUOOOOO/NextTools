@@ -19,7 +19,7 @@ const exactOrigin: RegisteredAgentSessionOrigin = {
 };
 
 beforeAll(async () => {
-  home = mkdtempSync(join(tmpdir(), 'myagents-registered-origin-'));
+  home = mkdtempSync(join(tmpdir(), 'nexttools-registered-origin-'));
   originalHome = process.env.HOME;
   originalUserProfile = process.env.USERPROFILE;
   process.env.HOME = home;

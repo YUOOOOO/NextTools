@@ -2,7 +2,7 @@
 //!
 //! Periodically fetches BerriAI/litellm's `model_prices_and_context_window.json`
 //! (~1.5MB community catalog of model context windows + output limits) and
-//! stores it raw under `~/.myagents/cache/`. The Node sidecar reads it as the
+//! stores it raw under `~/.nexttools/cache/`. The Node sidecar reads it as the
 //! LOWEST-priority source in `model-capabilities.ts` — a fallback context window
 //! for third-party models whose `/v1/models` doesn't report one.
 //!
@@ -70,7 +70,7 @@ fn now_secs() -> u64 {
 
 fn cache_dir() -> Result<PathBuf, String> {
     let home = dirs::home_dir().ok_or("Cannot determine home directory")?;
-    Ok(home.join(".myagents").join("cache"))
+    Ok(home.join(".nexttools").join("cache"))
 }
 
 /// Parse `liteLLMModelDataRefresh` out of a config.json string. PURE — testable.
@@ -87,13 +87,13 @@ fn parse_enabled_flag(config_json: &str) -> Option<bool> {
     parsed.flag
 }
 
-/// Read the toggle from `~/.myagents/config.json`. Default ON: a missing file,
+/// Read the toggle from `~/.nexttools/config.json`. Default ON: a missing file,
 /// missing key, or parse error all mean "enabled" — the feature opts users IN.
 fn is_enabled() -> bool {
     let Some(home) = dirs::home_dir() else {
         return true;
     };
-    let path = home.join(".myagents").join("config.json");
+    let path = home.join(".nexttools").join("config.json");
     match fs::read_to_string(&path) {
         Ok(content) => parse_enabled_flag(&content).unwrap_or(true),
         Err(_) => true,
@@ -147,7 +147,7 @@ fn build_client() -> Result<reqwest::Client, String> {
     #[allow(clippy::disallowed_methods)]
     let builder = reqwest::Client::builder()
         .timeout(Duration::from_secs(HTTP_TIMEOUT_SECS))
-        .user_agent(concat!("MyAgents/", env!("CARGO_PKG_VERSION")));
+        .user_agent(concat!("NextTools/", env!("CARGO_PKG_VERSION")));
     crate::proxy_config::build_client_with_proxy(builder)
 }
 

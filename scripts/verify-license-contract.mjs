@@ -63,7 +63,7 @@ requireEqual(
 );
 requireContains('Cargo package version', cargo, `version = "${expectedVersion}"`);
 requireContains('Cargo package license', cargo, `license = "${expectedLicense}"`);
-requireContains('Cargo.lock root package version', cargoLock, `name = "myagents"\nversion = "${expectedVersion}"`);
+requireContains('Cargo.lock root package version', cargoLock, `name = "nexttools"\nversion = "${expectedVersion}"`);
 requireContains('AGPL license text', license, 'GNU AFFERO GENERAL PUBLIC LICENSE');
 requireContains('AGPL version text', license, 'Version 3, 19 November 2007');
 requireEqual(
@@ -74,7 +74,7 @@ requireEqual(
 requireContains('README license identifier', readme, expectedLicense);
 requireContains('README commercial contact', readme, expectedEmail);
 requireContains('Settings commercial contact', settingsPage, `mailto:${expectedEmail}`);
-requireContains('Settings version-pinned source revision', settingsPage, '`v${appVersion}`');
+requireContains('Settings fork source revision', settingsPage, "const sourceRevision = 'feature'");
 requireContains('Settings license link', settingsPage, '/blob/${sourceRevision}/LICENSE');
 requireContains('Settings third-party notices link', settingsPage, '/blob/${sourceRevision}/THIRD_PARTY_NOTICES.md');
 requireContains('Chinese Settings license copy', settingsZh, expectedLicense);
@@ -113,4 +113,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`License contract verified: MyAgents ${expectedVersion} (${expectedLicense})`);
+console.log(`License contract verified: NextTools ${expectedVersion} (${expectedLicense})`);

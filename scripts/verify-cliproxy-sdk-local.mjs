@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 const require = createRequire(import.meta.url);
 const native = join(dirname(require.resolve(`@anthropic-ai/claude-agent-sdk-${process.platform}-${process.arch}/package.json`)), process.platform === 'win32' ? 'claude.exe' : 'claude');
-const scratch=mkdtempSync(join(tmpdir(),'myagents-cliproxy-agent-contract-'));
+const scratch=mkdtempSync(join(tmpdir(),'nexttools-cliproxy-agent-contract-'));
 const model='synthetic-main';
 const childModel='synthetic-other-model';
 const requests=[]; let terminal=false; let childSeen=false;

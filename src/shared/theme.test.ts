@@ -50,7 +50,7 @@ describe('Theme selection semantics', () => {
   });
 
   it('migrates the historical materialized canonical ID back to product-default tracking', () => {
-    expect(normalizeThemeConfigRecord({ themeId: 'myagents-default' })).toMatchObject({
+    expect(normalizeThemeConfigRecord({ themeId: 'nexttools-default' })).toMatchObject({
       themeId: DEFAULT_THEME_ID,
       themeSelectionExplicit: false,
     });
@@ -58,10 +58,10 @@ describe('Theme selection semantics', () => {
 
   it('preserves an explicitly selected canonical Theme', () => {
     expect(normalizeThemeConfigRecord({
-      themeId: 'myagents-default',
+      themeId: 'nexttools-default',
       themeSelectionExplicit: true,
     })).toMatchObject({
-      themeId: 'myagents-default',
+      themeId: 'nexttools-default',
       themeSelectionExplicit: true,
     });
   });

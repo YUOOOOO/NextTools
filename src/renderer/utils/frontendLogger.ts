@@ -36,7 +36,7 @@ let rustLogAbort: AbortController | null = null;
 // Custom event name for React logs (kept for back-compat with code that still
 // listens via window event; the global store is the canonical source going
 // forward).
-export const REACT_LOG_EVENT = 'myagents:react-log';
+export const REACT_LOG_EVENT = 'nexttools:react-log';
 
 // ── Pattern 6: active tab tracking (FIXED — App-owned active registry) ─────
 // Previously this was a single `currentTabId` overwritten by whichever tab

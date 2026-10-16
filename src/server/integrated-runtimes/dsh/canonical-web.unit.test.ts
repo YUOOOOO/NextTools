@@ -8,12 +8,12 @@ import type { DshRequestContext, DshRpcObject } from './protocol-types';
 
 const profile: DshModelExecutionProfile = Object.freeze({
   revision: 'profile-v1',
-  providerRouteId: 'myagents-anthropic-api-anthropic-messages',
+  providerRouteId: 'nexttools-anthropic-api-anthropic-messages',
   api: 'anthropic-messages',
   provider: 'anthropic-api',
   modelId: 'claude-sonnet-4-6',
   baseUrl: 'https://api.anthropic.com',
-  credentialRef: 'MYAGENTS_PROVIDER_ANTHROPIC_API_API_KEY',
+  credentialRef: 'NEXTTOOLS_PROVIDER_ANTHROPIC_API_API_KEY',
   contextWindow: 200_000,
   maxTokens: 64_000,
 });

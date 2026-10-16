@@ -19,7 +19,7 @@ afterEach(() => {
 
 describe('plugin runtime Skill inventory', () => {
   it('returns SDK-qualified default and manifest-path Skill names', () => {
-    const root = mkdtempSync(join(tmpdir(), 'myagents-plugin-manifest-'));
+    const root = mkdtempSync(join(tmpdir(), 'nexttools-plugin-manifest-'));
     roots.push(root);
     write(join(root, '.claude-plugin', 'plugin.json'), JSON.stringify({
       name: 'review-tools',

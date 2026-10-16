@@ -27,7 +27,7 @@ import { isTauriEnvironment } from '@/utils/browserMock';
 
 function requireDesktop(): void {
   if (!isTauriEnvironment()) {
-    throw new Error('Recording commands require the MyAgents desktop app');
+    throw new Error('Recording commands require the NextTools desktop app');
   }
 }
 
@@ -198,6 +198,6 @@ export function recordMediaUrl(
 ): string {
   const path = `record-media/${encodeURIComponent(recordId)}/${track}.opus`;
   return navigator.platform.toLowerCase().includes('win')
-    ? `http://myagents-resource.localhost/${path}`
-    : `myagents-resource://${path}`;
+    ? `http://nexttools-resource.localhost/${path}`
+    : `nexttools-resource://${path}`;
 }

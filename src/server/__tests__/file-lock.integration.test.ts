@@ -28,7 +28,7 @@ async function exitedChildPid(): Promise<number> {
 }
 
 beforeEach(() => {
-  scratch = mkdtempSync(join(tmpdir(), 'myagents-file-lock-'));
+  scratch = mkdtempSync(join(tmpdir(), 'nexttools-file-lock-'));
 });
 
 afterEach(() => {

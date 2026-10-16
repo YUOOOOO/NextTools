@@ -611,7 +611,7 @@ unsafe fn load_adapter(path: &Path) -> Result<PlatformLibrary, NativeBundleError
 
 unsafe fn load_get_api(library: &PlatformLibrary) -> Result<GetApi, NativeBundleError> {
     // SAFETY: The verified adapter contract exports exactly this symbol/type.
-    let symbol = unsafe { library.get::<GetApi>(b"myagents_speech_adapter_get_api\0") }
+    let symbol = unsafe { library.get::<GetApi>(b"nexttools_speech_adapter_get_api\0") }
         .map_err(|_| NativeBundleError::LoadFailed)?;
     Ok(*symbol)
 }
@@ -655,7 +655,7 @@ mod tests {
     fn write_manifest(root: &Path) -> (PathBuf, PathBuf, PathBuf) {
         let (platform, architecture) = current_target().unwrap();
         let signing = expected_signing_kind(platform);
-        let worker = write_file(root, "bin/myagents-media-worker", b"worker");
+        let worker = write_file(root, "bin/nexttools-media-worker", b"worker");
         let adapter = write_file(root, "native/adapter", b"adapter");
         let sherpa = write_file(root, "native/sherpa", b"sherpa");
         let runtime = write_file(root, "shared/onnxruntime", b"runtime");

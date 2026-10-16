@@ -12,11 +12,11 @@
  * effective window estimate via `Math.min(contextWindow, N)` (autoCompact.ts:40-46).
  *
  * Data sources (in **disk-first override order** — first wins):
- *   1. `~/.myagents/providers/*.json` — user-defined custom providers.
- *   2. `~/.myagents/config.json::presetCustomModels[providerId][]` — models
+ *   1. `~/.nexttools/providers/*.json` — user-defined custom providers.
+ *   2. `~/.nexttools/config.json::presetCustomModels[providerId][]` — models
  *      discovered/added by the user via the UI on preset providers.
  *   3. `PRESET_PROVIDERS` (bundled in `renderer/config/types.ts`) — fallback.
- *   4. `~/.myagents/cache/litellm_model_prices.json` — LiteLLM community data,
+ *   4. `~/.nexttools/cache/litellm_model_prices.json` — LiteLLM community data,
  *      fetched by the Rust side on a 24h cadence. LOWEST priority in the flat,
  *      provider-unknown registry. A provider-scoped lookup only reaches this
  *      fallback when the active provider has no corresponding model row; a
@@ -103,7 +103,7 @@ export interface ModelCapability {
   source: ModelCapabilitySource;
 }
 
-// Safety caps for malicious / runaway inputs. A rogue ~/.myagents/providers/
+// Safety caps for malicious / runaway inputs. A rogue ~/.nexttools/providers/
 // directory with thousands of files would otherwise freeze the event loop
 // on every session-env build.
 const MAX_PROVIDER_FILES = 256;
@@ -117,7 +117,7 @@ const MAX_PLAUSIBLE_TOKENS = 20_000_000;
 // provider's /v1/models doesn't report). The Rust side fetches
 // `model_prices_and_context_window.json` (~1.5MB, ~2700 entries) to this path
 // on a 24h cadence; we read it here as the LOWEST-priority registry source.
-const LITELLM_CACHE_REL = ['.myagents', 'cache', 'litellm_model_prices.json'] as const;
+const LITELLM_CACHE_REL = ['.nexttools', 'cache', 'litellm_model_prices.json'] as const;
 // The file is ~1.5MB today; 24MB headroom guards against runaway growth while
 // still rejecting an absurd/poisoned file before we JSON.parse it.
 const MAX_LITELLM_FILE_BYTES = 24 * 1024 * 1024;
@@ -311,18 +311,18 @@ function providerListContainsModel(providers: unknown, bareModelId: string): boo
 }
 
 function loadCustomProvidersFromDisk(home: string): Array<Record<string, unknown>> {
-  const dir = resolve(home, '.myagents', 'providers');
+  const dir = resolve(home, '.nexttools', 'providers');
   if (!existsSync(dir)) return [];
   const out: Array<Record<string, unknown>> = [];
   let files: string[];
   try {
     files = readdirSync(dir).filter(f => f.endsWith('.json'));
   } catch (err) {
-    console.warn('[model-caps] readdir failed for ~/.myagents/providers/:', (err as Error)?.message ?? err);
+    console.warn('[model-caps] readdir failed for ~/.nexttools/providers/:', (err as Error)?.message ?? err);
     return [];
   }
   if (files.length > MAX_PROVIDER_FILES) {
-    console.warn(`[model-caps] ~/.myagents/providers/ has ${files.length} files; processing first ${MAX_PROVIDER_FILES}`);
+    console.warn(`[model-caps] ~/.nexttools/providers/ has ${files.length} files; processing first ${MAX_PROVIDER_FILES}`);
     files = files.slice(0, MAX_PROVIDER_FILES);
   }
   for (const f of files) {
@@ -344,7 +344,7 @@ function loadCustomProvidersFromDisk(home: string): Array<Record<string, unknown
 }
 
 function loadPresetCustomModels(home: string): Record<string, unknown> | null {
-  const configPath = resolve(home, '.myagents', 'config.json');
+  const configPath = resolve(home, '.nexttools', 'config.json');
   if (!existsSync(configPath)) return null;
   try {
     const stat = statSync(configPath);
@@ -356,7 +356,7 @@ function loadPresetCustomModels(home: string): Record<string, unknown> | null {
     const cfg = JSON.parse(stripBom(raw)) as { presetCustomModels?: Record<string, unknown> };
     return cfg.presetCustomModels ?? null;
   } catch (err) {
-    console.warn('[model-caps] failed to read ~/.myagents/config.json:', (err as Error)?.message ?? err);
+    console.warn('[model-caps] failed to read ~/.nexttools/config.json:', (err as Error)?.message ?? err);
     return null;
   }
 }
@@ -503,9 +503,9 @@ function loadLiteLLMCatalogFromDisk(home: string): Map<string, ModelCapability> 
  * undoes the v0.2.0 cold-start work.
  *
  * The cache is invalidated by stat-checking just two paths:
- *   - `~/.myagents/providers/`  (mtime changes when a file is created /
+ *   - `~/.nexttools/providers/`  (mtime changes when a file is created /
  *     deleted / replaced via tmp+rename — the canonical edit pattern)
- *   - `~/.myagents/config.json` (mtime changes on `presetCustomModels` edits)
+ *   - `~/.nexttools/config.json` (mtime changes on `presetCustomModels` edits)
  *
  * A miss costs 2 `statSync`s + 1 Map alloc; a hit costs 2 `statSync`s. Mid-
  * session edits propagate by the next call after the file system records the
@@ -532,8 +532,8 @@ function statMtimeMs(path: string): number {
 function buildRegistry(): Map<string, ModelCapability> {
   const home = getHomeDirOrNull();
 
-  const providersDir = home ? resolve(home, '.myagents', 'providers') : '';
-  const configPath = home ? resolve(home, '.myagents', 'config.json') : '';
+  const providersDir = home ? resolve(home, '.nexttools', 'providers') : '';
+  const configPath = home ? resolve(home, '.nexttools', 'config.json') : '';
   const litellmPath = home ? resolve(home, ...LITELLM_CACHE_REL) : '';
   const providersDirMtimeMs = providersDir ? statMtimeMs(providersDir) : -1;
   const configMtimeMs = configPath ? statMtimeMs(configPath) : -1;
@@ -551,7 +551,7 @@ function buildRegistry(): Map<string, ModelCapability> {
 
   const map = new Map<string, ModelCapability>();
 
-  // 1) Custom providers from ~/.myagents/providers/*.json — disk-first override.
+  // 1) Custom providers from ~/.nexttools/providers/*.json — disk-first override.
   if (home) {
     ingestProviderList(loadCustomProvidersFromDisk(home), map, 'custom');
   }
@@ -581,7 +581,7 @@ function buildRegistry(): Map<string, ModelCapability> {
   //    discovery has filled the same modelId.
   ingestProviderList(PRESET_PROVIDERS, map, 'preset');
 
-  // 4) LiteLLM cached catalog (Rust-maintained ~/.myagents/cache/) — LOWEST
+  // 4) LiteLLM cached catalog (Rust-maintained ~/.nexttools/cache/) — LOWEST
   //    priority. first-wins means it only fills models that custom/discovered/
   //    preset never defined; our hand-curated presets (e.g. MiniMax 200K, which
   //    corrects LiteLLM's wrong 1M) always win. Absent until the first fetch.
@@ -763,7 +763,7 @@ export function lookupModelModalitySupport(
  *
  * Known cosmetic trade-off (documented in #335): the SDK's own `/context`
  * HEADLINE window is the raw suffix value (1M) — the env cap only shapes the
- * auto-compact threshold / free-space rows, which stay correct. MyAgents' own
+ * auto-compact threshold / free-space rows, which stay correct. NextTools' own
  * context ring (`chat:context-usage`) uses the registry window and shows the
  * true value. Models at exactly 200K (claude-sonnet-4-6 wire-default,
  * claude-haiku-4-5) stay unwrapped — for first-party Anthropic models the

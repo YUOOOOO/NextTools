@@ -30,7 +30,7 @@ import { verifyAgentNetworkProtocol } from './verify-agent-network-protocol.mjs'
 await verifyAgentNetworkProtocol();
 
 // Read package.json version once and inject as a compile-time constant.
-// This is the ONLY way `myagents version` can show the real shipped
+// This is the ONLY way `nexttools version` can show the real shipped
 // version in production: the runtime `process.env.npm_package_version`
 // is set by `npm run …` (dev), not by Tauri's sidecar spawn (prod), so
 // without compile-time injection the admin-api falls back to a stale
@@ -62,7 +62,7 @@ const BUILD_IDENTITY = { version: PKG_VERSION, mode: 'bundle', capturedAt: new D
 // "loading history". A unique alias here permanently sidesteps the
 // collision regardless of how many depths-deep deps re-import the symbol.
 const ESM_INTEROP_BANNER =
-  'import { createRequire as __myAgentsCreateRequire } from "module"; const require = __myAgentsCreateRequire(import.meta.url);';
+  'import { createRequire as __nextToolsCreateRequire } from "module"; const require = __nextToolsCreateRequire(import.meta.url);';
 const CLI_SHEBANG_BANNER = '#!/usr/bin/env node';
 
 const TARGETS = {
@@ -117,7 +117,7 @@ const TARGETS = {
     // `--import tsx/esm` so tsx's loader hooks see every module load. When
     // the bundle lives somewhere with no `package.json` above declaring
     // `"type": "module"` (e.g. a Windows production install at
-    // `C:\Users\hackl\AppData\Local\MyAgents\`), Node's default classifier
+    // `C:\Users\hackl\AppData\Local\NextTools\`), Node's default classifier
     // returns `format: "commonjs"` for the `.js` entry. tsx's hook then
     // detects ESM syntax in the CJS-classified file, transpiles it to CJS
     // via esbuild, and re-serves it as a `data:text/javascript` URL — which
@@ -134,12 +134,12 @@ const TARGETS = {
     external: ['openclaw'],
   },
   cli: {
-    entryPoints: ['src/cli/myagents.ts'],
+    entryPoints: ['src/cli/nexttools.ts'],
     // The extension is part of the runtime contract. The CLI bundle is
     // CommonJS, and `.cjs` keeps that classification deterministic even when
     // a development `.app` lives below a repository `package.json` whose
     // `type` is `module`.
-    outfile: 'src-tauri/resources/cli/myagents.cjs',
+    outfile: 'src-tauri/resources/cli/nexttools.cjs',
     format: 'cjs',
     sourcemap: false,
     banner: { js: CLI_SHEBANG_BANNER },
@@ -165,7 +165,7 @@ if (targetName === 'server') {
 }
 
 // The package must contain exactly one CLI business payload. Remove artifacts
-// emitted by older build logic (notably myagents.cmd) before rebuilding while
+// emitted by older build logic (notably nexttools.cmd) before rebuilding while
 // preserving the tracked placeholder used by clean checkouts.
 if (targetName === 'cli') {
   for (const entry of await readdir(outputDir)) {
@@ -182,10 +182,10 @@ await build({
   define: {
     ...dshBuildDefines(fileURLToPath(new URL('..', import.meta.url))),
     // Compile-time version constant. Replaces `process.env.npm_package_version`
-    // fallbacks across the codebase so `myagents version` reports the real
+    // fallbacks across the codebase so `nexttools version` reports the real
     // shipped build instead of a stale hardcoded string in production.
-    __MYAGENTS_VERSION__: JSON.stringify(PKG_VERSION),
-    __MYAGENTS_BUILD_IDENTITY__: JSON.stringify(BUILD_IDENTITY),
+    __NEXTTOOLS_VERSION__: JSON.stringify(PKG_VERSION),
+    __NEXTTOOLS_BUILD_IDENTITY__: JSON.stringify(BUILD_IDENTITY),
   },
   // `postBuild` is our own hook — strip it before handing config to esbuild.
   ...(({ postBuild: _strip, ...rest }) => rest)(cfg),

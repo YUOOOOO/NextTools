@@ -19,7 +19,7 @@ describe('native scrollbar policy', () => {
     expect(entry).not.toContain('installPlatformClass');
     expect(styles).not.toContain('scrollbar-width: thin');
     expect(styles).not.toContain('scrollbar-color:');
-    expect(styles).not.toContain('myagents-scrollbar-active');
+    expect(styles).not.toContain('nexttools-scrollbar-active');
     expect(floatingStyles).not.toContain('.fbw-convo::-webkit-scrollbar');
   });
 

@@ -44,8 +44,8 @@ const CREDENTIAL_PATHS: readonly string[] = [
   '.kube',
   '.docker',
   '.config/op',
-  '.myagents/codex/auth.json',
-  '.myagents/credentials',
+  '.nexttools/codex/auth.json',
+  '.nexttools/credentials',
 ];
 
 const MAC_SENSITIVE_SUBDIRS: readonly string[] = [
@@ -73,8 +73,8 @@ export const __blacklistForCrossCheck = {
   winSensitiveSubdirs: WIN_SENSITIVE_SUBDIRS,
 } as const;
 
-/** Trusted root for MyAgents-owned tool attachments (relative to $HOME). */
-export const TOOL_ATTACHMENT_ROOT_REL = '.myagents/generated/tool-attachments';
+/** Trusted root for NextTools-owned tool attachments (relative to $HOME). */
+export const TOOL_ATTACHMENT_ROOT_REL = '.nexttools/generated/tool-attachments';
 
 export interface PathSafetyOk {
   ok: true;
@@ -183,8 +183,8 @@ function checkBlacklist(canonical: string): PathSafetyResult {
 }
 
 /**
- * Validate that `target` is inside the MyAgents-owned attachment root
- * (`~/.myagents/generated/tool-attachments/...`). Used by `saveToolAttachment`
+ * Validate that `target` is inside the NextTools-owned attachment root
+ * (`~/.nexttools/generated/tool-attachments/...`). Used by `saveToolAttachment`
  * to refuse writes outside the trusted root.
  */
 export function validateTrustedAttachmentRoot(

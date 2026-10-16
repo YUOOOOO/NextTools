@@ -737,8 +737,8 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
             if (!isMountedRef.current) return;
             void refreshConfigFromDisk('admin CLI change', { syncNativeUiLanguage: true });
         };
-        window.addEventListener('myagents:config-changed', handler);
-        return () => window.removeEventListener('myagents:config-changed', handler);
+        window.addEventListener('nexttools:config-changed', handler);
+        return () => window.removeEventListener('nexttools:config-changed', handler);
     }, [refreshConfigFromDisk]);
 
     // ============= Actions =============

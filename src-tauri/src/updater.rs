@@ -1,4 +1,4 @@
-// MyAgents Auto-Updater Module
+// NextTools Auto-Updater Module
 // Provides silent background update checking, downloading, and installation
 //
 // Flow:
@@ -96,18 +96,18 @@ struct PendingUpdateMeta {
     version: String,
 }
 
-/// Get the ~/.myagents/ directory path
+/// Get the ~/.nexttools/ directory path
 #[cfg(any(target_os = "windows", target_os = "macos"))]
-fn get_myagents_dir() -> Result<std::path::PathBuf, String> {
+fn get_nexttools_dir() -> Result<std::path::PathBuf, String> {
     let home = dirs::home_dir().ok_or("Cannot determine home directory")?;
-    Ok(home.join(".myagents"))
+    Ok(home.join(".nexttools"))
 }
 
 /// Atomically save pending update bytes + metadata to disk
 /// Writes to .tmp first, then renames to avoid partial files
 #[cfg(any(target_os = "windows", target_os = "macos"))]
 fn save_pending_update_to_disk(version: &str, bytes: &[u8]) -> Result<(), String> {
-    let dir = get_myagents_dir()?;
+    let dir = get_nexttools_dir()?;
     std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create dir: {}", e))?;
 
     let bin_path = dir.join("pending_update.bin");
@@ -140,7 +140,7 @@ fn save_pending_update_to_disk(version: &str, bytes: &[u8]) -> Result<(), String
 /// to prevent. Bundle the reset so callers can't forget.
 #[cfg(any(target_os = "windows", target_os = "macos"))]
 fn clear_pending_update_from_disk() {
-    if let Ok(dir) = get_myagents_dir() {
+    if let Ok(dir) = get_nexttools_dir() {
         let _ = std::fs::remove_file(dir.join("pending_update.bin"));
         let _ = std::fs::remove_file(dir.join("pending_update.bin.tmp"));
         let _ = std::fs::remove_file(dir.join("pending_update.json"));
@@ -154,7 +154,7 @@ fn clear_pending_update_from_disk() {
 /// Read the version of the pending update from disk metadata (None if not present or corrupt)
 #[cfg(any(target_os = "windows", target_os = "macos"))]
 fn read_pending_update_version() -> Option<String> {
-    let dir = get_myagents_dir().ok()?;
+    let dir = get_nexttools_dir().ok()?;
     let meta_path = dir.join("pending_update.json");
     let bin_path = dir.join("pending_update.bin");
     if !meta_path.exists() || !bin_path.exists() {
@@ -426,7 +426,7 @@ pub struct DownloadProgress {
 }
 
 /// Build an updater with user's proxy configuration applied.
-/// Reads proxy settings from ~/.myagents/config.json:
+/// Reads proxy settings from ~/.nexttools/config.json:
 /// - Proxy enabled → `.proxy(url)`
 /// - No proxy configured → inherit system network behavior (respect system proxy)
 fn build_updater_with_proxy(app: &AppHandle) -> Result<tauri_plugin_updater::Updater, String> {
@@ -956,7 +956,7 @@ pub async fn install_pending_update(
         logger::info(&app, "[Updater] install_pending_update called");
 
         // Step 1: Read update bytes and version from disk
-        let dir = get_myagents_dir()?;
+        let dir = get_nexttools_dir()?;
         let bin_path = dir.join("pending_update.bin");
         let meta_path = dir.join("pending_update.json");
 
@@ -1217,7 +1217,7 @@ pub async fn test_update_connectivity(app: AppHandle) -> Result<String, String> 
     let current_version = app.package_info().version.to_string();
     #[allow(clippy::disallowed_methods)]
     let builder = reqwest::Client::builder()
-        .user_agent(format!("MyAgents-Updater/{}", current_version))
+        .user_agent(format!("NextTools-Updater/{}", current_version))
         .timeout(std::time::Duration::from_secs(30));
 
     let client = proxy_config::build_client_with_proxy(builder)
@@ -1315,47 +1315,47 @@ mod tests {
     #[test]
     fn parses_windows_updater_temp_dir_names() {
         assert_eq!(
-            parse_windows_updater_temp_dir_version("MyAgents-0.2.27-updater-abcd", "MyAgents"),
+            parse_windows_updater_temp_dir_version("NextTools-0.2.27-updater-abcd", "NextTools"),
             Some("0.2.27")
         );
         assert_eq!(
             parse_windows_updater_temp_dir_version(
-                "MyAgents-1.2.3-beta.1+build.7-updater-random",
-                "MyAgents"
+                "NextTools-1.2.3-beta.1+build.7-updater-random",
+                "NextTools"
             ),
             Some("1.2.3-beta.1+build.7")
         );
 
         assert_eq!(
-            parse_windows_updater_temp_dir_version("Other-0.2.27-updater-abcd", "MyAgents"),
+            parse_windows_updater_temp_dir_version("Other-0.2.27-updater-abcd", "NextTools"),
             None
         );
         assert_eq!(
-            parse_windows_updater_temp_dir_version("MyAgents-0.2-updater-abcd", "MyAgents"),
+            parse_windows_updater_temp_dir_version("NextTools-0.2-updater-abcd", "NextTools"),
             None
         );
         assert_eq!(
-            parse_windows_updater_temp_dir_version("MyAgents-01.2.3-updater-abcd", "MyAgents"),
+            parse_windows_updater_temp_dir_version("NextTools-01.2.3-updater-abcd", "NextTools"),
             None
         );
         assert_eq!(
-            parse_windows_updater_temp_dir_version("MyAgents-0.2.27-updater-", "MyAgents"),
+            parse_windows_updater_temp_dir_version("NextTools-0.2.27-updater-", "NextTools"),
             None
         );
         assert_eq!(
-            parse_windows_updater_temp_dir_version("MyAgents-1.2.3--updater-abcd", "MyAgents"),
+            parse_windows_updater_temp_dir_version("NextTools-1.2.3--updater-abcd", "NextTools"),
             None
         );
         assert_eq!(
-            parse_windows_updater_temp_dir_version("MyAgents-1.2.3+-updater-abcd", "MyAgents"),
+            parse_windows_updater_temp_dir_version("NextTools-1.2.3+-updater-abcd", "NextTools"),
             None
         );
         assert_eq!(
-            parse_windows_updater_temp_dir_version("MyAgents-1.2.3-01-updater-abcd", "MyAgents"),
+            parse_windows_updater_temp_dir_version("NextTools-1.2.3-01-updater-abcd", "NextTools"),
             None
         );
         assert_eq!(
-            parse_windows_updater_temp_dir_version("MyAgents-0.2.27", "MyAgents"),
+            parse_windows_updater_temp_dir_version("NextTools-0.2.27", "NextTools"),
             None
         );
     }
@@ -1363,8 +1363,8 @@ mod tests {
     #[test]
     fn cleanup_removes_only_stale_owned_updater_dirs() {
         let root = tempfile::tempdir().unwrap();
-        let owned_dir = root.path().join("MyAgents-0.2.9-updater-old");
-        let owned_file = root.path().join("MyAgents-0.2.10-updater-file");
+        let owned_dir = root.path().join("NextTools-0.2.9-updater-old");
+        let owned_file = root.path().join("NextTools-0.2.10-updater-file");
         let other_dir = root.path().join("Other-0.2.9-updater-old");
         std::fs::create_dir(&owned_dir).unwrap();
         std::fs::write(&owned_file, b"not a dir").unwrap();
@@ -1372,7 +1372,7 @@ mod tests {
 
         let stats = cleanup_stale_windows_updater_temp_dirs_in(
             root.path(),
-            "MyAgents",
+            "NextTools",
             SystemTime::now() + Duration::from_secs(25 * 60 * 60),
             WINDOWS_UPDATER_TEMP_DIR_GRACE,
         )
@@ -1389,12 +1389,12 @@ mod tests {
     #[test]
     fn cleanup_keeps_fresh_owned_updater_dirs() {
         let root = tempfile::tempdir().unwrap();
-        let fresh_dir = root.path().join("MyAgents-0.2.9-updater-fresh");
+        let fresh_dir = root.path().join("NextTools-0.2.9-updater-fresh");
         std::fs::create_dir(&fresh_dir).unwrap();
 
         let stats = cleanup_stale_windows_updater_temp_dirs_in(
             root.path(),
-            "MyAgents",
+            "NextTools",
             SystemTime::now(),
             WINDOWS_UPDATER_TEMP_DIR_GRACE,
         )
@@ -1411,13 +1411,13 @@ mod tests {
     fn cleanup_skips_symlinked_updater_dirs() {
         let root = tempfile::tempdir().unwrap();
         let target = root.path().join("target");
-        let link = root.path().join("MyAgents-0.2.9-updater-link");
+        let link = root.path().join("NextTools-0.2.9-updater-link");
         std::fs::create_dir(&target).unwrap();
         std::os::unix::fs::symlink(&target, &link).unwrap();
 
         let stats = cleanup_stale_windows_updater_temp_dirs_in(
             root.path(),
-            "MyAgents",
+            "NextTools",
             SystemTime::now() + Duration::from_secs(25 * 60 * 60),
             WINDOWS_UPDATER_TEMP_DIR_GRACE,
         )

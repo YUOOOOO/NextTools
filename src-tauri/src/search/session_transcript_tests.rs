@@ -5,9 +5,9 @@ use sha2::{Digest, Sha256};
 /// Opt-in, synthetic data only: each input directory contains sessions.json,
 /// sessions/ and sessions-v2/ with one 10 or 100 MiB conversation named bench.
 #[test]
-#[ignore = "Requires MYAGENTS_TRANSCRIPT_INDEX_BENCH_DIR synthetic v1/v2 fixtures"]
+#[ignore = "Requires NEXTTOOLS_TRANSCRIPT_INDEX_BENCH_DIR synthetic v1/v2 fixtures"]
 fn benchmark_v1_v2_indexing() {
-    let root = std::env::var("MYAGENTS_TRANSCRIPT_INDEX_BENCH_DIR")
+    let root = std::env::var("NEXTTOOLS_TRANSCRIPT_INDEX_BENCH_DIR")
         .expect("synthetic fixture directory required");
     for mib in [10, 100] {
         for version in [1, 2] {

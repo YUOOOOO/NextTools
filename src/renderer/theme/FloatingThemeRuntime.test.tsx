@@ -7,7 +7,7 @@ const floatingMocks = vi.hoisted(() => ({
   listener: null as null | ((event: { payload: unknown }) => void),
   configListener: null as null | ((event: { payload: unknown }) => void),
   loadAppConfig: vi.fn<() => Promise<{ themeId: string; appearanceMode: 'system' | 'light' | 'dark'; markdownReadingSize?: 'large' | 'standard' }>>(async () => ({
-    themeId: 'myagents-default', appearanceMode: 'dark', markdownReadingSize: 'standard',
+    themeId: 'nexttools-default', appearanceMode: 'dark', markdownReadingSize: 'standard',
   })),
 }));
 
@@ -34,7 +34,7 @@ describe('FloatingThemeRuntime', () => {
     localStorage.clear();
     localStorage.setItem(THEME_BOOTSTRAP_KEY, JSON.stringify({
       version: 2,
-      themeId: 'myagents-default',
+      themeId: 'nexttools-default',
       appearanceMode: 'light',
       themeSelectionExplicit: true,
     }));
@@ -62,15 +62,15 @@ describe('FloatingThemeRuntime', () => {
   it('uses the bootstrap first frame, hydrates durable config, then accepts live main-window events', async () => {
     render(<FloatingThemeRuntime><Probe /></FloatingThemeRuntime>);
 
-    expect(screen.getByTestId('floating-theme')).toHaveTextContent('myagents-default:light');
-    await waitFor(() => expect(screen.getByTestId('floating-theme')).toHaveTextContent('myagents-default:dark'));
+    expect(screen.getByTestId('floating-theme')).toHaveTextContent('nexttools-default:light');
+    await waitFor(() => expect(screen.getByTestId('floating-theme')).toHaveTextContent('nexttools-default:dark'));
     expect(document.documentElement.dataset.markdownReadingSize).toBe('standard');
     await waitFor(() => expect(floatingMocks.listener).not.toBeNull());
 
     act(() => floatingMocks.listener?.({
-      payload: { themeId: 'myagents-default', appearanceMode: 'light' },
+      payload: { themeId: 'nexttools-default', appearanceMode: 'light' },
     }));
-    expect(screen.getByTestId('floating-theme')).toHaveTextContent('myagents-default:light');
+    expect(screen.getByTestId('floating-theme')).toHaveTextContent('nexttools-default:light');
     expect(document.documentElement.dataset.colorScheme).toBe('light');
   });
 
@@ -80,7 +80,7 @@ describe('FloatingThemeRuntime', () => {
     await waitFor(() => expect(floatingMocks.configListener).not.toBeNull());
 
     floatingMocks.loadAppConfig.mockResolvedValueOnce({
-      themeId: 'myagents-default', appearanceMode: 'dark', markdownReadingSize: 'large',
+      themeId: 'nexttools-default', appearanceMode: 'dark', markdownReadingSize: 'large',
     });
     act(() => floatingMocks.configListener?.({ payload: undefined }));
     await waitFor(() => expect(document.documentElement.dataset.markdownReadingSize).toBe('large'));
@@ -97,14 +97,14 @@ describe('FloatingThemeRuntime', () => {
     await waitFor(() => expect(floatingMocks.listener).not.toBeNull());
     expect(floatingMocks.loadAppConfig).toHaveBeenCalledTimes(1);
     act(() => floatingMocks.listener?.({
-      payload: { themeId: 'myagents-default', appearanceMode: 'light' },
+      payload: { themeId: 'nexttools-default', appearanceMode: 'light' },
     }));
-    expect(screen.getByTestId('floating-theme')).toHaveTextContent('myagents-default:light');
+    expect(screen.getByTestId('floating-theme')).toHaveTextContent('nexttools-default:light');
 
     await act(async () => {
-      resolveConfig({ themeId: 'myagents-default', appearanceMode: 'dark' });
+      resolveConfig({ themeId: 'nexttools-default', appearanceMode: 'dark' });
       await Promise.resolve();
     });
-    expect(screen.getByTestId('floating-theme')).toHaveTextContent('myagents-default:light');
+    expect(screen.getByTestId('floating-theme')).toHaveTextContent('nexttools-default:light');
   });
 });

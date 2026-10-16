@@ -200,7 +200,7 @@ impl AccountVerifier {
             .verify(
                 token,
                 "ma-network-peer+jwt",
-                "myagents-agent-peer",
+                "nexttools-agent-peer",
                 budget("certificateSeconds") + budget("clockSkewSeconds"),
             )
             .await?;
@@ -486,7 +486,7 @@ mod tests {
     fn network_jws_uses_fixed_trust_source_type_and_claim_budgets() {
         let (key, public) = fixture();
         let keys = checked_jwks(public).unwrap();
-        let issuer = "https://isolated.myagents.invalid";
+        let issuer = "https://isolated.nexttools.invalid";
         let audience = "00000000-0000-4000-8000-000000000001";
         let typ = "ma-network-access+jwt";
         let now = jsonwebtoken::get_current_timestamp();

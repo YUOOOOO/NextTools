@@ -90,11 +90,11 @@ describe('SimpleChatInput send paths', () => {
     workspaceMocks.service.searchFilesPage.mockResolvedValue({ items: [], complete: true, hasMore: false, scanLimitReached: false, nextCursor: null });
     workspaceMocks.service.importBase64Files.mockResolvedValue({
       success: true,
-      files: ['myagents_files/pasted.txt'],
+      files: ['nexttools_files/pasted.txt'],
     });
     workspaceMocks.service.copyPaths.mockResolvedValue({
       success: true,
-      copiedFiles: [{ targetPath: 'myagents_files/report.pdf' }],
+      copiedFiles: [{ targetPath: 'nexttools_files/report.pdf' }],
     });
     workspaceMocks.service.addGitignore.mockResolvedValue({ success: true });
     workspaceMocks.service.searchFiles.mockResolvedValue([]);
@@ -1243,10 +1243,10 @@ describe('SimpleChatInput send paths', () => {
       },
     });
 
-    await waitFor(() => expect(textarea).toHaveValue('@myagents_files/pasted.txt '));
+    await waitFor(() => expect(textarea).toHaveValue('@nexttools_files/pasted.txt '));
     expect(workspaceMocks.service.importBase64Files).toHaveBeenCalledWith({
       files: [{ name: 'pasted.txt', content: expect.any(String) }],
-      targetDir: 'myagents_files',
+      targetDir: 'nexttools_files',
     });
   });
 
@@ -1268,7 +1268,7 @@ describe('SimpleChatInput send paths', () => {
       },
     });
 
-    await waitFor(() => expect(textarea).toHaveValue('@myagents_files/pasted.txt '));
+    await waitFor(() => expect(textarea).toHaveValue('@nexttools_files/pasted.txt '));
     expect(screen.getByText(/图片理解未就绪/)).toHaveTextContent(
       '当前模型不支持图片，图片已作为工作区文件添加；图片理解未就绪，Agent 可能无法读取。请启用并配置图片理解，或切换支持图片的模型。',
     );
@@ -1294,7 +1294,7 @@ describe('SimpleChatInput send paths', () => {
       },
     });
 
-    await waitFor(() => expect(textarea).toHaveValue('@myagents_files/pasted.txt '));
+    await waitFor(() => expect(textarea).toHaveValue('@nexttools_files/pasted.txt '));
     expect(screen.queryByText(/当前模型不支持图片/)).not.toBeInTheDocument();
   });
 
@@ -1303,7 +1303,7 @@ describe('SimpleChatInput send paths', () => {
     const ref = createRef<SimpleChatInputHandle>();
     workspaceMocks.service.copyPaths.mockResolvedValueOnce({
       success: true,
-      copiedFiles: [{ targetPath: 'myagents_files/screenshot.png' }],
+      copiedFiles: [{ targetPath: 'nexttools_files/screenshot.png' }],
     });
     renderInput({
       ref,
@@ -1321,7 +1321,7 @@ describe('SimpleChatInput send paths', () => {
       await processDroppedFilePaths(['/tmp/screenshot.png']);
     });
 
-    expect(screen.getByRole('textbox')).toHaveValue('@myagents_files/screenshot.png ');
+    expect(screen.getByRole('textbox')).toHaveValue('@nexttools_files/screenshot.png ');
     expect(screen.getByText(/图片理解未就绪/)).toBeInTheDocument();
   });
 
@@ -1397,12 +1397,12 @@ describe('SimpleChatInput send paths', () => {
     await user.type(textarea, 'keep me');
 
     await act(async () => {
-      resolveImport({ success: true, files: ['myagents_files/pasted.txt'] });
+      resolveImport({ success: true, files: ['nexttools_files/pasted.txt'] });
     });
 
     await waitFor(() => {
       expect((textarea as HTMLTextAreaElement).value).toContain('keep me');
-      expect((textarea as HTMLTextAreaElement).value).toContain('@myagents_files/pasted.txt');
+      expect((textarea as HTMLTextAreaElement).value).toContain('@nexttools_files/pasted.txt');
     });
   });
 
@@ -1417,10 +1417,10 @@ describe('SimpleChatInput send paths', () => {
       await handle.processDroppedFilePaths(['/tmp/report.pdf']);
     });
 
-    await waitFor(() => expect(textarea).toHaveValue('@myagents_files/report.pdf '));
+    await waitFor(() => expect(textarea).toHaveValue('@nexttools_files/report.pdf '));
     expect(workspaceMocks.service.copyPaths).toHaveBeenCalledWith({
       sourcePaths: ['/tmp/report.pdf'],
-      targetDir: 'myagents_files',
+      targetDir: 'nexttools_files',
       autoRename: true,
     });
   });
@@ -1445,13 +1445,13 @@ describe('SimpleChatInput send paths', () => {
     await user.type(textarea, 'keep me');
 
     await act(async () => {
-      resolveCopy({ success: true, copiedFiles: [{ targetPath: 'myagents_files/report.pdf' }] });
+      resolveCopy({ success: true, copiedFiles: [{ targetPath: 'nexttools_files/report.pdf' }] });
       await copyPromise;
     });
 
     await waitFor(() => {
       expect((textarea as HTMLTextAreaElement).value).toContain('keep me');
-      expect((textarea as HTMLTextAreaElement).value).toContain('@myagents_files/report.pdf');
+      expect((textarea as HTMLTextAreaElement).value).toContain('@nexttools_files/report.pdf');
     });
   });
 
@@ -1489,7 +1489,7 @@ describe('SimpleChatInput send paths', () => {
     view.rerender(renderComposer('/workspace-b'));
     await user.type(textarea, 'workspace B draft');
     await act(async () => {
-      resolveCopy({ success: true, copiedFiles: [{ targetPath: 'myagents_files/report.pdf' }] });
+      resolveCopy({ success: true, copiedFiles: [{ targetPath: 'nexttools_files/report.pdf' }] });
       await copyPromise;
     });
 

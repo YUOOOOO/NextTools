@@ -2,7 +2,7 @@ export type OpenClawConfigSnapshot = {
   channels: Record<string, Record<string, unknown>>;
 } & Record<string, unknown>;
 
-const CONFIG_GLOBAL_KEY = '__MYAGENTS_OPENCLAW_CONFIG__';
+const CONFIG_GLOBAL_KEY = '__NEXTTOOLS_OPENCLAW_CONFIG__';
 
 type ConfigGlobal = typeof globalThis & {
   [CONFIG_GLOBAL_KEY]?: OpenClawConfigSnapshot;
@@ -81,7 +81,7 @@ function collectChannelAliases(args: {
     if (value && value !== args.channelKey) aliases.add(value);
   };
 
-  // Old MyAgents data often uses the installation/package identity while
+  // Old NextTools data often uses the installation/package identity while
   // OpenClaw plugins read their protocol channel identity.
   add(packageBasename(args.entryModule));
   add(legacyInferredChannelKey(args.entryModule));

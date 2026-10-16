@@ -1,4 +1,4 @@
-// MyAgents architectural-boundary lint via dependency-cruiser.
+// NextTools architectural-boundary lint via dependency-cruiser.
 //
 // This file holds the "module-graph" rules that ESLint can't express:
 // "module A is not allowed to import from module B." Each rule below
@@ -65,7 +65,7 @@ module.exports = {
           '(^|/)(babel|nodemon|jest|vitest|webpack|esbuild|vite|tailwind|postcss|stylelint)\\.config\\.(js|cjs|mjs|ts)$',
           '^src/server/index\\.ts$', // sidecar entry
           '^src/server/plugin-bridge/main\\.ts$', // bridge entry
-          '^src/cli/myagents\\.ts$', // CLI entry
+          '^src/cli/nexttools\\.ts$', // CLI entry
           '^src/renderer/main\\.tsx$', // renderer entry
           '^src-tauri/', // Rust files: depcruise sees them only via fs walk; not part of TS graph
           // Type-only files. Since we set tsPreCompilationDeps:false, dep-cruiser
@@ -168,7 +168,7 @@ module.exports = {
       name: 'theme-consumers-public-api-only',
       severity: 'error',
       comment:
-        'Renderer Theme consumers MUST NOT import Theme internals — binding to myagents-default, registry implementation, or private adapter files makes a future complete Theme require consumer edits and can create mixed palettes. Import only the public `@/theme` entry; files inside src/renderer/theme may compose their own package internals.',
+        'Renderer Theme consumers MUST NOT import Theme internals — binding to nexttools-default, registry implementation, or private adapter files makes a future complete Theme require consumer edits and can create mixed palettes. Import only the public `@/theme` entry; files inside src/renderer/theme may compose their own package internals.',
       from: {
         path: '^src/renderer/(?!theme/)',
         pathNot: ['\\.(?:test|spec)\\.[cm]?[jt]sx?$']

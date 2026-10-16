@@ -36,6 +36,7 @@ describe('SettingsSidebar i18n', () => {
     expect(screen.queryByRole('button', { name: 'Skills' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Plugins' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tools' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'About' })).not.toBeInTheDocument();
     expect(screen.getByTitle('View Rust logs')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Developer' })).not.toBeInTheDocument();
   });
@@ -55,16 +56,15 @@ describe('SettingsSidebar i18n', () => {
       'Network Proxy',
       'External Calls',
       'Shortcuts',
-      'About',
     ]);
   });
 
-  it('adds Developer directly below About only after the About gesture unlocks it', () => {
+  it('adds Developer after Shortcuts only when previously unlocked', () => {
     render(<SidebarProbe developerUnlocked />);
 
     const labels = within(screen.getByRole('navigation'))
       .getAllByRole('button')
       .map(button => button.textContent);
-    expect(labels.slice(-2)).toEqual(['About', 'Developer']);
+    expect(labels.slice(-2)).toEqual(['Shortcuts', 'Developer']);
   });
 });

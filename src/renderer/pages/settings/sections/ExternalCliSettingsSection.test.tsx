@@ -43,8 +43,8 @@ describe('ExternalCliSettingsSection', () => {
       if (command === 'cmd_get_external_cli_access') {
         return {
           enabled: false,
-          launcherPath: '/Applications/MyAgents/myagents',
-          skillPath: '/Users/test/.myagents/external-myagents-cli/SKILL.md',
+          launcherPath: '/Applications/NextTools/nexttools',
+          skillPath: '/Users/test/.nexttools/external-nexttools-cli/SKILL.md',
           skillReady: true,
         };
       }
@@ -53,8 +53,8 @@ describe('ExternalCliSettingsSection', () => {
           enabled: true,
           token: 'mae_test_token',
           createdAt: '2026-09-19T00:00:00.000Z',
-          launcherPath: '/Applications/MyAgents/myagents',
-          skillPath: '/Users/test/.myagents/external-myagents-cli/SKILL.md',
+          launcherPath: '/Applications/NextTools/nexttools',
+          skillPath: '/Users/test/.nexttools/external-nexttools-cli/SKILL.md',
           skillReady: true,
         };
       }
@@ -65,8 +65,8 @@ describe('ExternalCliSettingsSection', () => {
   it('refreshes from the Rust authority when another window changes access', async () => {
     mocks.invoke.mockResolvedValueOnce({
       enabled: false,
-      launcherPath: '/Applications/MyAgents/myagents',
-      skillPath: '/Users/test/.myagents/external-myagents-cli/SKILL.md',
+      launcherPath: '/Applications/NextTools/nexttools',
+      skillPath: '/Users/test/.nexttools/external-nexttools-cli/SKILL.md',
       skillReady: true,
     });
     renderSection();
@@ -79,8 +79,8 @@ describe('ExternalCliSettingsSection', () => {
       enabled: true,
       token: 'mae_from_other_window',
       createdAt: '2026-09-19T00:00:00.000Z',
-      launcherPath: '/Applications/MyAgents/myagents',
-      skillPath: '/Users/test/.myagents/external-myagents-cli/SKILL.md',
+      launcherPath: '/Applications/NextTools/nexttools',
+      skillPath: '/Users/test/.nexttools/external-nexttools-cli/SKILL.md',
       skillReady: true,
     });
     mocks.listener?.();
@@ -105,16 +105,16 @@ describe('ExternalCliSettingsSection', () => {
     mocks.invoke
       .mockResolvedValueOnce({
         enabled: false,
-        launcherPath: '/Applications/MyAgents/myagents',
-        skillPath: '/Users/test/.myagents/external-myagents-cli/SKILL.md',
+        launcherPath: '/Applications/NextTools/nexttools',
+        skillPath: '/Users/test/.nexttools/external-nexttools-cli/SKILL.md',
         skillReady: true,
       })
       .mockResolvedValueOnce({
         enabled: true,
         token: 'mae_missed_event',
         createdAt: '2026-09-19T00:00:00.000Z',
-        launcherPath: '/Applications/MyAgents/myagents',
-        skillPath: '/Users/test/.myagents/external-myagents-cli/SKILL.md',
+        launcherPath: '/Applications/NextTools/nexttools',
+        skillPath: '/Users/test/.nexttools/external-nexttools-cli/SKILL.md',
         skillReady: true,
       });
 
@@ -159,8 +159,8 @@ describe('ExternalCliSettingsSection', () => {
           enabled: true,
           token: 'mae_real_secret_must_not_leak',
           createdAt: '2026-09-19T00:00:00.000Z',
-          launcherPath: '/Users/test/.myagents/bin/myagents',
-          skillPath: '/Users/test/.myagents/external-myagents-cli/SKILL.md',
+          launcherPath: '/Users/test/.nexttools/bin/nexttools',
+          skillPath: '/Users/test/.nexttools/external-nexttools-cli/SKILL.md',
           skillReady: true,
         };
       }
@@ -169,9 +169,9 @@ describe('ExternalCliSettingsSection', () => {
     await i18n.changeLanguage('zh-CN');
     renderSection();
 
-    expect(await screen.findByText('MYAGENTS_API_TOKEN')).toBeInTheDocument();
+    expect(await screen.findByText('NEXTTOOLS_API_TOKEN')).toBeInTheDocument();
     expect(
-      screen.getByText(/export MYAGENTS_API_TOKEN="<token>"/),
+      screen.getByText(/export NEXTTOOLS_API_TOKEN="<token>"/),
     ).toBeInTheDocument();
     expect(
       screen.queryByText(/mae_real_secret_must_not_leak/),
@@ -183,9 +183,9 @@ describe('ExternalCliSettingsSection', () => {
 
     const copied = mocks.copyPlainText.mock.calls.at(-1)?.[0] as string;
     expect(copied).toBe(
-      '请先阅读本机文件 "/Users/test/.myagents/external-myagents-cli/SKILL.md"，并严格按照其中的公开 CLI 契约操作 MyAgents。\n\n' +
-        '本机 MyAgents CLI 完整路径是："/Users/test/.myagents/bin/myagents"\n\n' +
-        '请将 MYAGENTS_API_TOKEN 注入到环境变量：`export MYAGENTS_API_TOKEN="mae_real_secret_must_not_leak"`',
+      '请先阅读本机文件 "/Users/test/.nexttools/external-nexttools-cli/SKILL.md"，并严格按照其中的公开 CLI 契约操作 NextTools。\n\n' +
+        '本机 NextTools CLI 完整路径是："/Users/test/.nexttools/bin/nexttools"\n\n' +
+        '请将 NEXTTOOLS_API_TOKEN 注入到环境变量：`export NEXTTOOLS_API_TOKEN="mae_real_secret_must_not_leak"`',
     );
     expect(copied).not.toContain('<token>');
   });
@@ -195,15 +195,15 @@ describe('ExternalCliSettingsSection', () => {
     renderSection();
 
     expect(
-      screen.queryByText(/A local program holding MYAGENTS_API_TOKEN/),
+      screen.queryByText(/A local program holding NEXTTOOLS_API_TOKEN/),
     ).not.toBeInTheDocument();
 
     await user.click(await screen.findByRole('switch'));
 
     const warning = await screen.findByText(
-      /A local program holding MYAGENTS_API_TOKEN/,
+      /A local program holding NEXTTOOLS_API_TOKEN/,
     );
-    const accessHeading = screen.getByText('MyAgents CLI external access');
+    const accessHeading = screen.getByText('NextTools CLI external access');
     const promptHeading = screen.getByText('Prompt for another AI');
 
     expect(warning.closest('section')).toBe(accessHeading.closest('section'));
@@ -262,8 +262,8 @@ describe('ExternalCliSettingsSection', () => {
           enabled: true,
           token: 'mae_existing_token',
           createdAt: '2026-09-19T00:00:00.000Z',
-          launcherPath: '/Users/test/.myagents/bin/myagents',
-          skillPath: '/Users/test/.myagents/external-myagents-cli/SKILL.md',
+          launcherPath: '/Users/test/.nexttools/bin/nexttools',
+          skillPath: '/Users/test/.nexttools/external-nexttools-cli/SKILL.md',
           skillReady: false,
         };
       }

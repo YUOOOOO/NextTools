@@ -1,6 +1,6 @@
 # Builtin Claude 工具权限架构
 
-本文描述 Builtin Claude Agent SDK 的工具可见性、`canUseTool` 与 hooks 如何共同形成 MyAgents 权限边界。Integrated DSH 与 External Runtime 由 `session-engine` adapter 和各 Runtime 原生协议拥有，不复用本文回调。
+本文描述 Builtin Claude Agent SDK 的工具可见性、`canUseTool` 与 hooks 如何共同形成 NextTools 权限边界。Integrated DSH 与 External Runtime 由 `session-engine` adapter 和各 Runtime 原生协议拥有，不复用本文回调。
 
 SDK 类型与行为必须先核对当前安装的：
 
@@ -22,9 +22,9 @@ Prompt 或 tool description 只帮助模型选择工具，不构成权限控制�
 
 ## Permission mode 映射
 
-MyAgents 在 Query 创建时把产品模式映射到 SDK mode：
+NextTools 在 Query 创建时把产品模式映射到 SDK mode：
 
-| MyAgents | SDK | 语义 |
+| NextTools | SDK | 语义 |
 | --- | --- | --- |
 | `auto` | `acceptEdits` | 编辑自动接受，其它调用按产品 policy |
 | `plan` | `plan` | 只允许规划期安全 surface |
@@ -44,7 +44,7 @@ MyAgents 在 Query 创建时把产品模式映射到 SDK mode：
 }
 ```
 
-MyAgents 的允许路径必须带 `updatedInput`。AskUserQuestion 等会改变输入的工具返回补全后的 input；普通允许则原样回传。拒绝返回用户可理解的 `message`；控制转移工具在用户取消时使用 `interrupt: true`，防止模型把取消当作普通 tool error 后继续执行。
+NextTools 的允许路径必须带 `updatedInput`。AskUserQuestion 等会改变输入的工具返回补全后的 input；普通允许则原样回传。拒绝返回用户可理解的 `message`；控制转移工具在用户取消时使用 `interrupt: true`，防止模型把取消当作普通 tool error 后继续执行。
 
 不要从旧示例猜 SDK shape，类型字段和 hook output 以已安装 `sdk.d.ts` 为准。
 

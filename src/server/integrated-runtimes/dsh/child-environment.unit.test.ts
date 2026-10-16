@@ -20,10 +20,10 @@ describe("DSH child environment", () => {
         NODE_OPTIONS: "--require=/tmp/inject.js",
         ANTHROPIC_API_KEY: "credential-canary",
         HTTPS_PROXY: "http://user:password@example.invalid",
-        MYAGENTS_PORT: "1",
-        MYAGENTS_SESSION_ID: "stale-session",
-        MYAGENTS_INTERNAL_CLI_TOKEN: "ambient-capability",
-        MYAGENTS_API_TOKEN: "external-capability",
+        NEXTTOOLS_PORT: "1",
+        NEXTTOOLS_SESSION_ID: "stale-session",
+        NEXTTOOLS_INTERNAL_CLI_TOKEN: "ambient-capability",
+        NEXTTOOLS_API_TOKEN: "external-capability",
       },
     });
     expect(environment.env).toEqual({
@@ -37,24 +37,24 @@ describe("DSH child environment", () => {
     expect(JSON.stringify(environment)).not.toContain("credential-canary");
     expect(environment.env).not.toHaveProperty("NODE_OPTIONS");
     expect(environment.env).not.toHaveProperty("HTTPS_PROXY");
-    expect(environment.env).not.toHaveProperty("MYAGENTS_PORT");
-    expect(environment.env).not.toHaveProperty("MYAGENTS_SESSION_ID");
-    expect(environment.env).not.toHaveProperty("MYAGENTS_INTERNAL_CLI_TOKEN");
-    expect(environment.env).not.toHaveProperty("MYAGENTS_API_TOKEN");
+    expect(environment.env).not.toHaveProperty("NEXTTOOLS_PORT");
+    expect(environment.env).not.toHaveProperty("NEXTTOOLS_SESSION_ID");
+    expect(environment.env).not.toHaveProperty("NEXTTOOLS_INTERNAL_CLI_TOKEN");
+    expect(environment.env).not.toHaveProperty("NEXTTOOLS_API_TOKEN");
   });
 
   it('seals explicit Product routing independently of stale ambient variables and generation rotation', () => {
     for (const [productSessionId, sidecarPort] of [['product-a', 31417], ['product-b', 31418], ['product-a', 31419]] as const) {
       const environment = buildDshChildEnvironment({
         nodeExecutablePath: '/verified/node',
-        inheritedEnvironment: { MYAGENTS_PORT: '1', MYAGENTS_SESSION_ID: 'old-runtime-session', MYAGENTS_INTERNAL_CLI_TOKEN: 'stale-capability', NODE_OPTIONS: 'injected' },
+        inheritedEnvironment: { NEXTTOOLS_PORT: '1', NEXTTOOLS_SESSION_ID: 'old-runtime-session', NEXTTOOLS_INTERNAL_CLI_TOKEN: 'stale-capability', NODE_OPTIONS: 'injected' },
         sessionCli: { productSessionId, sidecarPort, internalCliToken: 'app-capability' },
       });
-      expect(environment.env.MYAGENTS_PORT).toBe(String(sidecarPort));
-      expect(environment.env.MYAGENTS_SESSION_ID).toBe(productSessionId);
-      expect(environment.env.MYAGENTS_INTERNAL_CLI_TOKEN).toBe('app-capability');
-      expect(environment.env.MYAGENTS_API_TOKEN).toBeUndefined();
-      expect(environment.allowedKeys).toEqual(['PATH', 'MYAGENTS_PORT', 'MYAGENTS_SESSION_ID', 'MYAGENTS_INTERNAL_CLI_TOKEN']);
+      expect(environment.env.NEXTTOOLS_PORT).toBe(String(sidecarPort));
+      expect(environment.env.NEXTTOOLS_SESSION_ID).toBe(productSessionId);
+      expect(environment.env.NEXTTOOLS_INTERNAL_CLI_TOKEN).toBe('app-capability');
+      expect(environment.env.NEXTTOOLS_API_TOKEN).toBeUndefined();
+      expect(environment.allowedKeys).toEqual(['PATH', 'NEXTTOOLS_PORT', 'NEXTTOOLS_SESSION_ID', 'NEXTTOOLS_INTERNAL_CLI_TOKEN']);
       expect(environment.inheritedKeys).toEqual([]);
       expect(environment.env.NODE_OPTIONS).toBeUndefined();
     }
@@ -96,7 +96,7 @@ describe("DSH child environment", () => {
         ANTHROPIC_API_KEY: 'credential-canary',
         NODE_OPTIONS: '--require=/tmp/inject.js',
         PATH: '/untrusted',
-        MYAGENTS_PROXY_INJECTED: '1',
+        NEXTTOOLS_PROXY_INJECTED: '1',
       },
     });
     const selectedProxyEnvironment = process.platform === 'win32'

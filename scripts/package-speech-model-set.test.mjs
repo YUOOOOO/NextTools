@@ -34,7 +34,7 @@ function writeExecutable(path, contents) {
 }
 
 function createPublisherFixture() {
-  const root = mkdtempSync(join(tmpdir(), "myagents-speech-publisher-"));
+  const root = mkdtempSync(join(tmpdir(), "nexttools-speech-publisher-"));
   const fakeBin = join(root, "fake-bin");
   const remoteDir = join(root, "remote");
   const rcloneLog = join(root, "rclone.log");
@@ -167,7 +167,7 @@ for argument in "$@"; do
   current="$argument"
 done
 source_path="$previous"
-relative="\${current#r2:myagents-releases/}"
+relative="\${current#r2:nexttools-releases/}"
 destination="\${FAKE_REMOTE_DIR}/\${relative}"
 mkdir -p "\${destination%/*}"
 cp "$source_path" "$destination"
@@ -217,7 +217,7 @@ test("compiled speech model source lock uses canonical LF bytes", () => {
 });
 
 test("speech model packager publishes the exact compiled source-lock bytes", () => {
-  const root = mkdtempSync(join(tmpdir(), "myagents-speech-model-package-"));
+  const root = mkdtempSync(join(tmpdir(), "nexttools-speech-model-package-"));
   try {
     execFileSync(
       process.execPath,
@@ -243,7 +243,7 @@ test("speech model packager publishes the exact compiled source-lock bytes", () 
 });
 
 test("speech model packager requires the existing updater signing key for release output", () => {
-  const root = mkdtempSync(join(tmpdir(), "myagents-speech-model-signing-"));
+  const root = mkdtempSync(join(tmpdir(), "nexttools-speech-model-signing-"));
   try {
     const env = { ...process.env };
     delete env.TAURI_SIGNING_PRIVATE_KEY;
@@ -264,9 +264,9 @@ test(
   "speech model packager rejects a symlinked publication directory",
   { skip: process.platform === "win32" },
   () => {
-    const root = mkdtempSync(join(tmpdir(), "myagents-speech-model-symlink-"));
+    const root = mkdtempSync(join(tmpdir(), "nexttools-speech-model-symlink-"));
     const external = mkdtempSync(
-      join(tmpdir(), "myagents-speech-model-external-"),
+      join(tmpdir(), "nexttools-speech-model-external-"),
     );
     try {
       symlinkSync(external, join(root, "sets"), "dir");

@@ -593,7 +593,7 @@ mod tests {
             ]
         );
         assert_eq!(request["expectedKeyGeneration"], 1);
-        if let Ok(path) = std::env::var("MYAGENTS_NETWORK_RENEWAL_CONTRACT_OUTPUT") {
+        if let Ok(path) = std::env::var("NEXTTOOLS_NETWORK_RENEWAL_CONTRACT_OUTPUT") {
             // Explicit isolated verification artifact: CSR/public metadata only.
             std::fs::write(path, serde_json::to_vec(&request).unwrap()).unwrap();
         }

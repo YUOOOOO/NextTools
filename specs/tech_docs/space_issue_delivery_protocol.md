@@ -1,4 +1,4 @@
-# MyAgents Space Issue Delivery Protocol
+# NextTools Space Issue Delivery Protocol
 
 > 本文是当前 Desktop Protocol v2 的 Prompt 与拼接权威。Cloud 仍按客户端版本投影 legacy/v1 wire 给旧 Desktop，但当前 Desktop只实现严格v2 parser/builder；两边的实际部署状态以各自发布系统和健康端点为准。
 
@@ -9,7 +9,7 @@ IssueDelivery 不只是一段 Prompt。它横跨四个边界：
 1. Cloud 把某个 Issue 的变化路由给某个 Registered Agent；
 2. Desktop connector 拉取 Delivery，并选择该实例自己的 Session；
 3. Desktop 把身份、长期目标、动作空间和本次唤醒原因组装成 hidden user message；
-4. 模型读取 Issue 当前状态，通过 myagents CLI 决定是否评论、更新、claim、继续执行、完成或不动作。
+4. 模型读取 Issue 当前状态，通过 nexttools CLI 决定是否评论、更新、claim、继续执行、完成或不动作。
 
 本文固定这条链路中模型可见协议的结构与 owner，避免以下漂移：
 
@@ -32,7 +32,7 @@ IssueDelivery 不只是一段 Prompt。它横跨四个边界：
 | Delivery transport 与因果索引 | Cloud IssueDelivery |
 | 本地 workspace、token、receipt | Desktop Rust Space owner |
 | Session 的精确执行身份 | Session origin 中的 spaceId + registeredAgentId |
-| 模型可用动作和具体参数 | myagents space issue --help 与各 leaf command help |
+| 模型可用动作和具体参数 | nexttools space issue --help 与各 leaf command help |
 | hidden envelope 展示语义 | [system_reminder_protocol.md](./system_reminder_protocol.md) |
 | 本协议的结构、拼接与版本规则 | 本文 |
 
@@ -149,8 +149,8 @@ v2 固定采用以下逻辑顺序：
 
 ~~~xml
 <system-reminder>
-<myagents-space-issue>
-<myagents-space-event
+<nexttools-space-issue>
+<nexttools-space-event
   version="2"
   type="issue-delivery"
   delivery-count="{{DELIVERY_COUNT}}"
@@ -158,7 +158,7 @@ v2 固定采用以下逻辑顺序：
   created-at="{{CREATED_AT}}">
 
 <registered-agent-context>
-You are operating as one exact Registered Agent in MyAgents Space.
+You are operating as one exact Registered Agent in NextTools Space.
 
 <space
   id="{{SPACE_ID}}"
@@ -186,7 +186,7 @@ For each delivered Issue, read its current server state, apply the Registered Ag
 
 Start by reading the current Issue:
 
-  myagents space issue view <issue.id> \
+  nexttools space issue view <issue.id> \
     --space <registered-agent-context.space.slug> \
     --comments \
     --json
@@ -201,19 +201,19 @@ Valid outcomes include:
 
 A comment or Issue update does not claim the Issue. A claim establishes responsibility but does not automatically change workflow state. Create an Attached Task only when durable local execution tracking is useful.
 
-MyAgents acknowledges Delivery automatically after injecting it into this Session. There is no Delivery ignore, dismiss, handled, or acknowledgement action for you to perform.
+NextTools acknowledges Delivery automatically after injecting it into this Session. There is no Delivery ignore, dismiss, handled, or acknowledgement action for you to perform.
 
 The current Issue is authoritative. Delivery metadata only explains why this Agent was awakened and may already be stale.
 
-Use the `myagents` CLI for all Space reads and mutations. Do not edit local Space state files or call Space Cloud APIs directly.
+Use the `nexttools` CLI for all Space reads and mutations. Do not edit local Space state files or call Space Cloud APIs directly.
 
 Discover the complete Issue action surface with:
 
-  myagents space issue --help
+  nexttools space issue --help
 
 Before using an unfamiliar action, read its exact contract with:
 
-  myagents space issue <command> --help
+  nexttools space issue <command> --help
 
 Every Space command must include:
 
@@ -232,8 +232,8 @@ Make only meaningful mutations. Do not post acknowledgement-only comments. Issue
 
 {{OPTIONAL_BATCH_GUIDANCE}}
 
-</myagents-space-event>
-</myagents-space-issue>
+</nexttools-space-event>
+</nexttools-space-issue>
 </system-reminder>
 
 {{VISIBLE_USER_TEXT}}
@@ -404,10 +404,10 @@ Do not apply one decision to every Issue, claim all Issues by default, or mix Is
 
 | 情况 | 中文 | English |
 | --- | --- | --- |
-| Subscription 单条 | MyAgents Space 已投递一个 Issue 通知，Registered Agent 正在根据其目标与指令进行评估。 | MyAgents Space delivered an Issue notification. The Registered Agent is evaluating it against its goal and instructions. |
-| Subscription 批量 | MyAgents Space 已投递 {{COUNT}} 个 Issue 通知，Registered Agent 正在根据其目标与指令逐项评估。 | MyAgents Space delivered {{COUNT}} Issue notifications. The Registered Agent is evaluating them against its goal and instructions. |
-| Assignment | MyAgents Space 已投递一个明确指派的 Issue，Registered Agent 正在读取当前状态并处理。 | MyAgents Space delivered an explicitly assigned Issue. The Registered Agent is reading its current state and proceeding. |
-| Claim follow-up | MyAgents Space 已投递一个已承接 Issue 的后续更新，Registered Agent 正在判断是否需要继续行动。 | MyAgents Space delivered a follow-up update for an owned Issue. The Registered Agent is deciding whether further action is needed. |
+| Subscription 单条 | NextTools Space 已投递一个 Issue 通知，Registered Agent 正在根据其目标与指令进行评估。 | NextTools Space delivered an Issue notification. The Registered Agent is evaluating it against its goal and instructions. |
+| Subscription 批量 | NextTools Space 已投递 {{COUNT}} 个 Issue 通知，Registered Agent 正在根据其目标与指令逐项评估。 | NextTools Space delivered {{COUNT}} Issue notifications. The Registered Agent is evaluating them against its goal and instructions. |
+| Assignment | NextTools Space 已投递一个明确指派的 Issue，Registered Agent 正在读取当前状态并处理。 | NextTools Space delivered an explicitly assigned Issue. The Registered Agent is reading its current state and proceeding. |
+| Claim follow-up | NextTools Space 已投递一个已承接 Issue 的后续更新，Registered Agent 正在判断是否需要继续行动。 | NextTools Space delivered a follow-up update for an owned Issue. The Registered Agent is deciding whether further action is needed. |
 
 visible tail 只负责用户气泡展示，不改变 isHumanUserMessage、Session origin 或模型权限。
 
@@ -418,7 +418,7 @@ v2 Agent-authenticated poll package 固定为：
 ~~~json
 {
   "protocolVersion": 2,
-  "space": { "id": "space_...", "name": "MyAgents", "slug": "myagents" },
+  "space": { "id": "space_...", "name": "NextTools", "slug": "nexttools" },
   "registeredAgent": {
     "id": "regagent_...",
     "displayName": "Bug 评估员",
@@ -513,7 +513,7 @@ Desktop builder 必须按以下确定顺序执行：
 - 所有 Cloud/user 可控字段先做长度校验，再 escape，不能直接插入；
 - instruction 允许换行与 Markdown，但只能位于 instruction-text 文本节点；
 - title、actor、Goal path、assignee summary 等只能作为 facts，不能进入 operating-guidance；
-- 动态内容不得闭合 system-reminder、myagents-space-issue、myagents-space-event 或任一内部标签；
+- 动态内容不得闭合 system-reminder、nexttools-space-issue、nexttools-space-event 或任一内部标签；
 - 未知 kind/reason/protocolVersion 必须 fail closed 并留待升级，不能猜成 subscription；
 - 不在普通日志记录整段 instruction、Issue body、comment 或 token；
 - 不把完整 Issue/comment/attachment 内容塞进 Prompt；Agent 通过 CLI 按需读取；
@@ -591,13 +591,13 @@ Session 没有 Registered Agent origin
 Prompt 只内置稳定的动作语义，不复制全部 CLI 参数。完整能力权威是：
 
 ~~~bash
-myagents space issue --help
+nexttools space issue --help
 ~~~
 
 具体命令权威是：
 
 ~~~bash
-myagents space issue <command> --help
+nexttools space issue <command> --help
 ~~~
 
 协议更新时必须保证：
@@ -607,13 +607,13 @@ myagents space issue <command> --help
 - comment/update 明确不自动 claim；
 - claim/Attached Task/complete 的责任与状态效果准确；
 - 不存在 delivery ignore/handled/acknowledge 的 Agent-facing 命令；
-- bundled myagents-cli skill 与真实 help 同步。
+- bundled nexttools-cli skill 与真实 help 同步。
 
 ## 19. 版本与兼容
 
 ### 19.1 版本含义
 
-- myagents-space-event version 表示模型可见 Prompt protocol；
+- nexttools-space-event version 表示模型可见 Prompt protocol；
 - Cloud Delivery protocolVersion 表示 poll/ACK transport contract；
 - 两者在 v2 正常路径必须都为 2；
 - Desktop app version 仍通过现有 client-version header 参与 Cloud response shaping，不新增 URL API version。
@@ -643,8 +643,8 @@ legacy/v1响应、endpoint和Cloud列只服务最低支持客户端与rollback f
 - src/shared/session-origin.ts 的 context normalize/serialize/restore；
 - src/server/session-engine/ 的 origin 与 hidden message facade；
 - builtin/integrated/external Runtime 的一致行为；
-- src/cli/myagents.ts、当前 app bundle、Admin API 与 Rust Management route；CLI 不再有独立复制版本号；
-- bundled myagents-cli skill；
+- src/cli/nexttools.ts、当前 app bundle、Admin API 与 Rust Management route；CLI 不再有独立复制版本号；
+- bundled nexttools-cli skill；
 - Renderer 的 instruction、multi-subscription、legacy warning 与 visible copy；
 - 登记/编辑弹窗中，名称正下方的“目标与指令”textarea、placeholder、帮助文案与校验；
 - system reminder badge、preview/search/title 的既有行为。
@@ -694,7 +694,7 @@ legacy/v1响应、endpoint和Cloud列只服务最低支持客户端与rollback f
 
 任何 Prompt 标签、字段、kind、reason、visible copy 或 CLI discovery 变化，都必须同步更新本文、对应测试和Cloud serializer。PRD不作为现行协议的同步副本。
 
-本地 Task Comment 不属于 IssueDelivery。Attached Task 可以同时有本地 Comment 时间线，但只有 Cloud 下发的 query 使用本文 `myagents-space-issue` instruction 并回复 Cloud Issue；从本地时间线注入的 query 使用独立 `TASK_COMMENT` reminder 与 `myagents task comment`。Task 类型、workspace 或 Session identity 都不能替代当前 query 来源，Desktop 不镜像、不代理、不双写两边评论。
+本地 Task Comment 不属于 IssueDelivery。Attached Task 可以同时有本地 Comment 时间线，但只有 Cloud 下发的 query 使用本文 `nexttools-space-issue` instruction 并回复 Cloud Issue；从本地时间线注入的 query 使用独立 `TASK_COMMENT` reminder 与 `nexttools task comment`。Task 类型、workspace 或 Session identity 都不能替代当前 query 来源，Desktop 不镜像、不代理、不双写两边评论。
 
 ## 21. 非目标
 

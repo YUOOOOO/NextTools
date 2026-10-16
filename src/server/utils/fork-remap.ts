@@ -3,7 +3,7 @@
  * See specs/prd/prd_0.2.27_fork_standalone_migration.md.
  *
  * The standalone SDK `forkSession()` copies the source transcript into a new session with
- * ALL message UUIDs remapped (fresh), preserving order + the parentUuid chain. Our MyAgents
+ * ALL message UUIDs remapped (fresh), preserving order + the parentUuid chain. Our NextTools
  * store keeps the OLD (source) sdkUuids on the copied rows, so after an eager fork those
  * anchors no longer resolve against the fork's transcript (fork-internal rewind would break).
  *

@@ -23,9 +23,9 @@ describe('Markdown web links', () => {
   });
 
   it.each([
-    'myagents://open/v1/spaces',
-    'myagents://open/v1/spaces/official/issues',
-    'myagents://open/v1/spaces/myagents/issues/iss_123',
+    'nexttools://open/v1/spaces',
+    'nexttools://open/v1/spaces/official/issues',
+    'nexttools://open/v1/spaces/nexttools/issues/iss_123',
   ])('sends a validated app intent for %s', href => {
     const received: unknown[] = [];
     const handler = (event: Event) => received.push((event as CustomEvent).detail);

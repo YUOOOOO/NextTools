@@ -3,7 +3,7 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getBuiltinMcpInstance } from '../../tools/builtin-mcp-registry';
 import { getImBridgeToolServer } from '../../tools/im-bridge-tools';
-import { MYAGENTS_TOOL_CALL_TIMEOUT_MS } from '../../session-core/tool-call-policy';
+import { NEXTTOOLS_TOOL_CALL_TIMEOUT_MS } from '../../session-core/tool-call-policy';
 import { maybeSpill } from '../../utils/large-value-store';
 import type {
   ProductDynamicToolSpec,
@@ -59,9 +59,9 @@ function codexDynamicToolName(serverId: string, toolName: string): string {
   const safeServer = serverId.replace(/[^A-Za-z0-9_-]/g, '_');
   const safeTool = toolName.replace(/[^A-Za-z0-9_-]/g, '_');
   // Codex reserves `mcp` and `mcp__*` for MCP tools that it owns natively.
-  // These tools are proxied by MyAgents through `thread/start.dynamicTools`,
+  // These tools are proxied by NextTools through `thread/start.dynamicTools`,
   // so their wire identity must live in a separate namespace.
-  return `myagents__mcp__${safeServer}__${safeTool}`;
+  return `nexttools__mcp__${safeServer}__${safeTool}`;
 }
 
 async function connectServer(
@@ -70,7 +70,7 @@ async function connectServer(
 ): Promise<{ connection: ConnectedServer; tools: ConnectedMcpTool[] }> {
   await serverReleaseByInstance.get(config.instance);
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  const client = new Client({ name: `myagents-managed-codex-${serverId}`, version: '0.4.6' });
+  const client = new Client({ name: `nexttools-managed-codex-${serverId}`, version: '0.4.6' });
   try {
     await config.instance.connect(serverTransport);
     await client.connect(clientTransport);
@@ -129,7 +129,7 @@ async function mapMcpResult(
         type: 'text',
         text: 'inline' in spilled
           ? item.text
-          : `${spilled.preview}\n\n[完整结果已保存为 MyAgents ref: ${spilled.id}]`,
+          : `${spilled.preview}\n\n[完整结果已保存为 NextTools ref: ${spilled.id}]`,
       });
       continue;
     }
@@ -160,7 +160,7 @@ async function mapMcpResult(
         type: 'text',
         text: 'inline' in spilled
           ? resourceText
-          : `${spilled.preview}\n\n[完整结果已保存为 MyAgents ref: ${spilled.id}]`,
+          : `${spilled.preview}\n\n[完整结果已保存为 NextTools ref: ${spilled.id}]`,
       });
       continue;
     }
@@ -205,8 +205,8 @@ class McpHostToolDispatcher implements ProductHostToolDispatcher {
       undefined,
       {
         signal: call.signal,
-        timeout: MYAGENTS_TOOL_CALL_TIMEOUT_MS,
-        maxTotalTimeout: MYAGENTS_TOOL_CALL_TIMEOUT_MS,
+        timeout: NEXTTOOLS_TOOL_CALL_TIMEOUT_MS,
+        maxTotalTimeout: NEXTTOOLS_TOOL_CALL_TIMEOUT_MS,
       },
     );
     return mapMcpResult(result as Parameters<typeof mapMcpResult>[0], this.sessionId);

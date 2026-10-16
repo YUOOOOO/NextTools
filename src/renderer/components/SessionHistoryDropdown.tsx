@@ -61,7 +61,7 @@ interface SessionHistoryDropdownProps {
 type FetchState = SessionMetadata[] | null;
 type CronTaskFetchState = CronTask[] | null;
 const EMPTY_SESSION_NOTIFICATION_BADGE_COUNTS = new Map<string, number>();
-const SHOW_AUTOMATION_HISTORY_STORAGE_KEY = 'myagents.chat.showAutomationHistorySessions';
+const SHOW_AUTOMATION_HISTORY_STORAGE_KEY = 'nexttools.chat.showAutomationHistorySessions';
 
 export default function SessionHistoryDropdown({
     agentDir,

@@ -1,4 +1,4 @@
-# MyAgents/Codex Pet Contract
+# NextTools/Codex Pet Contract
 
 ## Sprite Atlas
 
@@ -16,7 +16,7 @@ The webview animation uses CSS background positions from the fixed row and colum
 Place files under:
 
 ```text
-${MYAGENTS_HOME:-$HOME/.myagents}/pets/<pet-name>/
+${NEXTTOOLS_HOME:-$HOME/.nexttools}/pets/<pet-name>/
 ├── pet.json
 └── spritesheet.webp
 ```
@@ -32,4 +32,4 @@ Manifest shape:
 }
 ```
 
-MyAgents loads custom pets from the folder name under `${MYAGENTS_HOME:-$HOME/.myagents}/pets/`. Codex-compatible consumers can use the same package shape under `${CODEX_HOME:-$HOME/.codex}/pets/`.
+NextTools loads custom pets from the folder name under `${NEXTTOOLS_HOME:-$HOME/.nexttools}/pets/`. Codex-compatible consumers can use the same package shape under `${CODEX_HOME:-$HOME/.codex}/pets/`.

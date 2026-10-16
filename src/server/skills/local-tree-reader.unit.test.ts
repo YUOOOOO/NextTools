@@ -16,7 +16,7 @@ describe('readLocalDirectoryTree', () => {
   let root: string;
 
   beforeEach(() => {
-    root = mkdtempSync(join(tmpdir(), 'myagents-local-skill-'));
+    root = mkdtempSync(join(tmpdir(), 'nexttools-local-skill-'));
   });
 
   afterEach(() => {

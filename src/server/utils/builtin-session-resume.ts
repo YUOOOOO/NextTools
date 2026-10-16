@@ -25,7 +25,7 @@ export type BuiltinSessionResumeDecision =
     };
 
 /**
- * MyAgents metadata is not proof that the Claude Agent SDK can resume.
+ * NextTools metadata is not proof that the Claude Agent SDK can resume.
  * `query({ resume })` needs an SDK transcript under the same cwd; metadata-only
  * sessions created by POST /sessions must start with `sessionId` instead.
  */

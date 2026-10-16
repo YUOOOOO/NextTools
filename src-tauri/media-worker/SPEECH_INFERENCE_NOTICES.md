@@ -1,6 +1,6 @@
 # Speech inference native bundle notices
 
-MyAgents ships a target-specific media Worker and adapter under
+NextTools ships a target-specific media Worker and adapter under
 `speech-inference/v1`. The bundle intentionally does not contain ONNX Runtime:
 it references and verifies the single App-owned ONNX Runtime file from the
 document-processing resource bundle.
@@ -19,7 +19,7 @@ The native speech bundle is built from the exact revisions recorded in
   for bounded source-clock resampling;
 - hclust-cpp, already in the locked native graph, performs both local and
   global complete-link clustering; HDBSCAN is no longer shipped;
-- MyAgents media Worker, ABI v2 adapter and controlled sherpa raw-activity /
+- NextTools media Worker, ABI v2 adapter and controlled sherpa raw-activity /
   exclusive-speech embedding extension, under AGPL-3.0-only.
 
 The adjacent `legal/` inventory contains the exact license files copied from

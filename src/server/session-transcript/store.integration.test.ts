@@ -176,7 +176,7 @@ describe('SessionStore V2 ownership and compatibility', () => {
     const expected = { stats: { messageCount: 2, totalInputTokens: 10, totalOutputTokens: 20 }, lastMessagePreview: 'u2' };
     expect(store.getSessionMetadata(metadata.id)).toMatchObject(expected);
     expect(await active.writer.flush()).toBe(true);
-    expect(JSON.parse(await readFile(join(testState.home, '.myagents', 'sessions.json'), 'utf8'))[0]).toMatchObject(expected);
+    expect(JSON.parse(await readFile(join(testState.home, '.nexttools', 'sessions.json'), 'utf8'))[0]).toMatchObject(expected);
     content.admitUser({ id: 'u3', role: 'user', content: 'latest query', timestamp: 't' });
     content.append(content.block('next', 'text', { text: '' }), 'text', 'last answer');
     content.finishTurn('complete', { usage: { inputTokens: 3, outputTokens: 4 } });
@@ -213,7 +213,7 @@ describe('SessionStore V2 ownership and compatibility', () => {
     const { metadata, active } = await create();
     expect(await active.writer.flush()).toBe(true);
     await store.releaseSessionTranscriptForBinding(metadata.id);
-    const path = join(testState.home, '.myagents', 'sessions-v2', `${metadata.id}.jsonl`);
+    const path = join(testState.home, '.nexttools', 'sessions-v2', `${metadata.id}.jsonl`);
     await writeFile(path, 'invalid transcript header\n');
     const resumed = (await store.activateSessionTranscript(metadata.id))!;
     const { ProductTranscriptContent } = await import('./content');
@@ -281,13 +281,13 @@ describe('SessionStore V2 ownership and compatibility', () => {
     ];
     const source = await store.loadSessionTranscript(legacy.id);
     expect((await store.appendSessionMessages(legacy.id, source.cursor, rows)).ok).toBe(true);
-    const sourcePath = join(testState.home, '.myagents', 'sessions', `${legacy.id}.jsonl`);
+    const sourcePath = join(testState.home, '.nexttools', 'sessions', `${legacy.id}.jsonl`);
     const sourceBytes = await readFile(sourcePath);
     const target = createSessionMetadata('/workspace', { runtime: 'builtin' });
     testState.beforeTranscriptPublish = async () => {
       expect(store.isHistoryVisibleSession(store.getSessionMetadata(target.id)!)).toBe(false);
       expect(store.getActiveSessionTranscript(target.id)).toBeUndefined();
-      await expect(readFile(join(testState.home, '.myagents', 'sessions-v2', `${target.id}.jsonl`))).rejects.toMatchObject({ code: 'ENOENT' });
+      await expect(readFile(join(testState.home, '.nexttools', 'sessions-v2', `${target.id}.jsonl`))).rejects.toMatchObject({ code: 'ENOENT' });
     };
     await store.publishForkSession(target, rows, legacy.id);
     expect(store.isHistoryVisibleSession(store.getSessionMetadata(target.id)!)).toBe(true);
@@ -323,7 +323,7 @@ describe('SessionStore V2 ownership and compatibility', () => {
   it('gives fork user and nested tool attachments independent target copies', async () => {
     await store.saveSessionMetadata({ id: 'source', agentDir: '/workspace', title: 'source', createdAt: 't', lastActiveAt: 't' });
     const { createSessionMetadata } = await import('../types/session');
-    const root = join(testState.home, '.myagents');
+    const root = join(testState.home, '.nexttools');
     const userPath = join(root, 'attachments', 'source', 'image.png');
     const toolPath = join(root, 'generated', 'source.png');
     await mkdir(join(root, 'attachments', 'source'), { recursive: true });
@@ -359,9 +359,9 @@ describe('SessionStore V2 ownership and compatibility', () => {
     active.writer.observe({ kind: 'message-create', message: { id: 'a', role: 'assistant', content: '', timestamp: 't', transcriptState: 'streaming' } });
     active.writer.observe({ kind: 'text-append', messageId: 'a', field: 'text', offset: 0, text: 'unfinished' });
     expect(await active.writer.flush()).toBe(true);
-    const bytes = await readFile(join(testState.home, '.myagents', 'sessions-v2', `${metadata.id}.jsonl`), 'utf8');
+    const bytes = await readFile(join(testState.home, '.nexttools', 'sessions-v2', `${metadata.id}.jsonl`), 'utf8');
     expect(bytes).toContain('session-transcript');
-    await expect(readFile(join(testState.home, '.myagents', 'sessions', `${metadata.id}.jsonl`))).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(readFile(join(testState.home, '.nexttools', 'sessions', `${metadata.id}.jsonl`))).rejects.toMatchObject({ code: 'ENOENT' });
     await active.revoke();
     vi.resetModules();
     store = await import('../SessionStore');
@@ -384,7 +384,7 @@ describe('SessionStore V2 ownership and compatibility', () => {
     testState.failMetadata = false;
     expect(await active.writer.flush()).toBe(true);
     expect(active.writer.status.state).toBe('healthy');
-    const disk = JSON.parse(await readFile(join(testState.home, '.myagents', 'sessions.json'), 'utf8')) as SessionMetadata[];
+    const disk = JSON.parse(await readFile(join(testState.home, '.nexttools', 'sessions.json'), 'utf8')) as SessionMetadata[];
     expect(disk[0].materializationState).toBeUndefined();
   });
 
@@ -401,11 +401,11 @@ describe('SessionStore V2 ownership and compatibility', () => {
     const snapshot = await store.loadSessionTranscript(metadata.id);
     const row = { id: 'u', role: 'user' as const, content: 'old history', timestamp: 't' };
     expect((await store.appendSessionMessages(metadata.id, snapshot.cursor, [row])).ok).toBe(true);
-    expect(await readFile(join(testState.home, '.myagents', 'sessions', `${metadata.id}.jsonl`), 'utf8')).toBe(JSON.stringify(row) + '\n');
+    expect(await readFile(join(testState.home, '.nexttools', 'sessions', `${metadata.id}.jsonl`), 'utf8')).toBe(JSON.stringify(row) + '\n');
     expect((await store.getSessionData(metadata.id))?.messages).toEqual([row]);
     const { metadata: v2, active } = await create();
     expect(await active.writer.flush()).toBe(true);
-    await writeFile(join(testState.home, '.myagents', 'sessions-v2', `${metadata.id}.jsonl`), await readFile(join(testState.home, '.myagents', 'sessions-v2', `${v2.id}.jsonl`)));
+    await writeFile(join(testState.home, '.nexttools', 'sessions-v2', `${metadata.id}.jsonl`), await readFile(join(testState.home, '.nexttools', 'sessions-v2', `${v2.id}.jsonl`)));
     await expect(store.loadSessionTranscript(metadata.id)).rejects.toThrow('Conflicting');
     expect((await store.appendSessionMessages(metadata.id, snapshot.cursor, [row])).ok).toBe(false);
   });
@@ -426,7 +426,7 @@ describe('SessionStore V2 ownership and compatibility', () => {
     testState.failMetadata = false;
     expect(await active.writer.flush()).toBe(true);
     expect(active.hasPendingMutation).toBe(false);
-    const disk = JSON.parse(await readFile(join(testState.home, '.myagents', 'sessions.json'), 'utf8')) as SessionMetadata[];
+    const disk = JSON.parse(await readFile(join(testState.home, '.nexttools', 'sessions.json'), 'utf8')) as SessionMetadata[];
     expect(disk[0]).toMatchObject({ runtimeSessionId: 'native-new' });
     expect(disk[0].pendingConversationMutation).toBeUndefined();
   });

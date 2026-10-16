@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render lightweight animated QA previews from extracted MyAgents/Codex-compatible pet frames."""
+"""Render lightweight animated QA previews from extracted NextTools/Codex-compatible pet frames."""
 
 from __future__ import annotations
 

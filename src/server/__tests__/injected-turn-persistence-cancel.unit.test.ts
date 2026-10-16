@@ -124,7 +124,7 @@ describe('injected-turn cancellation before user persistence', () => {
       cursor: storeMocks.cursor,
     });
     resetQueueForTest();
-    await initializeAgent('/tmp/myagents-mcp-readiness-cancel', null, undefined, {
+    await initializeAgent('/tmp/nexttools-mcp-readiness-cancel', null, undefined, {
       preWarmDisabled: true,
     });
   });

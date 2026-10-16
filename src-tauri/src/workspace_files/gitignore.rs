@@ -1,6 +1,6 @@
 //! `.gitignore` pattern injection.
 //!
-//! Used right after `myagents_files/` is populated to ensure the imported
+//! Used right after `nexttools_files/` is populated to ensure the imported
 //! attachments don't get committed by mistake. Idempotent: if the pattern
 //! already matches a line, we no-op.
 //!
@@ -111,14 +111,14 @@ mod tests {
         let ws = make_tmp_workspace();
         let res = cmd_workspace_add_gitignore(
             ws.to_string_lossy().to_string(),
-            "myagents_files/".to_string(),
+            "nexttools_files/".to_string(),
         )
         .await
         .unwrap();
         assert!(res.added);
         assert_eq!(
             fs::read_to_string(ws.join(".gitignore")).unwrap(),
-            "myagents_files/\n"
+            "nexttools_files/\n"
         );
         let _ = fs::remove_dir_all(&ws);
     }
@@ -126,17 +126,17 @@ mod tests {
     #[tokio::test]
     async fn idempotent_when_pattern_present() {
         let ws = make_tmp_workspace();
-        fs::write(ws.join(".gitignore"), "myagents_files/\nnode_modules\n").unwrap();
+        fs::write(ws.join(".gitignore"), "nexttools_files/\nnode_modules\n").unwrap();
         let res = cmd_workspace_add_gitignore(
             ws.to_string_lossy().to_string(),
-            "myagents_files/".to_string(),
+            "nexttools_files/".to_string(),
         )
         .await
         .unwrap();
         assert!(!res.added);
         assert_eq!(
             fs::read_to_string(ws.join(".gitignore")).unwrap(),
-            "myagents_files/\nnode_modules\n"
+            "nexttools_files/\nnode_modules\n"
         );
         let _ = fs::remove_dir_all(&ws);
     }
@@ -147,14 +147,14 @@ mod tests {
         fs::write(ws.join(".gitignore"), "node_modules").unwrap();
         let res = cmd_workspace_add_gitignore(
             ws.to_string_lossy().to_string(),
-            "myagents_files/".to_string(),
+            "nexttools_files/".to_string(),
         )
         .await
         .unwrap();
         assert!(res.added);
         assert_eq!(
             fs::read_to_string(ws.join(".gitignore")).unwrap(),
-            "node_modules\nmyagents_files/\n"
+            "node_modules\nnexttools_files/\n"
         );
         let _ = fs::remove_dir_all(&ws);
     }

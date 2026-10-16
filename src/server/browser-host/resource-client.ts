@@ -35,7 +35,7 @@ async function wait(delayMs: number, signal?: AbortSignal): Promise<void> {
  * transaction is active; an uninstalled or failed resource is terminal.
  */
 export async function waitForBrowserResource(signal?: AbortSignal): Promise<BrowserResourceResolution> {
-  const sidecarId = process.env.MYAGENTS_SIDECAR_ID?.trim();
+  const sidecarId = process.env.NEXTTOOLS_SIDECAR_ID?.trim();
   if (sidecarId !== '__global__') {
     throw new Error('Browser resources are available only to the Global Sidecar');
   }

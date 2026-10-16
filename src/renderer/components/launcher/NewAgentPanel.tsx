@@ -106,7 +106,7 @@ async function findAvailablePath(dir: string, name: string): Promise<string> {
 
 async function resolveDefaultParentDir(): Promise<string> {
   try {
-    return await join(await homeDir(), '.myagents', 'projects');
+    return await join(await homeDir(), '.nexttools', 'projects');
   } catch {
     return '';
   }
@@ -381,7 +381,7 @@ export default memo(function NewAgentPanel({ onClose, onCreated }: NewAgentPanel
         if (isBrowserDevMode()) {
           // Browser dev mode remembers the parent for its next path suggestion.
           const { parent } = splitPathForDisplay(draft.folderPath.replace(/\\/g, '/'));
-          if (parent) window.localStorage.setItem('myagents:lastProjectDir', parent.replace(/\/$/, ''));
+          if (parent) window.localStorage.setItem('nexttools:lastProjectDir', parent.replace(/\/$/, ''));
         }
       } else {
         if (!template) throw new Error('Template not found');

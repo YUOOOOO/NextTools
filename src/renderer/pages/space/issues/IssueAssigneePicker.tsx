@@ -21,7 +21,7 @@ export type AssigneeChoice = {
 };
 
 function recentMemberKey(session: SpaceSession): string {
-  return `myagents.space.recentAssignees:${session.space.id}:${session.user.id}`;
+  return `nexttools.space.recentAssignees:${session.space.id}:${session.user.id}`;
 }
 
 function readRecentMemberIds(session: SpaceSession): string[] {

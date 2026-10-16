@@ -57,7 +57,7 @@ jobs:
         run: |
           sudo apt-get install -y --no-install-recommends python3 dbus-x11 xvfb xauth
           dbus-run-session -- xvfb-run -a python3 scripts/linux-package-smoke.py \
-            --app src-tauri/target/x86_64-unknown-linux-gnu/debug/myagents \
+            --app src-tauri/target/x86_64-unknown-linux-gnu/debug/nexttools \
             --resources src-tauri/target/x86_64-unknown-linux-gnu/debug \
             --startup
       - name: Build the Debian installer
@@ -67,7 +67,7 @@ jobs:
           ./build_linux.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: myagents-ubuntu-24.04-amd64
+          name: nexttools-ubuntu-24.04-amd64
           path: src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/deb/*.deb
           if-no-files-found: error
           compression-level: 0
@@ -91,7 +91,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          name: myagents-ubuntu-24.04-amd64
+          name: nexttools-ubuntu-24.04-amd64
           path: installer
       - name: Install and check the installed package as a normal user
         shell: bash
@@ -105,6 +105,6 @@ jobs:
           resource_root=$(dirname "$(dpkg -L "$package_name" | grep '/server-dist.js$')")
           runuser -u package-test -- dbus-run-session -- xvfb-run -a \
             python3 "$GITHUB_WORKSPACE/scripts/linux-package-smoke.py" \
-            --app /usr/bin/myagents --resources "$resource_root" --startup
+            --app /usr/bin/nexttools --resources "$resource_root" --startup
           apt-get remove -y "$package_name"
-          test ! -e /usr/bin/myagents
+          test ! -e /usr/bin/nexttools

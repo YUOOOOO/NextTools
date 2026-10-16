@@ -1,4 +1,4 @@
-# Contributing to MyAgents
+# Contributing to NextTools
 
 [English](#english) | [中文](#中文)
 
@@ -8,7 +8,7 @@
 
 ## English
 
-Thank you for your interest in contributing to MyAgents! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to NextTools! This document provides guidelines and instructions for contributing.
 
 ### Code of Conduct
 
@@ -23,7 +23,7 @@ Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
    - Clear, descriptive title
    - Steps to reproduce
    - Expected vs actual behavior
-   - MyAgents version, operating system version, and CPU architecture
+   - NextTools version, operating system version, and CPU architecture
    - Screenshots if applicable
 
 #### Suggesting Features
@@ -52,7 +52,7 @@ Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 6. Push and create a Pull Request
 
 By submitting a contribution, you confirm that you created it or have the
-right to submit it, and that it may be distributed as part of MyAgents under
+right to submit it, and that it may be distributed as part of NextTools under
 the project's community license and separate commercial licenses. If a
 Contributor License Agreement is requested for your contribution, it must be
 completed before merge.
@@ -67,8 +67,8 @@ See the [development guide](DEVELOPMENT.md#english) for prerequisites, Windows a
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR_USERNAME/MyAgents.git
-cd MyAgents
+git clone https://github.com/YOUR_USERNAME/NextTools.git
+cd NextTools
 
 # Install dependencies
 ./setup.sh
@@ -80,7 +80,7 @@ cd MyAgents
 ### Project Structure
 
 ```
-MyAgents/
+NextTools/
 ├── src/
 │   ├── renderer/     # React frontend
 │   ├── server/       # Node.js backend (Sidecar)
@@ -106,7 +106,7 @@ Feel free to open an issue or reach out at myagents.io@gmail.com
 
 ## 中文
 
-感谢您有兴趣为 MyAgents 做出贡献！本文档提供贡献指南和说明。
+感谢您有兴趣为 NextTools 做出贡献！本文档提供贡献指南和说明。
 
 ### 行为准则
 
@@ -121,7 +121,7 @@ Feel free to open an issue or reach out at myagents.io@gmail.com
    - 清晰的标题
    - 复现步骤
    - 预期行为 vs 实际行为
-   - MyAgents 版本、操作系统版本、CPU 架构
+   - NextTools 版本、操作系统版本、CPU 架构
    - 相关截图
 
 #### 功能建议
@@ -150,7 +150,7 @@ Feel free to open an issue or reach out at myagents.io@gmail.com
 6. 推送并创建 Pull Request
 
 提交贡献即表示你确认该内容由你创作，或你拥有提交该内容的充分权利，并同意项目方可以在
-MyAgents 的社区许可证和单独商业许可证下分发该贡献。如果项目要求签署贡献者许可协议
+NextTools 的社区许可证和单独商业许可证下分发该贡献。如果项目要求签署贡献者许可协议
 （CLA），必须在合并前完成。
 
 请勿提交来源或授权不明确的第三方代码、Prompt、素材、生成内容或其他材料。引入第三方内容
@@ -163,8 +163,8 @@ MyAgents 的社区许可证和单独商业许可证下分发该贡献。如果�
 
 ```bash
 # 克隆你的 fork
-git clone https://github.com/YOUR_USERNAME/MyAgents.git
-cd MyAgents
+git clone https://github.com/YOUR_USERNAME/NextTools.git
+cd NextTools
 
 # 安装依赖
 ./setup.sh
@@ -176,7 +176,7 @@ cd MyAgents
 ### 项目结构
 
 ```
-MyAgents/
+NextTools/
 ├── src/
 │   ├── renderer/     # React 前端
 │   ├── server/       # Node.js 后端 (Sidecar)

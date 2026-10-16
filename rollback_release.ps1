@@ -1,4 +1,4 @@
-# MyAgents 版本回滚脚本 (PowerShell)
+# NextTools 版本回滚脚本 (PowerShell)
 # 从 R2 上已有的旧版本数据重建更新清单，实现版本回滚
 #
 # 原理：R2 上 releases/v{VERSION}/ 目录保留了所有历史版本的完整产物
@@ -53,13 +53,13 @@ $ProjectDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $ProjectDir
 
 # 配置
-$R2Bucket = "myagents-releases"
+$R2Bucket = "nexttools-releases"
 $DownloadBaseUrl = "https://download.myagents.io"
 $EnvFile = Join-Path $ProjectDir ".env"
 
 Write-Host ""
 Write-Host "=========================================" -ForegroundColor Cyan
-Write-Host "  MyAgents 版本回滚" -ForegroundColor Yellow
+Write-Host "  NextTools 版本回滚" -ForegroundColor Yellow
 Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -132,7 +132,7 @@ acl = private
 $env:RCLONE_CONFIG_R2_ACCESS_KEY_ID = $R2AccessKeyId
 $env:RCLONE_CONFIG_R2_SECRET_ACCESS_KEY = $R2SecretAccessKey
 
-$WorkDir = Join-Path ([System.IO.Path]::GetTempPath()) ("myagents-rollback-" + [System.Guid]::NewGuid().ToString("N"))
+$WorkDir = Join-Path ([System.IO.Path]::GetTempPath()) ("nexttools-rollback-" + [System.Guid]::NewGuid().ToString("N"))
 $script:WorkDir = $WorkDir
 New-Item -ItemType Directory -Path $WorkDir -Force | Out-Null
 
@@ -322,16 +322,16 @@ if ($RollbackMac -and $TargetVersion -ne $CurrentMacVersion) {
     Write-Host "  重建 macOS 清单..." -ForegroundColor Cyan
 
     # darwin-aarch64.json
-    $armSigPath = Join-Path $SigDir "MyAgents_${TargetVersion}_aarch64.app.tar.gz.sig"
-    $armTarName = "MyAgents_${TargetVersion}_aarch64.app.tar.gz"
+    $armSigPath = Join-Path $SigDir "NextTools_${TargetVersion}_aarch64.app.tar.gz.sig"
+    $armTarName = "NextTools_${TargetVersion}_aarch64.app.tar.gz"
     if (-not (Test-Path $armSigPath)) {
-        $armSigPath = Join-Path $SigDir "MyAgents_aarch64.app.tar.gz.sig"
-        $armTarName = "MyAgents_aarch64.app.tar.gz"
+        $armSigPath = Join-Path $SigDir "NextTools_aarch64.app.tar.gz.sig"
+        $armTarName = "NextTools_aarch64.app.tar.gz"
     }
 
     if (Test-Path $armSigPath) {
         $armSig = (Get-Content $armSigPath -Raw).Trim()
-        $armManifest = @{ version = $TargetVersion; notes = "MyAgents v$TargetVersion"; pub_date = $PubDate; signature = $armSig; url = "$DownloadBaseUrl/releases/v$TargetVersion/$armTarName" }
+        $armManifest = @{ version = $TargetVersion; notes = "NextTools v$TargetVersion"; pub_date = $PubDate; signature = $armSig; url = "$DownloadBaseUrl/releases/v$TargetVersion/$armTarName" }
         [System.IO.File]::WriteAllText((Join-Path $ManifestDir "darwin-aarch64.json"), ($armManifest | ConvertTo-Json -Depth 5), [System.Text.UTF8Encoding]::new($false))
         Write-Host "    [OK] darwin-aarch64.json" -ForegroundColor Green
     } else {
@@ -339,20 +339,20 @@ if ($RollbackMac -and $TargetVersion -ne $CurrentMacVersion) {
     }
 
     # darwin-x86_64.json
-    $intelSigPath = Join-Path $SigDir "MyAgents_${TargetVersion}_x86_64.app.tar.gz.sig"
-    $intelTarName = "MyAgents_${TargetVersion}_x86_64.app.tar.gz"
+    $intelSigPath = Join-Path $SigDir "NextTools_${TargetVersion}_x86_64.app.tar.gz.sig"
+    $intelTarName = "NextTools_${TargetVersion}_x86_64.app.tar.gz"
     if (-not (Test-Path $intelSigPath)) {
-        $intelSigPath = Join-Path $SigDir "MyAgents_x86_64.app.tar.gz.sig"
-        $intelTarName = "MyAgents_x86_64.app.tar.gz"
+        $intelSigPath = Join-Path $SigDir "NextTools_x86_64.app.tar.gz.sig"
+        $intelTarName = "NextTools_x86_64.app.tar.gz"
     }
     if (-not (Test-Path $intelSigPath)) {
-        $intelSigPath = Join-Path $SigDir "MyAgents_${TargetVersion}_x64.app.tar.gz.sig"
-        $intelTarName = "MyAgents_${TargetVersion}_x64.app.tar.gz"
+        $intelSigPath = Join-Path $SigDir "NextTools_${TargetVersion}_x64.app.tar.gz.sig"
+        $intelTarName = "NextTools_${TargetVersion}_x64.app.tar.gz"
     }
 
     if (Test-Path $intelSigPath) {
         $intelSig = (Get-Content $intelSigPath -Raw).Trim()
-        $intelManifest = @{ version = $TargetVersion; notes = "MyAgents v$TargetVersion"; pub_date = $PubDate; signature = $intelSig; url = "$DownloadBaseUrl/releases/v$TargetVersion/$intelTarName" }
+        $intelManifest = @{ version = $TargetVersion; notes = "NextTools v$TargetVersion"; pub_date = $PubDate; signature = $intelSig; url = "$DownloadBaseUrl/releases/v$TargetVersion/$intelTarName" }
         [System.IO.File]::WriteAllText((Join-Path $ManifestDir "darwin-x86_64.json"), ($intelManifest | ConvertTo-Json -Depth 5), [System.Text.UTF8Encoding]::new($false))
         Write-Host "    [OK] darwin-x86_64.json" -ForegroundColor Green
     } else {
@@ -370,7 +370,7 @@ if ($RollbackMac -and $TargetVersion -ne $CurrentMacVersion) {
         $downloads = @{}
         if ($armDmg) { $downloads["mac_arm64"] = @{ name = "Apple Silicon"; url = "$DownloadBaseUrl/releases/v$TargetVersion/$armDmg" } }
         if ($intelDmg) { $downloads["mac_intel"] = @{ name = "Intel Mac"; url = "$DownloadBaseUrl/releases/v$TargetVersion/$intelDmg" } }
-        $latestManifest = @{ version = $TargetVersion; pub_date = $PubDate; release_notes = "MyAgents v$TargetVersion"; downloads = $downloads }
+        $latestManifest = @{ version = $TargetVersion; pub_date = $PubDate; release_notes = "NextTools v$TargetVersion"; downloads = $downloads }
         [System.IO.File]::WriteAllText((Join-Path $ManifestDir "latest.json"), ($latestManifest | ConvertTo-Json -Depth 5), [System.Text.UTF8Encoding]::new($false))
         Write-Host "    [OK] latest.json (ARM: $($armDmg ?? '无'), Intel: $($intelDmg ?? '无'))" -ForegroundColor Green
     } else {
@@ -384,8 +384,8 @@ if ($RollbackWin -and $TargetVersion -ne $CurrentWinVersion) {
     Write-Host "  重建 Windows 清单..." -ForegroundColor Cyan
 
     # windows-x86_64.json
-    $winSigPath = Join-Path $SigDir "MyAgents_${TargetVersion}_x86_64.nsis.zip.sig"
-    $winZipName = "MyAgents_${TargetVersion}_x86_64.nsis.zip"
+    $winSigPath = Join-Path $SigDir "NextTools_${TargetVersion}_x86_64.nsis.zip.sig"
+    $winZipName = "NextTools_${TargetVersion}_x86_64.nsis.zip"
     if (-not (Test-Path $winSigPath)) {
         $fallback = Get-ChildItem -Path $SigDir -Filter "*.nsis.zip.sig" -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($fallback) {
@@ -396,7 +396,7 @@ if ($RollbackWin -and $TargetVersion -ne $CurrentWinVersion) {
 
     if (Test-Path $winSigPath) {
         $winSig = (Get-Content $winSigPath -Raw).Trim()
-        $winManifest = @{ version = $TargetVersion; notes = "MyAgents v$TargetVersion"; pub_date = $PubDate; signature = $winSig; url = "$DownloadBaseUrl/releases/v$TargetVersion/$winZipName" }
+        $winManifest = @{ version = $TargetVersion; notes = "NextTools v$TargetVersion"; pub_date = $PubDate; signature = $winSig; url = "$DownloadBaseUrl/releases/v$TargetVersion/$winZipName" }
         [System.IO.File]::WriteAllText((Join-Path $ManifestDir "windows-x86_64.json"), ($winManifest | ConvertTo-Json -Depth 5), [System.Text.UTF8Encoding]::new($false))
         Write-Host "    [OK] windows-x86_64.json" -ForegroundColor Green
     } else {
@@ -411,7 +411,7 @@ if ($RollbackWin -and $TargetVersion -ne $CurrentWinVersion) {
 
     if ($winExe) {
         $latestWin = @{
-            version = $TargetVersion; pub_date = $PubDate; release_notes = "MyAgents v$TargetVersion"
+            version = $TargetVersion; pub_date = $PubDate; release_notes = "NextTools v$TargetVersion"
             downloads = @{ "win_x64" = @{ name = "Windows x64"; url = "$DownloadBaseUrl/releases/v$TargetVersion/$winExe" } }
         }
         [System.IO.File]::WriteAllText((Join-Path $ManifestDir "latest_win.json"), ($latestWin | ConvertTo-Json -Depth 5), [System.Text.UTF8Encoding]::new($false))

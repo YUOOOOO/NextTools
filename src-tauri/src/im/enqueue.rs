@@ -283,7 +283,7 @@ pub(super) async fn enqueue_to_sidecar(
     let url = format!("http://127.0.0.1:{}/api/im/enqueue", port);
     let response = client
         .post(&url)
-        .header("X-MyAgents-Request-Id", &msg.request_id)
+        .header("X-NextTools-Request-Id", &msg.request_id)
         .json(&body)
         .send()
         .await

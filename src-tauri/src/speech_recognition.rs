@@ -25,8 +25,8 @@ use crate::workspace_files::path_safety::{
     validate_workspace_root,
 };
 use chrono::{DateTime, Duration, Utc};
-use myagents_media_worker_protocol::record_identity::{PersonMatchEvidence, MAX_IDENTITY_PEOPLE};
-use myagents_media_worker_protocol::{
+use nexttools_media_worker_protocol::record_identity::{PersonMatchEvidence, MAX_IDENTITY_PEOPLE};
+use nexttools_media_worker_protocol::{
     read_worker_response, write_control_frame, write_pcm_frame, Checkpoint, PcmFrame, PcmStreamEnd,
     PcmStreamStart, RecordArtifactInput, SpeakerTurn, StartRequest, TrackKind, WorkerCommand,
     WorkerMetrics, WorkerResponse, WorkerStage, WorkloadIdentity, WorkloadInput, WorkloadKind,
@@ -55,8 +55,8 @@ const MAX_WORKER_ATTEMPTS: u32 = 3;
 const MAX_WORKER_STDERR_BYTES: u64 = 64 * 1024;
 const MAX_PENDING_JOBS: usize = 256;
 const MAX_AGENT_SOURCE_BYTES: u64 = 4 * 1024 * 1024 * 1024;
-const AGENT_OUTPUT_DIRECTORY: &str = "myagents_files/speech-transcriptions";
-const AGENT_STAGING_MARKER: &str = ".myagents-speech-owner";
+const AGENT_OUTPUT_DIRECTORY: &str = "nexttools_files/speech-transcriptions";
+const AGENT_STAGING_MARKER: &str = ".nexttools-speech-owner";
 const AGENT_PRIVATE_STAGING_TOKEN: &str = ".staging-token";
 const AGENT_PUBLISH_INTENT: &str = "publish-intent.json";
 const YIELD_GRACE_SECONDS: u64 = 15;
@@ -790,9 +790,9 @@ impl SpeechRecognitionManager {
 
         let native_root = resource_root.join("speech-inference").join("v1");
         let worker_name = if cfg!(windows) {
-            "myagents-media-worker.exe"
+            "nexttools-media-worker.exe"
         } else {
-            "myagents-media-worker"
+            "nexttools-media-worker"
         };
         let runtime_identity = runtime_registry
             .identity(InferenceRuntimeKind::OnnxCpu)
@@ -1148,7 +1148,7 @@ impl SpeechRecognitionManager {
         if fs::symlink_metadata(&public_dir).is_ok() {
             return Err("SPEECH_OUTPUT_COLLISION");
         }
-        let staging_dir = output_root.join(format!(".myagents-speech-{job_id}.staging"));
+        let staging_dir = output_root.join(format!(".nexttools-speech-{job_id}.staging"));
         let private_dir = self.root.join("private").join(&job_id);
         ensure_private_directory(&staging_dir).map_err(|_| "SPEECH_PRIVATE_STORAGE_UNAVAILABLE")?;
         if let Err(error) = ensure_private_directory(&private_dir) {
@@ -5693,7 +5693,7 @@ fn recover_agent_publish_intents(root: &Path, jobs: &mut HashMap<String, SpeechJ
         let Some(destination) = job.output.job_directory.as_deref().map(Path::new) else {
             continue;
         };
-        let staging = output_root.join(format!(".myagents-speech-{}.staging", job.job_id));
+        let staging = output_root.join(format!(".nexttools-speech-{}.staging", job.job_id));
         let private_dir = root.join("private").join(&job.job_id);
         let private_token = read_agent_token(
             &private_dir.join(AGENT_PRIVATE_STAGING_TOKEN),
@@ -5783,7 +5783,7 @@ fn cleanup_agent_owned_directory(path: &Path, token: &str) {
     };
     for _ in 0..8 {
         let suffix = Uuid::new_v4().simple().to_string();
-        let quarantine = parent.join(format!(".myagents-speech-cleanup-{}", &suffix[..12]));
+        let quarantine = parent.join(format!(".nexttools-speech-cleanup-{}", &suffix[..12]));
         match crate::durable_fs::rename_directory_noreplace(path, &quarantine) {
             Ok(()) => {
                 if validate_agent_directory(&quarantine, &identity, token).is_err() {
@@ -6439,7 +6439,7 @@ mod tests {
     use crate::record::{
         AudioRecordCreateInput, AudioTrackArtifactInput, CaptureStatus, RecordStore,
     };
-    use myagents_media_worker_protocol::{
+    use nexttools_media_worker_protocol::{
         write_control_frame, Checkpoint, PcmStreamCheckpoint, WorkerMetrics, WorkerResponse,
     };
 
@@ -7861,7 +7861,7 @@ mod tests {
         let initial = manager(&root);
         let job_id = "speech_publish_crash";
         let output_root = root.path().join("workspace-output");
-        let staging = output_root.join(format!(".myagents-speech-{job_id}.staging"));
+        let staging = output_root.join(format!(".nexttools-speech-{job_id}.staging"));
         let destination = output_root.join(job_id);
         let private = initial.root.join("private").join(job_id);
         ensure_private_directory(&staging).unwrap();
@@ -7973,7 +7973,7 @@ mod tests {
                 schema_version: 1,
                 job_id: job_id.into(),
                 staging_directory: output_root
-                    .join(format!(".myagents-speech-{job_id}.staging"))
+                    .join(format!(".nexttools-speech-{job_id}.staging"))
                     .to_string_lossy()
                     .into_owned(),
                 destination_directory: destination.to_string_lossy().into_owned(),

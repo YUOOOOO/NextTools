@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MyAgents</title>
+    <title>NextTools</title>
     <!-- Theme bootstrap: apply the last non-sensitive Theme selection before
          CSS/React paint. Durable AppConfig corrects this snapshot after load. -->
     <script>
       (function () {
         var root = document.documentElement;
-        var themeId = 'myagents-light';
+        var themeId = 'nexttools-light';
         var appearanceMode = 'system';
         function applySelection(id, mode) {
           var systemDark = false;
@@ -27,14 +27,14 @@
         // private-mode storage and future/unknown IDs cannot leave root bare.
         applySelection(themeId, appearanceMode);
         try {
-          var raw = localStorage.getItem('myagents:theme-bootstrap');
+          var raw = localStorage.getItem('nexttools:theme-bootstrap');
           if (raw) {
             var snapshot = JSON.parse(raw);
             if (snapshot && (snapshot.version === 1 || snapshot.version === 2)) {
               var storedThemeId = typeof snapshot.themeId === 'string' ? snapshot.themeId.trim() : '';
               var explicitTheme = snapshot.version === 2
                 ? snapshot.themeSelectionExplicit === true
-                : storedThemeId !== '' && storedThemeId !== 'myagents-default';
+                : storedThemeId !== '' && storedThemeId !== 'nexttools-default';
               if (explicitTheme && storedThemeId) themeId = storedThemeId;
               if (snapshot.appearanceMode === 'light' || snapshot.appearanceMode === 'dark' || snapshot.appearanceMode === 'system') {
                 appearanceMode = snapshot.appearanceMode;

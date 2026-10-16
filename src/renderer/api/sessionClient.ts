@@ -104,7 +104,7 @@ export interface SessionMetadata {
     mcpEnabledServers?: string[];
     /** Snapshot Claude cc-plugin enabled list. */
     enabledPluginIds?: string[];
-    /** Snapshot MyAgents official CLI tool enabled list. */
+    /** Snapshot NextTools official CLI tool enabled list. */
     enabledOfficialToolIds?: OfficialToolId[];
     providerId?: string;
     providerRoute?: ProviderRoute;

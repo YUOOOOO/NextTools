@@ -4,7 +4,7 @@
 export * from "./infra-runtime.auto.js";
 // === END AUTO-AUGMENT ===
 
-// OpenClaw plugin-sdk/infra-runtime shim for MyAgents Plugin Bridge
+// OpenClaw plugin-sdk/infra-runtime shim for NextTools Plugin Bridge
 // Provides filesystem utilities: temp dir resolution, file locking.
 
 import { homedir } from 'node:os';
@@ -14,10 +14,10 @@ import { mkdirSync, lstatSync, rmdirSync, writeFileSync, unlinkSync } from 'node
 /**
  * Resolve the preferred OpenClaw temp directory.
  * In real OpenClaw: tries XDG_RUNTIME_DIR → ~/.openclaw/tmp → os.tmpdir(), with permission checks.
- * Our shim: uses ~/.myagents/tmp (MyAgents convention, always writable).
+ * Our shim: uses ~/.nexttools/tmp (NextTools convention, always writable).
  */
 export function resolvePreferredOpenClawTmpDir(options) {
-  const dir = join(homedir(), '.myagents', 'tmp');
+  const dir = join(homedir(), '.nexttools', 'tmp');
   try { mkdirSync(dir, { recursive: true }); } catch { /* ignore */ }
   return dir;
 }

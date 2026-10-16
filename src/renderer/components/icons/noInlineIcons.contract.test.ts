@@ -14,7 +14,7 @@ const ALLOWED = new Set([
   'assets/workspace-icons/glyphs.tsx',
   'components/launcher/WorkspaceIcon.tsx',
   // The shared brand wordmark has its own optical sizes; it is not a UI glyph.
-  'components/brand/MyAgentsLogotype.tsx',
+  'components/brand/NextToolsLogotype.tsx',
   // Data visualisations, not icons.
   'components/UsageStatsPanel.tsx',
   'components/ContextUsageIndicator.tsx',
@@ -29,7 +29,7 @@ function collect(dir: string): string[] {
 }
 
 describe('renderer icon sources', () => {
-  it('draws UI glyphs only through the MyAgents icon sets', () => {
+  it('draws UI glyphs only through the NextTools icon sets', () => {
     const offenders = collect(RENDERER)
       .map((path) => relative(RENDERER, path).replaceAll('\\', '/'))
       .filter((path) => !ALLOWED.has(path))

@@ -24,7 +24,7 @@ if (!/^http:\/\/127\.0\.0\.1:[1-9][0-9]{0,4}$/.test(baseUrl) || typeof apiKey !=
 const require = createRequire(import.meta.url);
 const sdkRoot = dirname(require.resolve(`@anthropic-ai/claude-agent-sdk-${process.platform}-${process.arch}/package.json`));
 const native = join(sdkRoot, process.platform === 'win32' ? 'claude.exe' : 'claude');
-const scratch = mkdtempSync(join(tmpdir(), 'myagents-cliproxy-sdk-'));
+const scratch = mkdtempSync(join(tmpdir(), 'nexttools-cliproxy-sdk-'));
 const nonce = randomUUID();
 let toolCalls = 0;
 let sawThinking = false;

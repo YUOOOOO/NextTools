@@ -40,7 +40,7 @@ function applyBrightness(hex: string, multiplier: number): string {
 
 function tokensFor(stylesheetText: string, themeId: string, scheme: 'light' | 'dark'): Map<string, string> {
   const selector = `html[data-theme-id='${themeId}'][data-color-scheme='${scheme}']`;
-  const allowedSelectorLists = themeId === 'myagents-default'
+  const allowedSelectorLists = themeId === 'nexttools-default'
     ? [[`html[data-color-scheme='${scheme}']`, selector]]
     : [[selector]];
   const stylesheet = parseThemeStylesheet(stylesheetText);
@@ -127,7 +127,7 @@ describe('production Theme contrast', () => {
     const lightSurfaceFloor = luminance('#f0f0f0');
 
     for (const definition of themeRegistry.getAcceptedDefinitions().filter(
-      candidate => candidate.id !== 'myagents-default',
+      candidate => candidate.id !== 'nexttools-default',
     )) {
       const tokens = tokensFor(definition.stylesheetText, definition.id, 'light');
       expect(
@@ -141,7 +141,7 @@ describe('production Theme contrast', () => {
     const lightSurfaceFloor = luminance('#f0f0f0');
 
     for (const definition of themeRegistry.getAcceptedDefinitions().filter(
-      candidate => candidate.id !== 'myagents-default',
+      candidate => candidate.id !== 'nexttools-default',
     )) {
       const tokens = tokensFor(definition.stylesheetText, definition.id, 'light');
       expect(
@@ -155,7 +155,7 @@ describe('production Theme contrast', () => {
     const lightSurfaceFloor = luminance('#f0f0f0');
 
     for (const definition of themeRegistry.getAcceptedDefinitions().filter(
-      candidate => candidate.id !== 'myagents-default',
+      candidate => candidate.id !== 'nexttools-default',
     )) {
       const tokens = tokensFor(definition.stylesheetText, definition.id, 'light');
       expect(
@@ -216,7 +216,7 @@ describe('production Theme contrast', () => {
     ] as const;
 
     for (const definition of themeRegistry.getAcceptedDefinitions().filter(
-      candidate => candidate.id !== 'myagents-default' && candidate.id !== 'default-black',
+      candidate => candidate.id !== 'nexttools-default' && candidate.id !== 'default-black',
     )) {
       for (const scheme of ['light', 'dark'] as const) {
         const tokens = tokensFor(definition.stylesheetText, definition.id, scheme);
@@ -298,7 +298,7 @@ describe('production Theme contrast', () => {
     }
   });
 
-  it.each(['myagents-light', 'default-black'])('keeps %s light primary action readable', (themeId) => {
+  it.each(['nexttools-light', 'default-black'])('keeps %s light primary action readable', (themeId) => {
     const definition = themeRegistry.getAcceptedDefinitions().find(
       candidate => candidate.id === themeId,
     )!;

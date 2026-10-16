@@ -52,7 +52,7 @@ export class PluginManifestError extends Error {
 /**
  * Read & validate plugin.json from a tree (in-memory) or directory (on-disk).
  *
- * Validates only the fields MyAgents persists: `name` (required, kebab-case)
+ * Validates only the fields NextTools persists: `name` (required, kebab-case)
  * + optional metadata. Runtime component fields are intentionally omitted
  * from this returned persistence shape; their installed-file authority stays
  * in the consuming Runtime (SDK or Managed Codex extension compiler).
@@ -115,7 +115,7 @@ export function parsePluginManifest(raw: string): PluginManifest {
 /**
  * Read plugin.json from a directory. Returns null if the manifest is absent
  * (a plugin without a manifest is still allowed by spec — the SDK uses the
- * directory basename as the name — but MyAgents requires one so we can
+ * directory basename as the name — but NextTools requires one so we can
  * persist a stable id).
  *
  * Throws PluginManifestError if the file exists but is malformed.

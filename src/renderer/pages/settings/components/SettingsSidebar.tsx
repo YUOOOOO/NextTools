@@ -21,7 +21,6 @@ const NAV_ITEMS: Array<{ section: SettingsSection; labelKey: string }> = [
   { section: 'proxy', labelKey: 'sidebar.nav.proxy' },
   { section: 'external-cli', labelKey: 'sidebar.nav.externalCli' },
   { section: 'shortcuts', labelKey: 'sidebar.nav.shortcuts' },
-  { section: 'about', labelKey: 'sidebar.nav.about' },
   { section: 'developer', labelKey: 'sidebar.nav.developer' },
 ];
 

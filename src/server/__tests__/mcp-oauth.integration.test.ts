@@ -41,7 +41,7 @@ import {
 } from '../mcp-oauth/state-store';
 import { _setGeneralFetchTransportForTests } from '../utils/cancellation';
 
-const originalConfigDir = process.env.MYAGENTS_CONFIG_DIR;
+const originalConfigDir = process.env.NEXTTOOLS_CONFIG_DIR;
 const originalFetch = globalThis.fetch;
 const originalProxySettings = getCurrentProxySettings();
 const originalInheritedProxySnapshot = _getInheritedProxySnapshotForTests();
@@ -61,15 +61,15 @@ function writeExternalState(state: unknown): void {
 
 describe('mcp oauth', () => {
   beforeEach(() => {
-    configDir = mkdtempSync(join(tmpdir(), 'myagents-oauth-test-'));
-    process.env.MYAGENTS_CONFIG_DIR = configDir;
+    configDir = mkdtempSync(join(tmpdir(), 'nexttools-oauth-test-'));
+    process.env.NEXTTOOLS_CONFIG_DIR = configDir;
     resetStateStoreCacheForTests();
     globalThis.fetch = originalFetch;
     _setGeneralFetchTransportForTests(
       async (url, init) => globalThis.fetch(url, init as RequestInit),
     );
     // These tests own their transport through a per-case global fetch stub.
-    // Do not let the developer machine's persisted MyAgents proxy route the
+    // Do not let the developer machine's persisted NextTools proxy route the
     // request through an undici ProxyAgent and escape that deterministic stub.
     _resetProxyStateForTests(null, {});
   });
@@ -85,9 +85,9 @@ describe('mcp oauth', () => {
     _setGeneralFetchTransportForTests();
     _resetProxyStateForTests(originalProxySettings, originalInheritedProxySnapshot);
     if (originalConfigDir === undefined) {
-      delete process.env.MYAGENTS_CONFIG_DIR;
+      delete process.env.NEXTTOOLS_CONFIG_DIR;
     } else {
-      process.env.MYAGENTS_CONFIG_DIR = originalConfigDir;
+      process.env.NEXTTOOLS_CONFIG_DIR = originalConfigDir;
     }
     rmSync(configDir, { recursive: true, force: true });
   });
@@ -954,7 +954,7 @@ describe('mcp oauth', () => {
     const invalidConfigDir = join(configDir, 'not-a-directory');
     globalThis.fetch = (async () => {
       writeFileSync(invalidConfigDir, 'file blocks directory creation');
-      process.env.MYAGENTS_CONFIG_DIR = invalidConfigDir;
+      process.env.NEXTTOOLS_CONFIG_DIR = invalidConfigDir;
       return new Response(JSON.stringify({
         access_token: 'unpersisted-access',
         refresh_token: 'unpersisted-refresh',
@@ -963,7 +963,7 @@ describe('mcp oauth', () => {
     }) as typeof fetch;
 
     const outcome = await refreshToken('notion');
-    process.env.MYAGENTS_CONFIG_DIR = validConfigDir;
+    process.env.NEXTTOOLS_CONFIG_DIR = validConfigDir;
     resetStateStoreCacheForTests();
 
     expect(outcome.kind).toBe('failed');
@@ -1214,8 +1214,8 @@ describe('mcp oauth', () => {
       const child = spawn(process.execPath, ['--import', 'tsx/esm', fixture, 'notion'], {
         env: {
           ...process.env,
-          MYAGENTS_CONFIG_DIR: configDir,
-          MYAGENTS_SIDECAR_ROLE: 'session',
+          NEXTTOOLS_CONFIG_DIR: configDir,
+          NEXTTOOLS_SIDECAR_ROLE: 'session',
           HTTP_PROXY: '',
           HTTPS_PROXY: '',
           ALL_PROXY: '',

@@ -11,7 +11,7 @@ import { SpaceAvatar, spaceDisplayName } from '@/pages/space/SpaceAvatar';
 import SpaceProfileSettingsDialog from '@/pages/space/SpaceProfileSettingsDialog';
 import { spaceErrorMessage } from '@/api/spaceCloud';
 import { accountActions, getAccountSnapshot, type AccountSnapshot } from './accountStore';
-import { useMyAgentsAccount } from './useMyAgentsAccount';
+import { useNextToolsAccount } from './useNextToolsAccount';
 
 export default function AccountEntry({ expanded, available, environment, onOpenSpace }: {
   expanded: boolean;
@@ -19,7 +19,7 @@ export default function AccountEntry({ expanded, available, environment, onOpenS
   environment: string;
   onOpenSpace: () => void;
 }) {
-  const account = useMyAgentsAccount(environment, available);
+  const account = useNextToolsAccount(environment, available);
   return (
     <AccountControls
       key={`${environment}:${account.generation}:${expanded}`}

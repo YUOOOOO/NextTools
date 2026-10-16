@@ -12,7 +12,7 @@ Session 不是单一对象，而是同一产品会话在不同生命周期阶段
 | 当前 Product Session 绑定 | `session-engine/product-session-binding.ts` | 当前 Sidecar 正在服务哪个 Product Session |
 | Runtime execution identity | 对应 SessionEngine adapter | builtin 的 SDK Session UUID；DSH/外部 Runtime 的 session/thread id |
 | Sidecar 生命周期与 Owner | Rust `SidecarManager` | 创建、复用、replacement、Owner 附着与释放 |
-| transcript | `SessionStore` | MyAgents UI、搜索与恢复使用的产品历史 |
+| transcript | `SessionStore` | NextTools UI、搜索与恢复使用的产品历史 |
 | 当前 turn 与 Runtime queue | 对应 adapter | admission、执行、stop 与 terminal settlement |
 | Goal 状态 | Rust `SessionGoalManager` | 独立于 Session metadata 与 Task 的 durable state |
 | Renderer 投影 | `TabProvider` / `useTabState()` | 只投影当前 Tab 所属 Session，不反向成为业务 authority |
@@ -66,7 +66,7 @@ backend-created draft 使用 `materializationState: 'prepared'` 隐藏尚未提�
 
 DSH 原生会话使用官方 JSONL persistence，Runtime 自己的 coordination SQLite 只保存 locator、mutation/checkpoint 和文件恢复记录。Host SessionStore 拥有独立的产品目录、transcript 与输入/mutation journal；二者以原生 receipt 对账，不互相替代。
 
-每个 Product Session 的 Runtime home 与附件根由 `dshSessionOwnedPaths()` 派生，进程 replacement 沿用同一 home。当前接入没有旧 DSH 协议读取、开发数据重置或迁移入口；旧开发数据由维护人员在写入进程停止后手动清理。目录和恢复约束见 [DSH 集成指南](myagents_dsh_integrated_runtime.md#4-数据与持久化)。
+每个 Product Session 的 Runtime home 与附件根由 `dshSessionOwnedPaths()` 派生，进程 replacement 沿用同一 home。当前接入没有旧 DSH 协议读取、开发数据重置或迁移入口；旧开发数据由维护人员在写入进程停止后手动清理。目录和恢复约束见 [DSH 集成指南](nexttools_dsh_integrated_runtime.md#4-数据与持久化)。
 
 ## 3. Session metadata 的语义
 
@@ -202,7 +202,7 @@ Goal 的详细产品行为和 Task/Goal provider routing 见 [`task_center.md`](
 
 ### 5.2 Session Inbox 与事件
 
-`myagents session start/send/watch` 使用结构化 session event，不是普通文本拼接。事件经 Admin/Management API 投递到目标 Session 的既有 Inbox/SessionEngine admission，并放在隐藏的 `system-reminder` envelope 中；来自其它 Session 的正文必须 neutralize 协议标签。wire protocol 以 `sourceKind` 显式区分 `internal-session` 与 `external-cli`：前者要求真实 `fromSessionId` 并可回投，后者没有来源 Session 且不注册 reply，不能用空串或用户 payload 猜来源。
+`nexttools session start/send/watch` 使用结构化 session event，不是普通文本拼接。事件经 Admin/Management API 投递到目标 Session 的既有 Inbox/SessionEngine admission，并放在隐藏的 `system-reminder` envelope 中；来自其它 Session 的正文必须 neutralize 协议标签。wire protocol 以 `sourceKind` 显式区分 `internal-session` 与 `external-cli`：前者要求真实 `fromSessionId` 并可回投，后者没有来源 Session 且不注册 reply，不能用空串或用户 payload 猜来源。
 
 - `send.request` 投递工作；Renderer 只把它的可见 payload 投影为用户气泡；
 - `send.result` 在目标 turn terminal 后回传结果；
@@ -216,7 +216,7 @@ backend-created target 只有在 Runtime dispatch claim 成功后才发布 prepa
 
 Session Inbox 与用户手动 query 的投递时机独立：通用 `chatQueueResponseMode` 只控制手动 query；builtin / DSH / Codex 的 Inbox 固定 realtime。原 Runtime queue 负责接纳与派发，native receipt 决定消费与上屏；排队 HTTP 回执不代表模型已感知。A 运行、手动 B 等下一轮时，Inbox C 可在 A 的安全消费点进入 A，B 仍等待 A terminal。已消费的多个请求由原 turn owner 保存关联，在 terminal 前同步取走快照，分别返回同轮结果；未消费输入不能借用 A 的结果，reply / watch notification 也不触发自动回复。
 
-`myagents session get` 不进入 Inbox、不唤醒 Runtime，也不创建 turn。它按 message id 合并持久 snapshot、活跃内存与 streaming overlay，先严格投影 user/assistant 的可见顶层 text，再执行 `before`/`limit` 分页。user 正文与请求气泡共用 `parseLeadingSystemReminder` / `parseSessionSendRequestDisplay`：可见 tail 优先，无 tail 的 `send.request` 只显示请求 payload；自动 result/watch 及其它纯隐藏提醒不显示。旧已存请求同样按此规则读取，不改写历史；裸历史 XML 保持原可见文本语义。疑似结构化 assistant 内容只要解析或 block schema 异常就 fail closed，工具、思考、隐藏控制信息和无 text 结构块绝不回退为原始 JSON。活跃 owner 的 `liveSessionState` 与 `session state` 共用 `projectSessionActivity` 的 idle/running/waiting_user_action 三态；无 live owner 时仍返回 `isLive=false / liveSessionState=null`，不采样调用方状态。Rust 在 owner transport 或响应体失败时释放旧 dispatch、重新解析当前 owner 并只重试一次；最终错误保留 `SESSION_OWNER_UNAVAILABLE` 与 `SESSION_OWNER_INVALID_RESPONSE` 的区别。锚点只在可读文本序列内成立，失效时明确报错，避免静默重复或漏读。
+`nexttools session get` 不进入 Inbox、不唤醒 Runtime，也不创建 turn。它按 message id 合并持久 snapshot、活跃内存与 streaming overlay，先严格投影 user/assistant 的可见顶层 text，再执行 `before`/`limit` 分页。user 正文与请求气泡共用 `parseLeadingSystemReminder` / `parseSessionSendRequestDisplay`：可见 tail 优先，无 tail 的 `send.request` 只显示请求 payload；自动 result/watch 及其它纯隐藏提醒不显示。旧已存请求同样按此规则读取，不改写历史；裸历史 XML 保持原可见文本语义。疑似结构化 assistant 内容只要解析或 block schema 异常就 fail closed，工具、思考、隐藏控制信息和无 text 结构块绝不回退为原始 JSON。活跃 owner 的 `liveSessionState` 与 `session state` 共用 `projectSessionActivity` 的 idle/running/waiting_user_action 三态；无 live owner 时仍返回 `isLive=false / liveSessionState=null`，不采样调用方状态。Rust 在 owner transport 或响应体失败时释放旧 dispatch、重新解析当前 owner 并只重试一次；最终错误保留 `SESSION_OWNER_UNAVAILABLE` 与 `SESSION_OWNER_INVALID_RESPONSE` 的区别。锚点只在可读文本序列内成立，失效时明确报错，避免静默重复或漏读。
 
 跨设备协作使用 Rust App 的 `agent_network` 传输适配，同样进入上述原 Inbox/SessionEngine；不建立另一 SessionStore 或执行队列。本机 `PreparedFreshSession` / `PreparedDelivery` 在冷准备后释放 lifecycle 锁，保留原 transient owner，取得网络 permit 后重读原 identity/generation，再交给原 Node owner。最后本机 handoff 后属于在途；真实 `accepted` / `delivered` 以 Node 收据为准，网络 permit 不是业务收据。远端 handoff 的 HTTP ACK 丢失返回 `Unconfirmed`，包括内部无回推调用；准备失败和明确 `accepted:false` 仍拒绝，不自动重派。
 
@@ -227,28 +227,28 @@ Desktop、Goal、Task、Inbox、IM、Heartbeat 和 Memory 的执行都经 Sessio
 
 ### 5.3 Registered Agent origin
 
-Space Issue Delivery 复用 Inbox admission，但使用专用 `myagents-space-issue` reminder 与持久化 origin。Registered Agent identity 必须同时绑定 exact `spaceId` 与 `registeredAgentId`；缺失、畸形或普通 desktop origin 都 fail closed，不能因 workspace 相同或一次定向 delivery 把普通 Session 提升为 Agent。Fork 总是重置为 desktop origin。
+Space Issue Delivery 复用 Inbox admission，但使用专用 `nexttools-space-issue` reminder 与持久化 origin。Registered Agent identity 必须同时绑定 exact `spaceId` 与 `registeredAgentId`；缺失、畸形或普通 desktop origin 都 fail closed，不能因 workspace 相同或一次定向 delivery 把普通 Session 提升为 Agent。Fork 总是重置为 desktop origin。
 
 完整协议见 [`space_issue_delivery_protocol.md`](space_issue_delivery_protocol.md) 与 [`system_reminder_protocol.md`](system_reminder_protocol.md)。
 
 ## 6. 持久化与恢复
 
-### 6.1 MyAgents transcript
+### 6.1 NextTools transcript
 
 `SessionStore` 用 `sessions.json` 固定格式和 metadata；旧 Session 沿用 `sessions/` 的原 JSON/JSONL 读写，新建及 fork 目标固定到 `sessions-v2/` 的内容操作日志。无迁移、双写或 V2→V1 fallback。路径先经过 canonical Session id validation。
 
 V2 的 live projection 与异步 writer 同属 SessionStore。约 100 ms 的持续批次保存未结束内容，插话产生稳定展示段，完整帧/工具/附件更新原目标。待写队列无容量上限，持续故障时接受积压的内存风险；保存失败或挂起只报告产品记录异常与 toast，不主动阻断 AI。显式 fork/rewind/reset/delete 仍守自身 lifecycle 和物理写权限边界。格式、恢复与接口细节见 [`session_transcript_v2.md`](session_transcript_v2.md)。
 
-### 6.2 MyAgents 与 SDK 双重存储
+### 6.2 NextTools 与 SDK 双重存储
 
 两份历史服务不同 authority：
 
 | 存储 | 用途 |
 |---|---|
-| MyAgents V1/V2 产品文件 | UI 展示、搜索、Session 列表、跨 Runtime 的产品历史 |
+| NextTools V1/V2 产品文件 | UI 展示、搜索、Session 列表、跨 Runtime 的产品历史 |
 | Runtime 原生存储 | SDK/CLI resume、上下文连续性、Runtime 自有 cache 与 branch 语义 |
 
-不能用其中一份替代另一份。产品层恢复以 MyAgents transcript 为准，执行层 resume 以 adapter 的 native identity/history 为准；两者通过显式 identity 和 rewind boundary 对齐。
+不能用其中一份替代另一份。产品层恢复以 NextTools transcript 为准，执行层 resume 以 adapter 的 native identity/history 为准；两者通过显式 identity 和 rewind boundary 对齐。
 
 ### 6.3 REST snapshot 与 SSE
 

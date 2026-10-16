@@ -367,7 +367,7 @@ const SkillDetailPanel = forwardRef<SkillDetailPanelRef, SkillDetailPanelProps>(
             }
         }, [name, scope, agentDir, onDeleted, api, isInTabContext, t]);
 
-        // Phase D.5: skill.path is an absolute path (`~/.myagents/skills/<name>/`
+        // Phase D.5: skill.path is an absolute path (`~/.nexttools/skills/<name>/`
         // for global, `<project>/.claude/skills/<name>/` for project), not a
         // workspace-relative path — so we use `cmd_open_path_external` which
         // takes absolute paths and validates them against home/tmp prefix.

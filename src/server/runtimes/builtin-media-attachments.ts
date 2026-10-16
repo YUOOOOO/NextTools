@@ -9,7 +9,7 @@
  *  - `buildBuiltinMediaAttachments` — read a file-path media result (edge-tts /
  *    gemini-image) and save a trusted-root serving copy;
  *  - `saveExtractedToolResultAttachments` (#293) — write extracted image bytes
- *    into the per-tool workspace dir `<workspace>/myagents_files/<tool-name>/`
+ *    into the per-tool workspace dir `<workspace>/nexttools_files/<tool-name>/`
  *    (the user-visible `sourcePath`) + a trusted-root serving copy.
  *
  * Why base64-copy into the trusted root (not a zero-copy externalPath ref):
@@ -40,7 +40,7 @@ import { ensureDirSync } from '../utils/fs-utils';
 import { ensureGitignorePattern } from '../utils/gitignore';
 import type { ExtractedToolResultAttachment } from '../utils/tool-result-attachments';
 
-/** generated dir segment names (`~/.myagents/<name>` or `<ws>/myagents_files/<name>`). */
+/** generated dir segment names (`~/.nexttools/<name>` or `<ws>/nexttools_files/<name>`). */
 const GENERATED_DIR_NAMES = ['generated_audio', 'generated_images', 'generated'];
 
 export interface BuiltinAttachmentCtxBase {
@@ -49,17 +49,17 @@ export interface BuiltinAttachmentCtxBase {
   toolUseId: string;
   /**
    * Active workspace dir (agentDir). When set, extracted images land in the
-   * unified workspace location `<workspace>/myagents_files/<tool-name>/` —
-   * the same `myagents_files/` convention edge-tts / gemini-image use, but
+   * unified workspace location `<workspace>/nexttools_files/<tool-name>/` —
+   * the same `nexttools_files/` convention edge-tts / gemini-image use, but
    * foldered per tool (user's request #293-followup) so a Playwright run's
    * screenshots sit under their own folder. Absent (IM/cron with no
-   * workspace) → falls back to `~/.myagents/generated/<tool-name>/`.
+   * workspace) → falls back to `~/.nexttools/generated/<tool-name>/`.
    */
   workspace?: string;
 }
 
 /**
- * Folder name for a tool's generated files, under `myagents_files/`. Uses the
+ * Folder name for a tool's generated files, under `nexttools_files/`. Uses the
  * raw tool name (`mcp__playwright__browser_take_screenshot`) sanitized to
  * filesystem-safe chars so different tools self-organize into sibling folders.
  */
@@ -70,15 +70,15 @@ function toolDirName(toolName: string): string {
 
 /**
  * Resolve the per-tool generated dir and ensure it exists (+ gitignore the
- * workspace `myagents_files/` umbrella on first write, matching edge-tts /
+ * workspace `nexttools_files/` umbrella on first write, matching edge-tts /
  * gemini-image).
  */
 function ensureToolGeneratedDir(toolName: string, workspace?: string): string {
   const dir = workspace
-    ? path.join(workspace, 'myagents_files', toolDirName(toolName))
-    : path.join(homedir(), '.myagents', 'generated', toolDirName(toolName));
+    ? path.join(workspace, 'nexttools_files', toolDirName(toolName))
+    : path.join(homedir(), '.nexttools', 'generated', toolDirName(toolName));
   ensureDirSync(dir);
-  if (workspace) ensureGitignorePattern(workspace, 'myagents_files/');
+  if (workspace) ensureGitignorePattern(workspace, 'nexttools_files/');
   return dir;
 }
 
@@ -159,7 +159,7 @@ export async function buildBuiltinMediaAttachments(
  *
  * Storage (#293-followup): a `base64` source — the dominant case for
  * screenshots / inline images — is written to the unified WORKSPACE location
- * `<workspace>/myagents_files/<tool-name>/` (its `sourcePath`, what the tool
+ * `<workspace>/nexttools_files/<tool-name>/` (its `sourcePath`, what the tool
  * card's "reveal / open" targets), then a trusted-root copy is taken for
  * restart-safe serving (its `savedPath`). This is exactly edge-tts /
  * gemini-image's "workspace original + trusted serving copy" shape, just

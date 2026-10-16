@@ -61,17 +61,17 @@ pub use skills::{
 };
 pub use tools::{SpacePublishToolInput, SpaceUpdateToolInput};
 
-const SPACE_ENABLED_ENV: Option<&str> = option_env!("MYAGENTS_SPACE_ENABLED");
-const SPACE_BASE_URL_ENV: Option<&str> = option_env!("MYAGENTS_SPACE_BASE_URL");
-const SPACE_DEV_BASE_URL_ENV: Option<&str> = option_env!("MYAGENTS_SPACE_DEV_BASE_URL");
-const SPACE_PUBLIC_CLIENT_ID_ENV: Option<&str> = option_env!("MYAGENTS_SPACE_PUBLIC_CLIENT_ID");
-const SPACE_LEGACY_CLIENT_ID_ENV: Option<&str> = option_env!("MYAGENTS_SPACE_CLIENT_ID");
-const SPACE_PUBLIC_CLIENT_ID_HEADER: &str = "X-MyAgents-Space-Client-Id";
-const SPACE_CLIENT_VERSION_HEADER: &str = "X-MyAgents-Client-Version";
-const SPACE_DEVICE_ID_HEADER: &str = "X-MyAgents-Device-Id";
-const SPACE_PLATFORM_HEADER: &str = "X-MyAgents-Platform";
-const SPACE_OS_VERSION_HEADER: &str = "X-MyAgents-OS-Version";
-const SPACE_CONTEXT_HEADER: &str = "X-MyAgents-Space-Context";
+const SPACE_ENABLED_ENV: Option<&str> = option_env!("NEXTTOOLS_SPACE_ENABLED");
+const SPACE_BASE_URL_ENV: Option<&str> = option_env!("NEXTTOOLS_SPACE_BASE_URL");
+const SPACE_DEV_BASE_URL_ENV: Option<&str> = option_env!("NEXTTOOLS_SPACE_DEV_BASE_URL");
+const SPACE_PUBLIC_CLIENT_ID_ENV: Option<&str> = option_env!("NEXTTOOLS_SPACE_PUBLIC_CLIENT_ID");
+const SPACE_LEGACY_CLIENT_ID_ENV: Option<&str> = option_env!("NEXTTOOLS_SPACE_CLIENT_ID");
+const SPACE_PUBLIC_CLIENT_ID_HEADER: &str = "X-NextTools-Space-Client-Id";
+const SPACE_CLIENT_VERSION_HEADER: &str = "X-NextTools-Client-Version";
+const SPACE_DEVICE_ID_HEADER: &str = "X-NextTools-Device-Id";
+const SPACE_PLATFORM_HEADER: &str = "X-NextTools-Platform";
+const SPACE_OS_VERSION_HEADER: &str = "X-NextTools-OS-Version";
+const SPACE_CONTEXT_HEADER: &str = "X-NextTools-Space-Context";
 const SESSION_FILE: &str = "session.json";
 const MAX_PROFILE_AVATAR_BYTES: u64 = 5 * 1024 * 1024;
 const MAX_SPACE_AVATAR_BYTES: u64 = MAX_PROFILE_AVATAR_BYTES;
@@ -341,7 +341,7 @@ impl AuthenticatedSpaceSession {
     fn from_account(account: SpaceSession, session_path: PathBuf) -> Result<Self, String> {
         let session_token = account
             .authenticated_token()
-            .ok_or_else(|| "SPACE_REAUTH_REQUIRED: MyAgents Space login is required.".to_string())?
+            .ok_or_else(|| "SPACE_REAUTH_REQUIRED: NextTools Space login is required.".to_string())?
             .to_string();
         let session_binding_id = account.session_binding_id();
         Ok(Self {
@@ -1048,7 +1048,7 @@ fn validate_configured_space_base_url(key: &str, raw: &str) -> Result<String, St
 fn configured_dev_base_url() -> Result<Option<String>, String> {
     SPACE_DEV_BASE_URL_ENV
         .filter(|value| !value.trim().is_empty())
-        .map(|value| validate_configured_space_base_url("MYAGENTS_SPACE_DEV_BASE_URL", value))
+        .map(|value| validate_configured_space_base_url("NEXTTOOLS_SPACE_DEV_BASE_URL", value))
         .transpose()
 }
 
@@ -1066,7 +1066,7 @@ fn resolve_configured_space_environment(
 }
 
 fn configured_space_environment(dev_available: bool) -> SpaceEnvironment {
-    let Some(dir) = crate::app_dirs::myagents_data_dir() else {
+    let Some(dir) = crate::app_dirs::nexttools_data_dir() else {
         return SpaceEnvironment::Production;
     };
     let Ok(content) = fs::read_to_string(dir.join("config.json")) else {
@@ -1103,7 +1103,7 @@ pub fn space_build_capability() -> SpaceBuildCapability {
         };
     }
     let base_url = match SPACE_BASE_URL_ENV {
-        Some(value) => match validate_configured_space_base_url("MYAGENTS_SPACE_BASE_URL", value) {
+        Some(value) => match validate_configured_space_base_url("NEXTTOOLS_SPACE_BASE_URL", value) {
             Ok(url) => url,
             Err(error) => {
                 return SpaceBuildCapability {
@@ -1122,7 +1122,7 @@ pub fn space_build_capability() -> SpaceBuildCapability {
                 base_url: None,
                 public_client_id: configured_public_client_id(),
                 reason: Some(
-                    "MYAGENTS_SPACE_BASE_URL is required when MYAGENTS_SPACE_ENABLED=true"
+                    "NEXTTOOLS_SPACE_BASE_URL is required when NEXTTOOLS_SPACE_ENABLED=true"
                         .to_string(),
                 ),
                 environments: vec![SpaceEnvironment::Production],
@@ -1221,7 +1221,7 @@ fn with_space_client_context_headers(
         .header(ACCEPT_LANGUAGE, crate::i18n::current_locale().as_str())
         .header(
             USER_AGENT,
-            format!("MyAgents/{client_version} ({platform})"),
+            format!("NextTools/{client_version} ({platform})"),
         );
     if let Some(device_id) = SPACE_CLIENT_DEVICE_CONTEXT.device_id.as_deref() {
         request = request.header(SPACE_DEVICE_ID_HEADER, device_id);
@@ -1616,7 +1616,7 @@ async fn parse_authorized_cloud_data(
                     session_binding_id: Some(session.session_binding_id().to_string()),
                     ..SpaceCommandError::local(
                         "SPACE_SESSION_STATE_WRITE_FAILED",
-                        "MyAgents could not persist the Space login state.",
+                        "NextTools could not persist the Space login state.",
                     )
                 });
             }
@@ -1633,7 +1633,7 @@ async fn parse_authorized_cloud_data(
             );
             return Err(SpaceCommandError {
                 code: "SPACE_REAUTH_REQUIRED".to_string(),
-                message: "MyAgents Space login is required.".to_string(),
+                message: "NextTools Space login is required.".to_string(),
                 cloud_code: None,
                 http_status: Some(status.as_u16()),
                 request_id: None,
@@ -1701,7 +1701,7 @@ async fn parse_authorized_cloud_data(
         return Err(SpaceCommandError {
             code,
             message: if reauth_required {
-                "MyAgents Space login is required.".to_string()
+                "NextTools Space login is required.".to_string()
             } else {
                 message
             },
@@ -2070,7 +2070,7 @@ fn space_runtime_scope() -> Result<SpaceRuntimeScope, String> {
 }
 
 fn space_data_dir_for_environment(environment: SpaceEnvironment) -> Result<PathBuf, String> {
-    let root = crate::app_dirs::myagents_data_dir()
+    let root = crate::app_dirs::nexttools_data_dir()
         .ok_or_else(|| "Home dir not found".to_string())?
         .join("space");
     let dir = space_data_dir_path_for_environment(root, environment);
@@ -2117,7 +2117,7 @@ fn require_session() -> Result<AuthenticatedSpaceSession, String> {
     let configured_base_url = space_base_url()?;
     let path = session_path()?;
     let session = read_session_from_path(&path)?
-        .ok_or_else(|| "NOT_AUTHENTICATED: Not logged in to MyAgents Space.".to_string())?;
+        .ok_or_else(|| "NOT_AUTHENTICATED: Not logged in to NextTools Space.".to_string())?;
     if !space_base_urls_equal(&session.base_url, &configured_base_url) {
         return Err(
             "Space session belongs to a different Space service. Please log in again.".to_string(),
@@ -2362,7 +2362,7 @@ fn space_base_urls_equal(a: &str, b: &str) -> bool {
 }
 
 fn team_space_runtime_enabled() -> bool {
-    let Some(dir) = crate::app_dirs::myagents_data_dir() else {
+    let Some(dir) = crate::app_dirs::nexttools_data_dir() else {
         return true;
     };
     let Ok(content) = fs::read_to_string(dir.join("config.json")) else {

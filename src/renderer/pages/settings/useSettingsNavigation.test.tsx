@@ -39,7 +39,7 @@ describe('useSettingsNavigation', () => {
     const onSectionChange = vi.fn();
     render(<Probe initialSection="desktop-pet" floatingBallDevGate={false} onSectionChange={onSectionChange} />);
 
-    await waitFor(() => expect(screen.getByTestId('section')).toHaveTextContent('about'));
+    await waitFor(() => expect(screen.getByTestId('section')).toHaveTextContent('general'));
     expect(onSectionChange).toHaveBeenCalledTimes(1);
   });
 

@@ -29,7 +29,7 @@ export type { TaskCenterSearchIntent, TaskCenterTab } from '@/features/task-cent
 export type { SpaceTab } from '@/features/space/tabContract';
 export type { RecordTab } from '@/features/record/tabContract';
 
-/** Closed union for the builtin MyAgents edition. Downstream editions extend
+/** Closed union for the builtin NextTools edition. Downstream editions extend
  * their own closed union and composition explicitly. */
 export type Tab = LauncherTab | ChatTab | SettingsTab | CapabilitiesTab | TaskCenterTab | SpaceTab | RecordTab | AgentNetworkTab;
 

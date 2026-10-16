@@ -1,6 +1,6 @@
 # 代理配置架构
 
-MyAgents 的代理不是一个 process-global 开关，而是按网络请求 owner 分流。本文定义 current scope、baseline 和 helper；Provider 的认证与模型路由见 [`third_party_providers.md`](third_party_providers.md)。
+NextTools 的代理不是一个 process-global 开关，而是按网络请求 owner 分流。本文定义 current scope、baseline 和 helper；Provider 的认证与模型路由见 [`third_party_providers.md`](third_party_providers.md)。
 
 ## 配置与 scope
 
@@ -34,7 +34,7 @@ config.json proxySettings
        |
        +-- general owner
        |     updater, resource/runtime downloads, model metadata,
-       |     generic MyAgents HTTP, Plugin Bridge
+       |     generic NextTools HTTP, Plugin Bridge
        |
        +-- provider owner(providerId)
              Builtin SDK, OpenAI Bridge upstream, provider probe,
@@ -63,13 +63,13 @@ Renderer 与 Sidecar 的控制面、Rust 到 Sidecar、IPC 及内部 HTTP 必须
 
 `read_proxy_settings()` 只回答“应用代理配置是否有效”，不能替代 general-aware decision；Provider 可能在 `generalRequests=false` 时仍被选中。
 
-应用代理注入子进程时同时保留覆盖前的 inherited proxy snapshot，并标记 `MYAGENTS_PROXY_INJECTED`。未选择应用代理时保留 inherited proxy vars，只合并 localhost exclusion；不能擅自删除 inherited `ALL_PROXY`。
+应用代理注入子进程时同时保留覆盖前的 inherited proxy snapshot，并标记 `NEXTTOOLS_PROXY_INJECTED`。未选择应用代理时保留 inherited proxy vars，只合并 localhost exclusion；不能擅自删除 inherited `ALL_PROXY`。
 
 ## Node 三基线
 
 `src/server/proxy-state.ts` 同时维护：
 
-1. immutable `inheritedProxySnapshot`：Rust / MyAgents overlay 之前的 proxy env；
+1. immutable `inheritedProxySnapshot`：Rust / NextTools overlay 之前的 proxy env；
 2. app-proxy overlay：当前应用代理 URL；SOCKS5 时是本地 bridge URL；
 3. `process.env`：当前 general owner 的有效 baseline。
 
@@ -117,10 +117,10 @@ Claude Code / Codex 等 external Runtime 还可在 Agent 配置选择：
 
 | 值 | 语义 |
 | --- | --- |
-| `myagents` | 使用 Sidecar 当前 general baseline |
+| `nexttools` | 使用 Sidecar 当前 general baseline |
 | `terminal` | 移除 Sidecar proxy vars，再恢复 interactive shell warmup 检测到的 proxy env |
 
-`src/server/runtimes/env-utils.ts::resolveAgentEnvPolicy()` 是磁盘读取与字面量校验入口。未知值 fail-safe 到 `myagents` 并记录 warning；调用方不得裸 cast。`terminal` 没检测到 shell proxy 时形成无显式 proxy env，但仍可能通过 TUN/VPN 路由。
+`src/server/runtimes/env-utils.ts::resolveAgentEnvPolicy()` 是磁盘读取与字面量校验入口。未知值 fail-safe 到 `nexttools` 并记录 warning；调用方不得裸 cast。`terminal` 没检测到 shell proxy 时形成无显式 proxy env，但仍可能通过 TUN/VPN 路由。
 
 已打开的 PTY 拥有自己的出生 env，配置变化不会重写它；新 Terminal 使用新策略。
 
@@ -154,4 +154,4 @@ Integrated DSH 不使用 external CLI 的 `envPolicy`；Agent 从外部 Runtime 
 - config hot propagation、Channel replacement generation 和 PTY 不变；
 - raw ZIP DNS-pinned direct security exception。
 
-排查时读取 unified log 中的 `owner=general` / `owner=provider` 与 `path=myagents-proxy` / `path=inherited`，不要只观察 process env 的某一个变量。
+排查时读取 unified log 中的 `owner=general` / `owner=provider` 与 `path=nexttools-proxy` / `path=inherited`，不要只观察 process env 的某一个变量。

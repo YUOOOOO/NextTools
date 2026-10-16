@@ -31,7 +31,7 @@ import { buildMcpStdioLaunchConfig } from './utils/mcp-command';
 import { resolveRemoteMcpTransportConfig } from './session-core/mcp-template-resolution';
 import { getCrossPlatformEnv } from './utils/platform';
 import { ensureDirSync } from './utils/fs-utils';
-import { getMyAgentsNpmGlobalBinDir, getMyAgentsNpmGlobalPrefix, scrubMyAgentsNpmPrefixEnv } from './utils/npm-prefix-env';
+import { getNextToolsNpmGlobalBinDir, getNextToolsNpmGlobalPrefix, scrubNextToolsNpmPrefixEnv } from './utils/npm-prefix-env';
 import { buildSessionExecutablePath } from './utils/session-executable-path';
 import {
   applyContextWindowSuffixForContextLength,
@@ -559,7 +559,7 @@ const SUPPRESS_PER_TOKEN_LOG_BROADCAST = true;
 export const SDK_RESERVED_MCP_NAMES = ['claude-in-chrome', 'computer-use'];
 
 /**
- * MyAgents-reserved MCP server ids — names used by context-injected builtins
+ * NextTools-reserved MCP server ids — names used by context-injected builtins
  * that are managed by the sidecar, not user-toggleable. User MCPs configured
  * with these ids are silently dropped at SDK build time so they cannot
  * (a) overwrite the legitimate builtin in `result[server.id]`, or
@@ -570,12 +570,12 @@ export const SDK_RESERVED_MCP_NAMES = ['claude-in-chrome', 'computer-use'];
  * its id here too. See issue #148 for the original drift.
  *
  * v0.2.11 — `cron-tools`, `im-cron`, and `im-media` were retired in favour of
- * `myagents` CLI commands + system prompt guidance (single CLI surface usable
+ * `nexttools` CLI commands + system prompt guidance (single CLI surface usable
  * across builtin / DSH / Codex / Claude Code runtimes). Only `im-bridge-tools`
  * remains a context-injected MCP because its tool surface is a runtime-dynamic
  * passthrough of OpenClaw plugin tools — no fixed schema to teach via prompt.
  */
-export const MYAGENTS_CONTEXT_INJECTED_MCP_IDS = [
+export const NEXTTOOLS_CONTEXT_INJECTED_MCP_IDS = [
   'im-bridge-tools',
 ] as const;
 
@@ -633,12 +633,12 @@ const DECORATIVE_TEXT_MAX_LENGTH = 5000;
  * This avoids setting CLAUDE_CONFIG_DIR (which would break Keychain credential lookup).
  *
  * Skills (directories):
- * - Creates symlinks for globally enabled skills: <project>/.claude/skills/<name> → ~/.myagents/skills/<name>
+ * - Creates symlinks for globally enabled skills: <project>/.claude/skills/<name> → ~/.nexttools/skills/<name>
  * - Removes links disabled by the global skills-config (not project selection)
  * - Does NOT touch real (non-symlink) skill directories in the project
  *
  * Commands (.md files):
- * - Creates symlinks for all commands: <project>/.claude/commands/<name>.md → ~/.myagents/commands/<name>.md
+ * - Creates symlinks for all commands: <project>/.claude/commands/<name>.md → ~/.nexttools/commands/<name>.md
  * - Does NOT touch real (non-symlink) command files in the project
  *
  * Called at session startup (startStreamingSession) and after skill/command CRUD operations.
@@ -1636,14 +1636,14 @@ const _pendingAttachments: MessageAttachment[] = [];
 
 /** Set the sidecar port (called once from index.ts on startup).
  *
- *  Side effect: exports `MYAGENTS_PORT` to `process.env` so every subprocess
+ *  Side effect: exports `NEXTTOOLS_PORT` to `process.env` so every subprocess
  *  spawned later via `augmentedProcessEnv()` (external runtimes: claude-code /
  *  codex) inherits it automatically — the AI's shell tool can then invoke
- *  `myagents` CLI without the CLI bailing with `MYAGENTS_PORT not set`. This is
+ *  `nexttools` CLI without the CLI bailing with `NEXTTOOLS_PORT not set`. This is
  *  the pit-of-success alternative to editing three runtime `spawn()` call sites
  *  individually: a new runtime added tomorrow gets the same guarantee for free.
  *
- *  The builtin SDK path still sets `env.MYAGENTS_PORT` explicitly in
+ *  The builtin SDK path still sets `env.NEXTTOOLS_PORT` explicitly in
  *  `buildClaudeSessionEnv()` (idempotent) because pre-warm can spawn before
  *  this function is called and the process.env write would arrive too late. */
 export { getSidecarPort, setSidecarPort } from './session-core/sidecar-port';
@@ -2369,7 +2369,7 @@ const builtinToolTraceStarts = new Map<string, number>();
 // PRD 0.2.18 Session Inbox — per-turn binding of inbox metadata.
 //
 // Bound when the message generator yields a queued item that carries inboxMeta
-// (i.e. the message came in via /api/inbox/drain from a `myagents session send`
+// (i.e. the message came in via /api/inbox/drain from a `nexttools session send`
 // caller). Read at SDK result event handler: if replyBack=true, the turn's text
 // output is collected and pushed back to the caller via deliverInboxReply().
 //
@@ -3117,7 +3117,7 @@ export function getSessionEnabledPluginIds(): readonly string[] | null {
 }
 
 /**
- * Per-Tab override for MyAgents official CLI tools. This only changes the
+ * Per-Tab override for NextTools official CLI tools. This only changes the
  * next session/pre-warm system prompt; the current SDK subprocess cannot have
  * its system prompt mutated in place.
  */
@@ -3142,7 +3142,7 @@ export function getSessionEnabledOfficialToolIds(): readonly OfficialToolId[] | 
 
 /**
  * Hot-reload proxy configuration into the current process environment and
- * restart the builtin SDK only when the current provider's effective MyAgents
+ * restart the builtin SDK only when the current provider's effective NextTools
  * proxy state changed. Scope-only edits can matter even when the proxy URL is
  * unchanged; unrelated provider scope edits should not churn this session.
  */
@@ -3824,7 +3824,7 @@ export async function setSessionProviderEnv(providerEnv: ProviderEnv | undefined
  * The pre-warmed session is invisible to the frontend until the first user message.
  */
 /**
- * Force a session restart triggered by an explicit `myagents reload`.
+ * Force a session restart triggered by an explicit `nexttools reload`.
  *
  * Unlike `setMcpServers` / `setAgents` / provider / proxy paths, this bypasses
  * the `isCurrentSessionSnapshotted()` guard. The snapshot guard exists to
@@ -3953,11 +3953,11 @@ export function getAgents(): Record<string, AgentDefinition> | null {
 }
 
 /**
- * Predicate for each MyAgents-reserved context-injected builtin MCP id.
+ * Predicate for each NextTools-reserved context-injected builtin MCP id.
  * Returns true when the corresponding sidecar context is set, mirroring the
  * inclusion conditions in `buildSdkMcpServers()` Pattern 1.
  *
- * The `Record<typeof MYAGENTS_CONTEXT_INJECTED_MCP_IDS[number], …>` shape
+ * The `Record<typeof NEXTTOOLS_CONTEXT_INJECTED_MCP_IDS[number], …>` shape
  * makes TypeScript enforce 1:1 alignment between the reserved id list and
  * the predicates: adding a new reserved id without a predicate (or vice
  * versa) is a compile error. This is the pit-of-success against the drift
@@ -3970,7 +3970,7 @@ export function getAgents(): Record<string, AgentDefinition> | null {
  * "未启用". The fix routes the permission gate through this single map.
  */
 const CONTEXT_INJECTED_BUILTIN_PREDICATES: Record<
-  typeof MYAGENTS_CONTEXT_INJECTED_MCP_IDS[number],
+  typeof NEXTTOOLS_CONTEXT_INJECTED_MCP_IDS[number],
   () => boolean
 > = {
   // Permission follows the map installed on the live Query, not a newer
@@ -3989,7 +3989,7 @@ export function getCurrentImBridgeTurnContext(): import('./session-core/im-bridg
 
 function getActiveContextInjectedBuiltinIds(): Set<string> {
   const ids = new Set<string>();
-  for (const id of MYAGENTS_CONTEXT_INJECTED_MCP_IDS) {
+  for (const id of NEXTTOOLS_CONTEXT_INJECTED_MCP_IDS) {
     if (CONTEXT_INJECTED_BUILTIN_PREDICATES[id]()) ids.add(id);
   }
   return ids;
@@ -4024,15 +4024,15 @@ function checkMcpToolPermission(toolName: string, server?: McpServerProvenance):
   if (isContextInjectedSdkTool(server, activeBuiltins)) {
     return { allowed: true };
   }
-  // For ids in MYAGENTS_CONTEXT_INJECTED_MCP_IDS but NOT currently active,
+  // For ids in NEXTTOOLS_CONTEXT_INJECTED_MCP_IDS but NOT currently active,
   // reject with a context-specific message instead of the generic "未启用".
   // Driven by the reserved-id list so it can never drift from Pattern 1.
   // Retired MCP names (`cron-tools` / `im-cron` / `im-media`) intentionally
   // fall through to the regular user-MCP check below — they were dropped
   // from the reserved list in v0.2.11, so user MCPs may now legitimately
   // claim those names.
-  if ((MYAGENTS_CONTEXT_INJECTED_MCP_IDS as readonly string[]).includes(serverId)
-    || (MYAGENTS_CONTEXT_INJECTED_MCP_IDS as readonly string[]).includes(parts[1])) {
+  if ((NEXTTOOLS_CONTEXT_INJECTED_MCP_IDS as readonly string[]).includes(serverId)
+    || (NEXTTOOLS_CONTEXT_INJECTED_MCP_IDS as readonly string[]).includes(parts[1])) {
     return { allowed: false, reason: 'IM Bridge 工具仅允许当前会话由应用注册的 SDK 服务使用' };
   }
 
@@ -4073,13 +4073,13 @@ function checkMcpToolPermission(toolName: string, server?: McpServerProvenance):
  * - 'project': <cwd>/.claude/ (project-level config)
  *
  * We use 'project' only:
- * - Enabled MyAgents global Skills are projected into <cwd>/.claude/skills/ at Query birth
+ * - Enabled NextTools global Skills are projected into <cwd>/.claude/skills/ at Query birth
  * - Avoids setting CLAUDE_CONFIG_DIR which would break Keychain credential lookup
  * - Project-level: SDK reads project's .claude/skills/, .claude/commands/, CLAUDE.md
  *
  * We exclude 'user' because:
  * - 'user' reads from ~/.claude/ (Claude CLI's directory, not ours)
- * - Our product uses ~/.myagents/ for user-level config
+ * - Our product uses ~/.nexttools/ for user-level config
  * - Setting CLAUDE_CONFIG_DIR to redirect would break Anthropic subscription OAuth
  *   (SDK derives Keychain service names from CLAUDE_CONFIG_DIR path hash)
  */
@@ -4096,7 +4096,7 @@ function buildSettingSources(): ('user' | 'project')[] {
  *    OpenClaw plugin bridge which exposes a runtime-dynamic tool surface.
  *    Other historical context-injected MCPs (`cron-tools`, `im-cron`,
  *    `im-media`) were retired in v0.2.11 — the AI now reaches those
- *    capabilities through the `myagents` CLI + system prompt guidance,
+ *    capabilities through the `nexttools` CLI + system prompt guidance,
  *    so the same surface is available across builtin / DSH / Codex /
  *    Claude Code runtimes.
  * 2. Builtin registry (command='__builtin__') — in-process servers, user-toggled via Settings,
@@ -4137,11 +4137,11 @@ async function buildSdkMcpServers(
       console.warn(`[agent] MCP "${s.id}" skipped: conflicts with SDK reserved name. Rename to avoid this.`);
       return false;
     }
-    // Reserve MyAgents context-injected builtin ids: a user MCP with the same id
+    // Reserve NextTools context-injected builtin ids: a user MCP with the same id
     // would otherwise overwrite the builtin in result[id] and inherit its
     // auto-trust in canUseTool — see issue #148.
-    if ((MYAGENTS_CONTEXT_INJECTED_MCP_IDS as readonly string[]).includes(normalized)) {
-      console.warn(`[agent] MCP "${s.id}" skipped: id is reserved by MyAgents (context-injected builtin). Rename to avoid this.`);
+    if ((NEXTTOOLS_CONTEXT_INJECTED_MCP_IDS as readonly string[]).includes(normalized)) {
+      console.warn(`[agent] MCP "${s.id}" skipped: id is reserved by NextTools (context-injected builtin). Rename to avoid this.`);
       return false;
     }
     return true;
@@ -4201,7 +4201,7 @@ async function buildSdkMcpServers(
     if (server.id === MANAGED_BROWSER_MCP_ID && server.command === '__browser_host__') {
       const productSessionId = browserProductSessionIdOverride
         || sessionId
-        || process.env.MYAGENTS_SIDECAR_ID?.trim();
+        || process.env.NEXTTOOLS_SIDECAR_ID?.trim();
       if (!productSessionId || !agentDir) {
         throw new Error('Browser Host requires Product Session and workspace identity');
       }
@@ -6048,12 +6048,12 @@ function sealCcAuthEnv(env: NodeJS.ProcessEnv): void {
   }
 }
 
-const WINDOWS_UTF8_BASH_ENV_SENTINEL = 'MYAGENTS_WINDOWS_UTF8';
+const WINDOWS_UTF8_BASH_ENV_SENTINEL = 'NEXTTOOLS_WINDOWS_UTF8';
 const WINDOWS_UTF8_BASH_ENV_FILENAME = 'windows-utf8-bash-env.sh';
 const WINDOWS_UTF8_BASH_ENV_CONTENT = [
-  '# MyAgents-managed Bash prelude for Windows SDK tool output.',
-  `if [ -n "\${MYAGENTS_ORIGINAL_BASH_ENV:-}" ] && [ "\${MYAGENTS_ORIGINAL_BASH_ENV}" != "\${BASH_ENV:-}" ] && [ -r "\${MYAGENTS_ORIGINAL_BASH_ENV}" ]; then`,
-  '  . "${MYAGENTS_ORIGINAL_BASH_ENV}"',
+  '# NextTools-managed Bash prelude for Windows SDK tool output.',
+  `if [ -n "\${NEXTTOOLS_ORIGINAL_BASH_ENV:-}" ] && [ "\${NEXTTOOLS_ORIGINAL_BASH_ENV}" != "\${BASH_ENV:-}" ] && [ -r "\${NEXTTOOLS_ORIGINAL_BASH_ENV}" ]; then`,
+  '  . "${NEXTTOOLS_ORIGINAL_BASH_ENV}"',
   'fi',
   `export ${WINDOWS_UTF8_BASH_ENV_SENTINEL}=1`,
   'export LANG=C.UTF-8',
@@ -6067,7 +6067,7 @@ const WINDOWS_UTF8_BASH_ENV_CONTENT = [
 
 function ensureWindowsUtf8BashEnvScript(home: string): string | undefined {
   if (!home) return undefined;
-  const scriptDir = resolve(home, '.myagents', 'runtime');
+  const scriptDir = resolve(home, '.nexttools', 'runtime');
   const scriptPath = resolve(scriptDir, WINDOWS_UTF8_BASH_ENV_FILENAME);
   try {
     ensureDirSync(scriptDir);
@@ -6110,7 +6110,7 @@ export function applyWindowsUtf8SubprocessEnv(
   const existingBashEnv = env.BASH_ENV;
   const existingBashEnvForShell = existingBashEnv ? toGitBashEnvPath(existingBashEnv) : undefined;
   if (existingBashEnvForShell && existingBashEnvForShell !== bashEnvScriptForShell) {
-    env.MYAGENTS_ORIGINAL_BASH_ENV = existingBashEnvForShell;
+    env.NEXTTOOLS_ORIGINAL_BASH_ENV = existingBashEnvForShell;
   }
   env.BASH_ENV = bashEnvScriptForShell;
 }
@@ -6154,8 +6154,8 @@ export function buildClaudeSessionEnv(
   const isDebug = process.env.DEBUG === '1' || process.env.NODE_ENV === 'development';
   const isWindows = process.platform === 'win32';
   const executablePath = buildSessionExecutablePath();
-  const myAgentsNpmGlobalPrefix = getMyAgentsNpmGlobalPrefix(home);
-  const myAgentsNpmGlobalBinDir = getMyAgentsNpmGlobalBinDir(home);
+  const nextToolsNpmGlobalPrefix = getNextToolsNpmGlobalPrefix(home);
+  const nextToolsNpmGlobalBinDir = getNextToolsNpmGlobalBinDir(home);
 
   // Windows directory env vars — hoisted for reuse across essentialPaths + git-bash detection
   const winProgramFiles = isWindows ? (process.env.PROGRAMFILES || 'C:\\Program Files') : '';
@@ -6183,7 +6183,7 @@ export function buildClaudeSessionEnv(
   // (effective window - 13K), which is 967K for a 1M model and can exceed a
   // provider's safe input limit once its completion budget is included (#508).
   // Pinning the value also prevents a shell/project launch environment from
-  // silently changing MyAgents' session policy.
+  // silently changing NextTools' session policy.
   env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE = String(BUILTIN_AUTO_COMPACT_PERCENT);
 
   // Expose the managed npm prefix for command-local use only. Do NOT set
@@ -6191,25 +6191,25 @@ export function buildClaudeSessionEnv(
   // interactive shells with nvm treat those vars as incompatible and print a
   // warning before every Bash/zsh tool run. Skills that need a predictable
   // global install target should use:
-  //   npm_config_prefix="$MYAGENTS_NPM_GLOBAL_PREFIX" npm install -g <pkg>
-  if (myAgentsNpmGlobalPrefix) {
-    env.MYAGENTS_NPM_GLOBAL_PREFIX = myAgentsNpmGlobalPrefix;
-    if (myAgentsNpmGlobalBinDir) {
-      env.MYAGENTS_NPM_GLOBAL_BIN = myAgentsNpmGlobalBinDir;
+  //   npm_config_prefix="$NEXTTOOLS_NPM_GLOBAL_PREFIX" npm install -g <pkg>
+  if (nextToolsNpmGlobalPrefix) {
+    env.NEXTTOOLS_NPM_GLOBAL_PREFIX = nextToolsNpmGlobalPrefix;
+    if (nextToolsNpmGlobalBinDir) {
+      env.NEXTTOOLS_NPM_GLOBAL_BIN = nextToolsNpmGlobalBinDir;
     }
-    scrubMyAgentsNpmPrefixEnv(env, myAgentsNpmGlobalPrefix);
+    scrubNextToolsNpmPrefixEnv(env, nextToolsNpmGlobalPrefix);
   }
   // Disable SDK nonessential traffic (Statsig telemetry, Sentry error reporting, surveys).
-  // MyAgents manages its own telemetry; these external connections add startup latency
+  // NextTools manages its own telemetry; these external connections add startup latency
   // and can timeout in restricted network environments (e.g. China).
   env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = '1';
   // Disable SDK built-in cron tools (CronCreate/CronDelete/CronList).
-  // MyAgents has its own persistent scheduled Task system (im-cron compatibility
+  // NextTools has its own persistent scheduled Task system (im-cron compatibility
   // tool → Rust TaskStore/TaskSchedulerController) with IM delivery and wall-clock scheduling.
   // The SDK's cron is session-scoped/in-memory, would conflict and confuse users.
   env.CLAUDE_CODE_DISABLE_CRON = '1';
   // Disable SDK auto-loading of claude.ai proxy MCP servers.
-  // MyAgents manages MCP servers through its own UI (buildSdkMcpServers).
+  // NextTools manages MCP servers through its own UI (buildSdkMcpServers).
   // SDK auto-loaded servers use "claude.ai <DisplayName>" format (sanitized to "claude_ai_<Name>"),
   // which mismatches our config IDs → checkMcpToolPermission blocks the tools.
   // See: https://github.com/hAcKlyc/MyAgents/issues/73
@@ -6264,7 +6264,7 @@ export function buildClaudeSessionEnv(
     env.ANTHROPIC_CUSTOM_HEADERS = headers.join('\n');
   }
 
-  // Declare MyAgents as the inference-routing host for non-subscription
+  // Declare NextTools as the inference-routing host for non-subscription
   // providers. This tells CC's `managedEnv` layer (see claude-code
   // src/utils/managedEnv.ts withoutHostManagedProviderVars) to strip the
   // provider-routing vars (ANTHROPIC_BASE_URL / ANTHROPIC_API_KEY /
@@ -6272,7 +6272,7 @@ export function buildClaudeSessionEnv(
   // etc.) out of settings-sourced env before they're applied.
   //
   // Effect: external tools like cc-switch / Claude Code Router that write those
-  // vars into user settings cannot silently redirect MyAgents requests to a
+  // vars into user settings cannot silently redirect NextTools requests to a
   // third-party endpoint. `settingSources: ['project']` already excludes
   // settings.json from the merged-settings path, but getGlobalConfig().env
   // (~/.claude.json) is merged unconditionally — this flag closes that hole.
@@ -6289,12 +6289,12 @@ export function buildClaudeSessionEnv(
   // and break Anthropic subscription OAuth. Enabled global Skills are instead
   // projected into project .claude/skills/ at Query birth.
 
-  // Self-Config CLI: expose sidecar port so the `myagents` CLI can call back
+  // Self-Config CLI: expose sidecar port so the `nexttools` CLI can call back
   const sidecarPort = getSidecarPort();
   if (sidecarPort > 0) {
-    env.MYAGENTS_PORT = String(sidecarPort);
+    env.NEXTTOOLS_PORT = String(sidecarPort);
   }
-  env.MYAGENTS_SESSION_ID = sessionId;
+  env.NEXTTOOLS_SESSION_ID = sessionId;
 
   // Windows: Set CLAUDE_CODE_GIT_BASH_PATH so SDK finds git-bash directly
   // without relying on which("git") in PATH (which may be stale after NSIS install).
@@ -6346,7 +6346,7 @@ export function buildClaudeSessionEnv(
   });
 
   if (!effectiveProviderId) {
-    console.warn('[env] Provider-owned SDK env missing providerId; MyAgents proxy will not be injected for this subprocess');
+    console.warn('[env] Provider-owned SDK env missing providerId; NextTools proxy will not be injected for this subprocess');
   }
   applyProviderProxyPolicyToEnv(env, effectiveProviderId);
 
@@ -6464,7 +6464,7 @@ export function buildClaudeSessionEnv(
     // translates to OpenAI format and forwards to the per-token upstream.
     env.ANTHROPIC_BASE_URL = `http://127.0.0.1:${sidecarPort}/bridge/${bridgeToken}`;
     env.ANTHROPIC_API_KEY = effectiveProviderEnv.credentialSource
-      ? 'myagents-managed-oauth'
+      ? 'nexttools-managed-oauth'
       : (effectiveProviderEnv.apiKey ?? '');
     delete env.ANTHROPIC_AUTH_TOKEN;
     // CRITICAL: Strip proxy env vars from subprocess environment.
@@ -7614,7 +7614,7 @@ async function attachBuiltinMediaIfAny(
   }
   try {
     // workspace = agentDir → extracted images land in the unified
-    // `<workspace>/myagents_files/<tool-name>/` location (#293-followup).
+    // `<workspace>/nexttools_files/<tool-name>/` location (#293-followup).
     const ctx = { sessionId, toolUseId, workspace: agentDir };
     const attachments = [
       ...await buildBuiltinMediaAttachments(toolBlock.tool.name, contentStr, ctx),
@@ -8199,7 +8199,7 @@ export async function initializeAgent(
     await activateSessionTranscript(initialSessionId);
 
     // Metadata alone is not enough to resume the Claude Agent SDK. POST /sessions
-    // creates MyAgents metadata before the SDK has ever persisted a transcript,
+    // creates NextTools metadata before the SDK has ever persisted a transcript,
     // so `query({ resume })` would fail with "No conversation found". If
     // sdkSessionId is missing, only recover the rare crash-before-metadata-update
     // case when the SDK transcript probe finds real persisted transcriptState.messages.
@@ -8943,7 +8943,7 @@ export async function enqueueUserMessage(
   requestId?: string,
   // PRD 0.2.18 Session Inbox — inbox metadata for cross-session transcriptState.messages.
   // Present when message came in via /api/inbox/drain (caller sent through
-  // `myagents session send`). Carries reply-back instruction + caller identity;
+  // `nexttools session send`). Carries reply-back instruction + caller identity;
   // bound per-turn at generator yield, read at result handler for reply pushback.
   inboxMeta?: import('./inbox/types').InboxTurnMeta,
   analyticsSource?: TurnAnalyticsSource,
@@ -9596,7 +9596,7 @@ export async function enqueueUserMessage(
     }
   } else if (hasImages && filteredImageCount > 0) {
     // Modality fallback (PRD prd_0.2.3_image_modality_file_fallback.md):
-    // model lacks image support → write the images into `<agentDir>/myagents_files/`
+    // model lacks image support → write the images into `<agentDir>/nexttools_files/`
     // and append `@<relative path>` to the user text so the model can choose
     // to Read them (or hand them to other tools). Mirrors the behaviour of
     // pasting non-image files in the Tab UI input. IM Bot path inherits this
@@ -9607,7 +9607,7 @@ export async function enqueueUserMessage(
     // still sees a non-empty user turn and the message isn't silently lost.
     let fallbackPaths: string[] = [];
     if (agentDir) {
-      const targetDir = join(agentDir, 'myagents_files');
+      const targetDir = join(agentDir, 'nexttools_files');
       try {
         const written = await writeBase64FilesToAgentDir(
           resolvedImages!.map((img) => ({ name: img.name, content: img.data })),
@@ -9625,11 +9625,11 @@ export async function enqueueUserMessage(
       // Mirror the frontend non-image paste path (SimpleChatInput.tsx
       // /api/files/add-gitignore call): keep workspace-internal artifacts
       // out of git by default. PRD §6.4 explicitly calls for parity here.
-      ensureGitignorePattern(agentDir, 'myagents_files/');
+      ensureGitignorePattern(agentDir, 'nexttools_files/');
 
       const refs = fallbackPaths.map((p) => `@${p}`).join(' ');
       effectiveText = effectiveText ? `${effectiveText}\n\n${refs}` : refs;
-      console.log(`[agent] modality fallback: ${fallbackPaths.length} image(s) → myagents_files/ (model=${modelForFilter ?? '(unknown)'})`);
+      console.log(`[agent] modality fallback: ${fallbackPaths.length} image(s) → nexttools_files/ (model=${modelForFilter ?? '(unknown)'})`);
       broadcast('chat:attachments-fallback', {
         kind: 'image',
         count: fallbackPaths.length,
@@ -10778,17 +10778,17 @@ async function resolveBuiltinForkSource(source: SessionMetadata, visited = new S
 }
 
 /**
- * Exact MyAgents Record CLI forms that may bypass a second desktop approval.
+ * Exact NextTools Record CLI forms that may bypass a second desktop approval.
  * This stays Record-specific: it is a safety policy for one bounded product
  * surface, not a general shell parser or command allowlist framework.
  */
 export function isAutoAllowedRecordCliCommand(command: string): boolean {
   const cmd = command.trim();
   return (
-    /^myagents[ \t]+record[ \t]+list(?:[ \t]+(?:--kind[ \t]+(?:text|audio)|--tag[ \t]+[a-z0-9][a-z0-9-]{0,31}|--limit[ \t]+\d{1,4}|--json))*[ \t]*$/.test(cmd)
-    || /^myagents[ \t]+thought[ \t]+list(?:[ \t]+(?:--tag[ \t]+[a-z0-9][a-z0-9-]{0,31}|--limit[ \t]+\d{1,4}|--json))*[ \t]*$/.test(cmd)
-    || /^myagents[ \t]+(?:record|thought)[ \t]+create[ \t]+(?:--content[ \t]+)?'[^']*'[ \t]*$/.test(cmd)
-    || /^myagents[ \t]+(?:record|thought)[ \t]+create[ \t]+--content-file[ \t]+[^ \t\n\r;|&<>$`'"]+[ \t]*$/.test(cmd)
+    /^nexttools[ \t]+record[ \t]+list(?:[ \t]+(?:--kind[ \t]+(?:text|audio)|--tag[ \t]+[a-z0-9][a-z0-9-]{0,31}|--limit[ \t]+\d{1,4}|--json))*[ \t]*$/.test(cmd)
+    || /^nexttools[ \t]+thought[ \t]+list(?:[ \t]+(?:--tag[ \t]+[a-z0-9][a-z0-9-]{0,31}|--limit[ \t]+\d{1,4}|--json))*[ \t]*$/.test(cmd)
+    || /^nexttools[ \t]+(?:record|thought)[ \t]+create[ \t]+(?:--content[ \t]+)?'[^']*'[ \t]*$/.test(cmd)
+    || /^nexttools[ \t]+(?:record|thought)[ \t]+create[ \t]+--content-file[ \t]+[^ \t\n\r;|&<>$`'"]+[ \t]*$/.test(cmd)
   );
 }
 
@@ -11267,7 +11267,7 @@ async function startStreamingSession(preWarm = false): Promise<void> {
     // task that needs human approval. Cron creation should always default
     // to "" (sentinel for runtime max). Users who explicitly want a
     // stricter mode can pass `--permissionMode plan` via the cron tool.
-    if (process.env.MYAGENTS_MANAGEMENT_PORT && !getImCronContext()) {
+    if (process.env.NEXTTOOLS_MANAGEMENT_PORT && !getImCronContext()) {
       // PRD 0.2.9 — When the session's providerEnv came from the workspace
       // agent (the common case), surface the providerId too so the cron
       // tool can build live-resolve cron tasks. The agent lookup is local
@@ -11370,24 +11370,24 @@ async function startStreamingSession(preWarm = false): Promise<void> {
       skills: [...new Set(enabledSkillAllowlist)].sort(),
       settings: {
         cleanupPeriodDays: claudeTranscriptCleanupPeriodDays,
-        // MyAgents does not expose Anthropic feedback submission. Keep the
+        // NextTools does not expose Anthropic feedback submission. Keep the
         // upstream draft feature off explicitly instead of inheriting a CLI
         // default that may change in a patch release.
         feedbackDrafts: 'off' as const,
         plansDirectory: getSessionPlansDirectorySetting(sessionId),
-        // MyAgents owns provider routing and outbound-network policy. Without
+        // NextTools owns provider routing and outbound-network policy. Without
         // this, Claude Code's WebFetch tool sends the target hostname to
         // api.anthropic.com for a domain-safety preflight even when inference
         // is routed through a user-selected third-party provider.
         skipWebFetchPreflight: true,
         // The Artifact tool (SDK 0.3.16x+) publishes HTML/MD to claude.ai —
-        // an outward data flow MyAgents has not product-decided to expose.
+        // an outward data flow NextTools has not product-decided to expose.
         // Keep the tool surface frozen; revisit as its own feature if wanted.
         disableArtifact: true,
         // Claude Code's native bundled skills can duplicate identities owned by
-        // MyAgents' effective Skill inventory (for example skill-creator).
+        // NextTools' effective Skill inventory (for example skill-creator).
         // Disabling them removes duplicate listings and per-turn context cost;
-        // MyAgents-owned Skills still load through <cwd>/.claude/skills, which
+        // NextTools-owned Skills still load through <cwd>/.claude/skills, which
         // this flag does not touch. Built-in slash commands remain typable
         // (programmatic /compact is unaffected); they are only hidden from the model.
         disableBundledSkills: true,
@@ -11420,7 +11420,7 @@ async function startStreamingSession(preWarm = false): Promise<void> {
         // `[claude-code:unrecognized_model]` is an informational client-side
         // signal: the CLI's local registry doesn't know the model name, so it
         // warns that its auto-compact fallback window applies. Expected for
-        // every third-party provider model (glm/deepseek/...); MyAgents owns
+        // every third-party provider model (glm/deepseek/...); NextTools owns
         // the real ceiling via CLAUDE_CODE_AUTO_COMPACT_WINDOW + the [1m]
         // launch suffix (#335/#516), and the paired tengu_api_unrecognized_model
         // telemetry event is already dropped locally by
@@ -11450,7 +11450,7 @@ async function startStreamingSession(preWarm = false): Promise<void> {
           runtime: 'builtin',
           // Universal CLI capability surface (cron / IM media). Was external-runtime
           // only when builtin still had `cron-tools` / `im-cron` / `im-media` MCPs;
-          // those got dropped in favour of `myagents` CLI calls so builtin needs the
+          // those got dropped in favour of `nexttools` CLI calls so builtin needs the
           // same prompt now. Single CLI, single source of truth across all runtimes.
           cliToolsEnabled: true,
           userCliToolsEnabled: cliToolRegistryEnabled,
@@ -11472,7 +11472,7 @@ async function startStreamingSession(preWarm = false): Promise<void> {
       // `plugins: [{ type: 'local', path }]`; it then scans each path for
       // .claude-plugin/plugin.json and wires up the contained
       // skills / agents / hooks / .mcp.json / .lsp.json automatically.
-      // MyAgents only hands it the enabled set — getEnabledPluginSdkConfigs
+      // NextTools only hands it the enabled set — getEnabledPluginSdkConfigs
       // already filters to entries that exist on disk as valid plugin roots.
       // Field omitted entirely when no plugins are enabled so empty-array
       // noise doesn't show up in SDK debug output.
@@ -11550,10 +11550,10 @@ async function startStreamingSession(preWarm = false): Promise<void> {
 
         // Trust SDK provenance for active context-injected MCPs: skip user confirmation
         // entirely. These MCPs are injected by sidecar context (cron task / IM
-        // bot / bridge plugin) and are MyAgents-managed, not third-party. In IM
+        // bot / bridge plugin) and are NextTools-managed, not third-party. In IM
         // sessions there is no UI to confirm against anyway, so blocking on
         // confirmation would deadlock the call. The reserved id list in
-        // MYAGENTS_CONTEXT_INJECTED_MCP_IDS guarantees no user MCP can take
+        // NEXTTOOLS_CONTEXT_INJECTED_MCP_IDS guarantees no user MCP can take
         // the same name (filtered out in buildSdkMcpServers), so this auto-allow
         // can't be hijacked.
         if (isContextInjectedSdkTool(options.mcpServer, getActiveContextInjectedBuiltinIds())) {
@@ -11564,19 +11564,19 @@ async function startStreamingSession(preWarm = false): Promise<void> {
           };
         }
 
-        // Auto-allow read-only `myagents` CLI Bash invocations. After the v0.2.11
-        // cron / im-cron / im-media → CLI migration, the AI reaches MyAgents'
-        // own scheduling / IM / widget surface through `myagents <group> …`
+        // Auto-allow read-only `nexttools` CLI Bash invocations. After the v0.2.11
+        // cron / im-cron / im-media → CLI migration, the AI reaches NextTools'
+        // own scheduling / IM / widget surface through `nexttools <group> …`
         // instead of MCP tools. Read-only forms (no quoted arg, no shell-injection
         // surface) are auto-allowed so the AI doesn't burn a permission prompt
-        // on `myagents cron list` or `myagents im channels`. Mutating commands
+        // on `nexttools cron list` or `nexttools im channels`. Mutating commands
         // (`cron add`, `cron exit`, `cron remove`, `im send-media`, `im wake`)
         // are NOT in this allowlist — they go through the normal canUseTool
         // prompt in desktop mode, and through the headless fast-path below in
         // IM / cron mode.
         //
         // Whitespace separators are restricted to space + tab — `\s` would also
-        // match `\n`/`\r`, letting `myagents widget readme\nrm` slip through
+        // match `\n`/`\r`, letting `nexttools widget readme\nrm` slip through
         // (shell executes the second line as any PATH binary whose name happens
         // to fit the trailing token shape). Non-whitespace shell metachars
         // (`;`, `|`, `&&`, `>`, `$(`, backticks, …) already fail the strict
@@ -11584,10 +11584,10 @@ async function startStreamingSession(preWarm = false): Promise<void> {
         if (toolName === 'Bash' && !options.defaultToNo && !options.suppressAlwaysAllowRule) {
           const cmd = ((input as Record<string, unknown>)?.command as string | undefined)?.trim() ?? '';
 
-          // 1. Widget design contract: `myagents widget [readme|list|<module>] [<module>...]`
+          // 1. Widget design contract: `nexttools widget [readme|list|<module>] [<module>...]`
           //    — module names limited to `[a-z][a-z0-9-]*`.
-          if (/^myagents[ \t]+widget(?:[ \t]+(?:readme|list))?(?:[ \t]+[a-z][a-z0-9-]*)*[ \t]*$/.test(cmd)) {
-            console.log(`[permission] myagents widget readme auto-allowed: ${cmd}`);
+          if (/^nexttools[ \t]+widget(?:[ \t]+(?:readme|list))?(?:[ \t]+[a-z][a-z0-9-]*)*[ \t]*$/.test(cmd)) {
+            console.log(`[permission] nexttools widget readme auto-allowed: ${cmd}`);
             return {
               behavior: 'allow' as const,
               updatedInput: input as Record<string, unknown>
@@ -11595,33 +11595,33 @@ async function startStreamingSession(preWarm = false): Promise<void> {
           }
 
           // 2. Cron / IM read-only surface (zero-arg listings + readme):
-          //    `myagents cron list|status|readme [--json]`
-          //    `myagents im channels|readme [--json]`
-          if (/^myagents[ \t]+(?:cron[ \t]+(?:list|status|readme)|im[ \t]+(?:channels|readme))(?:[ \t]+--json)?[ \t]*$/.test(cmd)) {
-            console.log(`[permission] myagents readonly CLI auto-allowed: ${cmd}`);
+          //    `nexttools cron list|status|readme [--json]`
+          //    `nexttools im channels|readme [--json]`
+          if (/^nexttools[ \t]+(?:cron[ \t]+(?:list|status|readme)|im[ \t]+(?:channels|readme))(?:[ \t]+--json)?[ \t]*$/.test(cmd)) {
+            console.log(`[permission] nexttools readonly CLI auto-allowed: ${cmd}`);
             return {
               behavior: 'allow' as const,
               updatedInput: input as Record<string, unknown>
             };
           }
 
-          // 3. Cron run history: `myagents cron runs <taskId> [--limit N] [--full] [--json]`
+          // 3. Cron run history: `nexttools cron runs <taskId> [--limit N] [--full] [--json]`
           //    — taskId is an opaque slug-style id (alphanumerics + dash/underscore,
           //    bounded length); --limit takes a small integer. Order-agnostic flags.
-          if (/^myagents[ \t]+cron[ \t]+runs[ \t]+[a-zA-Z0-9_-]{1,64}(?:[ \t]+(?:--limit[ \t]+\d{1,4}|--full|--json))*[ \t]*$/.test(cmd)) {
-            console.log(`[permission] myagents cron runs auto-allowed: ${cmd}`);
+          if (/^nexttools[ \t]+cron[ \t]+runs[ \t]+[a-zA-Z0-9_-]{1,64}(?:[ \t]+(?:--limit[ \t]+\d{1,4}|--full|--json))*[ \t]*$/.test(cmd)) {
+            console.log(`[permission] nexttools cron runs auto-allowed: ${cmd}`);
             return {
               behavior: 'allow' as const,
               updatedInput: input as Record<string, unknown>
             };
           }
 
-          // 4. Record browse: canonical `myagents record list`; published
-          //    `myagents thought list` remains accepted as a compatibility alias.
+          // 4. Record browse: canonical `nexttools record list`; published
+          //    `nexttools thought list` remains accepted as a compatibility alias.
           //    --query is intentionally NOT in the allowlist — it carries arbitrary
           //    user text (the search string) which can hold shell metachars. That
           //    form falls through to the normal user-confirm / IM fast-path.
-          // 5. Text Record capture: canonical `myagents record create '<content>'`;
+          // 5. Text Record capture: canonical `nexttools record create '<content>'`;
           //    `thought create` remains accepted as a compatibility alias.
           //    Mutating, but the side effect is bounded — append-only into the
           //    user's Record list, no filesystem / network surface, fully
@@ -11646,7 +11646,7 @@ async function startStreamingSession(preWarm = false): Promise<void> {
           //      text Record create doesn't accept `--tag` (tags are derived
           //      from inline `#xxx` in the content), and the prompt no
           //      longer advertises it after issue-148-followup review.
-          // 6. Text Record capture via file: `myagents record create --content-file <path>`
+          // 6. Text Record capture via file: `nexttools record create --content-file <path>`
           //    Path is shell-quote-free (a single token without metachars), so
           //    the regex constraint here is the path-token character class
           //    `[^ \t;|&<>$\`'"]` — explicitly forbid every shell metachar
@@ -11655,7 +11655,7 @@ async function startStreamingSession(preWarm = false): Promise<void> {
           //    CLI validates size, NUL bytes, and read errors before sending
           //    anything to the management API. Issue #149 follow-up.
           if (isAutoAllowedRecordCliCommand(cmd)) {
-            console.log(`[permission] myagents Record CLI auto-allowed: ${cmd}`);
+            console.log(`[permission] nexttools Record CLI auto-allowed: ${cmd}`);
             return {
               behavior: 'allow' as const,
               updatedInput: input as Record<string, unknown>
@@ -12082,7 +12082,7 @@ async function startStreamingSession(preWarm = false): Promise<void> {
     // in `this.initialization
     // = this.initialize()` — calling `initializationResult()` here just awaits
     // the existing promise. Verified empirically with DEBUG_CLAUDE_AGENT_SDK=1:
-    // resolved at +337ms in a clean repro; in MyAgents production with project
+    // resolved at +337ms in a clean repro; in NextTools production with project
     // settings + playwright MCP the same handshake completes in ~3-5s.
     //
     // We use `lifecycleState.sdkControlReady` as the gate for the "AI 启动中" UI hint
@@ -12153,7 +12153,7 @@ async function startStreamingSession(preWarm = false): Promise<void> {
     //   Phase 1 (initial): 60s — if SDK subprocess doesn't show signs of life, fail fast.
     //   Phase 2 (extended): 600s — once session_state_changed:running arrives, the subprocess
     //     is alive and initializing. First-time workspace init can take minutes on Windows NTFS
-    //     (SDK builds internal caches for large directories like ~/.myagents with 20k+ files).
+    //     (SDK builds internal caches for large directories like ~/.nexttools with 20k+ files).
     //     After the first successful init, subsequent sessions complete in <1s.
     const STARTUP_TIMEOUT_INITIAL_MS = 60_000;
     const STARTUP_TIMEOUT_EXTENDED_MS = 600_000;
@@ -12187,7 +12187,7 @@ async function startStreamingSession(preWarm = false): Promise<void> {
     let streamEventTokenTotal = 0;
     // Same aggregation for `system subtype=thinking_tokens` (SDK 0.3.220+):
     // a live estimate frame per streamed thinking chunk (SDKThinkingTokensMessage,
-    // meant for spinner UIs — MyAgents renders thinking via chat:thinking-chunk
+    // meant for spinner UIs — NextTools renders thinking via chat:thinking-chunk
     // from stream_event instead, so these frames have no functional consumer).
     // Unsynchronized they were ~37k unified-log lines/day + one full-JSON
     // appendLogLine (session file + chat:log SSE) per frame.

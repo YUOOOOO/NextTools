@@ -255,9 +255,9 @@ const PORT_RANGE: u16 = 500;
 pub const GLOBAL_SIDECAR_ID: &str = "__global__";
 // Process identification marker (used to identify our sidecar processes)
 // This marker is added to all sidecar commands for reliable process identification
-const SIDECAR_MARKER: &str = "--myagents-sidecar";
-const SESSION_DELETE_AUTHORITY_ENV: &str = "MYAGENTS_SESSION_DELETE_AUTHORITY";
-const SESSION_DELETE_AUTHORITY_HEADER: &str = "X-MyAgents-Session-Delete-Authority";
+const SIDECAR_MARKER: &str = "--nexttools-sidecar";
+const SESSION_DELETE_AUTHORITY_ENV: &str = "NEXTTOOLS_SESSION_DELETE_AUTHORITY";
+const SESSION_DELETE_AUTHORITY_HEADER: &str = "X-NextTools-Session-Delete-Authority";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum SidecarProcessRole {
@@ -299,9 +299,9 @@ fn append_sidecar_entrypoint_args(
     port: u16,
     role: SidecarProcessRole,
 ) {
-    cmd.env("MYAGENTS_APP_VERSION", env!("CARGO_PKG_VERSION"));
+    cmd.env("NEXTTOOLS_APP_VERSION", env!("CARGO_PKG_VERSION"));
     cmd.env(
-        "MYAGENTS_APP_BUILD_MODE",
+        "NEXTTOOLS_APP_BUILD_MODE",
         if cfg!(debug_assertions) {
             "debug"
         } else {
@@ -400,10 +400,10 @@ mod sidecar_process_role_tests {
         for command in [&global, &session] {
             let environment: std::collections::HashMap<_, _> = command.get_envs().collect();
             assert_eq!(
-                environment.get(std::ffi::OsStr::new("MYAGENTS_APP_VERSION")),
+                environment.get(std::ffi::OsStr::new("NEXTTOOLS_APP_VERSION")),
                 Some(&Some(std::ffi::OsStr::new(env!("CARGO_PKG_VERSION")))),
             );
-            assert!(environment.contains_key(std::ffi::OsStr::new("MYAGENTS_APP_BUILD_MODE")));
+            assert!(environment.contains_key(std::ffi::OsStr::new("NEXTTOOLS_APP_BUILD_MODE")));
         }
         let session_args: Vec<_> = session
             .get_args()

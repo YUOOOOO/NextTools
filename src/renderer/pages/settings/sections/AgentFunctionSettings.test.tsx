@@ -24,10 +24,10 @@ describe('Agent function settings', () => {
     expect(screen.getByText('修改后默认以此运行环境运行，可在 Agent 设置中单独修改')).toBeInTheDocument();
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('cmd_detect_runtimes'));
     expect(updateConfig).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'MyAgents (Claude Agent SDK)' }));
+    await user.click(screen.getByRole('button', { name: 'NextTools (Claude Agent SDK)' }));
     expect(screen.queryByText('Codex CLI')).not.toBeInTheDocument();
     expect(screen.queryByText('Claude Code CLI')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /MyAgents \(DeepSeek Harness\)/ }));
+    await user.click(screen.getByRole('button', { name: /NextTools \(DeepSeek Harness\)/ }));
     expect(updateConfig).toHaveBeenCalledExactlyOnceWith({ defaultIntegratedRuntime: 'dsh' });
   });
 
@@ -35,7 +35,7 @@ describe('Agent function settings', () => {
     const user = userEvent.setup();
     const updateConfig = vi.fn().mockResolvedValue(undefined);
     render(<AgentFunctionSettings config={{ defaultIntegratedRuntime: 'dsh', chatQueueResponseMode: 'realtime' }} updateConfig={updateConfig} />);
-    expect(screen.getByRole('button', { name: 'MyAgents (DeepSeek Harness)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'NextTools (DeepSeek Harness)' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '轮次响应' }));
     expect(updateConfig).toHaveBeenCalledExactlyOnceWith({ chatQueueResponseMode: 'turn' });
   });

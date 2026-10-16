@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ThemeRegistry, ThemeRuntimeProvider } from '@/theme';
 import { syntheticTheme } from '@/theme/__tests__/syntheticTheme';
-import { myAgentsDefaultTheme } from '@/theme/themes/myagents-default';
+import { nextToolsDefaultTheme } from '@/theme/themes/nexttools-default';
 
 const syntaxCapture = vi.hoisted(() => ({
   styles: [] as Array<Record<string, CSSProperties>>,
@@ -31,7 +31,7 @@ import CodeBlock from './CodeBlock';
 
 describe('CodeBlock Theme adapter', () => {
   it('switches Prism styles with the resolved Theme without retaining synthetic values', () => {
-    const registry = new ThemeRegistry([myAgentsDefaultTheme, syntheticTheme]);
+    const registry = new ThemeRegistry([nextToolsDefaultTheme, syntheticTheme]);
     const view = render(
       <ThemeRuntimeProvider
         registry={registry}
@@ -64,7 +64,7 @@ describe('CodeBlock Theme adapter', () => {
     view.rerender(
       <ThemeRuntimeProvider
         registry={registry}
-        selection={{ themeId: 'myagents-default', appearanceMode: 'light' }}
+        selection={{ themeId: 'nexttools-default', appearanceMode: 'light' }}
       >
         <CodeBlock language="ts">const answer = 42;</CodeBlock>
       </ThemeRuntimeProvider>,

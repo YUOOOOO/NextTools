@@ -18,7 +18,7 @@ const provider: ProviderEnv = { providerId: 'antigravity-sub', apiProtocol: 'ant
   endpointSource: { kind: 'cliproxy', providerId: 'antigravity-sub' } };
 afterEach(() => { vi.unstubAllEnvs(); vi.resetAllMocks(); });
 function bind() {
-  vi.stubEnv('MYAGENTS_SIDECAR_ID', 'prompt-test');
+  vi.stubEnv('NEXTTOOLS_SIDECAR_ID', 'prompt-test');
   const grant = { providerId: 'antigravity-sub', baseUrl: 'http://127.0.0.1:13491', apiKey: 'a'.repeat(64),
     instanceGeneration: randomUUID(), accountGeneration: randomUUID(), leaseId: randomUUID(),
     modelPolicy: { id: 'approved-model', thinking: false } };

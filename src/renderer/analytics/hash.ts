@@ -28,7 +28,7 @@
  * 用户/恶意场景内存泄漏。
  */
 
-const PEPPER_KEY = 'myagents_analytics_pepper';
+const PEPPER_KEY = 'nexttools_analytics_pepper';
 const MAX_CACHE_SIZE = 1000;
 
 let cachedPepper: string | null = null;

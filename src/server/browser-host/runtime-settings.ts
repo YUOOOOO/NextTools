@@ -37,7 +37,7 @@ function assertArtifactRoot(
   const output = canonicalizeExistingPrefix(
     resolve(
       workspace,
-      ".myagents",
+      ".nexttools",
       "browser-artifacts",
       safeSession || "session",
     ),
@@ -56,7 +56,7 @@ function assertArtifactRoot(
 }
 
 /**
- * The MyAgents Browser has one deliberately small product contract in 0.4.10:
+ * The NextTools Browser has one deliberately small product contract in 0.4.10:
  * headed managed Chromium, isolated Contexts and product-owned identity.
  * Standard Playwright argv belongs to the separate `playwright` preset and is
  * never compiled here.

@@ -218,7 +218,7 @@ vi.mock("@/api/spaceCloud", async (importOriginal) => {
 function sessionFor(
   id: string,
   slug: string,
-  baseUrl = "https://space.myagents.test",
+  baseUrl = "https://space.nexttools.test",
   role: "admin" | "member" = "member",
 ): SpaceSession {
   return {
@@ -237,7 +237,7 @@ function sessionFor(
 
 function snapshot(
   spaceId: string,
-  baseUrl = "https://space.myagents.test",
+  baseUrl = "https://space.nexttools.test",
   role: "admin" | "member" = "member",
 ) {
   const session = sessionFor(`id-${spaceId}`, spaceId, baseUrl, role);
@@ -375,26 +375,26 @@ describe("Space switching", () => {
   });
 
   it('opens official Tools when bootstrap returns the real community slug', async () => {
-    useRealTeamStore('myagents');
+    useRealTeamStore('nexttools');
     const consumed = vi.fn();
     render(<Space isActive pendingRoute={{ generation: 40, route: { version: 1, name: 'space.tools', params: { spaceId: 'official' } } }} onRouteConsumed={consumed} />);
     await act(async () => undefined);
-    expect(screen.getByRole('main', { name: 'tool market' })).toHaveAttribute('data-space-id', 'myagents');
+    expect(screen.getByRole('main', { name: 'tool market' })).toHaveAttribute('data-space-id', 'nexttools');
     expect(consumed).toHaveBeenCalledWith(40);
     expect(harness.toast.error).not.toHaveBeenCalled();
   });
 
   it.each(['space.tools', 'space.issue'] as const)('accepts the official alias for %s when the community is already current', async (name) => {
-    const community = useRealTeamStore('myagents');
+    const community = useRealTeamStore('nexttools');
     const team = getSnapshot().session!;
-    __setSpaceStoreStateForTest({ session: { ...team, ...community, lastActiveSpaceId: 'official' }, spaceId: 'myagents' });
+    __setSpaceStoreStateForTest({ session: { ...team, ...community, lastActiveSpaceId: 'official' }, spaceId: 'nexttools' });
     const consumed = vi.fn();
     const route = name === 'space.tools'
       ? { version: 1 as const, name, params: { spaceId: 'official' } }
       : { version: 1 as const, name, params: { spaceId: 'official', issueId: 'community-issue' } };
     render(<Space isActive pendingRoute={{ generation: 41, route }} onRouteConsumed={consumed} />);
     await act(async () => undefined);
-    if (name === 'space.tools') expect(screen.getByRole('main', { name: 'tool market' })).toHaveAttribute('data-space-id', 'myagents');
+    if (name === 'space.tools') expect(screen.getByRole('main', { name: 'tool market' })).toHaveAttribute('data-space-id', 'nexttools');
     else expect(screen.getByRole('dialog', { name: 'issue detail' })).toHaveAttribute('data-issue-id', 'community-issue');
     expect(harness.api.spaceGetOfficial).not.toHaveBeenCalled();
     expect(consumed).toHaveBeenCalledWith(41);
@@ -703,7 +703,7 @@ describe("Space switching", () => {
       screen.getByRole("status", { name: "selected issue status" }),
     ).toHaveTextContent("doing");
 
-    harness.data = snapshot("myagents");
+    harness.data = snapshot("nexttools");
     view.rerender(<Space isActive />);
 
     expect(
@@ -855,14 +855,14 @@ describe("Space switching", () => {
 
     expect(harness.actions.refreshSkills).toHaveBeenCalledTimes(1);
 
-    harness.data = snapshot("myagents");
+    harness.data = snapshot("nexttools");
     view.rerender(<Space isActive />);
 
     expect(harness.actions.refreshSkills).toHaveBeenCalledTimes(2);
   });
 
   it("reloads the same Space slug when the service origin changes", async () => {
-    harness.data = snapshot("official", "https://space.myagents.test");
+    harness.data = snapshot("official", "https://space.nexttools.test");
     const view = render(<Space isActive />);
 
     await act(async () => {
@@ -872,7 +872,7 @@ describe("Space switching", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "set doing" }));
 
-    harness.data = snapshot("official", "https://space-dev.myagents.test");
+    harness.data = snapshot("official", "https://space-dev.nexttools.test");
     view.rerender(<Space isActive />);
 
     expect(

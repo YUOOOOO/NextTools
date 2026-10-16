@@ -28,7 +28,7 @@ function release(platform, version = '0.3.0', mutate = () => {}) {
   return { resources, requests, fetchBytes: async url => { requests.push(url); assert.ok(resources.has(url)); return resources.get(url); } };
 }
 function context(t) {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-cuse-test-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-cuse-test-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   return join(root, 'cuse');
 }

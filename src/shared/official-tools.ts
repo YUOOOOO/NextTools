@@ -53,7 +53,7 @@ export const OFFICIAL_TOOLS: readonly OfficialToolDefinition[] = [
   {
     id: SPEECH_RECOGNITION_TOOL_ID,
     name: '语音识别',
-    description: '使用 MyAgents 的本地语音模型转写当前工作区内的音频或视频附件。',
+    description: '使用 NextTools 的本地语音模型转写当前工作区内的音频或视频附件。',
     badge: 'CLI',
     cliGroup: 'speech',
     requiresConfig: false,

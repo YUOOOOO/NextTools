@@ -21,7 +21,7 @@ const initial: NetworkRegistry = {
   connections: [
     {
       id: "official",
-      name: "MyAgents",
+      name: "NextTools",
       official: true,
       url: null,
       removing: false,

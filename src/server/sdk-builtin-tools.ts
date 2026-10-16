@@ -1,9 +1,9 @@
 /**
- * MyAgents' product-owned Claude Agent SDK builtin catalog.
+ * NextTools' product-owned Claude Agent SDK builtin catalog.
  *
  * This is deliberately separate from permission policy: exposing a tool to the
  * model does not auto-approve it. Keeping an explicit catalog also prevents a
- * Claude Code patch from silently adding a new builtin with no MyAgents owner.
+ * Claude Code patch from silently adding a new builtin with no NextTools owner.
  */
 export const SDK_BUILTIN_TOOLS = [
   'Read',

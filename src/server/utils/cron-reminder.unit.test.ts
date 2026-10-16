@@ -17,7 +17,7 @@ describe('buildCronTaskReminder', () => {
     expect(wrapped).toBe([
       '<system-reminder>',
       '<CRON_TASK>',
-      'You are running inside a MyAgents scheduled task execution.',
+      'You are running inside a NextTools scheduled task execution.',
       'The user-visible text after this reminder is the task prompt for this execution.',
       '',
       'cronTaskId: cron_123',
@@ -30,11 +30,11 @@ describe('buildCronTaskReminder', () => {
         'Task collaboration:',
         '- Normal assistant output is not copied into the local Task timeline automatically.',
         '- If a result, issue, lesson, or question is worth preserving across Task Sessions, append an explicit local Task comment with:',
-        '  myagents task comment --body-file <path>',
+        '  nexttools task comment --body-file <path>',
         '- Do not record every assistant response; use comments only for durable Task-level collaboration.',
         '',
-        'If this MyAgents scheduled task goal is complete and future executions should stop, run:',
-      '  myagents task exit --reason "<brief reason>"',
+        'If this NextTools scheduled task goal is complete and future executions should stop, run:',
+      '  nexttools task exit --reason "<brief reason>"',
       '',
       'The command is bound to the current cron execution context; do not pass a task id.',
       '</CRON_TASK>',
@@ -82,7 +82,7 @@ describe('buildCronTaskReminder', () => {
     });
 
     expect(wrapped).toContain('allowExit: false');
-    expect(wrapped).not.toContain('myagents task exit');
+    expect(wrapped).not.toContain('nexttools task exit');
   });
 
   it('omits ordinary Task collaboration guidance for managed maintenance jobs', () => {
@@ -94,7 +94,7 @@ describe('buildCronTaskReminder', () => {
     });
 
     expect(wrapped).not.toContain('Task collaboration:');
-    expect(wrapped).not.toContain('myagents task comment');
+    expect(wrapped).not.toContain('nexttools task comment');
     expect(wrapped.endsWith('\nMaintain memory')).toBe(true);
   });
 

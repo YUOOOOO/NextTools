@@ -1004,7 +1004,7 @@ fn create_new_session_sidecar<'a, R: Runtime>(
     // Inject management API port for Bun→Rust IPC (v0.1.21)
     let mgmt_port = crate::management_api::get_management_port();
     if mgmt_port > 0 {
-        cmd.env("MYAGENTS_MANAGEMENT_PORT", mgmt_port.to_string());
+        cmd.env("NEXTTOOLS_MANAGEMENT_PORT", mgmt_port.to_string());
     }
     crate::external_cli::inject_internal_token(&mut cmd);
 
@@ -1012,18 +1012,18 @@ fn create_new_session_sidecar<'a, R: Runtime>(
     // this ensure attempt. In particular, missing Session metadata is not an
     // implicit builtin identity for a metadata creator.
     if let Some(runtime) = resolved_identity.runtime_for_env() {
-        cmd.env("MYAGENTS_RUNTIME", runtime);
+        cmd.env("NEXTTOOLS_RUNTIME", runtime);
     }
     if let Some(runtime_source) = resolved_identity.runtime_source_for_env() {
-        cmd.env("MYAGENTS_RUNTIME_SOURCE", runtime_source);
+        cmd.env("NEXTTOOLS_RUNTIME_SOURCE", runtime_source);
     }
     if let Some(runtime_binding_json) = &resolved_identity.runtime_binding_json {
-        cmd.env("MYAGENTS_RUNTIME_BINDING", runtime_binding_json);
+        cmd.env("NEXTTOOLS_RUNTIME_BINDING", runtime_binding_json);
     }
     let sidecar_generation = manager_guard.next_generation(session_id);
-    cmd.env("MYAGENTS_SIDECAR_ID", session_id);
+    cmd.env("NEXTTOOLS_SIDECAR_ID", session_id);
     cmd.env(
-        "MYAGENTS_SIDECAR_GENERATION",
+        "NEXTTOOLS_SIDECAR_GENERATION",
         sidecar_generation.to_string(),
     );
     let runtime_for_trace = resolved_identity.runtime.clone();
@@ -1325,7 +1325,7 @@ pub(crate) fn finish_session_owner_release(
                         .post(format!(
                             "http://127.0.0.1:{port}/api/browser/session/retire"
                         ))
-                        .header("x-myagents-sidecar-generation", generation.to_string())
+                        .header("x-nexttools-sidecar-generation", generation.to_string())
                         .json(&serde_json::json!({
                             "productSessionId": &drain.session_id,
                         }))

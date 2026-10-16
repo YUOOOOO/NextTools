@@ -1,7 +1,7 @@
 /**
  * 设置 → 工具箱 的「CLI 工具」分区（PRD 0.2.36 cli_first_tool_registry）。
  *
- * 数据源 = sidecar Admin API（/api/admin/tool/*，与 `myagents tool` 同一套
+ * 数据源 = sidecar Admin API（/api/admin/tool/*，与 `nexttools tool` 同一套
  * handler），不直读磁盘。注册入口刻意不在 GUI：工具由对话中的 AI 经
  * tool-creator 创建注册，本分区只承担可见性/管理（可审计性三件套之一）+
  * 空状态的用户引导。视觉以 specs/playgrounds/toolbox_settings_tab.html

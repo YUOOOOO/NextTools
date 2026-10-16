@@ -1,5 +1,5 @@
 #!/bin/bash
-# MyAgents macOS Dev 构建脚本
+# NextTools macOS Dev 构建脚本
 # 构建带 DevTools 的调试版本，启动时自动打开控制台
 # 只构建 .app 不构建 DMG (避免弹窗)
 
@@ -47,7 +47,7 @@ NC='\033[0m'
 
 echo ""
 echo -e "${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║${NC}  ${GREEN}🤖 MyAgents macOS Dev 构建${NC}                           ${CYAN}║${NC}"
+echo -e "${CYAN}║${NC}  ${GREEN}🤖 NextTools macOS Dev 构建${NC}                           ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}  ${YELLOW}⚠ DevTools 启用 + 只构建 App${NC}                        ${CYAN}║${NC}"
 echo -e "${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
 echo ""
@@ -93,23 +93,23 @@ CLIPROXY_HOST_PLATFORM="darwin-x64"
 if [[ "$DEV_NATIVE_TARGET" == "aarch64-apple-darwin" ]]; then CLIPROXY_HOST_PLATFORM="darwin-arm64"; fi
 node "${PROJECT_DIR}/scripts/prepare-cliproxy.mjs" "$CLIPROXY_HOST_PLATFORM"
 
-# 杀死残留 MyAgents 实例（避免生产版和 debug 版同时运行互相打架）
-# 优先使用 PID lock file 精确杀——只杀 MyAgents 主进程，不误杀其他 node 进程。
+# 杀死残留 NextTools 实例（避免生产版和 debug 版同时运行互相打架）
+# 优先使用 PID lock file 精确杀——只杀 NextTools 主进程，不误杀其他 node 进程。
 # SIGKILL(-9) 防止 macOS Automatic Termination 自动重启被杀的 .app。
 if [ "$CLIPROXY_BUILD_ONLY" != true ]; then
 echo -e "${BLUE}[准备] 杀死残留进程...${NC}"
-LOCK_FILE="$HOME/.myagents/app.lock"
+LOCK_FILE="$HOME/.nexttools/app.lock"
 if [ -f "$LOCK_FILE" ]; then
     OLD_PID=$(cat "$LOCK_FILE" 2>/dev/null)
     # Validate PID is a positive integer before using it with kill
     if [[ "$OLD_PID" =~ ^[1-9][0-9]*$ ]] && kill -0 "$OLD_PID" 2>/dev/null; then
-        echo -e "${YELLOW}  杀死运行中的 MyAgents (PID $OLD_PID)...${NC}"
+        echo -e "${YELLOW}  杀死运行中的 NextTools (PID $OLD_PID)...${NC}"
         kill -9 "$OLD_PID" 2>/dev/null || true
     fi
     rm -f "$LOCK_FILE"
 fi
-# Fallback: 杀死任何漏网的 MyAgents 进程（lock file 可能不存在或 PID 已过期）
-pkill -9 -f "MyAgents.app" 2>/dev/null || true
+# Fallback: 杀死任何漏网的 NextTools 进程（lock file 可能不存在或 PID 已过期）
+pkill -9 -f "NextTools.app" 2>/dev/null || true
 pkill -9 -f "node.*src/server/index.ts" 2>/dev/null || true
 pkill -9 -f "node.*server-dist.js" 2>/dev/null || true
 sleep 1  # 等待进程完全退出
@@ -172,7 +172,7 @@ fi
 
 # 清理 debug 构建产物（确保 resources 被重新复制）
 rm -rf "${PROJECT_DIR}/src-tauri/target/debug/bundle"
-rm -rf "${PROJECT_DIR}/src-tauri/target/debug/MyAgents.app"
+rm -rf "${PROJECT_DIR}/src-tauri/target/debug/NextTools.app"
 rm -rf "${PROJECT_DIR}/src-tauri/target/debug/resources"
 echo -e "${GREEN}✓ 已清理并创建占位符${NC}"
 echo ""

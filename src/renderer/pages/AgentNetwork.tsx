@@ -21,7 +21,7 @@ import {
   type NetworkDevice,
   type NetworkSnapshot,
 } from "@/api/agentNetwork";
-import { useMyAgentsLogin } from "@/hooks/useMyAgentsLogin";
+import { useNextToolsLogin } from "@/hooks/useNextToolsLogin";
 import { SpaceLogin } from "@/pages/space/SpaceChrome";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { getDeviceId, preloadDeviceId } from "@/identity/deviceIdentity";
@@ -136,7 +136,7 @@ function AgentNetworkContent({
       if (generation === networkGeneration(connectionId)) setAuthLoading(false);
     }
   }, [t, connectionId, official]);
-  const { authBusy, authFlow, startLogin } = useMyAgentsLogin(
+  const { authBusy, authFlow, startLogin } = useNextToolsLogin(
     isActive,
     reloadAccount,
   );

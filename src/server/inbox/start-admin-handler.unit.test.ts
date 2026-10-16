@@ -44,7 +44,7 @@ function registry(archived = false) {
 describe('handleAdminSessionStart', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.MYAGENTS_MANAGEMENT_PORT = '43123';
+    process.env.NEXTTOOLS_MANAGEMENT_PORT = '43123';
     mocks.resolvePersistedAgentWorkspaceRegistry.mockResolvedValue(registry());
     mocks.getSessionMetadata.mockReturnValue({ title: 'Source chat', agentDir: '/source' });
   });
@@ -115,7 +115,7 @@ describe('handleAdminSessionStart', () => {
       messageId: 'message-1',
       error: { code: 'admission_unconfirmed' },
       recoveryHint: {
-        recoveryCommand: 'myagents session list --agent agent-1',
+        recoveryCommand: 'nexttools session list --agent agent-1',
         message: expect.stringContaining('do not automatically resend'),
       },
     });

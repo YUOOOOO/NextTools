@@ -71,10 +71,10 @@ describe('Responses API prompt_cache_key injection', () => {
   it('forwards the bridge-generated prompt_cache_key without enabling stateful Responses fields', () => {
     const out = translateRequestToResponses(
       { ...baseReq },
-      { promptCacheKey: 'myagents:responses:abc123' },
+      { promptCacheKey: 'nexttools:responses:abc123' },
     );
 
-    expect(out.prompt_cache_key).toBe('myagents:responses:abc123');
+    expect(out.prompt_cache_key).toBe('nexttools:responses:abc123');
     expect(out.store).toBe(false);
     expect('previous_response_id' in out).toBe(false);
     expect('conversation' in out).toBe(false);
@@ -83,7 +83,7 @@ describe('Responses API prompt_cache_key injection', () => {
 
   it('projects SDK cache_control only onto Responses content locations that support breakpoints', () => {
     const out = translateRequestToResponses(sdkMarkedReq, {
-      promptCacheKey: 'myagents:responses:abc123',
+      promptCacheKey: 'nexttools:responses:abc123',
       promptCacheBreakpoints: true,
     });
 
@@ -147,16 +147,16 @@ describe('Chat Completions prompt_cache_key injection', () => {
   it('forwards the bridge-generated prompt_cache_key without enabling retention', () => {
     const out = translateRequest(
       { ...baseReq },
-      { promptCacheKey: 'myagents:chat_completions:abc123' },
+      { promptCacheKey: 'nexttools:chat_completions:abc123' },
     );
 
-    expect(out.prompt_cache_key).toBe('myagents:chat_completions:abc123');
+    expect(out.prompt_cache_key).toBe('nexttools:chat_completions:abc123');
     expect('prompt_cache_retention' in out).toBe(false);
   });
 
   it('projects SDK cache_control onto every supported Chat content part', () => {
     const out = translateRequest(sdkMarkedReq, {
-      promptCacheKey: 'myagents:chat_completions:abc123',
+      promptCacheKey: 'nexttools:chat_completions:abc123',
       promptCacheBreakpoints: true,
     });
 

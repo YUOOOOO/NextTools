@@ -70,7 +70,7 @@ function imageMimeFromBytes(buffer: Buffer): string {
 }
 
 function defaultCacheDir(): string {
-  return join(homedir(), '.myagents', 'cache', 'assets');
+  return join(homedir(), '.nexttools', 'cache', 'assets');
 }
 
 function ensurePrivateCacheDir(cacheDir: string): void {

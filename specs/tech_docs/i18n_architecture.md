@@ -1,6 +1,6 @@
 # UI Internationalization Architecture
 
-本文档描述 MyAgents 产品界面国际化框架。它只覆盖产品 UI 文案与 native chrome（托盘菜单等）；AI 输出内容、用户工作区文件内容、日志原文不在本框架内翻译。
+本文档描述 NextTools 产品界面国际化框架。它只覆盖产品 UI 文案与 native chrome（托盘菜单等）；AI 输出内容、用户工作区文件内容、日志原文不在本框架内翻译。
 
 ## 核心模型
 
@@ -11,7 +11,7 @@
 | `UiLanguage` | 用户配置值：`system` 或显式 locale | `AppConfig.uiLanguage` |
 | `SupportedLocale` | 实际渲染 locale | `src/shared/i18n.ts` + `src-tauri/src/i18n.rs` |
 
-`UiLanguage` 是持久化字段，写在 `~/.myagents/config.json::uiLanguage`。新安装默认 `system`；老配置缺少该字段时迁移为 `zh-CN`，避免存量用户升级后界面语言突然变化。
+`UiLanguage` 是持久化字段，写在 `~/.nexttools/config.json::uiLanguage`。新安装默认 `system`；老配置缺少该字段时迁移为 `zh-CN`，避免存量用户升级后界面语言突然变化。
 
 支持的 locale 必须显式 allow-list。新增语言不能只添加 JSON 文件，还必须同步 TypeScript shared 定义、Rust native 定义、Settings 选项、格式化逻辑与测试。
 

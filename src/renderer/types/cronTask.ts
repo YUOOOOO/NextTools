@@ -148,7 +148,7 @@ export interface CronTaskConfig {
   permissionMode?: string;
   model?: string;
   /** Per-task provider id.
-   *  Sidecar live-resolves credentials from `~/.myagents/config.json` on
+   *  Sidecar live-resolves credentials from `~/.nexttools/config.json` on
    *  when a new execution Session is initialized — no key copies in TaskStore. */
   providerId?: string;
   runtime?: RuntimeType;

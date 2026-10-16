@@ -4,9 +4,9 @@
 //! redirects, certain "Save As UTF-8" toolchains) prepend a U+FEFF BOM to
 //! UTF-8 files. `serde_json::from_str` does NOT tolerate the BOM and fails
 //! with `expected value at line 1 column 1`. When the user manually edited
-//! `~/.myagents/config.json` with such a tool, MyAgents would log the parse
+//! `~/.nexttools/config.json` with such a tool, NextTools would log the parse
 //! error and fall back to the `.bak` backup — an opaque failure mode that
-//! looked like data loss. MyAgents itself never writes BOM (`serde_json::to_string_pretty`
+//! looked like data loss. NextTools itself never writes BOM (`serde_json::to_string_pretty`
 //! produces clean UTF-8), so the fix is read-side: strip BOM before parsing.
 //!
 //! Use this helper at every JSON-reader site whose **source file** might be

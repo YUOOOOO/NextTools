@@ -90,12 +90,12 @@ describe('renderer file lock errors', () => {
     });
 
     it('preserves the concrete lock path in the generic error', async () => {
-        const outcome = withFileLock('/home/test/.myagents/providers/custom.json', async () => undefined).catch((error) => error);
+        const outcome = withFileLock('/home/test/.nexttools/providers/custom.json', async () => undefined).catch((error) => error);
 
         await vi.advanceTimersByTimeAsync(5_100);
         expect(await outcome).toMatchObject({
             code: 'FILE_BUSY',
-            lockPath: '/home/test/.myagents/providers/custom.json.lock',
+            lockPath: '/home/test/.nexttools/providers/custom.json.lock',
         });
     });
 
@@ -120,10 +120,10 @@ describe('renderer file lock errors', () => {
             acquiredOwner = content.trim();
         });
 
-        await expect(withFileLock('/home/test/.myagents/config.json', async () => 'acquired')).resolves.toBe('acquired');
+        await expect(withFileLock('/home/test/.nexttools/config.json', async () => 'acquired')).resolves.toBe('acquired');
         expect(mocks.rename).toHaveBeenCalledWith(
-            '/home/test/.myagents/config.json.lock',
-            expect.stringContaining('/home/test/.myagents/config.json.lock.stale-renderer-'),
+            '/home/test/.nexttools/config.json.lock',
+            expect.stringContaining('/home/test/.nexttools/config.json.lock.stale-renderer-'),
         );
     });
 
@@ -133,7 +133,7 @@ describe('renderer file lock errors', () => {
         await vi.advanceTimersByTimeAsync(5_100);
         expect(await outcome).toMatchObject({
             code: 'PROJECTS_BUSY',
-            lockPath: '/home/test/.myagents/projects.json.lock',
+            lockPath: '/home/test/.nexttools/projects.json.lock',
         });
     });
 
@@ -143,7 +143,7 @@ describe('renderer file lock errors', () => {
         await vi.advanceTimersByTimeAsync(5_100);
         expect(await outcome).toMatchObject({
             code: 'CONFIG_BUSY',
-            lockPath: '/home/test/.myagents/config.json.lock',
+            lockPath: '/home/test/.nexttools/config.json.lock',
         });
     });
 
@@ -153,7 +153,7 @@ describe('renderer file lock errors', () => {
         await vi.advanceTimersByTimeAsync(5_100);
         expect(await outcome).toMatchObject({
             code: 'AGENT_CONFIG_INTENT_BUSY',
-            lockPath: '/home/test/.myagents/agent-config-intent.lock',
+            lockPath: '/home/test/.nexttools/agent-config-intent.lock',
         });
     });
 
@@ -161,12 +161,12 @@ describe('renderer file lock errors', () => {
         mocks.mkdir.mockResolvedValueOnce(undefined);
 
         const outcome = withAgentConfigIntentLock(async () => {
-            throw new ProjectsBusyError('/home/test/.myagents/projects.json.lock', 5_000);
+            throw new ProjectsBusyError('/home/test/.nexttools/projects.json.lock', 5_000);
         }).catch((error) => error);
 
         expect(await outcome).toMatchObject({
             code: 'PROJECTS_BUSY',
-            lockPath: '/home/test/.myagents/projects.json.lock',
+            lockPath: '/home/test/.nexttools/projects.json.lock',
         });
     });
 
@@ -174,7 +174,7 @@ describe('renderer file lock errors', () => {
         mocks.readTextFile.mockResolvedValue('renderer:malformed\n');
         mocks.stat.mockResolvedValue({ mtime: new Date(Date.now() - 30_001) });
 
-        const outcome = withFileLock('/home/test/.myagents/config.json', async () => undefined).catch((error) => error);
+        const outcome = withFileLock('/home/test/.nexttools/config.json', async () => undefined).catch((error) => error);
 
         await vi.advanceTimersByTimeAsync(5_100);
         expect(await outcome).toMatchObject({ code: 'FILE_BUSY' });

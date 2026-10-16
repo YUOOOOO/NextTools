@@ -370,7 +370,7 @@ export function ThoughtPanel({
   // Uses `projects` (what the Launcher actually shows) rather than
   // `config.agents` so the candidate list matches the visible workspace
   // inventory 1:1 — including plain workspaces not yet upgraded to
-  // Agents, and excluding internal workspaces like `~/.myagents`.
+  // Agents, and excluding internal workspaces like `~/.nexttools`.
   const { projects } = useConfig();
   const tagCandidates = useThoughtTagCandidates(thoughts, projects);
 

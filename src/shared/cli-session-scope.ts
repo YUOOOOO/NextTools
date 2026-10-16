@@ -1,4 +1,4 @@
-export const CLI_SESSION_HEADER = 'x-myagents-session-id';
+export const CLI_SESSION_HEADER = 'x-nexttools-session-id';
 
 export function isCliProductSessionId(value: string): boolean {
   return /^[A-Za-z0-9-]{1,99}$/u.test(value);
@@ -13,7 +13,7 @@ export function cliSessionScopeError(requested: string | null, current: string |
     error: 'The CLI request does not belong to this Sidecar Session.',
     recoveryHint: {
       message: 'Retry from the active Session so its current routing context is used.',
-      recoveryCommand: 'myagents agent current --json',
+      recoveryCommand: 'nexttools agent current --json',
     },
   };
 }

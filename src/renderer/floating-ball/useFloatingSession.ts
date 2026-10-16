@@ -419,7 +419,7 @@ function withFloatingCorrelation(sessionId: string, options: RequestInit = {}): 
         headers: {
             ...headerRecord(options.headers),
             [LOG_SESSION_HEADER]: sessionId,
-            'X-MyAgents-Tab-Id': OWNER_ID,
+            'X-NextTools-Tab-Id': OWNER_ID,
         },
     };
 }
@@ -527,7 +527,7 @@ export function useFloatingSession(modeRef: React.MutableRefObject<'hidden' | 'p
     const [error, setError] = useState<string | null>(null);
     const [sessionId, setSessionId] = useState<string | null>(null);
     const [workspacePath, setWorkspacePath] = useState<string | null>(null);
-    const [workspaceName, setWorkspaceName] = useState<string>('Mino');
+    const [workspaceName, setWorkspaceName] = useState<string>('Nexo');
     const [messages, setMessages] = useState<FbMsg[]>([]);
     const [queuedMessages, setQueuedMessages] = useState<QueuedMessageInfo[]>([]);
     const [liveMessage, setLiveMessage] = useState<FbAssistantMsg | null>(null);
@@ -1567,7 +1567,7 @@ export function useFloatingSession(modeRef: React.MutableRefObject<'hidden' | 'p
                 if (!boundWs) {
                     throw new Error(fbText('noWorkspace'));
                 }
-                console.info(`[fb-session] boot workspace resolved path=${boundWs.path} name=${boundWs.name ?? 'Mino'}`);
+                console.info(`[fb-session] boot workspace resolved path=${boundWs.path} name=${boundWs.name ?? 'Nexo'}`);
                 workspaceRef.current = { path: boundWs.path };
 
                 // Session 轮换（PRD §6.2）：身份三元组 (id, workspace, date)。
@@ -1596,7 +1596,7 @@ export function useFloatingSession(modeRef: React.MutableRefObject<'hidden' | 'p
                 }
 
                 setWorkspacePath(boundWs.path);
-                setWorkspaceName(boundWs.name || 'Mino');
+                setWorkspaceName(boundWs.name || 'Nexo');
                 stage = 'connect-session';
                 await connectSession(sid, boundWs.path, cfg, projects);
                 if (cancelled) return;

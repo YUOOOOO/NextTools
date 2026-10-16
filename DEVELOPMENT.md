@@ -1,8 +1,8 @@
-# MyAgents 开发指引
+# NextTools 开发指引
 
 [返回 README](README.md) · [English](#english) · [贡献指南](CONTRIBUTING.md)
 
-MyAgents 使用 Tauri v2 + Rust、React 19 + TypeScript，以及 Node.js v24 Sidecar。Agent Runtime 包括 Claude Agent SDK、Integrated DeepSeek Harness 和 Claude Code / Codex 适配。具体模块职责与边界以[架构文档](specs/ARCHITECTURE.md)为准。
+NextTools 使用 Tauri v2 + Rust、React 19 + TypeScript，以及 Node.js v24 Sidecar。Agent Runtime 包括 Claude Agent SDK、Integrated DeepSeek Harness 和 Claude Code / Codex 适配。具体模块职责与边界以[架构文档](specs/ARCHITECTURE.md)为准。
 
 ## 环境准备
 
@@ -19,7 +19,7 @@ MyAgents 使用 Tauri v2 + Rust、React 19 + TypeScript，以及 Node.js v24 Sid
 
 ```bash
 git clone https://github.com/hAcKlyc/MyAgents.git
-cd MyAgents
+cd NextTools
 ```
 
 macOS：
@@ -78,7 +78,7 @@ npm run test:credentialed   # 真实 Provider / SDK smoke，仅显式本地运�
 src/renderer/              React 前端
 src/server/                Node.js Sidecar 与 SessionEngine
 src/server/plugin-bridge/  OpenClaw Plugin Bridge
-src/cli/                   myagents CLI
+src/cli/                   nexttools CLI
 src/shared/                共享类型与逻辑
 src-tauri/                 Tauri Rust 桌面层与 Worker
 bundled-agents/            内置 Agent
@@ -103,7 +103,7 @@ specs/                     架构、设计、技术与构建文档
 
 ## English
 
-MyAgents uses Tauri v2 + Rust, React 19 + TypeScript, and a Node.js v24 Sidecar. Runtimes include Claude Agent SDK, Integrated DeepSeek Harness, and Claude Code / Codex adapters. The [architecture guide](specs/ARCHITECTURE.md) defines module responsibilities and boundaries.
+NextTools uses Tauri v2 + Rust, React 19 + TypeScript, and a Node.js v24 Sidecar. Runtimes include Claude Agent SDK, Integrated DeepSeek Harness, and Claude Code / Codex adapters. The [architecture guide](specs/ARCHITECTURE.md) defines module responsibilities and boundaries.
 
 ### Prerequisites
 

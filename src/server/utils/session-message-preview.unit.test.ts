@@ -55,7 +55,7 @@ describe('session-message-preview', () => {
       `<system-reminder><${SESSION_EVENT_TAG}>result</${SESSION_EVENT_TAG}></system-reminder>`,
     )).toBe(false);
     expect(isHuman(
-      '<system-reminder><myagents-space-issue>issue</myagents-space-issue></system-reminder>',
+      '<system-reminder><nexttools-space-issue>issue</nexttools-space-issue></system-reminder>',
     )).toBe(false);
     expect(isHuman('请解释 <inbox-message> 标签')).toBe(true);
     expect(isHuman('', [{
@@ -69,7 +69,7 @@ describe('session-message-preview', () => {
       { kind: 'desktop', surface: 'launcher_input' },
     )).toBe(false);
     expect(isHumanUserMessage(
-      { content: '<system-reminder><myagents-space-issue>issue</myagents-space-issue></system-reminder>Visible issue' },
+      { content: '<system-reminder><nexttools-space-issue>issue</nexttools-space-issue></system-reminder>Visible issue' },
       { kind: 'registered-agent', surface: 'space_issue_delivery', context: { spaceId: 'space-1', registeredAgentId: 'ra-1' } },
     )).toBe(false);
   });

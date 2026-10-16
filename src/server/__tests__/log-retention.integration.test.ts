@@ -33,7 +33,7 @@ import { runLogRetentionSweep } from '../log-retention';
 let scratch: string;
 
 beforeEach(() => {
-  scratch = mkdtempSync(join(tmpdir(), 'myagents-log-retention-'));
+  scratch = mkdtempSync(join(tmpdir(), 'nexttools-log-retention-'));
 });
 
 afterEach(() => {
@@ -219,7 +219,7 @@ describe('runLogRetentionSweep — file matching is precise', () => {
     runLogRetentionSweep({ logsDir: scratch, now: NOW });
     // The session regex is `^\d{4}-\d{2}-\d{2}-` so this DOES match — but
     // only because it has the date prefix + dash. In production, crash logs
-    // live in `~/.myagents/logs/crash/`, a subdirectory we don't even
+    // live in `~/.nexttools/logs/crash/`, a subdirectory we don't even
     // readdir into. Document that here.
     // Verify the file still exists (it's recent so retention floor protects).
     expect(existing().has('2026-05-03T10-00-00.log')).toBe(true);

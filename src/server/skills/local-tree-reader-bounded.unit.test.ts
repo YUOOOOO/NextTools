@@ -25,7 +25,7 @@ describe('readLocalDirectoryTree bounded descriptor reads', () => {
   let root: string;
 
   beforeEach(() => {
-    root = mkdtempSync(join(tmpdir(), 'myagents-local-growth-'));
+    root = mkdtempSync(join(tmpdir(), 'nexttools-local-growth-'));
     growthFault.path = join(root, 'SKILL.md');
     growthFault.armed = false;
     writeFileSync(growthFault.path, 'small');

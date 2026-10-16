@@ -9,11 +9,11 @@ import { afterEach, describe, expect, it } from 'vitest';
  * Explicit release smoke for the package-root API used by Browser Host.
  *
  * Run against a prepared Playwright runtime, or a local Chrome installation:
- *   MYAGENTS_PLAYWRIGHT_BROWSER_SMOKE=1 \
- *   MYAGENTS_PLAYWRIGHT_BROWSER_CHANNEL=chrome \
+ *   NEXTTOOLS_PLAYWRIGHT_BROWSER_SMOKE=1 \
+ *   NEXTTOOLS_PLAYWRIGHT_BROWSER_CHANNEL=chrome \
  *   npm run test:credentialed -- playwright-browser-host
  */
-describe.runIf(process.env.MYAGENTS_PLAYWRIGHT_BROWSER_SMOKE === '1')(
+describe.runIf(process.env.NEXTTOOLS_PLAYWRIGHT_BROWSER_SMOKE === '1')(
   '@playwright/mcp Browser Host release smoke',
   () => {
     let browser: Browser | undefined;
@@ -25,7 +25,7 @@ describe.runIf(process.env.MYAGENTS_PLAYWRIGHT_BROWSER_SMOKE === '1')(
     });
 
     it('navigates and snapshots through the public createConnection API', async () => {
-      const channel = process.env.MYAGENTS_PLAYWRIGHT_BROWSER_CHANNEL;
+      const channel = process.env.NEXTTOOLS_PLAYWRIGHT_BROWSER_CHANNEL;
       browser = await chromium.launch({
         headless: true,
         ...(channel ? { channel } : {}),
@@ -50,14 +50,14 @@ describe.runIf(process.env.MYAGENTS_PLAYWRIGHT_BROWSER_SMOKE === '1')(
         new URL('http://127.0.0.1/internal/playwright'),
         { fetch: (input, init) => serverTransport.handleRequest(new Request(input, init)) },
       );
-      const client = new Client({ name: 'myagents-browser-host-smoke', version: '0.4.10' });
+      const client = new Client({ name: 'nexttools-browser-host-smoke', version: '0.4.10' });
 
       try {
         await client.connect(clientTransport);
         const navigate = await client.callTool({
           name: 'browser_navigate',
           arguments: {
-            url: 'data:text/html,<title>MyAgents Browser Host</title><h1>ready</h1>',
+            url: 'data:text/html,<title>NextTools Browser Host</title><h1>ready</h1>',
           },
         });
         const snapshot = await client.callTool({ name: 'browser_snapshot', arguments: {} });

@@ -208,9 +208,9 @@ async fn handle(
         "400 Bad Request"
     };
     let body = if callback.is_some() {
-        "授权结果已收到，请返回 MyAgents。"
+        "授权结果已收到，请返回 NextTools。"
     } else {
-        "此授权回调无效，请返回 MyAgents。"
+        "此授权回调无效，请返回 NextTools。"
     };
     let response = format!("HTTP/1.1 {status}\r\nContent-Type: text/plain; charset=utf-8\r\nCache-Control: no-store\r\nContent-Security-Policy: default-src 'none'\r\nReferrer-Policy: no-referrer\r\nConnection: close\r\nContent-Length: {}\r\n\r\n{body}", body.len());
     // Receiving a valid callback is the boundary. A browser that disconnects

@@ -106,7 +106,7 @@ export default function HeartbeatConfigCard({
             const { invoke } = await import('@tauri-apps/api/core');
             const sep = workspacePath.includes('\\') ? '\\' : '/';
             const filePath = `${workspacePath}${sep}HEARTBEAT.md`;
-            // Use Rust command to bypass Tauri fs scope (which only covers ~/.myagents)
+            // Use Rust command to bypass Tauri fs scope (which only covers ~/.nexttools)
             const content: string = await invoke('cmd_read_workspace_file', { path: filePath }) ?? '';
             setPreviewFile({ name: 'HEARTBEAT.md', content, size: new TextEncoder().encode(content).length, path: filePath });
         } catch (e) {
@@ -116,7 +116,7 @@ export default function HeartbeatConfigCard({
         }
     }, [workspacePath]);
 
-    // Direct file save via Rust command — bypasses Tauri fs scope (which only covers ~/.myagents)
+    // Direct file save via Rust command — bypasses Tauri fs scope (which only covers ~/.nexttools)
     const handleDirectSave = useCallback(async (content: string) => {
         if (!previewFile) return;
         const { invoke } = await import('@tauri-apps/api/core');

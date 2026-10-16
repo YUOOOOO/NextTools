@@ -3,10 +3,10 @@
  *
  * Features:
  * - Lazy file creation: only creates log file on first write
- * - Centralized log directory: ~/.myagents/logs/
+ * - Centralized log directory: ~/.nexttools/logs/
  * - Session-based naming: {date}-{sessionId}.log
  *
- * Retention: handled by `./log-retention.ts` for the whole `~/.myagents/logs/`
+ * Retention: handled by `./log-retention.ts` for the whole `~/.nexttools/logs/`
  * directory (age + byte budget across all sources). Per-session log files
  * had no byte budget pre-#121; they share the unified policy now.
  */

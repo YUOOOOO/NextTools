@@ -3,7 +3,7 @@ import { normalizeMcpSelection, normalizeMcpSelectionField } from '../shared/mcp
  * SessionStore - Handles persistence of session data using JSONL format.
  *
  * Storage structure:
- * ~/.myagents/
+ * ~/.nexttools/
  * ├── sessions.json          # Array of SessionMetadata (index)
  * └── sessions/
  *     ├── {session-id}.jsonl  # Messages in JSONL format (append-only)
@@ -59,14 +59,14 @@ import { assertDshProductInputMatches, fingerprintDshProductInput } from './sess
 import { normalizeSessionRuntimeIdentity, resolveBuiltinSdkSessionId } from './utils/session-runtime-identity';
 import { resolveLastVisibleTurnPreview } from './utils/session-message-preview';
 
-const MYAGENTS_DIR = join(homedir(), '.myagents');
-const SESSIONS_FILE = join(MYAGENTS_DIR, 'sessions.json');
-const SESSIONS_DIR = join(MYAGENTS_DIR, 'sessions');
-const SESSIONS_V2_DIR = join(MYAGENTS_DIR, 'sessions-v2');
-const ATTACHMENTS_DIR = join(MYAGENTS_DIR, 'attachments');
-const SESSIONS_TMP_FILE = join(MYAGENTS_DIR, 'sessions.json.tmp');
-const SESSIONS_LOCK_FILE = join(MYAGENTS_DIR, 'sessions.lock');
-const SESSIONS_LOCK_DIR = join(MYAGENTS_DIR, 'session-locks');
+const NEXTTOOLS_DIR = join(homedir(), '.nexttools');
+const SESSIONS_FILE = join(NEXTTOOLS_DIR, 'sessions.json');
+const SESSIONS_DIR = join(NEXTTOOLS_DIR, 'sessions');
+const SESSIONS_V2_DIR = join(NEXTTOOLS_DIR, 'sessions-v2');
+const ATTACHMENTS_DIR = join(NEXTTOOLS_DIR, 'attachments');
+const SESSIONS_TMP_FILE = join(NEXTTOOLS_DIR, 'sessions.json.tmp');
+const SESSIONS_LOCK_FILE = join(NEXTTOOLS_DIR, 'sessions.lock');
+const SESSIONS_LOCK_DIR = join(NEXTTOOLS_DIR, 'session-locks');
 const LOCK_TIMEOUT_MS = 5000;
 const LOCK_STALE_MS = 30000;
 
@@ -141,12 +141,12 @@ async function publishV2Metadata(
         // V2 never writes a cached full row over another owner's unrelated fields.
         const updated = existing ? { ...existing, ...patch } : metadata;
         if (index < 0) all.push(updated); else all[index] = updated;
-        await asyncFs.mkdir(MYAGENTS_DIR, { recursive: true });
+        await asyncFs.mkdir(NEXTTOOLS_DIR, { recursive: true });
         const file = await asyncFs.open(SESSIONS_TMP_FILE, 'w');
         try { await file.writeFile(JSON.stringify(all, null, 2), 'utf8'); await file.sync(); }
         finally { await file.close(); }
         await asyncFs.rename(SESSIONS_TMP_FILE, SESSIONS_FILE);
-        await syncTranscriptDirectory(MYAGENTS_DIR);
+        await syncTranscriptDirectory(NEXTTOOLS_DIR);
         return updated;
     });
 }
@@ -567,7 +567,7 @@ function recoverSessionsIndexCandidates(): SessionMetadata[] {
 
 function createCorruptBackupPath(): string {
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const base = join(MYAGENTS_DIR, `sessions.json.corrupt-${stamp}`);
+    const base = join(NEXTTOOLS_DIR, `sessions.json.corrupt-${stamp}`);
     if (!existsSync(base)) {
         return base;
     }
@@ -622,8 +622,8 @@ function readSessionsIndexForWrite(): SessionMetadata[] {
  * Ensure storage directories exist
  */
 function ensureStorageDir(): void {
-    if (!existsSync(MYAGENTS_DIR)) {
-        ensureDirSync(MYAGENTS_DIR);
+    if (!existsSync(NEXTTOOLS_DIR)) {
+        ensureDirSync(NEXTTOOLS_DIR);
     }
     if (!existsSync(SESSIONS_DIR)) {
         ensureDirSync(SESSIONS_DIR);
@@ -1449,7 +1449,7 @@ async function deleteSessionOwned(
                 try { await file.writeFile(JSON.stringify(all.filter(row => row.id !== sessionId), null, 2)); await file.sync(); }
                 finally { await file.close(); }
                 await asyncFs.rename(SESSIONS_TMP_FILE, SESSIONS_FILE);
-                await syncTranscriptDirectory(MYAGENTS_DIR);
+                await syncTranscriptDirectory(NEXTTOOLS_DIR);
             }
             // Retain the revoked in-process identity until this Sidecar exits.
             return { deleted: true };

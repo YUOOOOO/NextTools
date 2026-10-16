@@ -2,24 +2,24 @@
 export const SYSTEM_SKILLS_VERSION = '60';
 
 /**
- * Canonical Skill names that are part of MyAgents' always-available runtime
+ * Canonical Skill names that are part of NextTools' always-available runtime
  * contract.
  *
  * The effective project/global winner for these names cannot be disabled as
  * an ordinary Skill. The task and memory skills back managed workflows, while
- * myagents-cli and myagents-docs are the product's baseline operation and
+ * nexttools-cli and nexttools-docs are the product's baseline operation and
  * product-knowledge surfaces.
  */
 export const REQUIRED_SYSTEM_SKILLS = [
-  'myagents-task-alignment',
-  'myagents-memory-update',
-  'myagents-memory-gardener',
-  'myagents-memory-molt',
-  'myagents-cli',
-  'myagents-anydoc',
-  'myagents-speech-recognition',
-  'myagents-task-automation',
-  'myagents-docs',
+  'nexttools-task-alignment',
+  'nexttools-memory-update',
+  'nexttools-memory-gardener',
+  'nexttools-memory-molt',
+  'nexttools-cli',
+  'nexttools-anydoc',
+  'nexttools-speech-recognition',
+  'nexttools-task-automation',
+  'nexttools-docs',
 ] as const;
 
 export type RequiredSystemSkill = typeof REQUIRED_SYSTEM_SKILLS[number];
@@ -31,15 +31,15 @@ export type RequiredSystemSkill = typeof REQUIRED_SYSTEM_SKILLS[number];
  * still current before dispatch.
  */
 export interface ProductSystemSkillRequirement {
-  name: 'myagents-task-alignment';
-  sourceLocalId: 'myagents-task-alignment';
+  name: 'nexttools-task-alignment';
+  sourceLocalId: 'nexttools-task-alignment';
   systemSkillsVersion: typeof SYSTEM_SKILLS_VERSION;
   contentSha256: string;
 }
 
 export const TASK_ALIGNMENT_SKILL_REQUIREMENT: ProductSystemSkillRequirement = {
-  name: 'myagents-task-alignment',
-  sourceLocalId: 'myagents-task-alignment',
+  name: 'nexttools-task-alignment',
+  sourceLocalId: 'nexttools-task-alignment',
   systemSkillsVersion: SYSTEM_SKILLS_VERSION,
   contentSha256: '9620698adb62b54b5f8f2e700a33d8e417a29b447e6134316bbf9ff3cc35fd58',
 };

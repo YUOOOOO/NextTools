@@ -710,7 +710,7 @@ mod tests {
     #[test]
     #[ignore = "Run against synthetic files from scripts/benchmark-session-transcript.mjs --keep-fixtures"]
     fn benchmark_cold_fold() {
-        let root = std::env::var("MYAGENTS_TRANSCRIPT_BENCH_DIR")
+        let root = std::env::var("NEXTTOOLS_TRANSCRIPT_BENCH_DIR")
             .expect("synthetic fixture directory required");
         for mib in [10, 100] {
             let id = format!("cold{mib}");

@@ -186,7 +186,7 @@ export async function routeNetworkRequest(
   try {
     request = networkRequest(route, payload, kind);
     if (!request) return null;
-    const sidecarId = process.env.MYAGENTS_SIDECAR_ID?.trim();
+    const sidecarId = process.env.NEXTTOOLS_SIDECAR_ID?.trim();
     if (!sidecarId)
       return {
         success: false,

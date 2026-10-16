@@ -1,7 +1,7 @@
 //! Record-local human facts and their original-audio anchors. No voice vectors
 //! or inferred names are persisted here. Automatic bindings live in the result.
 use super::*;
-use myagents_media_worker_protocol::record_identity::PersonMatchEvidence;
+use nexttools_media_worker_protocol::record_identity::PersonMatchEvidence;
 
 const MAX_PERSON_ANCHOR_INTERVALS: usize = 32_768;
 
@@ -112,7 +112,7 @@ pub(super) fn validate_anchor_shapes(overrides: &RecordSpeakerOverrides) -> Resu
         |value: &str| value.len() == 64 && value.bytes().all(|b| b.is_ascii_hexdigit());
     let valid_interval = |interval: &OriginalSpeechInterval| {
         interval.start_sample < interval.end_sample
-            && interval.end_sample <= myagents_media_worker_protocol::MAX_MEDIA_SAMPLES_PER_TRACK
+            && interval.end_sample <= nexttools_media_worker_protocol::MAX_MEDIA_SAMPLES_PER_TRACK
     };
     let ordered = |intervals: &[OriginalSpeechInterval]| {
         intervals.iter().all(&valid_interval)
@@ -125,7 +125,7 @@ pub(super) fn validate_anchor_shapes(overrides: &RecordSpeakerOverrides) -> Resu
     if (overrides.schema_version == 1
         && (!overrides.person_anchors.is_empty() || !overrides.assignment_anchors.is_empty()))
         || overrides.person_anchors.len()
-            > myagents_media_worker_protocol::record_identity::MAX_IDENTITY_PEOPLE
+            > nexttools_media_worker_protocol::record_identity::MAX_IDENTITY_PEOPLE
         || overrides
             .person_anchors
             .values()
@@ -142,7 +142,7 @@ pub(super) fn validate_anchor_shapes(overrides: &RecordSpeakerOverrides) -> Resu
         || overrides.person_anchors.values().any(|anchor| {
             !valid_hash(&anchor.audio_identity)
                 || anchor.identity_scopes.len()
-                    > myagents_media_worker_protocol::record_identity::MAX_IDENTITY_PEOPLE
+                    > nexttools_media_worker_protocol::record_identity::MAX_IDENTITY_PEOPLE
                 || anchor
                     .identity_scopes
                     .iter()
@@ -893,7 +893,7 @@ fn bind_people(
         overrides,
         &baseline.audio_identity,
     )?;
-    if evidence.len() > myagents_media_worker_protocol::record_identity::MAX_IDENTITY_PEOPLE {
+    if evidence.len() > nexttools_media_worker_protocol::record_identity::MAX_IDENTITY_PEOPLE {
         return Err("Record identity evidence exceeds the fixed limit".into());
     }
     for proof in evidence {

@@ -101,7 +101,7 @@ export function createDshInitializeParams(options: {
       maxVersion: GENERATED_PROTOCOL_VERSION,
     },
     host: {
-      name: "MyAgents",
+      name: "NextTools",
       version: options.productVersion,
       platform: options.platform ?? process.platform,
       arch: options.arch ?? process.arch,

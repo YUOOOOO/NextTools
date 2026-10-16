@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ThemeRegistry, ThemeRuntimeProvider } from '@/theme';
 import { syntheticTheme } from '@/theme/__tests__/syntheticTheme';
-import { myAgentsDefaultTheme } from '@/theme/themes/myagents-default';
+import { nextToolsDefaultTheme } from '@/theme/themes/nexttools-default';
 
 const monacoCapture = vi.hoisted(() => ({
   defineTheme: vi.fn(),
@@ -33,7 +33,7 @@ import MonacoEditor from './MonacoEditor';
 
 describe('MonacoEditor Theme adapter', () => {
   it('redefines and selects the new Theme without replacing the editor surface', () => {
-    const registry = new ThemeRegistry([myAgentsDefaultTheme, syntheticTheme]);
+    const registry = new ThemeRegistry([nextToolsDefaultTheme, syntheticTheme]);
     const view = render(
       <ThemeRuntimeProvider
         registry={registry}
@@ -45,11 +45,11 @@ describe('MonacoEditor Theme adapter', () => {
     const editorSurface = view.getByTestId('monaco-editor');
 
     expect(monacoCapture.defineTheme).toHaveBeenCalledWith(
-      'myagents-synthetic-test-theme-synthetic-light-monaco',
+      'nexttools-synthetic-test-theme-synthetic-light-monaco',
       syntheticTheme.schemes.light.monaco.data,
     );
     expect(monacoCapture.setTheme).toHaveBeenLastCalledWith(
-      'myagents-synthetic-test-theme-synthetic-light-monaco',
+      'nexttools-synthetic-test-theme-synthetic-light-monaco',
     );
 
     view.rerender(
@@ -63,23 +63,23 @@ describe('MonacoEditor Theme adapter', () => {
 
     expect(view.getByTestId('monaco-editor')).toBe(editorSurface);
     expect(monacoCapture.defineTheme).toHaveBeenCalledWith(
-      'myagents-synthetic-test-theme-synthetic-dark-monaco',
+      'nexttools-synthetic-test-theme-synthetic-dark-monaco',
       syntheticTheme.schemes.dark.monaco.data,
     );
     expect(monacoCapture.setTheme).toHaveBeenLastCalledWith(
-      'myagents-synthetic-test-theme-synthetic-dark-monaco',
+      'nexttools-synthetic-test-theme-synthetic-dark-monaco',
     );
 
     view.rerender(
       <ThemeRuntimeProvider
         registry={registry}
-        selection={{ themeId: 'myagents-default', appearanceMode: 'light' }}
+        selection={{ themeId: 'nexttools-default', appearanceMode: 'light' }}
       >
         <MonacoEditor value="const x = 1" onChange={vi.fn()} language="typescript" />
       </ThemeRuntimeProvider>,
     );
 
     expect(view.getByTestId('monaco-editor')).toBe(editorSurface);
-    expect(monacoCapture.setTheme).toHaveBeenLastCalledWith('myagents-myagents-default-warm-light');
+    expect(monacoCapture.setTheme).toHaveBeenLastCalledWith('nexttools-nexttools-default-warm-light');
   });
 });

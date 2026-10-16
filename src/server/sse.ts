@@ -189,7 +189,7 @@ interface SseMetrics {
   coalesceReplace: number;
 }
 
-const SSE_METRICS_KEY = '__myagents_sse_metrics__';
+const SSE_METRICS_KEY = '__nexttools_sse_metrics__';
 const sseMetrics: SseMetrics =
   ((globalThis as Record<string, unknown>)[SSE_METRICS_KEY] as SseMetrics) ??
   ((globalThis as Record<string, unknown>)[SSE_METRICS_KEY] = {
@@ -214,7 +214,7 @@ function bumpDropped(event: string): void {
 
 // 🔧 Fix: Use globalThis to ensure single clients Set even if module is loaded twice
 // (Per ChatGPT's suggestion to prevent module double-loading issues)
-const CLIENTS_KEY = '__myagents_sse_clients__';
+const CLIENTS_KEY = '__nexttools_sse_clients__';
 // SSE_INSTANCE_ID lives in sse-instance.ts (a leaf module) to break the
 // static cycle with logger.ts. Re-exported here so existing callers that
 // import it from './sse' keep working.
@@ -237,7 +237,7 @@ const HEARTBEAT_INTERVAL_MS = 15000;
 // SDK control-plane initialize can complete before the renderer has finished
 // attaching its SSE listeners; the slash menu still needs that latest snapshot.
 const CACHED_EVENTS = new Set(['chat:status', 'chat:slash-commands']);
-const LAST_VALUE_CACHE_KEY = '__myagents_sse_lvc__';
+const LAST_VALUE_CACHE_KEY = '__nexttools_sse_lvc__';
 const lastValueCache: Map<string, unknown> =
   (globalThis as Record<string, unknown>)[LAST_VALUE_CACHE_KEY] as Map<string, unknown> ??
   ((globalThis as Record<string, unknown>)[LAST_VALUE_CACHE_KEY] = new Map<string, unknown>());

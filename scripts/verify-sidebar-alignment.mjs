@@ -9,16 +9,16 @@ import { createServer } from 'vite';
 import { webkit, chromium } from 'playwright';
 
 const repo = resolve(import.meta.dirname, '..');
-const output = await mkdtemp(resolve(tmpdir(), 'myagents-sidebar-qa-'));
+const output = await mkdtemp(resolve(tmpdir(), 'nexttools-sidebar-qa-'));
 const entryId = repo + '/src/renderer/__sidebar_qa.tsx';
 const stub = new Map(Object.entries({
-  '@/hooks/useConfig': `const noop=()=>{}; const value={config:{defaultWorkspacePath:'/fixture/mino',agents:[]},projects:[{id:'mino',name:'Mino_T',path:'/fixture/mino',icon:'lightning'},{id:'growth',name:'MA_增长',path:'/fixture/growth',icon:'rocket'},{id:'project',name:'myagents-codex',path:'/fixture/project'},{id:'emoji',name:'Legacy 工作区',path:'/fixture/emoji',icon:'🍀'},{id:'archived',name:'Archived 工作区',path:'/fixture/archived',archivedAt:'2026-10-01T00:00:00Z'}],isLoading:false,error:null,removeProject:noop,patchProject:noop,touchProject:noop,refreshConfig:noop};export const useConfig=()=>value;`,
+  '@/hooks/useConfig': `const noop=()=>{}; const value={config:{defaultWorkspacePath:'/fixture/mino',agents:[]},projects:[{id:'mino',name:'Mino_T',path:'/fixture/mino',icon:'lightning'},{id:'growth',name:'MA_增长',path:'/fixture/growth',icon:'rocket'},{id:'project',name:'nexttools-codex',path:'/fixture/project'},{id:'emoji',name:'Legacy 工作区',path:'/fixture/emoji',icon:'🍀'},{id:'archived',name:'Archived 工作区',path:'/fixture/archived',archivedAt:'2026-10-01T00:00:00Z'}],isLoading:false,error:null,removeProject:noop,patchProject:noop,touchProject:noop,refreshConfig:noop};export const useConfig=()=>value;`,
   '@/hooks/useTaskCenterData': `const data={sessions:[{id:'fixture-session',agentDir:'/fixture/mino',title:'侧栏对齐检查',createdAt:'2026-10-05T00:00:00Z',lastActiveAt:'2026-10-05T00:00:00Z'}],isSessionsLoading:false,error:null,sessionTagsMap:new Map(),workspaceSessionStates:new Map(),deleteProtectedSessionIds:new Set(),refresh:()=>{},actions:{}};export const useGlobalSidebarTaskCenterData=()=>data;`,
   '@/hooks/taskCenterStore': 'export const ensureWorkspaceSessions=()=>{};',
   '@/hooks/useWorkspaceFileService': 'export const useWorkspaceFileService=()=>({openPathExternal:()=>{}});',
   '@/context/SessionDeletionContext': 'export const useSessionDeletion=()=>()=>{};',
   '@/components/Toast': 'export const useToast=()=>({error:console.error,warning:console.warn,success:()=>{},info:()=>{}});',
-  '@/features/account/useMyAgentsAccount': `const account={scope:'production',enabled:false,generation:0,loadState:'ready',view:null,error:null,avatarPresets:{people:[],agents:[],lastFetchedAt:0,isLoading:false,error:null}};export const useMyAgentsAccount=()=>account;`,
+  '@/features/account/useNextToolsAccount': `const account={scope:'production',enabled:false,generation:0,loadState:'ready',view:null,error:null,avatarPresets:{people:[],agents:[],lastFetchedAt:0,isLoading:false,error:null}};export const useNextToolsAccount=()=>account;`,
   '@/notifications/useNotificationCenter': `const value={snapshot:{loadState:'ready',authState:'signed_out',items:[],hasUnread:true,hasMore:false,isLoadingMore:false,feedCutoff:null,lastSyncedAt:null,errorCode:null},refresh:()=>{},loadMore:()=>{},markAllRead:()=>{}};export const useNotificationCenter=()=>value;`,
   '@/utils/browserMock': 'export * from "/utils/browserMock.ts?fixture-original";export const isTauriEnvironment=()=>true;export const isBrowserDevMode=()=>false;export const pickFolderForDialog=()=>null;',
   '@/components/FeedbackPopover': 'export default function FeedbackPopover(){return null;}',
@@ -27,7 +27,7 @@ const stub = new Map(Object.entries({
 }));
 const entry = `import React,{useState} from 'react';import {createRoot} from 'react-dom/client';import {i18n} from './i18n';import {ThemeRuntimeProvider} from './theme/ThemeRuntime';import GlobalSidebar from './components/global-sidebar/GlobalSidebar';import './index.css';await i18n.changeLanguage('zh-CN');
 const noop=()=>{};const yes=async()=>true;const tab={id:'launcher',view:'launcher',title:'Launcher'};window.audit={network:0,space:0};
-function Fixture(){const [appearanceMode,setAppearanceMode]=useState('light');const [themeId,setThemeId]=useState('myagents-light');window.audit.theme=setAppearanceMode;window.audit.themeId=setThemeId;window.audit.language=(l)=>i18n.changeLanguage(l);return <ThemeRuntimeProvider selection={{themeId,appearanceMode}}><div style={{display:'flex'}}><GlobalSidebar tabs={[tab]} activeTab={tab} activeWorkspacePath={null} teamSpaceAvailable onNewTab={noop} onOpenTaskCenter={noop} onCreateTask={noop} onOpenSpace={()=>window.audit.space++} onOpenAgentNetwork={()=>window.audit.network++} onOpenCapabilities={noop} onOpenSettings={noop} onOpenBugReport={noop} onOpenWorkspace={yes} onOpenSession={yes} onRenameSession={async()=>null} newAgentPanelOpen={false} onNewAgentPanelOpenChange={noop}/><main style={{flex:1,background:'var(--paper)',padding:32}}><p style={{color:'var(--ink-muted)'}}>MyAgents</p></main></div></ThemeRuntimeProvider>};createRoot(document.getElementById('root')).render(<Fixture/>);`;
+function Fixture(){const [appearanceMode,setAppearanceMode]=useState('light');const [themeId,setThemeId]=useState('nexttools-light');window.audit.theme=setAppearanceMode;window.audit.themeId=setThemeId;window.audit.language=(l)=>i18n.changeLanguage(l);return <ThemeRuntimeProvider selection={{themeId,appearanceMode}}><div style={{display:'flex'}}><GlobalSidebar tabs={[tab]} activeTab={tab} activeWorkspacePath={null} teamSpaceAvailable onNewTab={noop} onOpenTaskCenter={noop} onCreateTask={noop} onOpenSpace={()=>window.audit.space++} onOpenAgentNetwork={()=>window.audit.network++} onOpenCapabilities={noop} onOpenSettings={noop} onOpenBugReport={noop} onOpenWorkspace={yes} onOpenSession={yes} onRenameSession={async()=>null} newAgentPanelOpen={false} onNewAgentPanelOpenChange={noop}/><main style={{flex:1,background:'var(--paper)',padding:32}}><p style={{color:'var(--ink-muted)'}}>NextTools</p></main></div></ThemeRuntimeProvider>};createRoot(document.getElementById('root')).render(<Fixture/>);`;
 
 const server = await createServer({
   configFile: resolve(repo, 'vite.config.ts'),
@@ -87,7 +87,7 @@ try {
     });
   }, selector);
 
-  for (const themeId of ['myagents-default', 'myagents-light', 'codex']) {
+  for (const themeId of ['nexttools-default', 'nexttools-light', 'codex']) {
     for (const language of ['zh-CN', 'en-US']) {
       for (const mode of ['light', 'dark']) {
         await page.evaluate(async ({ themeId, language, mode }) => {

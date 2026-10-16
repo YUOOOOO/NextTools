@@ -1,4 +1,4 @@
-# MyAgents Rust lint policy
+# NextTools Rust lint policy
 #
 # Pit-of-success rule: ALL async tasks created in src-tauri MUST use
 # `tauri::async_runtime::spawn`. Calling `tokio::spawn` directly works in most
@@ -51,7 +51,7 @@ disallowed-methods = [
 # Existing call sites using `tokio::task::spawn_blocking` continue to work.
 
 # Unified logging macros: `log::*` macros only write to stdout / env_logger.
-# They bypass the unified log file at `~/.myagents/logs/unified-{date}.log`
+# They bypass the unified log file at `~/.nexttools/logs/unified-{date}.log`
 # which is the source of truth for Sidecar / React / Rust correlation.
 # `ulog_*!` macros (defined in `logger.rs`) write to stdout AND the unified
 # file AND emit to the React log panel. See specs/tech_docs/unified_logging.md.

@@ -152,7 +152,7 @@ function validateWorkspaceForRegistration(rawPath: string): string {
   const identity = normalizeWorkspacePathIdentity(normalized);
   const rootIdentity = normalizeWorkspacePathIdentity(parse(normalized).root);
   const privateDataIdentity = normalizeWorkspacePathIdentity(
-    resolve(homedir(), '.myagents'),
+    resolve(homedir(), '.nexttools'),
   );
   if (
     !identity ||
@@ -162,7 +162,7 @@ function validateWorkspaceForRegistration(rawPath: string): string {
   ) {
     throw new WorkspaceAgentRegistrationError(
       'WORKSPACE_PATH_UNSAFE',
-      'Filesystem roots and the MyAgents private data directory cannot be registered as Agent workspaces.',
+      'Filesystem roots and the NextTools private data directory cannot be registered as Agent workspaces.',
     );
   }
   return normalized;
@@ -208,7 +208,7 @@ export async function registerWorkspaceAgent(
     if (matches.length > 1) {
       throw new WorkspaceAgentRegistrationError(
         'DUPLICATE_PROJECT_WORKSPACE',
-        'Multiple Projects resolve to the requested workspace; repair the conflict in MyAgents before retrying.',
+        'Multiple Projects resolve to the requested workspace; repair the conflict in NextTools before retrying.',
         { projectIds: matches.map((project) => project.id) },
       );
     }
@@ -232,7 +232,7 @@ export async function registerWorkspaceAgent(
       ) {
         throw new WorkspaceAgentRegistrationError(
           'WORKSPACE_ARCHIVED',
-          'This workspace is archived. Unarchive it in MyAgents before retrying.',
+          'This workspace is archived. Unarchive it in NextTools before retrying.',
           { projectId: existing.id, agentId: existing.agentId },
         );
       }
@@ -440,7 +440,7 @@ export async function resolvePersistedAgentWorkspaceConflict(
       // a valid user choice. Ordinary identity reconciliation can finish materialization.
       await broadcastAppConfigChanged({ section: 'agent-identity', action: 'repair-deferred' });
       throw new WorkspaceAgentRegistrationError('AGENT_MATERIALIZATION_DEFERRED',
-        'Workspace ownership was saved, but independent configurations are not confirmed. Refresh or restart MyAgents to finish recovery.',
+        'Workspace ownership was saved, but independent configurations are not confirmed. Refresh or restart NextTools to finish recovery.',
         { cause: error instanceof Error ? error.message : String(error) });
     }
     await broadcastAppConfigChanged({ section: 'agent-identity', action: 'resolve-conflict' });

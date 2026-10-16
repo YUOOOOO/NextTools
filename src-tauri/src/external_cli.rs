@@ -8,12 +8,12 @@ use std::sync::{Mutex, OnceLock};
 use tauri::Emitter;
 
 const CONFIG_KEY: &str = "externalCliAccess";
-const EXTERNAL_CLI_SKILL_DIR: &str = "external-myagents-cli";
+const EXTERNAL_CLI_SKILL_DIR: &str = "external-nexttools-cli";
 const EXTERNAL_CLI_SKILL_FILE: &str = "SKILL.md";
 const EXTERNAL_CLI_SKILL_CONTENT: &str =
-    include_str!("../../bundled-guides/external-myagents-cli/SKILL.md");
-pub const INTERNAL_TOKEN_HEADER: &str = "x-myagents-internal-cli-token";
-pub const INTERNAL_TOKEN_ENV: &str = "MYAGENTS_INTERNAL_CLI_TOKEN";
+    include_str!("../../bundled-guides/external-nexttools-cli/SKILL.md");
+pub const INTERNAL_TOKEN_HEADER: &str = "x-nexttools-internal-cli-token";
+pub const INTERNAL_TOKEN_ENV: &str = "NEXTTOOLS_INTERNAL_CLI_TOKEN";
 
 static INTERNAL_TOKEN: OnceLock<String> = OnceLock::new();
 static EXTERNAL_CLI_SKILL_SYNC_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -83,18 +83,18 @@ fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
 }
 
 fn config_path() -> Result<PathBuf, String> {
-    crate::app_dirs::myagents_data_dir()
+    crate::app_dirs::nexttools_data_dir()
         .map(|dir| dir.join("config.json"))
-        .ok_or_else(|| "MyAgents data directory is unavailable".to_string())
+        .ok_or_else(|| "NextTools data directory is unavailable".to_string())
 }
 
 fn launcher_path() -> String {
     let file_name = if cfg!(windows) {
-        "myagents.cmd"
+        "nexttools.cmd"
     } else {
-        "myagents"
+        "nexttools"
     };
-    crate::app_dirs::myagents_data_dir()
+    crate::app_dirs::nexttools_data_dir()
         .map(|dir| dir.join("bin").join(file_name))
         .unwrap_or_else(|| PathBuf::from(file_name))
         .to_string_lossy()
@@ -108,7 +108,7 @@ fn external_cli_skill_path_at(data_dir: &Path) -> PathBuf {
 }
 
 fn external_cli_skill_path() -> String {
-    crate::app_dirs::myagents_data_dir()
+    crate::app_dirs::nexttools_data_dir()
         .map(|dir| external_cli_skill_path_at(&dir))
         .unwrap_or_else(|| PathBuf::from(EXTERNAL_CLI_SKILL_DIR).join(EXTERNAL_CLI_SKILL_FILE))
         .to_string_lossy()
@@ -117,11 +117,11 @@ fn external_cli_skill_path() -> String {
 
 /// Reconcile the explicit-read external AI guide with the current App version.
 ///
-/// This intentionally writes outside `~/.myagents/skills`: the file is a
+/// This intentionally writes outside `~/.nexttools/skills`: the file is a
 /// handoff document referenced by Settings, not an installed/injected skill.
 pub(crate) fn ensure_external_cli_skill() -> Result<bool, String> {
-    let data_dir = crate::app_dirs::myagents_data_dir()
-        .ok_or_else(|| "MyAgents data directory is unavailable".to_string())?;
+    let data_dir = crate::app_dirs::nexttools_data_dir()
+        .ok_or_else(|| "NextTools data directory is unavailable".to_string())?;
     let _guard = EXTERNAL_CLI_SKILL_SYNC_LOCK
         .get_or_init(|| Mutex::new(()))
         .lock()

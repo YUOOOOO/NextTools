@@ -53,7 +53,7 @@ pub struct CleanupReport {
     /// Processes still alive after the termination deadline.
     pub residual: usize,
     /// PIDs still alive after the termination deadline. Includes descendant
-    /// processes that may not match MyAgents command-line/root patterns
+    /// processes that may not match NextTools command-line/root patterns
     /// themselves, so update shutdown can keep verifying them explicitly.
     pub residual_pids: Vec<u32>,
     /// Total wall-clock time spent in this call.
@@ -187,7 +187,7 @@ pub fn kill_stale_processes(patterns: &[ProcessPattern]) -> CleanupReport {
 /// line patterns or running from/with argv references to one of `protected_roots`.
 ///
 /// The roots path is used by the Windows updater shutdown path: anything still
-/// executing from the current MyAgents install/resource directory can hold
+/// executing from the current NextTools install/resource directory can hold
 /// files that NSIS needs to overwrite, even if its argv no longer includes a
 /// legacy marker.
 pub fn kill_stale_processes_with_roots(
@@ -429,12 +429,12 @@ pub fn find_live_processes_by_pid(pids: &[u32]) -> Vec<ProcessMatch> {
         .collect()
 }
 
-/// Query whether a specific PID corresponds to a MyAgents process.
+/// Query whether a specific PID corresponds to a NextTools process.
 /// Uses the executable path (`GetModuleFileNameExW` underneath), so it is
 /// reliable whether the process was spawned via shortcut, installer, or
 /// direct path. Case-insensitive substring match to absorb Windows
-/// filesystem case quirks (`MyAgents` vs `myagents`).
-pub fn is_myagents_pid(pid: u32) -> bool {
+/// filesystem case quirks (`NextTools` vs `nexttools`).
+pub fn is_nexttools_pid(pid: u32) -> bool {
     let mut system = System::new();
     let only: [Pid; 1] = [Pid::from_u32(pid)];
     // remove_dead_processes=true so that a dead PID returns None from
@@ -453,7 +453,7 @@ pub fn is_myagents_pid(pid: u32) -> bool {
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|| proc.name().to_string_lossy().into_owned());
     let lower = haystack.to_ascii_lowercase();
-    lower.contains("myagents")
+    lower.contains("nexttools")
 }
 
 #[cfg(test)]
@@ -463,27 +463,27 @@ mod tests {
     #[test]
     fn root_match_accepts_windows_separator_variants() {
         let roots = normalized_roots(&[PathBuf::from(
-            r"C:\Users\alice\AppData\Local\MyAgents\resources",
+            r"C:\Users\alice\AppData\Local\NextTools\resources",
         )]);
         assert_eq!(
             process_match_reason(
-                "c:/users/alice/appdata/local/myagents/resources/nodejs/node.exe server-dist.js",
-                Some("c:/users/alice/appdata/local/myagents/resources/nodejs/node.exe"),
+                "c:/users/alice/appdata/local/nexttools/resources/nodejs/node.exe server-dist.js",
+                Some("c:/users/alice/appdata/local/nexttools/resources/nodejs/node.exe"),
                 &[],
                 &roots,
             )
             .as_deref(),
-            Some("exe under 'c:/users/alice/appdata/local/myagents/resources'")
+            Some("exe under 'c:/users/alice/appdata/local/nexttools/resources'")
         );
     }
 
     #[test]
     fn root_match_strips_extended_length_prefix() {
         let roots = normalized_roots(&[PathBuf::from(
-            r"\\?\C:\Users\alice\AppData\Local\MyAgents\resources",
+            r"\\?\C:\Users\alice\AppData\Local\NextTools\resources",
         )]);
         assert!(process_match_reason(
-            "node c:/users/alice/appdata/local/myagents/resources/plugin-bridge-dist.mjs",
+            "node c:/users/alice/appdata/local/nexttools/resources/plugin-bridge-dist.mjs",
             None,
             &[],
             &roots,
@@ -494,11 +494,11 @@ mod tests {
     #[test]
     fn root_match_does_not_match_prefix_siblings_by_exe() {
         let roots = normalized_roots(&[PathBuf::from(
-            r"C:\Users\alice\AppData\Local\MyAgents\resources",
+            r"C:\Users\alice\AppData\Local\NextTools\resources",
         )]);
         assert!(process_match_reason(
             "",
-            Some("c:/users/alice/appdata/local/myagents/resources-old/node.exe"),
+            Some("c:/users/alice/appdata/local/nexttools/resources-old/node.exe"),
             &[],
             &roots,
         )
@@ -508,10 +508,10 @@ mod tests {
     #[test]
     fn root_match_does_not_match_prefix_siblings_by_cmd() {
         let roots = normalized_roots(&[PathBuf::from(
-            r"C:\Users\alice\AppData\Local\MyAgents\resources",
+            r"C:\Users\alice\AppData\Local\NextTools\resources",
         )]);
         assert!(process_match_reason(
-            "node c:/users/alice/appdata/local/myagents/resources-old/server-dist.js",
+            "node c:/users/alice/appdata/local/nexttools/resources-old/server-dist.js",
             None,
             &[],
             &roots,
@@ -522,11 +522,11 @@ mod tests {
     #[test]
     fn root_match_does_not_require_command_line_when_exe_matches() {
         let roots = normalized_roots(&[PathBuf::from(
-            r"C:\Users\alice\AppData\Local\MyAgents\resources",
+            r"C:\Users\alice\AppData\Local\NextTools\resources",
         )]);
         assert!(process_match_reason(
             "",
-            Some("c:/users/alice/appdata/local/myagents/resources/nodejs/node.exe"),
+            Some("c:/users/alice/appdata/local/nexttools/resources/nodejs/node.exe"),
             &[],
             &roots,
         )
@@ -536,10 +536,10 @@ mod tests {
     #[test]
     fn root_match_accepts_file_url_command_arguments() {
         let roots = normalized_roots(&[PathBuf::from(
-            r"C:\Users\alice\AppData\Local\MyAgents\resources",
+            r"C:\Users\alice\AppData\Local\NextTools\resources",
         )]);
         assert!(process_match_reason(
-            "node --import=file:///c:/users/alice/appdata/local/myagents/resources/tsx-runtime/loader.mjs",
+            "node --import=file:///c:/users/alice/appdata/local/nexttools/resources/tsx-runtime/loader.mjs",
             None,
             &[],
             &roots,

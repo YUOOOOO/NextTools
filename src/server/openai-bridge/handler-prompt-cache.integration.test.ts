@@ -231,7 +231,7 @@ describe('OpenAI bridge Responses prompt_cache_key', () => {
     expect(fake.seen[0].path).toBe('/responses');
     const firstKey = fake.seen[0].body.prompt_cache_key;
     const secondKey = fake.seen[1].body.prompt_cache_key;
-    expect(firstKey).toEqual(expect.stringMatching(/^myagents:responses:[a-f0-9]{32}$/));
+    expect(firstKey).toEqual(expect.stringMatching(/^nexttools:responses:[a-f0-9]{32}$/));
     expect(secondKey).toBe(firstKey);
     expect(JSON.stringify(fake.seen[0].body)).not.toContain('raw-session-id');
   });
@@ -290,7 +290,7 @@ describe('OpenAI bridge Responses prompt_cache_key', () => {
 
     expect(disabled).toBe(true);
     expect(fake.seen).toHaveLength(3);
-    expect(fake.seen[0].body.prompt_cache_key).toEqual(expect.stringMatching(/^myagents:responses:[a-f0-9]{32}$/));
+    expect(fake.seen[0].body.prompt_cache_key).toEqual(expect.stringMatching(/^nexttools:responses:[a-f0-9]{32}$/));
     expect('prompt_cache_key' in fake.seen[1].body).toBe(false);
     expect('prompt_cache_key' in fake.seen[2].body).toBe(false);
     const joinedLogs = logs.join('\n');
@@ -504,7 +504,7 @@ describe('OpenAI bridge Responses prompt_cache_key', () => {
       }
       return { status: 200, body: okResponsesBody };
     });
-    const workspace = mkdtempSync(join(tmpdir(), 'myagents-cache-retry-'));
+    const workspace = mkdtempSync(join(tmpdir(), 'nexttools-cache-retry-'));
     temporaryWorkspaces.push(workspace);
     const upstream: UpstreamConfig = {
       providerId: 'strict-provider',
@@ -532,7 +532,7 @@ describe('OpenAI bridge Responses prompt_cache_key', () => {
       return input.find(item => item.type === 'function_call_output')?.output;
     });
     expect(new Set(outputs).size).toBe(1);
-    expect(readdirSync(join(workspace, 'myagents_files', 'temp'))).toHaveLength(1);
+    expect(readdirSync(join(workspace, 'nexttools_files', 'temp'))).toHaveLength(1);
   });
 
   it('redacts echoed requests after prompt_cache_key has been removed', async () => {
@@ -671,7 +671,7 @@ describe('OpenAI bridge Chat Completions prompt_cache_key', () => {
     expect(fake.seen[0].path).toBe('/chat/completions');
     const firstKey = fake.seen[0].body.prompt_cache_key;
     const secondKey = fake.seen[1].body.prompt_cache_key;
-    expect(firstKey).toEqual(expect.stringMatching(/^myagents:chat_completions:[a-f0-9]{32}$/));
+    expect(firstKey).toEqual(expect.stringMatching(/^nexttools:chat_completions:[a-f0-9]{32}$/));
     expect(secondKey).toBe(firstKey);
     expect(JSON.stringify(fake.seen[0].body)).not.toContain('raw-session-id');
   });
@@ -732,7 +732,7 @@ describe('OpenAI bridge Chat Completions prompt_cache_key', () => {
 
     expect(disabled).toBe(true);
     expect(fake.seen).toHaveLength(3);
-    expect(fake.seen[0].body.prompt_cache_key).toEqual(expect.stringMatching(/^myagents:chat_completions:[a-f0-9]{32}$/));
+    expect(fake.seen[0].body.prompt_cache_key).toEqual(expect.stringMatching(/^nexttools:chat_completions:[a-f0-9]{32}$/));
     expect('prompt_cache_key' in fake.seen[1].body).toBe(false);
     expect('prompt_cache_key' in fake.seen[2].body).toBe(false);
     const joinedLogs = logs.join('\n');

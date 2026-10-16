@@ -67,7 +67,7 @@ export function isDshRuntime(type: RuntimeType | undefined): type is 'dsh' {
  * Get the current runtime type from environment or default to 'builtin'
  */
 export function getCurrentRuntimeType(): RuntimeType {
-  const env = process.env.MYAGENTS_RUNTIME;
+  const env = process.env.NEXTTOOLS_RUNTIME;
   if (env === 'dsh' || env === 'claude-code' || env === 'codex') return env;
   return 'builtin';
 }
@@ -81,7 +81,7 @@ export function getCurrentRuntimeType(): RuntimeType {
 export function getCurrentRuntimeSource(): RuntimeSource | undefined {
   if (getCurrentRuntimeType() === 'dsh') return 'integrated';
   if (!isExternalRuntime(getCurrentRuntimeType())) return undefined;
-  return process.env.MYAGENTS_RUNTIME_SOURCE === 'managed-provider'
+  return process.env.NEXTTOOLS_RUNTIME_SOURCE === 'managed-provider'
     ? 'managed-provider'
     : 'system-cli';
 }

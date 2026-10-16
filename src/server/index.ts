@@ -244,7 +244,7 @@ async function writeSpaceSkillExportPackages(
   const exportId = randomUUID();
   const exportDir = join(
     homedir(),
-    '.myagents',
+    '.nexttools',
     'tmp',
     'skill-url-export',
     exportId,
@@ -1041,7 +1041,7 @@ interface SkillsConfig {
 
 function getSkillsConfigPath(): string {
   const homeDir = getHomeDirOrNull() || '';
-  return join(homeDir, '.myagents', 'skills-config.json');
+  return join(homeDir, '.nexttools', 'skills-config.json');
 }
 
 function readSkillsConfig(): SkillsConfig {
@@ -1139,36 +1139,36 @@ function resolveBundledSkillsDir(): string | null {
 const SYSTEM_SKILLS: readonly string[] = [
   // Optional native desktop Skill; Rust owns complete bundle updates.
   'cuse',
-  'myagents-task-alignment',
+  'nexttools-task-alignment',
   // v10: ultra-research removed — not generic enough.
   'download-anything',
-  // v9: myagents-cli — global skill that exposes the entire `myagents`
+  // v9: nexttools-cli — global skill that exposes the entire `nexttools`
   // CLI surface (cron / task / mcp / model / agent / runtime / skill /
   // plugin / widget / im / config) to every AI session in the product.
   // Force-synced because SKILL.md must track CLI changes in lockstep.
-  'myagents-cli',
+  'nexttools-cli',
   // v49: progressive instructions for the bundled offline document converter.
-  'myagents-anydoc',
+  'nexttools-anydoc',
   // v54: progressive instructions for Session-scoped local attachment ASR.
-  'myagents-speech-recognition',
+  'nexttools-speech-recognition',
   // v44: one Agent workflow for scheduled, future and conditional Task
   // automation; command Detector protocol is progressively disclosed inside.
-  'myagents-task-automation',
+  'nexttools-task-automation',
   // v35: stable product-use knowledge and expected-behaviour contract for
-  // every MyAgents session. Live operations remain in myagents-cli.
-  'myagents-docs',
+  // every NextTools session. Live operations remain in nexttools-cli.
+  'nexttools-docs',
   // v18: tool-creator — meta-skill for the CLI tool registry (PRD 0.2.36).
   // Teaches AI to author standards-compliant Agent-CLI tools and register
-  // them via `myagents tool add`. Force-synced because its contract (eight
+  // them via `nexttools tool add`. Force-synced because its contract (eight
   // rules / description cap / readme template) must track registry
   // validation in lockstep.
   'tool-creator',
   // v33: hidden memory-maintenance flows target these skills by exact name.
   // Force-sync so the injected prompt, managed tasks, and skill workflow stay
   // consistent across app upgrades.
-  'myagents-memory-update',
-  'myagents-memory-gardener',
-  'myagents-memory-molt',
+  'nexttools-memory-update',
+  'nexttools-memory-gardener',
+  'nexttools-memory-molt',
   // v50: skill-creator promoted from utility → system skill so its bundled
   // workflow and evaluation scripts update existing installations.
   'skill-creator',
@@ -1182,7 +1182,7 @@ function isSystemSkillName(name: string): boolean {
 }
 
 /**
- * Seed bundled skills to ~/.myagents/skills/ on first launch.
+ * Seed bundled skills to ~/.nexttools/skills/ on first launch.
  * Only copies skills that haven't been seeded before (tracked in skills-config.json).
  *
  * System skills (SYSTEM_SKILLS above) are owned by Rust's
@@ -1203,7 +1203,7 @@ function seedBundledSkills(): void {
 
     const config = readSkillsConfig();
     const homeDir = getHomeDirOrNull() || '';
-    const userSkillsDir = join(homeDir, '.myagents', 'skills');
+    const userSkillsDir = join(homeDir, '.nexttools', 'skills');
 
     ensureDirSync(userSkillsDir);
 
@@ -1229,7 +1229,7 @@ function seedBundledSkills(): void {
       // hiding the symlink from every guard below, so we must lstat first.
       // Repro: `node -e 'fs.cpSync("/tmp/src", "/tmp/dangling", {recursive:true})'`
       // where /tmp/dangling -> /nonexistent. Reported as user crash on v0.2.5
-      // (~/.myagents/skills/docx pointed at a deleted target).
+      // (~/.nexttools/skills/docx pointed at a deleted target).
       let dstLstat: ReturnType<typeof lstatSync> | null = null;
       try {
         dstLstat = lstatSync(dst);
@@ -1299,13 +1299,13 @@ function seedBundledSkills(): void {
 }
 
 /**
- * Ensure the ~/.myagents/plugins/ directory tree exists for Claude Plugin
+ * Ensure the ~/.nexttools/plugins/ directory tree exists for Claude Plugin
  * support (PRD 0.2.17). Unlike skills, plugins are never seeded by the app —
  * the user installs them via UI/CLI, and the directories below merely have
  * to exist so first-install doesn't have to MkDir-A-Path twice.
  *
- *   ~/.myagents/plugins/                  plugin install root
- *   ~/.myagents/plugins/data/             ${CLAUDE_PLUGIN_DATA} parent
+ *   ~/.nexttools/plugins/                  plugin install root
+ *   ~/.nexttools/plugins/data/             ${CLAUDE_PLUGIN_DATA} parent
  *
  * Idempotent. Called at sidecar startup alongside seedBundledSkills.
  */
@@ -1318,7 +1318,7 @@ function ensurePluginsDirs(): void {
       );
       return;
     }
-    const root = join(homeDir, '.myagents', 'plugins');
+    const root = join(homeDir, '.nexttools', 'plugins');
     const dataRoot = join(root, 'data');
     ensureDirSync(root);
     ensureDirSync(dataRoot);
@@ -1551,7 +1551,7 @@ async function routeAdminApi(
       payload as Parameters<typeof api.handleToolEnv>[0],
     );
 
-  // Official MyAgents CLI tools
+  // Official NextTools CLI tools
   if (route === 'anydoc/convert')
     return await api.handleAnydocConvert(
       payload as Parameters<typeof api.handleAnydocConvert>[0],
@@ -1933,7 +1933,7 @@ async function routeAdminApi(
       payload as Parameters<typeof api.handleRecordCreate>[0],
     );
 
-  // MyAgents Cloud Space — Registered Agent CLI bridge.
+  // NextTools Cloud Space — Registered Agent CLI bridge.
   if (route === 'space/list') return await api.handleSpaceList();
   if (route === 'space/whoami')
     return await api.handleSpaceWhoami(
@@ -2012,7 +2012,7 @@ async function routeAdminApi(
       payload as Parameters<typeof api.handleSpaceAttachmentInspect>[0],
     );
 
-  // Session Inbox (PRD 0.2.18) — `myagents session send`
+  // Session Inbox (PRD 0.2.18) — `nexttools session send`
   if (route === 'session/list') {
     return await api.handleSessionList(
       payload as Parameters<typeof api.handleSessionList>[0],
@@ -2061,7 +2061,7 @@ async function routeAdminApi(
     // message }` object overwrote the string. CLI printResult then rendered
     // `Error: [object Object]`. Put the spread first and let explicit fields
     // win; also surface `code` at top level so the granular exit-code branch
-    // in cli/myagents.ts:1627-1633 can read it without destructuring the
+    // in cli/nexttools.ts:1627-1633 can read it without destructuring the
     // nested error object.
     return result.status >= 200 && result.status < 300
       ? {
@@ -2091,7 +2091,7 @@ async function routeAdminApi(
     }
     const { managementApi } = await import('./utils/management-api-client');
     const result = await managementApi('/api/agent-network/watches', 'POST', {
-      sidecarId: process.env.MYAGENTS_SIDECAR_ID, ...(cancel ? { cancel } : {}), all,
+      sidecarId: process.env.NEXTTOOLS_SIDECAR_ID, ...(cancel ? { cancel } : {}), all,
     }, { timeoutMs: 22_000 });
     const { projectSessionWatchManagement } = await import('./inbox/watch-handler');
     return result.ok === true ? projectSessionWatchManagement(result.result, cancel, all)
@@ -2100,7 +2100,7 @@ async function routeAdminApi(
   if (route === 'agent/network-diagnose') {
     const { managementApi } = await import('./utils/management-api-client');
     const result = await managementApi('/api/agent-network/diagnose', 'POST', {
-      sidecarId: process.env.MYAGENTS_SIDECAR_ID, cursor: payload.cursor ?? null, limit: payload.limit ?? 100, network:payload.network??null,
+      sidecarId: process.env.NEXTTOOLS_SIDECAR_ID, cursor: payload.cursor ?? null, limit: payload.limit ?? 100, network:payload.network??null,
     }, { timeoutMs: 38_000 });
     return result.ok === true ? { success: true, data: result.data }
       : { success: false, code: 'NETWORK_DIAGNOSTIC_UNAVAILABLE', error: 'Network diagnostics unavailable.' };
@@ -2294,7 +2294,7 @@ function startupBeacon(step: string): void {
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, '0');
     const d = String(now.getDate()).padStart(2, '0');
-    const logsDir = join(homedir(), '.myagents', 'logs');
+    const logsDir = join(homedir(), '.nexttools', 'logs');
     ensureDirSync(logsDir);
     const filePath = join(logsDir, `unified-${y}-${m}-${d}.log`);
     const h = String(now.getHours()).padStart(2, '0');
@@ -2326,7 +2326,7 @@ async function main() {
     sidecarComposition.mode === 'development-union'
       ? 'development-union'
       : sidecarRole;
-  process.env.MYAGENTS_SIDECAR_ROLE = sidecarRoleLabel;
+  process.env.NEXTTOOLS_SIDECAR_ROLE = sidecarRoleLabel;
   const dirDisplay =
     agentDir.length > 50
       ? agentDir.slice(0, 3) + '...' + agentDir.slice(-44)
@@ -2349,9 +2349,9 @@ async function main() {
 
   // Store sidecar port BEFORE initializeAgent() so that:
   //   1. pre-warm's buildClaudeSessionEnv() reads the correct sidecarPort
-  //      (OpenAI bridge loopback URL + MYAGENTS_PORT injection both need it).
-  //   2. setSidecarPort's process.env.MYAGENTS_PORT side effect is in place
-  //      before any external runtime subprocess (or `myagents` CLI invocation
+  //      (OpenAI bridge loopback URL + NEXTTOOLS_PORT injection both need it).
+  //   2. setSidecarPort's process.env.NEXTTOOLS_PORT side effect is in place
+  //      before any external runtime subprocess (or `nexttools` CLI invocation
   //      from pre-warm bash tools) can spawn. This eliminates a subtle timing
   //      coincidence where the old ordering depended on pre-warm's 500ms
   //      debounce outlasting the few µs between these two calls.
@@ -2514,17 +2514,17 @@ async function main() {
       // Pattern 6 (HTTP request boundary): each request runs inside an ALS
       // frame so any nested console.* call automatically gets correlation
       // fields injected. Renderer-side code (`tauriClient.ts`) attaches
-      // x-myagents-log-session-id / X-MyAgents-Tab-Id; the server generates a
-      // fresh requestId (or honours an inbound `X-MyAgents-Request-Id` from
+      // x-nexttools-log-session-id / X-NextTools-Tab-Id; the server generates a
+      // fresh requestId (or honours an inbound `X-NextTools-Request-Id` from
       // the Rust proxy if it pre-populated one).
       const incomingRequestId =
-        request.headers.get('x-myagents-request-id') ?? undefined;
+        request.headers.get('x-nexttools-request-id') ?? undefined;
       const requestId = incomingRequestId ?? randomUUIDv4Short();
       const sessionId =
         request.headers.get(LOG_SESSION_HEADER)
         ?? request.headers.get(CLI_SESSION_HEADER)
         ?? undefined;
-      const tabId = request.headers.get('x-myagents-tab-id') ?? undefined;
+      const tabId = request.headers.get('x-nexttools-tab-id') ?? undefined;
       return withLogContext({ requestId, sessionId, tabId }, () =>
         dispatchRequest(request),
       );
@@ -2646,9 +2646,9 @@ async function main() {
         request.method === 'POST'
       ) {
         const expectedGeneration =
-          process.env.MYAGENTS_SIDECAR_GENERATION?.trim();
+          process.env.NEXTTOOLS_SIDECAR_GENERATION?.trim();
         const requestedGeneration = request.headers
-          .get('x-myagents-sidecar-generation')
+          .get('x-nexttools-sidecar-generation')
           ?.trim();
         if (!expectedGeneration || requestedGeneration !== expectedGeneration) {
           return jsonResponse(
@@ -2674,9 +2674,9 @@ async function main() {
         request.method === 'POST'
       ) {
         const expectedGeneration =
-          process.env.MYAGENTS_SIDECAR_GENERATION?.trim();
+          process.env.NEXTTOOLS_SIDECAR_GENERATION?.trim();
         const requestedGeneration = request.headers
-          .get('x-myagents-sidecar-generation')
+          .get('x-nexttools-sidecar-generation')
           ?.trim();
         if (!expectedGeneration || requestedGeneration !== expectedGeneration) {
           return jsonResponse(
@@ -2801,12 +2801,12 @@ async function main() {
       // Resolution:
       //   1. Look up the external-path registry (Codex savedPath, dynamic URLs after fetch).
       //      Hit → serve that real path.
-      //   2. Miss → fall back to the trusted attachment root <home>/.myagents/generated/
+      //   2. Miss → fall back to the trusted attachment root <home>/.nexttools/generated/
       //      tool-attachments/<s>/<t>/<f> (where base64 / URL downloads land).
       //
       // Security: the registry only holds paths registered by saveToolAttachment, which
       // pre-validated them via validateExternalReadPathNode (system/credential blacklist).
-      // The trusted-root fallback is by construction inside the MyAgents-owned tree.
+      // The trusted-root fallback is by construction inside the NextTools-owned tree.
       if (
         pathname.startsWith('/api/attachment/tool/') &&
         request.method === 'GET'
@@ -2880,7 +2880,7 @@ async function main() {
       }
 
       // Browser dev-mode fallback for attachment files.
-      // Production uses the Tauri `myagents-resource://attachment/<path>` custom protocol
+      // Production uses the Tauri `nexttools-resource://attachment/<path>` custom protocol
       // (`src-tauri/src/attachment_protocol.rs`) which serves bytes directly
       // through WebKit without round-tripping JSON. In dev (vite + browser) the
       // custom scheme isn't registered, so this route serves the same bytes
@@ -4169,7 +4169,7 @@ async function main() {
           session.messages.slice(idx + 1),
         );
         // Same metadata-only shape as GET /sessions/:id (P0) — previews are
-        // resolved via the myagents:// custom protocol on the client.
+        // resolved via the nexttools:// custom protocol on the client.
         return jsonResponse({ success: true, fromIndex: idx, messages: tail });
       }
 
@@ -4223,9 +4223,9 @@ async function main() {
             400,
           );
         }
-        const expectedAuthority = process.env.MYAGENTS_SESSION_DELETE_AUTHORITY;
+        const expectedAuthority = process.env.NEXTTOOLS_SESSION_DELETE_AUTHORITY;
         const providedAuthority = request.headers.get(
-          'X-MyAgents-Session-Delete-Authority',
+          'X-NextTools-Session-Delete-Authority',
         );
         if (!expectedAuthority || providedAuthority !== expectedAuthority) {
           return jsonResponse(
@@ -4743,18 +4743,18 @@ async function main() {
             );
           }
 
-          // Security: allow reading from workspace/myagents_files/{generated_images,temp}/ or legacy paths
+          // Security: allow reading from workspace/nexttools_files/{generated_images,temp}/ or legacy paths
           const resolvedPath = resolve(imagePath);
-          const legacyDir = join(homedir(), '.myagents', 'generated');
+          const legacyDir = join(homedir(), '.nexttools', 'generated');
           const legacyDirSep = legacyDir.endsWith(sep)
             ? legacyDir
             : legacyDir + sep;
-          // New unified paths + backward compat with myagents-generated/images/
+          // New unified paths + backward compat with nexttools-generated/images/
           const allowedDirs = currentAgentDir
             ? [
-                join(currentAgentDir, 'myagents_files', 'generated_images'),
-                join(currentAgentDir, 'myagents_files', 'temp'),
-                join(currentAgentDir, 'myagents-generated', 'images'), // backward compat
+                join(currentAgentDir, 'nexttools_files', 'generated_images'),
+                join(currentAgentDir, 'nexttools_files', 'temp'),
+                join(currentAgentDir, 'nexttools-generated', 'images'), // backward compat
               ]
             : [];
           const allowed =
@@ -4817,21 +4817,21 @@ async function main() {
             );
           }
 
-          // Security: allow reading from workspace/myagents_files/generated_audio/ or legacy paths
+          // Security: allow reading from workspace/nexttools_files/generated_audio/ or legacy paths
           const resolvedPath = resolve(audioPath);
           const legacyAudioDir = join(
             homedir(),
-            '.myagents',
+            '.nexttools',
             'generated_audio',
           );
           const legacyAudioDirSep = legacyAudioDir.endsWith(sep)
             ? legacyAudioDir
             : legacyAudioDir + sep;
-          // New unified path + backward compat with myagents-generated/audio/
+          // New unified path + backward compat with nexttools-generated/audio/
           const allowedAudioDirs = currentAgentDir
             ? [
-                join(currentAgentDir, 'myagents_files', 'generated_audio'),
-                join(currentAgentDir, 'myagents-generated', 'audio'), // backward compat
+                join(currentAgentDir, 'nexttools_files', 'generated_audio'),
+                join(currentAgentDir, 'nexttools-generated', 'audio'), // backward compat
               ]
             : [];
           const audioAllowed =
@@ -4984,7 +4984,7 @@ async function main() {
           const { readdirSync, statSync } = await import('fs');
           const { join: joinPath } = await import('path');
           const { homedir } = await import('os');
-          const logsDir = joinPath(homedir(), '.myagents', 'logs');
+          const logsDir = joinPath(homedir(), '.nexttools', 'logs');
 
           // Collect last 3 days of unified-*.log files
           const now = Date.now();
@@ -5012,7 +5012,7 @@ async function main() {
           // Output to Desktop
           const desktopDir = joinPath(homedir(), 'Desktop');
           const timestamp = new Date().toISOString().slice(0, 10);
-          const zipName = `MyAgents-logs-${timestamp}.zip`;
+          const zipName = `NextTools-logs-${timestamp}.zip`;
           const zipPath = joinPath(desktopDir, zipName);
 
           // Create zip using platform-appropriate command
@@ -5518,7 +5518,7 @@ async function main() {
                     params: {
                       protocolVersion: '2025-03-26',
                       capabilities: {},
-                      clientInfo: { name: 'MyAgents', version: '0.1.29' },
+                      clientInfo: { name: 'NextTools', version: '0.1.29' },
                     },
                   }),
                   signal: controller.signal,
@@ -6623,8 +6623,8 @@ async function main() {
 
       // Cross-platform home directory for user skills/commands
       const homeDir = getHomeDirOrNull() || '';
-      const userSkillsBaseDir = join(homeDir, '.myagents', 'skills');
-      const userCommandsBaseDir = join(homeDir, '.myagents', 'commands');
+      const userSkillsBaseDir = join(homeDir, '.nexttools', 'skills');
+      const userCommandsBaseDir = join(homeDir, '.nexttools', 'commands');
 
       // Helper: Get project base directories (supports explicit agentDir parameter)
       // Security: validates agentDir to prevent path traversal attacks
@@ -6657,7 +6657,7 @@ async function main() {
 
       // GET /api/project-capabilities - authoritative candidate + effective set
       // for the current workspace. Unlike the legacy per-directory endpoints,
-      // this resolves MyAgents-managed symlinks back to their global origin,
+      // this resolves NextTools-managed symlinks back to their global origin,
       // applies project-over-global winner semantics, and keeps disabled cards.
       if (
         pathname === '/api/project-capabilities' &&
@@ -6751,7 +6751,7 @@ async function main() {
           // App-wide invalidation is advisory here: every Session resolves the
           // disk authority again at its own turn admission, so a renderer fanout
           // outage must not turn a committed save into a false rollback.
-          if (process.env.MYAGENTS_MANAGEMENT_PORT) {
+          if (process.env.NEXTTOOLS_MANAGEMENT_PORT) {
             void managementApi(
               '/api/app/config-changed',
               'POST',
@@ -6936,7 +6936,7 @@ async function main() {
             return jsonResponse(
               {
                 success: false,
-                error: `${folderName} is a required MyAgents system skill and cannot be disabled`,
+                error: `${folderName} is a required NextTools system skill and cannot be disabled`,
               },
               409,
             );
@@ -7003,7 +7003,7 @@ async function main() {
         }
       }
 
-      // POST /api/skill/sync-from-claude - Sync skills from Claude Code to MyAgents
+      // POST /api/skill/sync-from-claude - Sync skills from Claude Code to NextTools
       // NOTE: This route MUST be before /api/skill/:name to avoid being captured by the wildcard
       if (
         pathname === '/api/skill/sync-from-claude' &&
@@ -7428,7 +7428,7 @@ async function main() {
         }
       }
 
-      // POST /api/skill/copy-to-global - Copy a project skill to global (~/.myagents/skills/)
+      // POST /api/skill/copy-to-global - Copy a project skill to global (~/.nexttools/skills/)
       // NOTE: This route MUST be before /api/skill/:name to avoid being captured by the wildcard
       if (
         pathname === '/api/skill/copy-to-global' &&
@@ -8000,7 +8000,7 @@ async function main() {
       // POST /api/skill/export-from-url - Resolve a GitHub/raw/npx skill source
       // and stage one or more canonical zip packages for Space publishing.
       //
-      // This deliberately does not write to ~/.myagents/skills or a workspace.
+      // This deliberately does not write to ~/.nexttools/skills or a workspace.
       // The renderer still hands the staged zip path to the Rust Space command,
       // so Space auth and cloud mutations remain owned by Tauri.
       if (
@@ -9232,7 +9232,7 @@ async function main() {
 
       // ============= SUB-AGENTS API =============
 
-      const userAgentsBaseDir = join(homeDir, '.myagents', 'agents');
+      const userAgentsBaseDir = join(homeDir, '.nexttools', 'agents');
 
       // Helper: Get project agents directory (supports explicit agentDir parameter)
       const getProjectAgentsDir = (queryAgentDir: string | null) => {
@@ -9329,8 +9329,8 @@ async function main() {
             return jsonResponse({ canSync: false, count: 0, folders: [] });
           }
 
-          const myagentsAgents = scanAgents(userAgentsBaseDir, 'user');
-          const myagentsSet = new Set(myagentsAgents.map((a) => a.folderName));
+          const nexttoolsAgents = scanAgents(userAgentsBaseDir, 'user');
+          const nexttoolsSet = new Set(nexttoolsAgents.map((a) => a.folderName));
 
           // folderName is the canonical agent identity (e.g. "code-reviewer"
           // for flat, "team/reviewer" for nested, "novels" for folder). The
@@ -9339,10 +9339,10 @@ async function main() {
           // name is trusted across the request boundary.
           const allFolders = claudeAgents.map((a) => a.folderName);
           const newFolders = claudeAgents
-            .filter((a) => !myagentsSet.has(a.folderName))
+            .filter((a) => !nexttoolsSet.has(a.folderName))
             .map((a) => a.folderName);
           const conflictFolders = claudeAgents
-            .filter((a) => myagentsSet.has(a.folderName))
+            .filter((a) => nexttoolsSet.has(a.folderName))
             .map((a) => a.folderName);
 
           return jsonResponse({
@@ -9366,14 +9366,14 @@ async function main() {
         }
       }
 
-      // POST /api/agent/sync-from-claude - Sync agents from Claude Code to MyAgents
+      // POST /api/agent/sync-from-claude - Sync agents from Claude Code to NextTools
       // NOTE: Must be before /api/agent/:name to avoid wildcard capture
       // Supports conflict handling: mode = 'skip' (default) | 'overwrite'
       //
       // Preserves the source agent's layout:
-      //   folder  (.claude/agents/foo/foo.md)        → ~/.myagents/agents/foo/foo.md  + _meta.json
-      //   flat    (.claude/agents/foo.md)            → ~/.myagents/agents/foo.md       (no _meta.json — flat has no home for it)
-      //   nested  (.claude/agents/team/reviewer.md)  → ~/.myagents/agents/team/reviewer.md  (ditto)
+      //   folder  (.claude/agents/foo/foo.md)        → ~/.nexttools/agents/foo/foo.md  + _meta.json
+      //   flat    (.claude/agents/foo.md)            → ~/.nexttools/agents/foo.md       (no _meta.json — flat has no home for it)
+      //   nested  (.claude/agents/team/reviewer.md)  → ~/.nexttools/agents/team/reviewer.md  (ditto)
       //
       // Why preserve instead of canonicalize to `folder`: `nested` folderNames
       // contain `/` (e.g. "team/reviewer"), which collapses ambiguously if
@@ -10434,7 +10434,7 @@ async function main() {
           try {
             // Set IM cron context for the im-cron tool (parity with /api/im/chat)
             let bridgeSurfaceRequiresTurnBoundary = false;
-            if (payload.botId && process.env.MYAGENTS_MANAGEMENT_PORT) {
+            if (payload.botId && process.env.NEXTTOOLS_MANAGEMENT_PORT) {
               const usesProductProvider =
                 usesProductProviderConfiguration(effectiveRuntime);
               const imCronModel = snapshotResolvedConfig.model;
@@ -10514,7 +10514,7 @@ async function main() {
               // message) keeps a stale mcpServers config and bridge plugin tools
               // appear "disconnected".
               //
-              // (v0.2.11) `im-media` was retired here — `myagents im send-media`
+              // (v0.2.11) `im-media` was retired here — `nexttools im send-media`
               // CLI is the new path, no SDK sync needed for it. `im-bridge-tools`
               // is the only remaining context-injected MCP this re-sync targets.
               //
@@ -11076,7 +11076,7 @@ async function main() {
               // PRD 0.2.18 Phase 3 — inbox envelope bridge fields (optional).
               // When present, buildCronEventRelayMessage wraps the cron content with
               // an `<inbox-message from="..." reply_back="false">` prefix so
-              // the IM Bot AI can `myagents session send <fromSessionId>` to
+              // the IM Bot AI can `nexttools session send <fromSessionId>` to
               // follow up. Cron uses reply_back=false because the cron task
               // session is short-lived and doesn't await a reply.
               fromSessionId?: string;
@@ -11445,7 +11445,7 @@ description: >
 
           // Build the hidden official-workflow prompt. Empty UPDATE_MEMORY.md
           // body means there are no workspace-specific additions; it does not
-          // disable the versioned myagents-memory-update system skill.
+          // disable the versioned nexttools-memory-update system skill.
           const now = new Date().toLocaleString('en-US', {
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             year: 'numeric',
@@ -11503,7 +11503,7 @@ description: >
             timeoutMs: MEMORY_UPDATE_TIMEOUT_MS,
             pollMs: 1000,
             beforeDispatch: taskDispatchGuard,
-            requiredSystemSkill: 'myagents-memory-update',
+            requiredSystemSkill: 'nexttools-memory-update',
             ...(isAuto
               ? {
                   queueId,
@@ -11663,7 +11663,7 @@ description: >
 
       // ============= SESSION INBOX (PRD 0.2.18) =============
       //
-      // Note: `myagents session send` CLI hits `/api/admin/session/send`
+      // Note: `nexttools session send` CLI hits `/api/admin/session/send`
       // (handled by `routeAdminApi` → `handleAdminInbox`). The previous raw
       // route at `/api/session/inbox` was deleted (cross-review Architecture
       // flagged it as duplicate dead code — CLI never hit it).
@@ -11685,7 +11685,7 @@ description: >
             {
               success: false,
               code: 'INTERNAL_CALLER_REQUIRED',
-              error: 'Internal MyAgents caller identity is required.',
+              error: 'Internal NextTools caller identity is required.',
             },
             401,
           );
@@ -11847,7 +11847,7 @@ description: >
           const { handleInboxDrain } = await import('./inbox/drain-handler');
           // PRD 0.2.18 cross-review fix (CC): workspacePath comes from THIS
           // sidecar's session metadata. process.cwd() is app bundle / `/`, and
-          // MYAGENTS_AGENT_DIR env is not reliable for sidecar-to-sidecar inbox.
+          // NEXTTOOLS_AGENT_DIR env is not reliable for sidecar-to-sidecar inbox.
           const engine = getSessionEngine();
           const injector: import('./inbox/drain-handler').InboxInjector =
             async (text, inboxMeta, options) => {
@@ -12235,7 +12235,7 @@ description: >
   //
   // Startup returns immediately; detected PATH is applied whenever the shell
   // finishes. `getShellEnv()` keeps returning the platform fallback PATH until
-  // then — sufficient for common binary lookups (.myagents/bin, homebrew, nvm,
+  // then — sufficient for common binary lookups (.nexttools/bin, homebrew, nvm,
   // fnm, volta, pnpm, cargo all in fallback).
   import('./utils/shell').then(({ warmupShellPath, getShellPath }) => {
     warmupShellPath().then(() => {

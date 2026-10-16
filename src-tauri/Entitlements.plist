@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <!--
-  MyAgents Hardened Runtime Entitlements
+  NextTools Hardened Runtime Entitlements
 
   NOTE: The allow-jit, allow-unsigned-executable-memory, and disable-library-validation
   entitlements are REQUIRED for any JavaScript runtime to function under macOS

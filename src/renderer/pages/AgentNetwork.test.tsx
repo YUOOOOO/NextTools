@@ -37,8 +37,8 @@ vi.mock("@/api/agentNetwork", async (original) => ({
   allNetworkDevices: mocks.devices,
   allDeviceAgents: mocks.agents,
 }));
-vi.mock("@/hooks/useMyAgentsLogin", () => ({
-  useMyAgentsLogin: () => ({
+vi.mock("@/hooks/useNextToolsLogin", () => ({
+  useNextToolsLogin: () => ({
     authBusy: false,
     authFlow: null,
     startLogin: mocks.login,
@@ -53,7 +53,7 @@ vi.mock("@/features/agent-network/store", async (original) => ({
     connections: [
       {
         id: mocks.selected,
-        name: mocks.selected === "official" ? "MyAgents" : "Team A",
+        name: mocks.selected === "official" ? "NextTools" : "Team A",
         official: mocks.selected === "official",
         url: null,
         removing: false,
@@ -466,7 +466,7 @@ describe("Agent network account and device management", () => {
     render(<AgentNetwork />);
     const button = await screen.findByRole("button", { name: "网络说明" });
     const hint =
-      "设备之间的 Agent 通信内容都在设备端加密，MyAgents 服务器只转发密文。";
+      "设备之间的 Agent 通信内容都在设备端加密，NextTools 服务器只转发密文。";
     expect(screen.queryByText(hint)).not.toBeInTheDocument();
     fireEvent.click(button);
     expect(await screen.findByText(hint)).toBeInTheDocument();

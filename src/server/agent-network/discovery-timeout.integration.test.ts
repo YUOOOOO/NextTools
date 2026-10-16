@@ -10,8 +10,8 @@ it('returns local discovery before the CLI deadline when the live management con
   try {
     const address=server.address();
     if (!address || typeof address==='string') throw new Error('Missing loopback address');
-    vi.stubEnv('MYAGENTS_MANAGEMENT_PORT',String(address.port));
-    vi.stubEnv('MYAGENTS_SIDECAR_ID','global');
+    vi.stubEnv('NEXTTOOLS_MANAGEMENT_PORT',String(address.port));
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID','global');
     vi.resetModules();
     const {discoverAgents}=await import('./discovery');
     const started=performance.now();

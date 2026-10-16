@@ -6,7 +6,7 @@ const capability = vi.hoisted(() => ({ adopt: vi.fn(), acquire: vi.fn() }));
 vi.mock('../../browser-host/capability-client', () => ({ adoptBrowserProductSession: capability.adopt, acquireBrowserCapability: capability.acquire }));
 const source: DshProductExtensionSource = {
   revision: 'config-1', workspacePath: '/synthetic/workspace', skills: [], commands: [], agents: [], dynamicTools: [],
-  mcpServers: PRESET_MCP_SERVERS.filter(server => server.id === 'myagents-browser'),
+  mcpServers: PRESET_MCP_SERVERS.filter(server => server.id === 'nexttools-browser'),
 };
 beforeEach(() => {
   capability.adopt.mockReset().mockResolvedValue(undefined);
@@ -23,13 +23,13 @@ describe('DSH managed Browser projection', () => {
     capability.acquire.mockRejectedValueOnce(new Error('private-error-synthetic-secret-1'));
     const unavailable = await projectDshManagedBrowser(source, 'product-1');
     expect(unavailable.mcpServers).toEqual([]);
-    expect(unavailable.components).toEqual([expect.objectContaining({ id: 'myagents-browser', state: 'failed', code: 'dsh_browser_host_unavailable' })]);
+    expect(unavailable.components).toEqual([expect.objectContaining({ id: 'nexttools-browser', state: 'failed', code: 'dsh_browser_host_unavailable' })]);
     expect(JSON.stringify(unavailable)).not.toContain('private-error');
     const failedPlane = compileDshProductExtensionPlane(unavailable);
     const ready = await projectDshManagedBrowser(source, 'product-1');
     const readyPlane = compileDshProductExtensionPlane(ready);
     expect(readyPlane.snapshot.revision).not.toBe(failedPlane.snapshot.revision);
-    expect(readyPlane.snapshot.components).toEqual([expect.objectContaining({ id: 'myagents-browser', descriptor: expect.objectContaining({ transport: 'http' }) })]);
+    expect(readyPlane.snapshot.components).toEqual([expect.objectContaining({ id: 'nexttools-browser', descriptor: expect.objectContaining({ transport: 'http' }) })]);
     expect(JSON.stringify(readyPlane.snapshot)).not.toContain('synthetic-secret');
     expect(source.mcpServers[0].command).toBe('__browser_host__');
   });

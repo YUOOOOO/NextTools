@@ -29,12 +29,12 @@ describe('clearRuntimeModelOverride', () => {
       model: 'gpt-5.6-sol',
       permissionMode: 'no-restrictions',
       reasoningEffort: 'high',
-      envPolicy: { proxy: 'myagents' },
+      envPolicy: { proxy: 'nexttools' },
     })).toEqual({
       source: 'managed-provider',
       permissionMode: 'no-restrictions',
       reasoningEffort: 'high',
-      envPolicy: { proxy: 'myagents' },
+      envPolicy: { proxy: 'nexttools' },
     });
   });
 

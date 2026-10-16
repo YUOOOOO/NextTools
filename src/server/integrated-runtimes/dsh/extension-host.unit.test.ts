@@ -27,7 +27,7 @@ function plane(dispatcher?: ProductHostToolDispatcher): DshCompiledExtensionPlan
       material: { authorization: 'Bearer private' },
     }],
     hostToolBindings: [{
-      publicToolName: 'mcp__myagents_host__lookup',
+      publicToolName: 'mcp__nexttools_host__lookup',
       dispatcherToolName: 'lookup',
     }],
     ...(dispatcher ? { hostToolDispatcher: dispatcher } : {}),
@@ -64,10 +64,10 @@ function context(signal = new AbortController().signal): DshRequestContext {
 function toolParams() {
   return {
     authority: {
-      componentId: 'mcp__myagents_host__lookup', componentGenerationId: `extensions-v1:${'a'.repeat(64)}`,
+      componentId: 'mcp__nexttools_host__lookup', componentGenerationId: `extensions-v1:${'a'.repeat(64)}`,
       runtimeGeneration: 'generation-one', runtimeSessionId: 'runtime-session', turnId: 'turn-one', callId: 'call-one',
     },
-    tool: 'mcp__myagents_host__lookup', input: {},
+    tool: 'mcp__nexttools_host__lookup', input: {},
   };
 }
 
@@ -88,7 +88,7 @@ describe('DSH extension Host reverse ports', () => {
       runtimeSessionId: 'runtime-session', productSessionId: 'product-session', params: toolParams(), context: context(),
     });
     expect(result).toEqual({ state: 'succeeded', content: [
-      { type: 'text', text: 'Already completed' }, { type: 'text', text: '[MyAgents Host tool attachment unavailable]' },
+      { type: 'text', text: 'Already completed' }, { type: 'text', text: '[NextTools Host tool attachment unavailable]' },
       { type: 'text', text: 'Additional useful output' },
     ] });
     expect(dispatch).toHaveBeenCalledOnce();
@@ -193,14 +193,14 @@ describe('DSH extension Host reverse ports', () => {
       productSessionId: 'product-session',
       params: {
         authority: {
-          componentId: 'mcp__myagents_host__lookup',
+          componentId: 'mcp__nexttools_host__lookup',
           componentGenerationId: `extensions-v1:${'a'.repeat(64)}`,
           runtimeGeneration: 'generation-one',
           runtimeSessionId: 'runtime-session',
           turnId: 'turn-one',
           callId: 'call-one',
         },
-        tool: 'mcp__myagents_host__lookup',
+        tool: 'mcp__nexttools_host__lookup',
         input: { query: 'fixture' },
       },
       context: context(signal),
@@ -241,14 +241,14 @@ describe('DSH extension Host reverse ports', () => {
       productSessionId: 'product-session',
       params: {
         authority: {
-          componentId: 'mcp__myagents_host__lookup',
+          componentId: 'mcp__nexttools_host__lookup',
           componentGenerationId: `extensions-v2:${'b'.repeat(64)}`,
           runtimeGeneration: 'generation-one',
           runtimeSessionId: 'runtime-session',
           turnId: 'turn-one',
           callId: 'call-one',
         },
-        tool: 'mcp__myagents_host__lookup',
+        tool: 'mcp__nexttools_host__lookup',
         input: {},
       },
       context: context(),

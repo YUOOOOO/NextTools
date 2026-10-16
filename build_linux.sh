@@ -140,7 +140,7 @@ if [ "$MODE" = "prepare" ]; then
 fi
 if [ "$MODE" = "debug" ]; then
     npm run tauri:build:prepared -- --target "$TARGET" --debug --no-bundle
-    APP="${PROJECT_DIR}/src-tauri/target/${TARGET}/debug/myagents"
+    APP="${PROJECT_DIR}/src-tauri/target/${TARGET}/debug/nexttools"
     test -x "$APP"
     echo "Development executable (keep this checkout): $APP"
     exit 0

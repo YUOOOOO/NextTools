@@ -33,7 +33,7 @@ describe('live Query MCP mutation ownership', () => {
     resetLifecycleForTest();
     resetQueueForTest();
     resetConfigForTest();
-    await initializeAgent('/tmp/myagents-mcp-live-mutation', null, undefined, {
+    await initializeAgent('/tmp/nexttools-mcp-live-mutation', null, undefined, {
       preWarmDisabled: true,
     });
   });

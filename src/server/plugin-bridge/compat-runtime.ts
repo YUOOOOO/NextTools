@@ -358,7 +358,7 @@ export function createCompatRuntime(rustPort: number, botId: string, pluginId: s
       })(),
 
       // ===== Activity tracking =====
-      // No-op — MyAgents doesn't need OpenClaw activity tracking.
+      // No-op — NextTools doesn't need OpenClaw activity tracking.
       activity: {
         record(_event: Record<string, unknown>) {},
         get(_params: Record<string, unknown>) { return []; },
@@ -521,10 +521,10 @@ export function createCompatRuntime(rustPort: number, botId: string, pluginId: s
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  ...(process.env.MYAGENTS_INTERNAL_CLI_TOKEN
+                  ...(process.env.NEXTTOOLS_INTERNAL_CLI_TOKEN
                     ? {
-                        'X-MyAgents-Internal-Cli-Token':
-                          process.env.MYAGENTS_INTERNAL_CLI_TOKEN,
+                        'X-NextTools-Internal-Cli-Token':
+                          process.env.NEXTTOOLS_INTERNAL_CLI_TOKEN,
                       }
                     : {}),
                 },
@@ -740,10 +740,10 @@ export function createCompatRuntime(rustPort: number, botId: string, pluginId: s
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  ...(process.env.MYAGENTS_INTERNAL_CLI_TOKEN
+                  ...(process.env.NEXTTOOLS_INTERNAL_CLI_TOKEN
                     ? {
-                        'X-MyAgents-Internal-Cli-Token':
-                          process.env.MYAGENTS_INTERNAL_CLI_TOKEN,
+                        'X-NextTools-Internal-Cli-Token':
+                          process.env.NEXTTOOLS_INTERNAL_CLI_TOKEN,
                       }
                     : {}),
                 },
@@ -851,7 +851,7 @@ export function createCompatRuntime(rustPort: number, botId: string, pluginId: s
         ) {
           // Sanitize subdir to prevent path traversal (strip '..', '/', '\')
           const safeSubdir = (subdir || '').replace(/\.\./g, '').replace(/[/\\]/g, '');
-          const dir = join(tmpdir(), 'myagents-media', safeSubdir);
+          const dir = join(tmpdir(), 'nexttools-media', safeSubdir);
           await ensureDir(dir);
           // Infer extension from originalFilename, then contentType
           let ext = '';
@@ -878,7 +878,7 @@ export function createCompatRuntime(rustPort: number, botId: string, pluginId: s
       },
 
       // ===== Pairing (device binding) =====
-      // No-op — MyAgents uses its own allowedUsers mechanism via BIND codes.
+      // No-op — NextTools uses its own allowedUsers mechanism via BIND codes.
       pairing: {
         buildPairingReply: () => { console.log('[compat-timing] pairing.buildPairingReply called'); return ''; },
         readAllowFromStore: async () => [],
@@ -899,7 +899,7 @@ export function createCompatRuntime(rustPort: number, botId: string, pluginId: s
       },
 
       // ===== Group policies =====
-      // MyAgents handles access control at Rust layer (group approval UI).
+      // NextTools handles access control at Rust layer (group approval UI).
       // Return allowed=true here so plugin-level gating doesn't block groups
       // before they reach the Rust layer for registration/approval.
       groups: {

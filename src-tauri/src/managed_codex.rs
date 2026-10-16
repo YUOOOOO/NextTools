@@ -18,8 +18,8 @@ use crate::utils::file_lock::{with_file_lock_blocking, FileLockError, FileLockOp
 use crate::{ulog_error, ulog_info, ulog_warn};
 
 const CODEX_PROVIDER_ID: &str = "codex-sub";
-pub(crate) const REQUIRED_VERSION: &str = env!("MYAGENTS_MANAGED_CODEX_VERSION");
-pub(crate) const REQUIRED_RUNTIME_SET: &str = env!("MYAGENTS_MANAGED_CODEX_RUNTIME_SET");
+pub(crate) const REQUIRED_VERSION: &str = env!("NEXTTOOLS_MANAGED_CODEX_VERSION");
+pub(crate) const REQUIRED_RUNTIME_SET: &str = env!("NEXTTOOLS_MANAGED_CODEX_RUNTIME_SET");
 const RUNTIME_SETS_BASE_URL: &str = "https://download.myagents.io/runtimes/codex/sets";
 const MANIFEST_SCHEMA_VERSION: u32 = 1;
 const DOWNLOAD_HOST: &str = "download.myagents.io";
@@ -211,8 +211,8 @@ fn manifest_signature_url_for_platform(platform: &str) -> String {
 }
 
 fn data_dir() -> Result<PathBuf, String> {
-    crate::app_dirs::myagents_data_dir()
-        .ok_or_else(|| "[managed-codex] Cannot determine ~/.myagents directory".to_string())
+    crate::app_dirs::nexttools_data_dir()
+        .ok_or_else(|| "[managed-codex] Cannot determine ~/.nexttools directory".to_string())
 }
 
 fn codex_home() -> Result<PathBuf, String> {
@@ -1778,7 +1778,7 @@ fn managed_env() -> Result<HashMap<String, String>, String> {
         "SSL_CERT_FILE",
         "SSL_CERT_DIR",
         "NODE_EXTRA_CA_CERTS",
-        "MYAGENTS_PROXY_INJECTED",
+        "NEXTTOOLS_PROXY_INJECTED",
         "HTTP_PROXY",
         "HTTPS_PROXY",
         "ALL_PROXY",
@@ -1796,7 +1796,7 @@ fn managed_env() -> Result<HashMap<String, String>, String> {
     }
     env.insert("CODEX_HOME".to_string(), normalize_out_path(home));
     env.insert(
-        "MYAGENTS_RUNTIME_SOURCE".to_string(),
+        "NEXTTOOLS_RUNTIME_SOURCE".to_string(),
         "managed-provider".to_string(),
     );
     Ok(env)
@@ -3393,7 +3393,7 @@ On a remote or headless machine? Use `codex login --device-auth` instead.";
     }
 
     #[test]
-    fn manifest_rejects_non_myagents_https_urls() {
+    fn manifest_rejects_non_nexttools_https_urls() {
         let mut manifest = valid_manifest("darwin-arm64");
         manifest.artifacts.get_mut("darwin-arm64").unwrap().url =
             "https://example.com/runtimes/codex/codex.zip".to_string();

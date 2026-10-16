@@ -101,7 +101,7 @@ describe('getAllMcpServersFromConfig — env merge (issue #303)', () => {
 
 describe('built-in Browser toggle persistence', () => {
   it('does not let persisted custom collisions shadow either built-in Browser preset', () => {
-    const collisions: McpServerDefinition[] = ['playwright', 'myagents-browser'].map(id => ({
+    const collisions: McpServerDefinition[] = ['playwright', 'nexttools-browser'].map(id => ({
       id,
       name: `shadow-${id}`,
       type: 'stdio',
@@ -114,13 +114,13 @@ describe('built-in Browser toggle persistence', () => {
       command: 'npx',
       isBuiltin: true,
     });
-    expect(findById(servers, 'myagents-browser')).toMatchObject({
+    expect(findById(servers, 'nexttools-browser')).toMatchObject({
       command: '__browser_host__',
       isBuiltin: true,
     });
   });
 
-  it.each(['playwright', 'myagents-browser'])('rejects custom creation for reserved id %s', async id => {
+  it.each(['playwright', 'nexttools-browser'])('rejects custom creation for reserved id %s', async id => {
     await expect(addCustomMcpServer({
       id,
       name: 'shadow',
@@ -132,10 +132,10 @@ describe('built-in Browser toggle persistence', () => {
 
   it('allows both Browser tools globally while persisting the absent-only Playwright default', () => {
     const next = applyMcpServerToggleToConfig(baseConfig({
-      mcpEnabledServers: ['myagents-browser', 'custom'],
+      mcpEnabledServers: ['nexttools-browser', 'custom'],
     }), 'playwright', true, true);
 
-    expect(next.mcpEnabledServers).toEqual(['myagents-browser', 'custom', 'playwright']);
+    expect(next.mcpEnabledServers).toEqual(['nexttools-browser', 'custom', 'playwright']);
     expect(next.mcpServerArgs?.playwright).toEqual(['--isolated']);
   });
 
@@ -150,16 +150,16 @@ describe('built-in Browser toggle persistence', () => {
   it('keeps both the managed Browser and Playwright unchanged while resources are unavailable', () => {
     const next = applyMcpServerToggleToConfig(baseConfig({
       mcpEnabledServers: ['playwright', 'custom'],
-    }), 'myagents-browser', true, false);
+    }), 'nexttools-browser', true, false);
 
     expect(next.mcpEnabledServers).toEqual(['playwright', 'custom']);
   });
 
   it('disabling one globally does not disable its Browser peer', () => {
     const next = applyMcpServerToggleToConfig(baseConfig({
-      mcpEnabledServers: ['playwright', 'myagents-browser', 'custom'],
+      mcpEnabledServers: ['playwright', 'nexttools-browser', 'custom'],
     }), 'playwright', false, true);
 
-    expect(next.mcpEnabledServers).toEqual(['myagents-browser', 'custom']);
+    expect(next.mcpEnabledServers).toEqual(['nexttools-browser', 'custom']);
   });
 });

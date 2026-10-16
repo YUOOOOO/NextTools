@@ -8,7 +8,7 @@ vi.mock('os', async original => ({ ...await original<typeof import('os')>(), hom
 let store: typeof import('../SessionStore');
 let id: string;
 beforeEach(async () => {
-  state.home = await mkdtemp(join(tmpdir(), 'myagents-transcript-stability-'));
+  state.home = await mkdtemp(join(tmpdir(), 'nexttools-transcript-stability-'));
   vi.resetModules();
   store = await import('../SessionStore');
   id = (await store.createSession('/synthetic-stability')).id;
@@ -28,7 +28,7 @@ it('adopts the real history after lock contention beyond the former two-second c
   let release!: () => void;
   let held = false;
   const gate = new Promise<void>(resolve => { release = resolve; });
-  const holder = withFileLock({ lockPath: join(state.home, '.myagents/session-locks', `${id}.jsonl.lock`) }, async () => { held = true; await gate; });
+  const holder = withFileLock({ lockPath: join(state.home, '.nexttools/session-locks', `${id}.jsonl.lock`) }, async () => { held = true; await gate; });
   await vi.waitFor(() => expect(held).toBe(true));
   const binding = store.activateSessionTranscript(id);
   try {

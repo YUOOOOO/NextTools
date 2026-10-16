@@ -1,6 +1,6 @@
 // Product-owned extension, copied beside the pinned sherpa C API.
-#ifndef MYAGENTS_SHERPA_RAW_C_API_H_
-#define MYAGENTS_SHERPA_RAW_C_API_H_
+#ifndef NEXTTOOLS_SHERPA_RAW_C_API_H_
+#define NEXTTOOLS_SHERPA_RAW_C_API_H_
 #include "sherpa-onnx/c-api/c-api.h"
 
 #ifdef __cplusplus
@@ -44,4 +44,4 @@ SHERPA_ONNX_API int32_t SherpaOnnxOfflineSpeakerDiarizationProcessRawV1(
 #ifdef __cplusplus
 }
 #endif
-#endif  // MYAGENTS_SHERPA_RAW_C_API_H_
+#endif  // NEXTTOOLS_SHERPA_RAW_C_API_H_

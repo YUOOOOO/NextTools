@@ -1,10 +1,10 @@
-# MyAgents 架构总览
+# NextTools 架构总览
 
 > 本文是项目的分层认知地图，只记录当前的 Owner、进程边界、权威数据源和主数据流。具体协议、字段、状态机、兼容读取和排障步骤由对应 `tech_docs/` 或代码维护；版本演进只进入 CHANGELOG 与发布说明。
 
 ## 项目定位
 
-MyAgents 是基于 Tauri v2 的桌面 AI Agent 客户端。React Renderer 提供多 Tab 工作区；Rust/Tauri 拥有桌面生命周期、本地持久化与系统能力；Node.js Sidecar 通过 SessionEngine 接入 Claude Agent SDK、Integrated DSH 与外部 Agent Runtime。
+NextTools 是基于 Tauri v2 的桌面 AI Agent 客户端。React Renderer 提供多 Tab 工作区；Rust/Tauri 拥有桌面生命周期、本地持久化与系统能力；Node.js Sidecar 通过 SessionEngine 接入 Claude Agent SDK、Integrated DSH 与外部 Agent Runtime。
 
 主要产品域包括对话与 Goal、Task 自动化、Agent Channel、Record/本地语音、文档转换、MCP/Skill/Plugin、内嵌终端与浏览器，以及 Cloud Space（协作空间）与 AgentNet（局域网络）。
 
@@ -17,7 +17,7 @@ MyAgents 是基于 Tauri v2 的桌面 AI Agent 客户端。React Renderer 提供
 | 内置 Node.js v24 | Global/Session Sidecar、Plugin Bridge、MCP Server、CLI 与随 App 运行的 Node 工具 |
 | Claude Agent SDK / Integrated DSH / 外部 CLI Runtime | 具体模型会话和工具执行；只能经 SessionEngine 进入产品 Session |
 
-正常安装中的 MyAgents 自有 Node 服务使用随 App 发布的 Node.js v24，无需用户安装系统 Node。核心服务的资源缺失回退、CLI 的严格资源定位，以及用户工具的 PATH 优先级分别由对应启动入口决定，见 [Bundled Node](./tech_docs/bundled_node.md)。SDK native binary、Codex、Claude Code、CLIProxy、Document Worker 和 Media Worker 都是独立进程，不共享 Node 进程内状态。
+正常安装中的 NextTools 自有 Node 服务使用随 App 发布的 Node.js v24，无需用户安装系统 Node。核心服务的资源缺失回退、CLI 的严格资源定位，以及用户工具的 PATH 优先级分别由对应启动入口决定，见 [Bundled Node](./tech_docs/bundled_node.md)。SDK native binary、Codex、Claude Code、CLIProxy、Document Worker 和 Media Worker 都是独立进程，不共享 Node 进程内状态。
 
 ## 全景架构
 
@@ -184,7 +184,7 @@ Record 的物理音轨与媒体时钟由 RecordingManager 持有；Media Worker 
 
 ### Agent 网络与跨仓库协议
 
-MyAgents 只包含客户端实现；`src/server/agent-network/` 是本机 Node Sidecar 适配层。Cloudflare 通用中转、网络设置和自部署身份属于 `MyAgents-Agenthub`；私有 `MyAgents_AgentNet` 固定版本组合官方服务，官方账号与签发仍属于 `MyAgents_space`。Rust App 的连接 registry 持有所有网络连接，页面选中项只决定展示；各连接复用原 actor，共享一个 App 字节预算。共享协议只定义通信契约，不拥有连接、登录状态或任务执行。
+NextTools 只包含客户端实现；`src/server/agent-network/` 是本机 Node Sidecar 适配层。Cloudflare 通用中转、网络设置和自部署身份属于 `MyAgents-Agenthub`；私有 `MyAgents_AgentNet` 固定版本组合官方服务，官方账号与签发仍属于 `MyAgents_space`。Rust App 的连接 registry 持有所有网络连接，页面选中项只决定展示；各连接复用原 actor，共享一个 App 字节预算。共享协议只定义通信契约，不拥有连接、登录状态或任务执行。
 
 协议源码由 `MyAgents-Agenthub/packages/agent-network-protocol/` 维护，客户端只提交 `vendor/agent-network-protocol/` 中的固定版本包与来源清单。TypeScript 通过锁定 npm 依赖消费；Rust 在构建时校验同一包的 SHA-256，将 Schema/fixtures 投影到 Cargo `OUT_DIR`，不保留第二份可编辑协议。普通安装、测试和构建不访问私有服务端仓库或平级 checkout。源码归属与产物更新见 [Agent 网络：公共协议与仓库分发](./tech_docs/agent_network.md#公共协议与仓库分发)。
 
@@ -197,13 +197,13 @@ MyAgents 只包含客户端实现；`src/server/agent-network/` 是本机 Node S
 | System Prompt | Node；产品 append、Workspace 指令和逐轮 reminder 分层组装 | [Prompt](./tech_docs/system_prompt_architecture.md)、[Reminder](./tech_docs/system_reminder_protocol.md) |
 | SessionEngine | Node facade；builtin/integrated/external Runtime 的唯一 route-facing 入口 | [Multi-Agent Runtime](./tech_docs/multi_agent_runtime.md) |
 | Builtin Session | Node；Claude Agent SDK Query、queue、turn、transcript 与配置 owner 分层 | [Session](./tech_docs/session_architecture.md) |
-| Integrated DSH | Session Sidecar 的 adapter 与独立 DSH 进程；原生 Session/Turn、工具、子 Agent 与 mutation receipts 由 Runtime 拥有，Host 负责配置、交互和 Product projection | [DSH 集成](./tech_docs/myagents_dsh_integrated_runtime.md) |
+| Integrated DSH | Session Sidecar 的 adapter 与独立 DSH 进程；原生 Session/Turn、工具、子 Agent 与 mutation receipts 由 Runtime 拥有，Host 负责配置、交互和 Product projection | [DSH 集成](./tech_docs/nexttools_dsh_integrated_runtime.md) |
 | External Runtime | Node；Claude Code/Codex adapter、进程与 normalized event | [Multi-Agent Runtime](./tech_docs/multi_agent_runtime.md) |
 | Provider / OpenAI Bridge | Node + Rust credential owner；Provider route materialization 与协议转换 | [第三方 Provider](./tech_docs/third_party_providers.md) |
 | 托管 CLIProxy | Rust 拥有组件/账号目录/进程与执行 lease；原版 CLIProxy 拥有 OAuth/refresh/协议转换，SDK 仍属 builtin | [CLIProxy](./tech_docs/managed_cliproxy.md) |
 | Custom MCP OAuth | Node state store；Global scheduler 主动刷新，Session Sidecar 观察 credential revision | [冷启动](./tech_docs/sidecar_cold_start.md) |
 | CLI / Admin API | App-owned CLI bundle；Node 区分带内部 capability 的 Session caller 与 token-authenticated 外部 caller，公开命令经过固定清单准入；外部策略/token 由 Rust App owner 管理，业务写入仍由对应 owner 裁决 | [CLI](./tech_docs/cli_architecture.md) |
-| 内置小助理 | `bundled-agents/myagents_helper/` 模板 + Global Sidecar Admin API；不建立第二套业务 authority | [CLI](./tech_docs/cli_architecture.md) |
+| 内置小助理 | `bundled-agents/nexttools_helper/` 模板 + Global Sidecar Admin API；不建立第二套业务 authority | [CLI](./tech_docs/cli_architecture.md) |
 | Task Center | Rust TaskStore、TaskApplication 与 TaskScheduler | [任务中心](./tech_docs/task_center.md)、[Provider routing](./tech_docs/task_provider_routing.md) |
 | Goal | Rust SessionGoalManager + Node goal orchestrator；Session 一等状态 | [Session](./tech_docs/session_architecture.md) |
 | Agent / IM | Rust Agent/Channel lifecycle；Node Session 执行 | [IM 集成](./tech_docs/im_integration_architecture.md) |

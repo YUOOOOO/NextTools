@@ -143,7 +143,7 @@ export function patchSherpaRawEvidence(sourceRoot) {
   const virtualDeclaration = declaration.replace('  RawDiarizationEvidence', '  virtual RawDiarizationEvidence').replace(') const;', ') const = 0;');
   const edits = [
     ['sherpa-onnx/csrc/offline-speaker-diarization.h', '5fc4f0f93c1e414b2333fee13524d993a82786e782ca129b6c5b77bf8861b5cc', [
-      ['#include <string>', '#include <string>\n#include "sherpa-onnx/csrc/myagents-raw-evidence.h"'],
+      ['#include <string>', '#include <string>\n#include "sherpa-onnx/csrc/nexttools-raw-evidence.h"'],
       ['  OfflineSpeakerDiarizationResult Process(', `${declaration}  OfflineSpeakerDiarizationResult Process(`],
     ]],
     ['sherpa-onnx/csrc/offline-speaker-diarization-impl.h', '16a9f61116710c430b69df0786a5150f4a66e8153dd1a7e855bf5c5a1b1dc5e5', [
@@ -170,7 +170,7 @@ export function patchSherpaRawEvidence(sourceRoot) {
       ['_SherpaOnnxOfflineSpeakerDiarizationProcess\n', '_SherpaOnnxOfflineSpeakerDiarizationProcess\n_SherpaOnnxOfflineSpeakerDiarizationProcessRawV1\n'],
     ]],
     ['sherpa-onnx/c-api/c-api.cc', '7b0b675d29b8d308d7ebc9cfdd3a6c3f065bb4b6709b032759d623659e279e7b', [
-      ['#include "sherpa-onnx/c-api/c-api.h"', '#include "sherpa-onnx/c-api/c-api.h"\n#include "sherpa-onnx/c-api/myagents-raw-evidence.h"'],
+      ['#include "sherpa-onnx/c-api/c-api.h"', '#include "sherpa-onnx/c-api/c-api.h"\n#include "sherpa-onnx/c-api/nexttools-raw-evidence.h"'],
       ['#else\n\nconst SherpaOnnxOfflineSpeakerDiarization *\nSherpaOnnxCreateOfflineSpeakerDiarization(', `${fragment('sherpa_raw_c_api.inc')}#else\n\nconst SherpaOnnxOfflineSpeakerDiarization *\nSherpaOnnxCreateOfflineSpeakerDiarization(`],
     ]],
   ];
@@ -194,8 +194,8 @@ export function patchSherpaRawEvidence(sourceRoot) {
     if (patched !== current) writes.push([path, patched]);
   }
   for (const [name, destination] of [
-    ['sherpa_raw_evidence.h', 'sherpa-onnx/csrc/myagents-raw-evidence.h'],
-    ['sherpa_raw_c_api.h', 'sherpa-onnx/c-api/myagents-raw-evidence.h'],
+    ['sherpa_raw_evidence.h', 'sherpa-onnx/csrc/nexttools-raw-evidence.h'],
+    ['sherpa_raw_c_api.h', 'sherpa-onnx/c-api/nexttools-raw-evidence.h'],
   ]) {
     const path = join(sourceRoot, destination);
     const bytes = fragment(name);

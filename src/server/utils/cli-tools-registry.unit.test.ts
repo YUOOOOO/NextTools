@@ -21,8 +21,8 @@ describe('buildUserToolsSectionText', () => {
       { name: 'md-merge', description: '合并 Markdown。' },
       { name: 'video-brief', description: '视频理解。' },
     ]);
-    expect(text).toContain('<myagents-user-tools>');
-    expect(text).toContain('</myagents-user-tools>');
+    expect(text).toContain('<nexttools-user-tools>');
+    expect(text).toContain('</nexttools-user-tools>');
     expect(text).toContain('## md-merge');
     expect(text).toContain('## video-brief');
     expect(text).not.toContain('…and');
@@ -37,14 +37,14 @@ describe('buildUserToolsSectionText', () => {
     expect(text).toContain(`## tool-${CLI_TOOL_PROMPT_MAX_TOOLS - 1}`);
     expect(text).not.toContain(`## tool-${CLI_TOOL_PROMPT_MAX_TOOLS}`);
     expect(text).toContain('…and 5 more registered tool(s)');
-    expect(text).toContain('myagents tool list');
+    expect(text).toContain('nexttools tool list');
   });
 });
 
 describe('buildLauncherSource', () => {
   it('embeds name and entry path as JSON (safe against spaces/quotes in paths)', () => {
-    const src = buildLauncherSource('md-merge', '/Users/x y/.myagents/tools/md-merge/run.mjs');
-    expect(src).toContain('"/Users/x y/.myagents/tools/md-merge/run.mjs"');
+    const src = buildLauncherSource('md-merge', '/Users/x y/.nexttools/tools/md-merge/run.mjs');
+    expect(src).toContain('"/Users/x y/.nexttools/tools/md-merge/run.mjs"');
     expect(src.startsWith('#!/usr/bin/env node\n')).toBe(true);
     // CJS：POSIX shim 无扩展名，node 按 CJS 解释（bin 目录无 package.json）
     expect(src).toContain("require('node:child_process')");
@@ -68,7 +68,7 @@ describe('findMissingEnvKeys', () => {
 describe('readCliToolManifest', () => {
   const dirs: string[] = [];
   const makeToolDir = (manifest: unknown, opts?: { skipEntryFile?: boolean }): string => {
-    const dir = mkdtempSync(join(tmpdir(), 'myagents-clitool-test-'));
+    const dir = mkdtempSync(join(tmpdir(), 'nexttools-clitool-test-'));
     dirs.push(dir);
     writeFileSync(join(dir, 'tool.json'), typeof manifest === 'string' ? manifest : JSON.stringify(manifest));
     if (!opts?.skipEntryFile) writeFileSync(join(dir, 'run.mjs'), '// entry');
@@ -86,7 +86,7 @@ describe('readCliToolManifest', () => {
   });
 
   it('fails with MANIFEST_NOT_FOUND for a dir without tool.json', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'myagents-clitool-test-'));
+    const dir = mkdtempSync(join(tmpdir(), 'nexttools-clitool-test-'));
     dirs.push(dir);
     const r = readCliToolManifest(dir);
     expect(r.ok).toBe(false);

@@ -838,13 +838,13 @@ describe('DSH Product mutation journal', () => {
       targetTranscriptPostcondition: 'b'.repeat(64),
     })).resolves.toMatchObject({ success: true });
 
-    const transcriptPath = join(home, '.myagents', 'sessions', `${sessionId}.jsonl`);
+    const transcriptPath = join(home, '.nexttools', 'sessions', `${sessionId}.jsonl`);
     writeFileSync(
       transcriptPath,
       `${begun.value.targetMessages.map(message => JSON.stringify(message)).join('\n')}\n`,
       'utf8',
     );
-    expect(JSON.parse(readFileSync(join(home, '.myagents', 'sessions.json'), 'utf8')))
+    expect(JSON.parse(readFileSync(join(home, '.nexttools', 'sessions.json'), 'utf8')))
       .toEqual(expect.arrayContaining([
         expect.objectContaining({ id: sessionId, pendingDshMutation: expect.any(Object) }),
       ]));

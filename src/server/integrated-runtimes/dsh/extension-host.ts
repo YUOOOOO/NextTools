@@ -88,7 +88,7 @@ export async function executeDshProductHostTool(input: {
     return {
       state: 'failed',
       code: 'host_tool_unavailable',
-      content: [{ type: 'text', text: 'The requested MyAgents Host tool is unavailable.' }],
+      content: [{ type: 'text', text: 'The requested NextTools Host tool is unavailable.' }],
     };
   }
   const authority = record(input.params.authority);
@@ -131,7 +131,7 @@ export async function executeDshProductHostTool(input: {
           mimetype: 'text/plain; charset=utf-8', inlineMaxBytes: 131_072, sessionId: input.productSessionId,
         });
         content.push({ type: 'text', text: 'inline' in spilled ? item.text
-          : `${spilled.preview}\n\n[完整结果已保存为 MyAgents ref: ${spilled.id}]` });
+          : `${spilled.preview}\n\n[完整结果已保存为 NextTools ref: ${spilled.id}]` });
       } else {
         content.push({
           type: 'attachment_ref',
@@ -141,7 +141,7 @@ export async function executeDshProductHostTool(input: {
     } catch {
       content.push({ type: 'text', text: item.type === 'text'
         ? `${item.text.slice(0, 4_096)}\n\n[Full output unavailable; only a preview is shown]`
-        : '[MyAgents Host tool attachment unavailable]' });
+        : '[NextTools Host tool attachment unavailable]' });
     }
   }
   return {

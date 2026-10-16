@@ -102,7 +102,7 @@ const LOG = '[mirror]';
  * observe completion (tests) can opt in.
  *
  * The function is a no-op when:
- *   * `MYAGENTS_MANAGEMENT_PORT` is unset (Sidecar started without
+ *   * `NEXTTOOLS_MANAGEMENT_PORT` is unset (Sidecar started without
  *     management API — should not happen in production but safe defaults).
  *   * `payload.text` is empty AND `payload.images` is empty/undefined.
  *
@@ -110,7 +110,7 @@ const LOG = '[mirror]';
  * misbehaving channel can't bring down the desktop turn.
  */
 export async function mirrorIfChannelBound(payload: MirrorPayload): Promise<void> {
-    const port = process.env.MYAGENTS_MANAGEMENT_PORT;
+    const port = process.env.NEXTTOOLS_MANAGEMENT_PORT;
     if (!port) return;
 
     const hasText = !!(payload.text && payload.text.trim().length > 0);

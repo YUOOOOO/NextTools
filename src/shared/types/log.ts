@@ -1,6 +1,6 @@
 /** Unified logging wire types shared by Renderer and Sidecar. */
 /** Diagnostic correlation only; never the CLI caller's Session authority. */
-export const LOG_SESSION_HEADER = 'x-myagents-log-session-id';
+export const LOG_SESSION_HEADER = 'x-nexttools-log-session-id';
 
 export type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 

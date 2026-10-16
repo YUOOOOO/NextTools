@@ -159,7 +159,7 @@ describe('official image understanding availability', () => {
   it('projects positive LiteLLM cache evidence as inferred for an unknown offering', () => {
     const previousHome = process.env.HOME;
     const tempHome = mkdtempSync(join(tmpdir(), 'ma-vision-options-'));
-    const cacheDir = join(tempHome, '.myagents', 'cache');
+    const cacheDir = join(tempHome, '.nexttools', 'cache');
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(
       join(cacheDir, 'litellm_model_prices.json'),

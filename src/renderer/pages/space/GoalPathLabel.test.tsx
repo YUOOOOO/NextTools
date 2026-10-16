@@ -5,9 +5,9 @@ import { GoalPathLabel } from "./GoalPathLabel";
 
 describe("GoalPathLabel", () => {
   it("renders a root goal as black text with normal weight", () => {
-    render(<GoalPathLabel label="MyAgents社区" leafLabel="MyAgents社区" />);
+    render(<GoalPathLabel label="NextTools社区" leafLabel="NextTools社区" />);
 
-    const label = screen.getByTitle("MyAgents社区");
+    const label = screen.getByTitle("NextTools社区");
     expect(label).toHaveClass("font-normal", "text-[var(--ink)]");
     expect(label).not.toHaveClass("font-semibold");
   });
@@ -15,22 +15,22 @@ describe("GoalPathLabel", () => {
   it("mutes the ancestor and keeps the leaf black without bolding it", () => {
     render(
       <GoalPathLabel
-        label="MyAgents社区 / MyAgents BUGFIX"
-        leafLabel="MyAgents BUGFIX"
+        label="NextTools社区 / NextTools BUGFIX"
+        leafLabel="NextTools BUGFIX"
       />,
     );
 
-    const label = screen.getByTitle("MyAgents社区 / MyAgents BUGFIX");
-    expect(within(label).getByText("MyAgents社区")).toHaveClass(
+    const label = screen.getByTitle("NextTools社区 / NextTools BUGFIX");
+    expect(within(label).getByText("NextTools社区")).toHaveClass(
       "text-[var(--ink-muted)]/75",
     );
-    const leaf = within(label).getByText("MyAgents BUGFIX");
+    const leaf = within(label).getByText("NextTools BUGFIX");
     expect(leaf).toHaveClass("font-normal", "text-[var(--ink)]");
     expect(leaf).not.toHaveClass("font-semibold");
   });
 
   it("applies the same hierarchy to Cloud compact deep paths", () => {
-    const fullLabel = "../MyAgents BUGFIX/Windows 系统兼容性优化";
+    const fullLabel = "../NextTools BUGFIX/Windows 系统兼容性优化";
     render(
       <GoalPathLabel
         label={fullLabel}
@@ -39,7 +39,7 @@ describe("GoalPathLabel", () => {
     );
 
     const label = screen.getByTitle(fullLabel);
-    expect(within(label).getByText("../MyAgents BUGFIX")).toHaveClass(
+    expect(within(label).getByText("../NextTools BUGFIX")).toHaveClass(
       "text-[var(--ink-muted)]/75",
     );
     expect(within(label).getByText("Windows 系统兼容性优化")).toHaveClass(

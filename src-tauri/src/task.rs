@@ -1,8 +1,8 @@
 //! Task store for Task Center (v0.1.69).
 //!
 //! Tasks are workspace-scoped execution units. The primary index lives in
-//! `~/.myagents/tasks.jsonl` (one task per line, atomic full-rewrite on change).
-//! Associated markdown documents live under `~/.myagents/tasks/<taskId>/`.
+//! `~/.nexttools/tasks.jsonl` (one task per line, atomic full-rewrite on change).
+//! Associated markdown documents live under `~/.nexttools/tasks/<taskId>/`.
 //! `task.md` is the complete execution context. Older verify.md/progress.md/
 //! alignment.md files remain readable; a non-empty legacy verify.md is lazily
 //! appended to task.md before detail, edit, or dispatch.
@@ -462,7 +462,7 @@ pub struct Task {
     pub description: Option<String>,
     pub workspace_id: String,
     /// Absolute path to the workspace — Sidecar cwd and AI-bash base. Task
-    /// docs live in `~/.myagents/tasks/<id>/` (user-scoped, v0.1.69+), not
+    /// docs live in `~/.nexttools/tasks/<id>/` (user-scoped, v0.1.69+), not
     /// here. Stored so UI and execution don't have to resolve it separately.
     #[serde(default)]
     pub workspace_path: String,
@@ -516,7 +516,7 @@ pub struct Task {
     /// PRD 0.2.9 — Per-task provider id override. When `None` the Task
     /// follows the workspace agent. When set,
     /// the sidecar live-resolves env on every tick from
-    /// `~/.myagents/config.json`, so credential rotation propagates without
+    /// `~/.nexttools/config.json`, so credential rotation propagates without
     /// a re-save and credential copies never land in `tasks.jsonl` /
     /// the legacy Cron store.
     ///
@@ -1349,7 +1349,7 @@ pub struct TaskUpdateInput {
     #[serde(default)]
     pub notification_patch: Option<TaskNotificationPatch>,
     /// When `Some`, the new contents are atomically written to
-    /// `~/.myagents/tasks/<id>/task.md` under the same write lock that persists the
+    /// `~/.nexttools/tasks/<id>/task.md` under the same write lock that persists the
     /// JSONL row. Empty string is rejected — prompt must have content.
     #[serde(default)]
     pub prompt: Option<String>,
@@ -1530,7 +1530,7 @@ pub struct TaskStore {
     /// original bytes with an empty or partial map.
     load_error: Option<String>,
     /// User-scoped Task artifact root. In production this is the same
-    /// `~/.myagents/tasks/` root used by `task_docs_dir`; deriving it from the
+    /// `~/.nexttools/tasks/` root used by `task_docs_dir`; deriving it from the
     /// store data dir keeps tests and alternate app data roots isolated.
     task_artifacts_root: PathBuf,
     comment_notification_index: Arc<StdRwLock<TaskCommentNotificationIndex>>,
@@ -3066,7 +3066,7 @@ impl TaskStore {
         write_atomic_text(&task_path, &merged)
     }
 
-    /// Check-and-write `~/.myagents/tasks/<id>/<filename>` atomically with respect to
+    /// Check-and-write `~/.nexttools/tasks/<id>/<filename>` atomically with respect to
     /// the running/verifying lock. The status check and the file write
     /// both happen under the same write lock so a concurrent
     /// `update_status(running)` can't slip in between and let us mutate
@@ -4623,8 +4623,8 @@ fn pin_runtime_for_provider_id(provider_id: &Option<String>, runtime: &mut Optio
     }
 }
 
-/// Resolve `~/.myagents/tasks/<id>/` and verify the resolved path stays inside
-/// `~/.myagents/tasks/`. This is the pit-of-success guard — centralizing path
+/// Resolve `~/.nexttools/tasks/<id>/` and verify the resolved path stays inside
+/// `~/.nexttools/tasks/`. This is the pit-of-success guard — centralizing path
 /// join + boundary check here means no caller can accidentally escape the
 /// sandbox via a bad id.
 ///
@@ -4640,7 +4640,7 @@ pub fn task_docs_dir(task_id: &str) -> Result<PathBuf, String> {
     let base = task_docs_root()?;
     let resolved = base.join(task_id);
     // Defense in depth: after the `validate_safe_id` check above, any resolved
-    // path must still lexically start with `~/.myagents/tasks/`. This catches
+    // path must still lexically start with `~/.nexttools/tasks/`. This catches
     // future bypasses if the validator is weakened.
     if !resolved.starts_with(&base) {
         return Err(format!(
@@ -4652,9 +4652,9 @@ pub fn task_docs_dir(task_id: &str) -> Result<PathBuf, String> {
     Ok(resolved)
 }
 
-/// Root dir for all task documents — `~/.myagents/tasks/`.
+/// Root dir for all task documents — `~/.nexttools/tasks/`.
 ///
-/// Honors `MYAGENTS_TASK_DOCS_ROOT` **only in debug / test builds** so tests
+/// Honors `NEXTTOOLS_TASK_DOCS_ROOT` **only in debug / test builds** so tests
 /// (and the one-off migration script) can redirect to a tempdir without
 /// touching the real user profile. Production builds ignore the env var to
 /// shut down the "user's shell rc or a rogue child-process env accidentally
@@ -4664,23 +4664,23 @@ pub fn task_docs_dir(task_id: &str) -> Result<PathBuf, String> {
 fn task_docs_root() -> Result<PathBuf, String> {
     #[cfg(debug_assertions)]
     {
-        if let Ok(override_path) = std::env::var("MYAGENTS_TASK_DOCS_ROOT") {
+        if let Ok(override_path) = std::env::var("NEXTTOOLS_TASK_DOCS_ROOT") {
             let p = PathBuf::from(&override_path);
             if !p.is_absolute() {
                 return Err(format!(
-                    "MYAGENTS_TASK_DOCS_ROOT must be absolute, got {}",
+                    "NEXTTOOLS_TASK_DOCS_ROOT must be absolute, got {}",
                     override_path
                 ));
             }
             return Ok(p);
         }
     }
-    // Route through `app_dirs::myagents_data_dir()` so future dev/prod data
-    // isolation (see `app_dirs.rs` doc — e.g. `~/.myagents-dev/` for debug
+    // Route through `app_dirs::nexttools_data_dir()` so future dev/prod data
+    // isolation (see `app_dirs.rs` doc — e.g. `~/.nexttools-dev/` for debug
     // builds) picks up this path automatically. Don't hardcode home dir.
-    crate::app_dirs::myagents_data_dir()
+    crate::app_dirs::nexttools_data_dir()
         .map(|d| d.join("tasks"))
-        .ok_or_else(|| "cannot resolve myagents data dir for task docs".to_string())
+        .ok_or_else(|| "cannot resolve nexttools data dir for task docs".to_string())
 }
 
 /// Crash-durable atomic text write: tmp write → sync_all → rename → cleanup
@@ -5207,8 +5207,8 @@ pub async fn cmd_task_prepare_discussion(
     source_record_id: Option<String>,
 ) -> Result<PreparedTaskDiscussion, String> {
     validate_safe_id(&discussion_id, "discussionId")?;
-    let root = crate::app_dirs::myagents_data_dir()
-        .ok_or_else(|| "cannot resolve MyAgents data dir".to_string())?
+    let root = crate::app_dirs::nexttools_data_dir()
+        .ok_or_else(|| "cannot resolve NextTools data dir".to_string())?
         .join("task-discussions");
     if fs::symlink_metadata(&root)
         .ok()
@@ -5295,8 +5295,8 @@ fn validate_discussion_input(
         || input.text.trim().is_empty()
         || input.text != context.visible_user_message
         || Uuid::parse_str(&input.client_request_id).is_err()
-        || input.required_system_skill.name != "myagents-task-alignment"
-        || input.required_system_skill.source_local_id != "myagents-task-alignment"
+        || input.required_system_skill.name != "nexttools-task-alignment"
+        || input.required_system_skill.source_local_id != "nexttools-task-alignment"
         || input.required_system_skill.system_skills_version.is_empty()
         || input.required_system_skill.content_sha256.len() != 64
         || !input
@@ -5363,8 +5363,8 @@ pub async fn cmd_task_save_discussion_input(
     discussion_id: String,
     input: TaskDiscussionInput,
 ) -> Result<(), String> {
-    let root = crate::app_dirs::myagents_data_dir()
-        .ok_or("cannot resolve MyAgents data dir")?
+    let root = crate::app_dirs::nexttools_data_dir()
+        .ok_or("cannot resolve NextTools data dir")?
         .join("task-discussions");
     tauri::async_runtime::spawn_blocking(move || {
         save_discussion_input_under(&root, &discussion_id, &input)
@@ -5377,8 +5377,8 @@ pub async fn cmd_task_save_discussion_input(
 pub async fn cmd_task_read_discussion_input(
     discussion_id: String,
 ) -> Result<Option<TaskDiscussionInput>, String> {
-    let root = crate::app_dirs::myagents_data_dir()
-        .ok_or("cannot resolve MyAgents data dir")?
+    let root = crate::app_dirs::nexttools_data_dir()
+        .ok_or("cannot resolve NextTools data dir")?
         .join("task-discussions");
     tauri::async_runtime::spawn_blocking(move || {
         read_discussion_input_under(&root, &discussion_id)
@@ -5395,8 +5395,8 @@ const TASK_DISCUSSION_CANDIDATE_MAX_BYTES: u64 = 1024 * 1024;
 /// an invalid shape, symlink, oversized body, or stale/unreadable file fail
 /// closed instead of trusting the CLI's earlier snapshot.
 pub fn read_owned_discussion_candidate(raw_path: &str) -> Result<Option<String>, String> {
-    let root = crate::app_dirs::myagents_data_dir()
-        .ok_or_else(|| "cannot resolve MyAgents data dir".to_string())?
+    let root = crate::app_dirs::nexttools_data_dir()
+        .ok_or_else(|| "cannot resolve NextTools data dir".to_string())?
         .join("task-discussions");
     read_owned_discussion_candidate_under(&root, raw_path)
 }
@@ -5513,7 +5513,7 @@ pub async fn cmd_task_delete(
 
 /// Read one of the markdown documents attached to a Task.
 ///
-/// - `task`: the executor prompt (`~/.myagents/tasks/<id>/task.md`). Authored by the user
+/// - `task`: the executor prompt (`~/.nexttools/tasks/<id>/task.md`). Authored by the user
 ///   at dispatch, editable from the task detail overlay.
 /// - `verify`, `progress`, `alignment`: retained legacy documents. They are
 ///   read-only compatibility surfaces except for the legacy verify editor API.
@@ -5558,7 +5558,7 @@ pub async fn cmd_task_write_doc(
     state.write_doc(&id, "task.md", &content).await
 }
 
-/// Reveal `~/.myagents/tasks/<id>/` in the OS file manager so the user
+/// Reveal `~/.nexttools/tasks/<id>/` in the OS file manager so the user
 /// can inspect / edit `task.md`, `verify.md`, `progress.md`, `alignment.md`
 /// directly. Sandboxed through `task_docs_dir` so we can't be coerced into
 /// opening an arbitrary path. Creates the dir on demand — a fresh Task
@@ -5694,7 +5694,7 @@ static TEST_DOCS_ROOT: std::sync::OnceLock<tempfile::TempDir> = std::sync::OnceL
 pub(crate) fn ensure_test_docs_root() {
     TEST_DOCS_ROOT.get_or_init(|| {
         let dir = tempfile::tempdir().expect("create shared test docs tempdir");
-        std::env::set_var("MYAGENTS_TASK_DOCS_ROOT", dir.path());
+        std::env::set_var("NEXTTOOLS_TASK_DOCS_ROOT", dir.path());
         dir
     });
 }
@@ -5727,7 +5727,7 @@ mod tests {
             name: "升级 openclaw lark 适配器".to_string(),
             executor: TaskExecutor::Agent,
             description: None,
-            workspace_id: "ws-myagents".to_string(),
+            workspace_id: "ws-nexttools".to_string(),
             workspace_path: ws.to_string_lossy().into_owned(),
             task_md_content: "跑通 v2.4".to_string(),
             execution_mode: TaskExecutionMode::Once,
@@ -5749,7 +5749,7 @@ mod tests {
             mcp_enabled_servers: None,
             managed_kind: None,
             source_record_id: Some("record-1".to_string()),
-            tags: vec!["MyAgents".to_string()],
+            tags: vec!["NextTools".to_string()],
             notification: None,
         }
     }
@@ -6674,8 +6674,8 @@ mod tests {
                 TaskCreateAttachedInput {
                     name: "Space Issue #123".to_string(),
                     executor: TaskExecutor::Agent,
-                    description: Some("MyAgents Space Issue iss_123".to_string()),
-                    workspace_id: "ws-myagents".to_string(),
+                    description: Some("NextTools Space Issue iss_123".to_string()),
+                    workspace_id: "ws-nexttools".to_string(),
                     workspace_path: ws.to_string_lossy().into_owned(),
                     task_md_content: "处理 Space Issue".to_string(),
                     current_session_id: "session-123".to_string(),
@@ -6772,7 +6772,7 @@ mod tests {
                     name: "Space Issue #deleted".to_string(),
                     executor: TaskExecutor::Agent,
                     description: None,
-                    workspace_id: "ws-myagents".to_string(),
+                    workspace_id: "ws-nexttools".to_string(),
                     workspace_path: ws.to_string_lossy().into_owned(),
                     task_md_content: "处理 Space Issue".to_string(),
                     current_session_id: "deleted-attached-session".to_string(),
@@ -6869,7 +6869,7 @@ mod tests {
                     name: "Space Issue #lifecycle".to_string(),
                     executor: TaskExecutor::Agent,
                     description: None,
-                    workspace_id: "ws-myagents".to_string(),
+                    workspace_id: "ws-nexttools".to_string(),
                     workspace_path: ws.to_string_lossy().into_owned(),
                     task_md_content: "处理 Space Issue".to_string(),
                     current_session_id: "attached-session-locked".to_string(),
@@ -6961,7 +6961,7 @@ mod tests {
                     name: "Space Issue #field-update".to_string(),
                     executor: TaskExecutor::Agent,
                     description: None,
-                    workspace_id: "ws-myagents".to_string(),
+                    workspace_id: "ws-nexttools".to_string(),
                     workspace_path: ws.to_string_lossy().into_owned(),
                     task_md_content: "处理 Space Issue".to_string(),
                     current_session_id: "attached-primary".to_string(),
@@ -7265,7 +7265,7 @@ mod tests {
         assert!(error.contains("must be updated together"));
         assert_eq!(
             store.get(&created.id).await.unwrap().workspace_id,
-            "ws-myagents"
+            "ws-nexttools"
         );
 
         let mut relative_path = empty_update_input(&created.id);
@@ -7735,7 +7735,7 @@ mod tests {
                 "candidatesDir": dir.join("candidates").to_string_lossy(), "workspaceId": "ws", "workspacePath": "/ws", "sourceRecordId": "record-audio",
                 "sourceRecordDocumentPath": "/record/content.md", "sourceRecordAudioPaths": [{ "track": "mixed", "path": "/record/audio.wav" }],
                 "visibleUserMessage": "  Original input\nkeep spaces  " } },
-            "requiredSystemSkill": { "name": "myagents-task-alignment", "sourceLocalId": "myagents-task-alignment", "systemSkillsVersion": "60", "contentSha256": "a".repeat(64) }
+            "requiredSystemSkill": { "name": "nexttools-task-alignment", "sourceLocalId": "nexttools-task-alignment", "systemSkillsVersion": "60", "contentSha256": "a".repeat(64) }
         })).unwrap()
     }
 

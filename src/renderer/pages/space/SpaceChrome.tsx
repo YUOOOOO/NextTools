@@ -14,7 +14,7 @@ import {
 } from '@/components/icons';
 
 import type { SpaceInfo, SpaceListItem, SpaceSession } from "@/api/spaceCloud";
-import myagentsWebLogo from "@/assets/brand/myagents-web-logo.png";
+import nexttoolsWebLogo from "@/assets/brand/nexttools-web-logo.png";
 import { SpaceIcon } from "./SpaceAvatar";
 import { PAPER_GRID_STYLE } from "./spaceUi";
 
@@ -46,7 +46,7 @@ function spaceIconAvatarUrl(space: SpaceInfo): string | null {
   return (
     space.avatarUrl ||
     (space.spaceKind === "official" || space.slug === "official"
-      ? myagentsWebLogo
+      ? nexttoolsWebLogo
       : null)
   );
 }
@@ -77,7 +77,7 @@ export function SpaceLogin({
       <div className="relative z-10 w-full max-w-md rounded-xl border border-[var(--line)] bg-[var(--paper-elevated)] p-6 shadow-md">
         <div className="mb-6 flex items-center gap-3">
           <img
-            src={myagentsWebLogo}
+            src={nexttoolsWebLogo}
             alt=""
             className="h-11 w-11 rounded-xl shadow-sm"
           />

@@ -126,7 +126,7 @@ export default function MonacoEditor({
     const resolvedTheme = useResolvedTheme();
     const monacoTheme = resolvedTheme.adapters.monaco;
     const activeTheme = useMemo(
-        () => `myagents-${safeMonacoThemeSegment(resolvedTheme.themeId)}-${safeMonacoThemeSegment(monacoTheme.name)}`,
+        () => `nexttools-${safeMonacoThemeSegment(resolvedTheme.themeId)}-${safeMonacoThemeSegment(monacoTheme.name)}`,
         [monacoTheme.name, resolvedTheme.themeId],
     );
 
@@ -242,7 +242,7 @@ export default function MonacoEditor({
                 range: new monaco.Range(lineNumber, 1, lineNumber, 1),
                 options: {
                     isWholeLine: true,
-                    className: 'myagents-monaco-search-focus-line',
+                    className: 'nexttools-monaco-search-focus-line',
                 },
             },
         ]);
@@ -715,7 +715,7 @@ export default function MonacoEditor({
             )}
             {findTooltip && createPortal(
                 <div
-                    className="myagents-monaco-find-tooltip"
+                    className="nexttools-monaco-find-tooltip"
                     style={{ left: findTooltip.x, top: findTooltip.top }}
                 >
                     {findTooltip.label}

@@ -504,7 +504,7 @@ const snapshotByLabelBeforeRun = Object.fromEntries(
   snapshots.map((snapshot) => [snapshot.label, snapshot]),
 );
 const executionRoot = mkdtempSync(
-  join(tmpdir(), "myagents-speech-quality-run-"),
+  join(tmpdir(), "nexttools-speech-quality-run-"),
 );
 chmodSync(executionRoot, 0o700);
 const cleanupExecutionRoot = () => {

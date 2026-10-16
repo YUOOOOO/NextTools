@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   readPreview: vi.fn(),
   readLocalPreview: vi.fn(),
   onInsertReference: vi.fn(),
-  onOpenMyAgentsPreview: vi.fn(),
+  onOpenNextToolsPreview: vi.fn(),
   onFilePreviewExternal: vi.fn(),
   onRevealInTree: vi.fn(),
   writeText: vi.fn(),
@@ -94,7 +94,7 @@ function renderFloatingMarkdown(markdown: string) {
       workspacePath={WORKSPACE}
       onInsertReference={mocks.onInsertReference}
       menuProfile="floatingBall"
-      onOpenMyAgentsPreview={mocks.onOpenMyAgentsPreview}
+      onOpenNextToolsPreview={mocks.onOpenNextToolsPreview}
     >
       <Markdown>{markdown}</Markdown>
     </FileActionProvider>,
@@ -282,7 +282,7 @@ describe('Markdown inline-code file paths', () => {
       return el;
     });
     fireEvent.click(chip);
-    await waitFor(() => expect(mocks.onOpenMyAgentsPreview).toHaveBeenCalledWith(
+    await waitFor(() => expect(mocks.onOpenNextToolsPreview).toHaveBeenCalledWith(
       REL,
       expect.objectContaining({ displayPath: REL }),
     ));

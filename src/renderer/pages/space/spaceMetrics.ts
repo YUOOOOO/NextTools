@@ -259,7 +259,7 @@ export function recordSpaceMetric(name: SpaceMetricName, payload: SpaceMetricPay
   const debugEnabled =
     import.meta.env.DEV
     && typeof window !== 'undefined'
-    && window.localStorage?.getItem('myagents.space.metrics') === '1';
+    && window.localStorage?.getItem('nexttools.space.metrics') === '1';
   if (debugEnabled) {
     console.debug('[Space metric]', name, payload);
   }

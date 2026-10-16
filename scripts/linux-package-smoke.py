@@ -112,7 +112,7 @@ def check_startup(app, env, scratch):
                 texts = []
                 log.flush()
                 texts.append((scratch / 'startup.log').read_text(errors='replace'))
-                for path in (scratch / '.myagents' / 'logs').glob('unified-*.log'):
+                for path in (scratch / '.nexttools' / 'logs').glob('unified-*.log'):
                     texts.append(path.read_text(errors='replace'))
                 ports = re.findall(r'TCP health check passed[^\n]*on port (\d+)', '\n'.join(texts))
                 for port in set(ports):
@@ -159,7 +159,7 @@ def main():
     executables = [app, node, root / 'claude-agent-sdk' / 'claude',
                    document_root / document['worker']['path'],
                    speech_root / speech['files']['mediaWorker']['path']]
-    with tempfile.TemporaryDirectory(prefix='myagents-linux-smoke-') as directory:
+    with tempfile.TemporaryDirectory(prefix='nexttools-linux-smoke-') as directory:
         scratch = Path(directory)
         env = {key: value for key, value in os.environ.items()
                if key in ('DISPLAY', 'WAYLAND_DISPLAY', 'DBUS_SESSION_BUS_ADDRESS', 'XAUTHORITY')}
@@ -184,7 +184,7 @@ def main():
         # The SDK package version and the native Claude Code version are distinct.
         if not re.search(r'\d+\.\d+\.\d+', run([str(executables[2]), '--version'], env=env, cwd=scratch)):
             raise ValueError('Bundled Claude executable did not report a version')
-        for script in ('server-dist.js', 'plugin-bridge-dist.mjs', 'cli/myagents.cjs'):
+        for script in ('server-dist.js', 'plugin-bridge-dist.mjs', 'cli/nexttools.cjs'):
             run([str(node), '--check', str(root / script)], env=env, cwd=scratch)
         run([str(node), '-e', '''
             const {createRequire} = require('node:module');

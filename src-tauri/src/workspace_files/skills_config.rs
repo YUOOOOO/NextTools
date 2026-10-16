@@ -1,4 +1,4 @@
-//! Read-only access to `~/.myagents/skills-config.json`.
+//! Read-only access to `~/.nexttools/skills-config.json`.
 //!
 //! Used by the no-Sidecar Launcher picker. Project-level capability selection
 //! is intentionally not interpreted in Rust; Runtime admission is Node-owned.
@@ -27,11 +27,11 @@ struct AppConfigGate {
     cli_tool_registry_enabled: bool,
 }
 
-/// Read the user's disabled-skill list from `~/.myagents/skills-config.json`.
+/// Read the user's disabled-skill list from `~/.nexttools/skills-config.json`.
 /// Returns an empty list if the file is missing, unreadable, or malformed —
 /// safe default lets the caller continue without disabling anything.
-pub fn read_disabled_list(myagents_root: &Path) -> Vec<String> {
-    let path = myagents_root.join("skills-config.json");
+pub fn read_disabled_list(nexttools_root: &Path) -> Vec<String> {
+    let path = nexttools_root.join("skills-config.json");
     if !path.is_file() {
         return Vec::new();
     }
@@ -49,17 +49,17 @@ pub fn read_disabled_list(myagents_root: &Path) -> Vec<String> {
 }
 
 /// Product-owned runtime contracts that must remain enabled across every
-/// MyAgents surface. Keep in sync with `src/shared/systemSkills.ts`.
+/// NextTools surface. Keep in sync with `src/shared/systemSkills.ts`.
 pub const REQUIRED_SYSTEM_SKILLS: &[&str] = &[
-    "myagents-task-alignment",
-    "myagents-memory-update",
-    "myagents-memory-gardener",
-    "myagents-memory-molt",
-    "myagents-cli",
-    "myagents-anydoc",
-    "myagents-speech-recognition",
-    "myagents-task-automation",
-    "myagents-docs",
+    "nexttools-task-alignment",
+    "nexttools-memory-update",
+    "nexttools-memory-gardener",
+    "nexttools-memory-molt",
+    "nexttools-cli",
+    "nexttools-anydoc",
+    "nexttools-speech-recognition",
+    "nexttools-task-automation",
+    "nexttools-docs",
 ];
 
 pub fn is_required_system_skill(name: &str) -> bool {
@@ -67,10 +67,10 @@ pub fn is_required_system_skill(name: &str) -> bool {
 }
 
 /// Read the experimental user-registered CLI tool registry gate from
-/// `~/.myagents/config.json`. Omitted/malformed/unreadable means disabled,
+/// `~/.nexttools/config.json`. Omitted/malformed/unreadable means disabled,
 /// matching the TypeScript `isCliToolRegistryEnabled()` helper.
-pub fn read_cli_tool_registry_enabled(myagents_root: &Path) -> bool {
-    let path = myagents_root.join("config.json");
+pub fn read_cli_tool_registry_enabled(nexttools_root: &Path) -> bool {
+    let path = nexttools_root.join("config.json");
     if !path.is_file() {
         return false;
     }
@@ -91,7 +91,7 @@ mod tests {
         let root = tempfile::tempdir().expect("tempdir");
         fs::write(
             root.path().join("skills-config.json"),
-            r#"{"disabled":["myagents-task-alignment","myagents-memory-update","myagents-memory-gardener","myagents-memory-molt","myagents-cli","myagents-anydoc","myagents-speech-recognition","myagents-task-automation","myagents-docs","ordinary-skill"]}"#,
+            r#"{"disabled":["nexttools-task-alignment","nexttools-memory-update","nexttools-memory-gardener","nexttools-memory-molt","nexttools-cli","nexttools-anydoc","nexttools-speech-recognition","nexttools-task-automation","nexttools-docs","ordinary-skill"]}"#,
         )
         .expect("write skills config");
 

@@ -16,7 +16,7 @@ function put(path, content, executable = false) {
 }
 
 function fixture(t, { os = 'ubuntu', version = '24.04', kernel = 'Linux', arch = 'x86_64', missing = '' } = {}) {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-linux-build-test-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-linux-build-test-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const bin = join(root, 'bin');
   const log = join(root, 'calls');
@@ -44,11 +44,11 @@ if [ "$1" = --version ]; then echo ${toolchain.npm}; fi
 case "$*" in
   *--debug*)
     mkdir -p src-tauri/target/x86_64-unknown-linux-gnu/debug
-    printf '#!/bin/sh\\necho app-started >> "$TEST_CALLS"\\n' > src-tauri/target/x86_64-unknown-linux-gnu/debug/myagents
-    chmod +x src-tauri/target/x86_64-unknown-linux-gnu/debug/myagents ;;
+    printf '#!/bin/sh\\necho app-started >> "$TEST_CALLS"\\n' > src-tauri/target/x86_64-unknown-linux-gnu/debug/nexttools
+    chmod +x src-tauri/target/x86_64-unknown-linux-gnu/debug/nexttools ;;
   *--bundles*)
     mkdir -p src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/deb
-    touch src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/deb/MyAgents_0.4.17_amd64.deb ;;
+    touch src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/deb/NextTools_0.4.17_amd64.deb ;;
 esac
 `, true);
   for (const script of ['ensure_rust_toolchain.sh', 'download_nodejs.sh']) {
@@ -138,7 +138,7 @@ test('release uses the same resources and produces only the current amd64 deb', 
   assert.match(f.calls(), /build:tsx-runtime -- linux x64/);
   assert.match(f.calls(), /tauri:build:prepared -- --target x86_64-unknown-linux-gnu --bundles deb/);
   assert.ok(f.calls().indexOf('prepare-dsh-runtime.mjs') < f.calls().indexOf('tauri:build:prepared'));
-  assert.match(result.stdout, /MyAgents_0.4.17_amd64.deb/);
+  assert.match(result.stdout, /NextTools_0.4.17_amd64.deb/);
   assert.doesNotMatch(f.calls(), /appimage|codesign/);
 });
 

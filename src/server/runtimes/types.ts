@@ -95,7 +95,7 @@ export interface SessionStartOptions {
   /**
    * Per-session env policy (issue #194). Resolved by the caller from
    * `agent.runtimeConfig.envPolicy`. When omitted, runtime adapters default
-   * to `{ proxy: 'myagents' }` — the legacy MyAgents-overrides-everything
+   * to `{ proxy: 'nexttools' }` — the legacy NextTools-overrides-everything
    * behaviour, preserving backwards compat.
    */
   envPolicy?: RuntimeEnvPolicy;
@@ -111,13 +111,13 @@ export interface SessionStartOptions {
    */
   ephemeral?: boolean;
   /**
-   * Effective MyAgents MCP servers for runtimes that accept MCP at process
+   * Effective NextTools MCP servers for runtimes that accept MCP at process
    * startup. The builtin SDK path owns live setMcpServers; managed Codex
    * consumes this as app-server startup config.
    */
   mcpServers?: McpServerDefinition[];
   /**
-   * MyAgents-owned extension projection for the existing managed Codex
+   * NextTools-owned extension projection for the existing managed Codex
    * adapter. It is generation-scoped and never persisted by the runtime.
    */
   managedCodexExtensions?: ManagedCodexExtensionSnapshot;
@@ -613,7 +613,7 @@ export interface AgentRuntime {
   /**
    * Append a user message to the currently active turn instead of starting a
    * new turn. Only runtimes whose protocol exposes same-turn steering should
-   * implement this; others fall back to MyAgents' turn-boundary queue.
+   * implement this; others fall back to NextTools' turn-boundary queue.
    */
   canSteerMessage?(process: RuntimeProcess): boolean;
 

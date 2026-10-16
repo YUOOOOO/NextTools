@@ -115,8 +115,8 @@ impl OfficialAccountSession {
     }
     pub(crate) fn service_id(&self) -> Result<&'static str, NetworkError> {
         let id = match space_build_capability().active_environment {
-            SpaceEnvironment::Production => option_env!("MYAGENTS_AGENT_NETWORK_SERVICE_ID"),
-            SpaceEnvironment::Dev => option_env!("MYAGENTS_AGENT_NETWORK_DEV_SERVICE_ID"),
+            SpaceEnvironment::Production => option_env!("NEXTTOOLS_AGENT_NETWORK_SERVICE_ID"),
+            SpaceEnvironment::Dev => option_env!("NEXTTOOLS_AGENT_NETWORK_DEV_SERVICE_ID"),
         }
         .ok_or_else(|| NetworkError::new("NETWORK_SERVICE_UNCONFIGURED"))?;
         if uuid::Uuid::parse_str(id)

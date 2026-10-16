@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
 export interface PromptCacheKeyInput {
-  appNamespace: 'myagents';
+  appNamespace: 'nexttools';
   providerId: string;
   model: string | undefined;
   sessionId: string | undefined;
@@ -14,7 +14,7 @@ const LOG_HASH_LENGTH = 12;
 /**
  * Build an upstream-safe prompt cache affinity key.
  *
- * The key must be stable for a MyAgents session but must not reveal raw
+ * The key must be stable for a NextTools session but must not reveal raw
  * session ids, workspace paths, prompts, or provider secrets to the upstream.
  */
 export function buildPromptCacheKey(input: PromptCacheKeyInput): string | undefined {
@@ -30,7 +30,7 @@ export function buildPromptCacheKey(input: PromptCacheKeyInput): string | undefi
     sessionId,
   ].join('\0');
   const digest = createHash('sha256').update(material).digest('hex').slice(0, HASH_LENGTH);
-  return `myagents:${input.upstreamFormat}:${digest}`;
+  return `nexttools:${input.upstreamFormat}:${digest}`;
 }
 
 export function hashForLog(value: string): string {

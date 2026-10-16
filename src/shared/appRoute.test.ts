@@ -19,42 +19,42 @@ describe('AppRoute', () => {
     }
     for (const url of routeFixtures.rejected) expect(parseAppRouteUrl(url), url).toBeNull();
     const market = createSpaceToolsAppRoute('official');
-    expect(serializeAppRoute(market)).toBe('myagents://open/v1/spaces/official/tools');
+    expect(serializeAppRoute(market)).toBe('nexttools://open/v1/spaces/official/tools');
     expect(() => createSpaceToolsAppRoute('')).toThrow();
     expect(() => createSpaceToolsAppRoute('x'.repeat(201))).toThrow();
   });
 
   it('round-trips supported v1 routes', () => {
-    expect(serializeAppRoute(createSpaceHomeAppRoute())).toBe('myagents://open/v1/spaces');
-    expect(serializeAppRoute(createSpaceIssuesAppRoute('myagents'))).toBe('myagents://open/v1/spaces/myagents/issues');
+    expect(serializeAppRoute(createSpaceHomeAppRoute())).toBe('nexttools://open/v1/spaces');
+    expect(serializeAppRoute(createSpaceIssuesAppRoute('nexttools'))).toBe('nexttools://open/v1/spaces/nexttools/issues');
     const route = createSpaceIssueAppRoute('space_1', 'issue-2');
     expect(serializeAppRoute(route)).toBe(
-      'myagents://open/v1/spaces/space_1/issues/issue-2',
+      'nexttools://open/v1/spaces/space_1/issues/issue-2',
     );
     expect(parseAppRouteUrl(serializeAppRoute(route))).toEqual(route);
 
     const commentRoute = createTaskCommentAppRoute('task_1', 'comment-2');
     expect(serializeAppRoute(commentRoute)).toBe(
-      'myagents://open/v1/tasks/task_1/comments/comment-2',
+      'nexttools://open/v1/tasks/task_1/comments/comment-2',
     );
     expect(parseAppRouteUrl(serializeAppRoute(commentRoute))).toEqual(commentRoute);
   });
 
   it.each([
-    'myagents://attachment/session/file.png',
-    'myagents://tool-attachment/session/turn/file.png',
-    'myagents-resource://attachment/session/file.png',
-    'myagents://evil/v1/spaces/a/issues/b',
-    'myagents://open/v2/spaces/a/issues/b',
-    'myagents://open/v1/spaces/a/issues/b/extra',
-    'myagents://open/v1/tasks/a/comments/b/extra',
-    'myagents://open/v1/tasks/a/issues/b',
-    'myagents://open/v1/spaces/a/issues/b?prompt=run',
-    'myagents://open/v1/spaces/a/issues/b#fragment',
-    'myagents://open/v1/spaces/a%2Fb/issues/c',
-    'myagents://open/v1/spaces/a/issues/%ZZ',
-    'myagents://user@open/v1/spaces/a/issues/b',
-    'myagents://open:42/v1/spaces/a/issues/b',
+    'nexttools://attachment/session/file.png',
+    'nexttools://tool-attachment/session/turn/file.png',
+    'nexttools-resource://attachment/session/file.png',
+    'nexttools://evil/v1/spaces/a/issues/b',
+    'nexttools://open/v2/spaces/a/issues/b',
+    'nexttools://open/v1/spaces/a/issues/b/extra',
+    'nexttools://open/v1/tasks/a/comments/b/extra',
+    'nexttools://open/v1/tasks/a/issues/b',
+    'nexttools://open/v1/spaces/a/issues/b?prompt=run',
+    'nexttools://open/v1/spaces/a/issues/b#fragment',
+    'nexttools://open/v1/spaces/a%2Fb/issues/c',
+    'nexttools://open/v1/spaces/a/issues/%ZZ',
+    'nexttools://user@open/v1/spaces/a/issues/b',
+    'nexttools://open:42/v1/spaces/a/issues/b',
   ])('rejects unsupported or ambiguous input: %s', (value) => {
     expect(parseAppRouteUrl(value)).toBeNull();
   });

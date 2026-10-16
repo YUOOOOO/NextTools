@@ -69,7 +69,7 @@ describe('SSE replay diagnostics', () => {
       isError: true,
       content: markers.body,
       input: {
-        command: `myagents anydoc convert --password ${markers.password}`,
+        command: `nexttools anydoc convert --password ${markers.password}`,
         source: markers.inputPath,
         output: markers.outputPath,
       },
@@ -79,7 +79,7 @@ describe('SSE replay diagnostics', () => {
     for (const marker of Object.values(markers)) {
       expect(summary).not.toContain(marker);
     }
-    expect(summary).not.toContain('myagents anydoc convert');
+    expect(summary).not.toContain('nexttools anydoc convert');
   });
 
   it('summarizes arbitrary string payloads irreversibly', () => {

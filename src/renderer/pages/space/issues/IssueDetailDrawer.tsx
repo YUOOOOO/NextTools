@@ -43,7 +43,7 @@ function basename(path: string): string {
 }
 
 function buildAttachmentDownloadCommand(attachmentId: string, spaceSlug: string): string {
-  return `myagents space attachment download ${attachmentId} --space ${spaceSlug}`;
+  return `nexttools space attachment download ${attachmentId} --space ${spaceSlug}`;
 }
 
 function IssueMarkdown({ children }: { children: string }) {

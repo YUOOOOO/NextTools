@@ -21,10 +21,10 @@ export async function deliverSessionWatchEvents(
   const reply = Promise.all(replies.map(item => item.delivery));
   if (watches.length === 0) { await reply; return; }
 
-  const managementPort = process.env.MYAGENTS_MANAGEMENT_PORT;
+  const managementPort = process.env.NEXTTOOLS_MANAGEMENT_PORT;
   if (!managementPort && watches.some(watch => !watch.networkReturn)) {
     for (const watch of watches) if (watch.networkReturn) ackPendingSessionWatch(watch.watchId);
-    console.error('[session-watch] MYAGENTS_MANAGEMENT_PORT not set — cannot push watch events');
+    console.error('[session-watch] NEXTTOOLS_MANAGEMENT_PORT not set — cannot push watch events');
     await reply;
     return;
   }

@@ -1,4 +1,4 @@
-﻿# Publish the MyAgents-managed Codex runtime bundle to Cloudflare R2.
+﻿# Publish the NextTools-managed Codex runtime bundle to Cloudflare R2.
 # This is intentionally separate from publish_windows.ps1: App releases do not
 # upload runtime resources.
 
@@ -18,7 +18,7 @@ Set-Location $ProjectDir
 
 $EnvFile = Join-Path $ProjectDir ".env"
 $RuntimeLockFile = Join-Path $ProjectDir "src\shared\managed-codex-runtime.json"
-$R2Bucket = "myagents-releases"
+$R2Bucket = "nexttools-releases"
 $DownloadBaseUrl = "https://download.myagents.io"
 if (-not $OutDir) {
     $OutDir = Join-Path $ProjectDir "dist\managed-codex"

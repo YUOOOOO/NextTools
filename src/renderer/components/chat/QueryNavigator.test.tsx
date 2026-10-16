@@ -128,7 +128,7 @@ describe('QueryNavigator', () => {
 
   it('uses the visible Space issue status after a hidden delivery reminder', () => {
     const scrollContainerRef = { current: document.createElement('div') };
-    const visible = 'MyAgents Space 已投递一个 Issue 通知，Registered Agent 开始处理。';
+    const visible = 'NextTools Space 已投递一个 Issue 通知，Registered Agent 开始处理。';
     const mixed = [
       '<system-reminder>',
       `<${SPACE_ISSUE_CONTEXT_TAG}>`,

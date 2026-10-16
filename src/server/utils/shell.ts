@@ -1,7 +1,7 @@
 import { execFile } from 'child_process';
 import { posix as pathPosix, win32 as pathWin32 } from 'path';
 import { readdirSync, existsSync } from 'fs';
-import { getMyAgentsNpmGlobalBinDir } from './npm-prefix-env';
+import { getNextToolsNpmGlobalBinDir } from './npm-prefix-env';
 import { getBundledNodeDir } from './runtime';
 
 const isWindows = process.platform === 'win32';
@@ -75,7 +75,7 @@ export function getFallbackPaths(options: FallbackPathOptions = {}): string[] {
 
         // Keep this in sync with buildClaudeSessionEnv(): product-owned
         // launchers first, then runtimes and package-manager fallbacks.
-        pushPath(paths, userProfile ? joinForPlatform(platform, userProfile, '.myagents', 'bin') : '', platform);
+        pushPath(paths, userProfile ? joinForPlatform(platform, userProfile, '.nexttools', 'bin') : '', platform);
         pushPath(paths, programFiles ? joinForPlatform(platform, programFiles, 'nodejs') : '', platform);
         pushPath(paths, programFilesX86 ? joinForPlatform(platform, programFilesX86, 'nodejs') : '', platform);
         pushPath(paths, nvmSymlink, platform);
@@ -84,8 +84,8 @@ export function getFallbackPaths(options: FallbackPathOptions = {}): string[] {
         pushPath(paths, appData ? joinForPlatform(platform, appData, 'npm') : '', platform);
         pushPath(paths, userProfile ? joinForPlatform(platform, userProfile, 'AppData', 'Roaming', 'npm') : '', platform);
         pushPath(paths, bundledNodeDir, platform);
-        pushPath(paths, localAppData ? joinForPlatform(platform, localAppData, 'MyAgents', 'nodejs') : '', platform);
-        pushPath(paths, getMyAgentsNpmGlobalBinDir(userProfile, platform), platform);
+        pushPath(paths, localAppData ? joinForPlatform(platform, localAppData, 'NextTools', 'nodejs') : '', platform);
+        pushPath(paths, getNextToolsNpmGlobalBinDir(userProfile, platform), platform);
         pushPath(paths, userProfile ? joinForPlatform(platform, userProfile, '.bun', 'bin') : '', platform);
         pushPath(paths, localAppData ? joinForPlatform(platform, localAppData, 'bun', 'bin') : '', platform);
         // Git for Windows — SDK requires git; PATH may be stale after NSIS install
@@ -99,13 +99,13 @@ export function getFallbackPaths(options: FallbackPathOptions = {}): string[] {
     // GUI apps don't inherit shell PATH, so we enumerate known binary directories.
     const home = envValue(env, 'HOME');
     const paths: string[] = [];
-    pushPath(paths, home ? `${home}/.myagents/bin` : '', platform);
+    pushPath(paths, home ? `${home}/.nexttools/bin` : '', platform);
     pushPath(paths, '/opt/homebrew/bin', platform);        // macOS Apple Silicon homebrew
     pushPath(paths, '/usr/local/bin', platform);           // macOS Intel homebrew / Linux system
     pushPath(paths, '/usr/bin', platform);
     pushPath(paths, '/bin', platform);
     pushPath(paths, bundledNodeDir, platform);
-    pushPath(paths, getMyAgentsNpmGlobalBinDir(home, platform), platform);
+    pushPath(paths, getNextToolsNpmGlobalBinDir(home, platform), platform);
     pushPath(paths, home ? `${home}/.local/bin` : '', platform);          // Claude Code / pipx / XDG user-local
     pushPath(paths, home ? `${home}/.bun/bin` : '', platform);            // Bun global installs
     pushPath(paths, home ? `${home}/.npm-global/bin` : '', platform);     // npm custom global prefix
@@ -201,7 +201,7 @@ let warmupInFlight: Promise<void> | null = null;
  * (issue #194). When the user runs `codex` / `claude` directly in terminal,
  * THESE are the values their CLI subprocess inherits. RuntimeEnvPolicy
  * `proxy: 'terminal'` will substitute these into the external-runtime spawn
- * env so MyAgents behaves consistently with terminal invocations.
+ * env so NextTools behaves consistently with terminal invocations.
  *
  * Each key's value is `null` while warmup hasn't completed, an empty string
  * `''` if the user's shell has the var explicitly unset, or the value otherwise.
@@ -297,8 +297,8 @@ export function warmupShellPath(): Promise<void> {
 
     warmupInFlight = new Promise<void>((resolve) => {
         const shell = process.env.SHELL || '/bin/zsh';
-        const pathMarker = `__MYAGENTS_PATH_${process.pid}__`;
-        const proxyMarker = `__MYAGENTS_PROXY_${process.pid}__`;
+        const pathMarker = `__NEXTTOOLS_PATH_${process.pid}__`;
+        const proxyMarker = `__NEXTTOOLS_PROXY_${process.pid}__`;
         // Compose one shell invocation that captures BOTH the user's PATH and
         // their proxy-related env vars (issue #194). Cheaper than two shell
         // spawns; each var emitted between dedicated markers so we can parse
@@ -391,7 +391,7 @@ export function warmupShellPath(): Promise<void> {
  * Return value semantics:
  *  - `null`: warmup hasn't run yet. Caller should treat as "no info".
  *  - `{}`: warmup ran but user has no proxy env set. Distinct from null —
- *     caller can safely strip MyAgents-injected proxy vars from the subprocess
+ *     caller can safely strip NextTools-injected proxy vars from the subprocess
  *     env in this case (terminal-parity = unset).
  *  - `{ HTTP_PROXY: '…', … }`: real values to inject into subprocess env.
  *     Always check both upper- and lower-case keys when applying.

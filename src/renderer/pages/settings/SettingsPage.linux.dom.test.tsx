@@ -194,7 +194,7 @@ describe('Ubuntu settings availability', () => {
     const onCheckForUpdate = vi.fn();
     render(<ToastProvider><Settings mode="settings" initialSection="desktop-pet" isActive
       onCheckForUpdate={onCheckForUpdate} /></ToastProvider>);
-    await waitFor(() => expect(screen.getByText(String(i18n.t('about.manualLinuxUpdate', { ns: 'settings' })))).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'General' })).toBeInTheDocument());
     expect(screen.queryByRole('button', { name: String(i18n.t('about.checkUpdates', { ns: 'settings' })) })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: String(i18n.t('sidebar.nav.floatingBall', { ns: 'settings' })) })).not.toBeInTheDocument();
     expect(screen.queryByText(String(i18n.t('about.desktopPetTitle', { ns: 'settings' })))).not.toBeInTheDocument();
@@ -214,13 +214,13 @@ describe('Ubuntu settings availability', () => {
     expect(screen.queryByText(String(i18n.t('about.manualLinuxUpdate', { ns: 'settings' })))).not.toBeInTheDocument();
   });
 
-  it('redirects a Developer deep link to About until the gesture unlocks it', async () => {
+  it('redirects a locked Developer deep link to General', async () => {
     settingsMocks.linux = false;
     render(<ToastProvider><Settings mode="settings" initialSection="developer" isActive /></ToastProvider>);
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'MyAgents' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'General' })).toBeInTheDocument());
     expect(within(screen.getByRole('navigation')).queryByRole('button', { name: String(i18n.t('sidebar.nav.developer', { ns: 'settings' })) })).not.toBeInTheDocument();
-    expect(screen.queryByText(String(i18n.t('general.defaultRuntimeTitle', { ns: 'settings' })))).not.toBeInTheDocument();
+    expect(screen.getByText(String(i18n.t('general.defaultRuntimeTitle', { ns: 'settings' })))).toBeInTheDocument();
   });
 
   it('keeps the default Runtime in General without requiring Developer mode', async () => {
@@ -233,7 +233,7 @@ describe('Ubuntu settings availability', () => {
     expect(within(navigation).queryByRole('button', { name: developerLabel })).not.toBeInTheDocument();
     expect(screen.queryByText(runtimeLabel)).not.toBeInTheDocument();
 
-    const wordmark = screen.getByRole('heading', { name: 'MyAgents' });
+    const wordmark = screen.getByRole('heading', { name: 'NextTools' });
     for (let i = 0; i < 5; i += 1) fireEvent.click(wordmark);
 
     const developerTab = within(navigation).getByRole('button', { name: developerLabel });
@@ -252,7 +252,7 @@ describe('Ubuntu settings availability', () => {
     expect(spaceToggle).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(spaceToggle);
     expect(settingsMocks.updateConfig).toHaveBeenCalledWith({ teamSpaceDevGate: false });
-    fireEvent.click(within(navigation).getByRole('button', { name: String(i18n.t('sidebar.nav.about', { ns: 'settings' })) }));
+    fireEvent.click(within(navigation).getByRole('button', { name: String(i18n.t('sidebar.nav.general', { ns: 'settings' })) }));
     expect(screen.queryByText(spaceLabel)).not.toBeInTheDocument();
 
   });

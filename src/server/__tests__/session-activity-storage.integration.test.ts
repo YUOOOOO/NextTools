@@ -12,7 +12,7 @@ let originalUserProfile: string | undefined;
 let store: SessionStoreModule;
 
 beforeAll(async () => {
-  home = mkdtempSync(join(tmpdir(), 'myagents-session-activity-'));
+  home = mkdtempSync(join(tmpdir(), 'nexttools-session-activity-'));
   originalHome = process.env.HOME;
   originalUserProfile = process.env.USERPROFILE;
   process.env.HOME = home;

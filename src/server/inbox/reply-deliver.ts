@@ -10,7 +10,7 @@
 //   2. 构造 PendingInboxMessage(kind=Reply, replyBack=false)
 //   3. POST 到 Rust /api/inbox/deliver(同一个跨 sidecar 通道)
 //   4. Rust 把 reply 推回 caller sidecar 的 /api/inbox/drain
-//   5. Caller sidecar drain handler 用 MyAgents Session Event Protocol v1
+//   5. Caller sidecar drain handler 用 NextTools Session Event Protocol v1
 //      的 send.result 注入 enqueueUserMessage
 //   6. Caller AI 在下一个 turn 看到系统推送结果
 
@@ -139,9 +139,9 @@ export async function deliverInboxReply(
   const callerMeta = getSessionMetadata(inboxMeta.fromSessionId);
   const resumeWorkspacePath = callerMeta?.agentDir;
 
-  const managementPort = process.env.MYAGENTS_MANAGEMENT_PORT;
+  const managementPort = process.env.NEXTTOOLS_MANAGEMENT_PORT;
   if (!managementPort) {
-    console.error('[inbox/reply] MYAGENTS_MANAGEMENT_PORT not set — cannot push reply');
+    console.error('[inbox/reply] NEXTTOOLS_MANAGEMENT_PORT not set — cannot push reply');
     return false;
   }
 

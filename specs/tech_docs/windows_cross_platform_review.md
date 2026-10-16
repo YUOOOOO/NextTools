@@ -21,10 +21,10 @@ Windows 使用 WebView2（Chromium），macOS 使用 WKWebView。不能依据其
 
 | 平台 | URL |
 | --- | --- |
-| macOS / Linux | `myagents-resource://tool-attachment/<session>/<turn>/<file>` |
-| Windows | `http://myagents-resource.localhost/tool-attachment/<session>/<turn>/<file>` |
+| macOS / Linux | `nexttools-resource://tool-attachment/<session>/<turn>/<file>` |
+| Windows | `http://nexttools-resource.localhost/tool-attachment/<session>/<turn>/<file>` |
 
-`src/renderer/utils/toolAttachment.ts` 验证 Session scope 后调用 `resolveMyAgentsResourceUrl()`。Rust `attachment_protocol.rs` 做 path normalization、scope 与 file safety。Renderer 不再把 Sidecar loopback URL直接放进 `img/src` 或 `media/src`。
+`src/renderer/utils/toolAttachment.ts` 验证 Session scope 后调用 `resolveNextToolsResourceUrl()`。Rust `attachment_protocol.rs` 做 path normalization、scope 与 file safety。Renderer 不再把 Sidecar loopback URL直接放进 `img/src` 或 `media/src`。
 
 Windows smoke：
 

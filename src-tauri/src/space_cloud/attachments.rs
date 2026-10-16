@@ -475,7 +475,7 @@ pub(super) async fn download_attachment_with_token(
             .map(safe_local_name)
             .unwrap_or_else(|| "unknown-issue".to_string());
         format!(
-            "myagents_files/space/issues/{}/attachments/{}/{}",
+            "nexttools_files/space/issues/{}/attachments/{}/{}",
             issue_part,
             safe_local_name(&input.attachment_id),
             name

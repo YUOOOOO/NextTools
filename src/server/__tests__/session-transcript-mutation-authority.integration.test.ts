@@ -23,15 +23,15 @@ function message(id: string, role: 'user' | 'assistant' = 'user'): SessionMessag
 }
 
 function transcriptPath(sessionId: string): string {
-  return join(testHome, '.myagents', 'sessions', `${sessionId}.jsonl`);
+  return join(testHome, '.nexttools', 'sessions', `${sessionId}.jsonl`);
 }
 
 function legacyTranscriptPath(sessionId: string): string {
-  return join(testHome, '.myagents', 'sessions', `${sessionId}.json`);
+  return join(testHome, '.nexttools', 'sessions', `${sessionId}.json`);
 }
 
 beforeAll(async () => {
-  testHome = mkdtempSync(join(tmpdir(), 'myagents-transcript-authority-'));
+  testHome = mkdtempSync(join(tmpdir(), 'nexttools-transcript-authority-'));
   originalHome = process.env.HOME;
   originalUserProfile = process.env.USERPROFILE;
   process.env.HOME = testHome;

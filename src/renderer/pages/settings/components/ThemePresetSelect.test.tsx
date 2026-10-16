@@ -16,13 +16,13 @@ describe('ThemePresetSelect', () => {
       />,
     );
 
-    const trigger = screen.getByRole('button', { name: /MyAgents Classic2/ });
+    const trigger = screen.getByRole('button', { name: /NextTools Classic2/ });
     fireEvent.click(trigger);
-    const defaultBlackOption = screen.getAllByRole('button', { name: 'MyAgents Classic2' })
+    const defaultBlackOption = screen.getAllByRole('button', { name: 'NextTools Classic2' })
       .find(candidate => candidate !== trigger);
     expect(defaultBlackOption).toBeDefined();
-    expect(screen.getByRole('button', { name: 'MyAgents Light' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'MyAgents Classic' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'NextTools Light' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'NextTools Classic' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sage' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Claude' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Absolutely' })).not.toBeInTheDocument();
@@ -34,7 +34,7 @@ describe('ThemePresetSelect', () => {
     expect(swatchGroup).not.toBeNull();
     expect(swatchGroup?.children).toHaveLength(2);
     expect(swatchGroup?.children[0]).toHaveStyle({ backgroundColor: '#111111' });
-    const label = within(defaultBlackOption!).getByText('MyAgents Classic2');
+    const label = within(defaultBlackOption!).getByText('NextTools Classic2');
     const indicator = defaultBlackOption?.querySelector('[data-selected-indicator]');
     expect(indicator).not.toBeNull();
     expect(label.compareDocumentPosition(indicator!) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
@@ -51,18 +51,18 @@ describe('ThemePresetSelect', () => {
     const onPersistError = vi.fn();
     render(
       <ThemePresetSelect
-        value="myagents-default"
+        value="nexttools-default"
         onPersistTheme={vi.fn().mockRejectedValue(failure)}
         onPersistError={onPersistError}
       />,
     );
 
-    const trigger = screen.getByRole('button', { name: /MyAgents Classic/ });
+    const trigger = screen.getByRole('button', { name: /NextTools Classic/ });
     fireEvent.click(trigger);
     fireEvent.click(screen.getByRole('button', { name: 'Linear' }));
 
-    expect(trigger).toHaveTextContent('MyAgents Classic');
+    expect(trigger).toHaveTextContent('NextTools Classic');
     await waitFor(() => expect(onPersistError).toHaveBeenCalledWith(failure));
-    expect(trigger).toHaveTextContent('MyAgents Classic');
+    expect(trigger).toHaveTextContent('NextTools Classic');
   });
 });

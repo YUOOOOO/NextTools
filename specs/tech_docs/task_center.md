@@ -4,14 +4,14 @@
 
 ## 1. 所有权
 
-两个当前 Store 位于 `~/.myagents/`：
+两个当前 Store 位于 `~/.nexttools/`：
 
 | Store | 文件 | Owner |
 |---|---|---|
 | `RecordStore` | `records/<YYYY-MM>/<id>/` | 文字/音频 Record、timeline/transcript/speaker projection、artifact 与 Task 关联 |
 | `TaskStore` | `tasks.jsonl` + `tasks/<id>/task.md` + 可选 `comments.jsonl` | Task 身份、状态、调度、完整任务契约、本地评论、运行统计与审计 |
 
-`thoughts/` 是升级输入，不再是新产品 surface 的权威。`RecordStore` 在启动时按幂等锁把旧 Thought 迁入 text Record，保留原 identity/provenance；`myagents thought` 仅是 `myagents record` 的兼容 alias。audio Record 的录音、转录和说话人状态仍由 Record/Recording/Speech owner 管理，不写入 Task row，也不让 TaskStore 代管媒体 artifact。
+`thoughts/` 是升级输入，不再是新产品 surface 的权威。`RecordStore` 在启动时按幂等锁把旧 Thought 迁入 text Record，保留原 identity/provenance；`nexttools thought` 仅是 `nexttools record` 的兼容 alias。audio Record 的录音、转录和说话人状态仍由 Record/Recording/Speech owner 管理，不写入 Task row，也不让 TaskStore 代管媒体 artifact。
 
 新 Task 的唯一语义文档是完整 `task.md`。旧 `verify.md/progress.md/alignment.md` 仍可读取；其中旧 `verify.md` 在 task read/edit/dispatch 前通过 TaskStore 的幂等迁移原样追加为 `# verify.md` 章节。新建和编辑不得继续维持平行四文档协议。
 
@@ -67,7 +67,7 @@ any allowed state -> Deleted (product-level irreversible tombstone)
 
 timer handle 只负责“何时触发”。真正的 AI Turn 是独立执行作业；Stop 先撤销该次 queue authority，再携带精确 `queueId` 请求 SessionEngine stop。只有精确 stop 得到业务确认才清除 execution、释放 Task owner 并发出 stopped confirmation；失败保留 `stop_failed` 投影与 Session 保护，用户只能重试 stop，不能 rerun/edit/delete。对 `blocked | stopped | done | archived` 再发 stop 只重试 transient turn，保留原终态原因，不追加伪状态迁移。`queueId` 已是执行 generation，禁止再维护冗余 generation counter。worker 异常退出由 RAII claim guard 收敛成可见的 `stop_failed`，不留下不可见的永久 owner。
 
-隐藏的 memory auto-update batch 也复用同一 queue authority：每处理一个 Session 前把当前 Session 发布到 transient execution，`/api/memory/update` 携带 MyAgents Session id 与 `{ kind: 'task', id: taskId } + queueId` 注入 SessionEngine，并在 runtime promotion 前用 MyAgents Session id 回查 Rust authority（external runtime 自己的 thread id 只传给 `runInjectedTurn`，不可混作 Sidecar identity）。禁用/停止若先赢，后续 Session 不再启动；已启动的更新由同一个 `/task/stop` 精确终止。Sidecar owner 同样是 `Task(taskId)`；终止不确定时保留 owner。当前 execution 的成功证据仍只接受 marker 之后、内容精确等于 `MEMORY_UPDATE_OK` 的 assistant message，不做 substring 匹配，也不复用旧历史；但下一批的 cooldown 与 query reset 以已持久化的 user `<MEMORY_UPDATE>` dispatch marker 为准，即使该轮失败也不立即重发。候选范围固定为最近 7 天内存在真人输入的 Session，最终时间依据是 JSONL，而不是可能被自动 turn 污染的 `lastActiveAt`。
+隐藏的 memory auto-update batch 也复用同一 queue authority：每处理一个 Session 前把当前 Session 发布到 transient execution，`/api/memory/update` 携带 NextTools Session id 与 `{ kind: 'task', id: taskId } + queueId` 注入 SessionEngine，并在 runtime promotion 前用 NextTools Session id 回查 Rust authority（external runtime 自己的 thread id 只传给 `runInjectedTurn`，不可混作 Sidecar identity）。禁用/停止若先赢，后续 Session 不再启动；已启动的更新由同一个 `/task/stop` 精确终止。Sidecar owner 同样是 `Task(taskId)`；终止不确定时保留 owner。当前 execution 的成功证据仍只接受 marker 之后、内容精确等于 `MEMORY_UPDATE_OK` 的 assistant message，不做 substring 匹配，也不复用旧历史；但下一批的 cooldown 与 query reset 以已持久化的 user `<MEMORY_UPDATE>` dispatch marker 为准，即使该轮失败也不立即重发。候选范围固定为最近 7 天内存在真人输入的 Session，最终时间依据是 JSONL，而不是可能被自动 turn 污染的 `lastActiveAt`。
 
 ### Scheduled tick 与 run-now
 
@@ -95,7 +95,7 @@ timer/check-now -> Detector -> quiet: commit checkpoint/health only
                                          -> SessionEngine queue -> Runtime
 ```
 
-Detector protocol v1 只允许 `quiet | activate`。进程退出、timeout、输出超限、非 UTF-8、strict schema 或持久化失败属于 harness failure，不是第三种 decision，也不交给 AI 判断。`test` 真实执行命令但不提交 MyAgents 的 checkpoint/health/counter/event，也不启动 AI；脚本自己的文件、网络或数据库副作用不会回滚。`check-now` 是真实检查，会提交状态；命中时先把 event 与 ordinary queue identity 持久绑定、完成 Rust execution claim / Session reservation 并把投送交给后台 owner 后返回，不等待 AI Turn 终结。Runtime admission 或 terminal 的后续失败仍由 pending outbox、exact queue authority 与 Task health 可见恢复；已有 pending event 时拒绝新检查，绝不把 pending 投送冒充一次 Detector check。程序 failure 对 CLI/Admin 返回非成功诊断。`task run-now`/兼容 `cron run-now` 绕过 Detector，直接执行 AI，但 pending Activation Event 拥有投送优先权：outbox 未结算时 run-now 由 Rust authority 拒绝。
+Detector protocol v1 只允许 `quiet | activate`。进程退出、timeout、输出超限、非 UTF-8、strict schema 或持久化失败属于 harness failure，不是第三种 decision，也不交给 AI 判断。`test` 真实执行命令但不提交 NextTools 的 checkpoint/health/counter/event，也不启动 AI；脚本自己的文件、网络或数据库副作用不会回滚。`check-now` 是真实检查，会提交状态；命中时先把 event 与 ordinary queue identity 持久绑定、完成 Rust execution claim / Session reservation 并把投送交给后台 owner 后返回，不等待 AI Turn 终结。Runtime admission 或 terminal 的后续失败仍由 pending outbox、exact queue authority 与 Task health 可见恢复；已有 pending event 时拒绝新检查，绝不把 pending 投送冒充一次 Detector check。程序 failure 对 CLI/Admin 返回非成功诊断。`task run-now`/兼容 `cron run-now` 绕过 Detector，直接执行 AI，但 pending Activation Event 拥有投送优先权：outbox 未结算时 run-now 由 Rust authority 拒绝。
 
 `trigger-state.json` 由 TaskStore 独占，保存 bounded checkpoint、检查/健康统计、最近 128 个已结算 event id 与一个 pending Activation Event。pending 同时持久化 Detector invocation cause；旧文件缺失该字段时按 `scheduled` 兼容。activate 必须先把 checkpoint 和 pending event 写入同一次原子替换，再 claim 并持久绑定 ordinary queue id，之后才能进入 Session admission；这个绑定不是“已被 Runtime 接纳”的回执，而是崩溃恢复与 stop 所需的 exact identity。AI Turn 确认接纳并终结时，Task row 原子提交 execution count、terminal status 与 `lastActivationEventId` receipt，然后才清 outbox；若在两次写之间崩溃，启动恢复只结算匹配 receipt 的 event，不重复唤醒。Running Task 的 pending 由 scheduler 按原 cause 恢复；Stopped/Blocked Task 只恢复 `check-now` 产生的一次性 manual admission，不 arm timer、不改变既有状态。Session 忙碌复用既有 SessionEngine queue，不建立 Trigger 专用队列。
 
@@ -123,7 +123,7 @@ Task ↔ Session relation 只在 Runtime adapter 已接纳首轮 query 后，由
 
 `comments.jsonl` 是 Comment 语义 authority；记录 author、时间、可选 reply 关系、冻结的 `conversationSessionId` 与最小 admission receipt。用户 Comment 先持久化，再选择至多一个目标：直接评论取最近一次已接纳 Session；回复有 Session 的历史 Comment 固定回该 Session；没有 Session 时保留 `pending_session`，之后不得自动改投另一个 Session。投送复用 Inbox/SessionEngine FIFO，不增加本地 Delivery、poll 或 ACK。冻结的 Session ID 只拥有 exact routing，不拥有 Session birth；投送必须在既有 Session lifecycle fence 内重新核对逻辑 Sidecar owner 或 durable metadata，已删除目标记为失败，不能用 Task workspace 复活同一 ID。
 
-Agent 只能从已绑定 Session 显式调用 `myagents task comment` 写回；普通 assistant 输出不自动形成 Comment。Task 首轮可以从运行上下文安全解析当前 Task ID，用户 Comment 注入的后续轮必须使用 `TASK_COMMENT` reminder 中的显式 ID。Attached Task 使用同一本地时间线，但 Cloud IssueDelivery 与本地 Comment 各自保留自己的 reminder/CLI 回复通道，不镜像或双写。
+Agent 只能从已绑定 Session 显式调用 `nexttools task comment` 写回；普通 assistant 输出不自动形成 Comment。Task 首轮可以从运行上下文安全解析当前 Task ID，用户 Comment 注入的后续轮必须使用 `TASK_COMMENT` reminder 中的显式 ID。Attached Task 使用同一本地时间线，但 Cloud IssueDelivery 与本地 Comment 各自保留自己的 reminder/CLI 回复通道，不镜像或双写。
 
 TaskStore 维护可重建、最多 5000 条的 Agent Comment locator/excerpt index：启动异步扫描，之后 append/rename/delete 增量维护。全局通知 owner 只读取该 source、保存有界本地已读 receipt，并与 Cloud source 合并排序/分页；不复制 Comment 正文。通知目标使用 typed `task.comment` AppRoute，打开同一个 Task detail Drawer 并 focus exact Comment。
 
@@ -154,7 +154,7 @@ managed job 不再创建 managed CronTask 旁路。memory auto-update 的 config
 -> Session Goal recovery
 ```
 
-Cron 兼容 facade 发布 list/start/stop/update/delete/run-now，不发布 `cron get`；单条详情统一使用 canonical `myagents task get <taskId>`，同样只投影 TaskStore。未迁移历史行仅通过显式只读命令 `cmd_get_unmigrated_legacy_cron_tasks` 进入 Legacy 面板；deleted Task 仍作为 legacy id tombstone，旧行不会重新出现或再次迁移。
+Cron 兼容 facade 发布 list/start/stop/update/delete/run-now，不发布 `cron get`；单条详情统一使用 canonical `nexttools task get <taskId>`，同样只投影 TaskStore。未迁移历史行仅通过显式只读命令 `cmd_get_unmigrated_legacy_cron_tasks` 进入 Legacy 面板；deleted Task 仍作为 legacy id tombstone，旧行不会重新出现或再次迁移。
 
 迁移规则：
 
@@ -208,7 +208,7 @@ Goal 是 Session 状态，不是 Task execution mode：
 - 不创建 Task、不占用 Task status/schedule 字段。
 - Task 与 Goal 可在同一 Session 共存；Task scheduler 不感知 Goal。
 - Goal turn 的 completion descriptor 保留 `{ kind: 'goal', id: goalId }` owner；generic Session completion 被抑制，Goal terminal/outbox/notification 继续由 Goal domain lifecycle 负责。
-- Task 需要持续执行时，由 prompt 中的 AI 在当前 Session 调 `myagents goal create`；Task 模型不增加 Task→Goal 编排字段。
+- Task 需要持续执行时，由 prompt 中的 AI 在当前 Session 调 `nexttools goal create`；Task 模型不增加 Task→Goal 编排字段。
 
 详见 [`session_architecture.md`](session_architecture.md) 的“Goal 与跨 Session 协作”。
 
@@ -217,7 +217,7 @@ Goal 是 Session 状态，不是 Task execution mode：
 - Rust：`src-tauri/src/task.rs`、`task_application.rs`、`task_scheduler.rs`、`task_execution.rs`
 - Legacy compatibility：`src-tauri/src/cron_task/*`、`legacy_upgrade.rs`
 - Management API：`/api/task/*`（含 comment/list/context/retry、turn admitted、trigger validate/test/check-now/reset 与 run-now）及兼容 `/api/cron/*`。Node 的 canonical `/api/admin/task/{start,stop,runs}` 不套 ambient workspace guard，继续复用既有 Rust `/api/cron/{run,stop,runs}` TaskStore adapter；不新增第二套任务 authority。
-- CLI：`myagents task ...` 是 Agent-facing canonical surface，覆盖通用 `create-direct`、评论写回、创建/启停、历史、exit、Trigger test/check-now/run-now/reset；`myagents record ...` 是 Record canonical surface，`myagents thought ...` 只保留兼容；`myagents cron ...` 只保留 App 内兼容，不在 token-authenticated 外部公开清单中
+- CLI：`nexttools task ...` 是 Agent-facing canonical surface，覆盖通用 `create-direct`、评论写回、创建/启停、历史、exit、Trigger test/check-now/run-now/reset；`nexttools record ...` 是 Record canonical surface，`nexttools thought ...` 只保留兼容；`nexttools cron ...` 只保留 App 内兼容，不在 token-authenticated 外部公开清单中
 - Renderer：`src/renderer/components/task-center/`、`useCronTask`（兼容展示 hook）
 
 用户可见的创建、列表、详情与评论交互以

@@ -1,14 +1,14 @@
-# MyAgents 构建与发布指南
+# NextTools 构建与发布指南
 
 setup / build 分工、业务构建去重与缓存失效规则见 [构建资源准备与复用](../tech_docs/build_resource_preparation.md)。
 
-本文档描述 MyAgents 的构建流程、发布流程以及分发渠道的完整信息。
+本文档描述 NextTools 的构建流程、发布流程以及分发渠道的完整信息。
 
 ---
 
 ## 概览
 
-MyAgents 提供以下平台构建入口；Ubuntu 的交付范围与验收要求见对应指南：
+NextTools 提供以下平台构建入口；Ubuntu 的交付范围与验收要求见对应指南：
 
 | 平台 | 架构 | 构建脚本 | 发布脚本 |
 |------|------|---------|---------|
@@ -36,19 +36,19 @@ DSH 集成版 Dev 构建默认拉取 `src/shared/integrated-runtimes/dsh-release
 所有发布文件存储在 **Cloudflare R2**，通过自定义域名 `download.myagents.io` 提供访问。
 
 ```
-myagents-releases/
+nexttools-releases/
 ├── update/
 │   ├── darwin-aarch64.json    # ARM 自动更新清单
 │   ├── darwin-x86_64.json     # Intel 自动更新清单
 │   └── latest.json            # 官网下载 API
 └── releases/
     └── v{VERSION}/
-        ├── MyAgents_{VERSION}_aarch64.dmg         # ARM DMG
-        ├── MyAgents_{VERSION}_x64.dmg             # Intel DMG
-        ├── MyAgents_{VERSION}_aarch64.app.tar.gz  # ARM 更新包
-        ├── MyAgents_{VERSION}_aarch64.app.tar.gz.sig  # ARM 签名
-        ├── MyAgents_{VERSION}_x64.app.tar.gz      # Intel 更新包
-        └── MyAgents_{VERSION}_x64.app.tar.gz.sig  # Intel 签名
+        ├── NextTools_{VERSION}_aarch64.dmg         # ARM DMG
+        ├── NextTools_{VERSION}_x64.dmg             # Intel DMG
+        ├── NextTools_{VERSION}_aarch64.app.tar.gz  # ARM 更新包
+        ├── NextTools_{VERSION}_aarch64.app.tar.gz.sig  # ARM 签名
+        ├── NextTools_{VERSION}_x64.app.tar.gz      # Intel 更新包
+        └── NextTools_{VERSION}_x64.app.tar.gz.sig  # Intel 签名
 ```
 
 ---
@@ -104,7 +104,7 @@ myagents-releases/
 
 **注意**：如果未设置 `TAURI_SIGNING_PRIVATE_KEY`，脚本会显示警告并询问是否继续。构建出的应用**无法使用自动更新功能**。
 
-MyAgents 支持 macOS 13，而官方 ONNX Runtime 1.28 arm64 archive 的最低系统版本是 macOS 14，且没有 x64 archive。因此 Apple Silicon 与 Intel 都从锁定源码按 deployment target 13.0 构建共享 ONNX Runtime。`build_macos.sh` 会在正式构建前对每个所选 target 调用 `scripts/prepare-native-inference.mjs`；顶层入口只解析一次 target，并以 exact target prepared cache（而非当前 `resources/*/v1` 投影）完成 document/speech 预检和准备。因此在 Apple Silicon 上选择 Both 时，先前的 arm64 投影不会参与 x86_64 的 cache 或 ORT identity 决策。已有当前 fingerprint 的完整 prepared cache 时不会强制要求源码构建工具。脚本不会自动执行 Homebrew 或修改系统环境，缺项时会给出对应的安装与验证命令。
+NextTools 支持 macOS 13，而官方 ONNX Runtime 1.28 arm64 archive 的最低系统版本是 macOS 14，且没有 x64 archive。因此 Apple Silicon 与 Intel 都从锁定源码按 deployment target 13.0 构建共享 ONNX Runtime。`build_macos.sh` 会在正式构建前对每个所选 target 调用 `scripts/prepare-native-inference.mjs`；顶层入口只解析一次 target，并以 exact target prepared cache（而非当前 `resources/*/v1` 投影）完成 document/speech 预检和准备。因此在 Apple Silicon 上选择 Both 时，先前的 arm64 投影不会参与 x86_64 的 cache 或 ORT identity 决策。已有当前 fingerprint 的完整 prepared cache 时不会强制要求源码构建工具。脚本不会自动执行 Homebrew 或修改系统环境，缺项时会给出对应的安装与验证命令。
 
 native inference 的受支持 target 由 `src-tauri/document-worker/resource-lock.json::targets` 唯一锁定：`aarch64-apple-darwin`、`x86_64-apple-darwin`、`x86_64-pc-windows-msvc`、`x86_64-unknown-linux-gnu`、`aarch64-unknown-linux-gnu`。每个正式产物都必须由同一 `prepare-native-inference` 入口生成 document/speech 两份 target manifest；speech bundle 只携带 media Worker、sherpa adapter/native 依赖与 legal inventory，ONNX Runtime 必须引用同 target document artifact，不能复制第二份。真实发布验收需在对应 target 机器/runner 上检查签名、notices、Worker 最小加载和至少一份媒体 smoke；不能用 host-only 单测替代五 target 产物证据。
 
@@ -157,14 +157,14 @@ native inference 的受支持 target 由 `src-tauri/document-worker/resource-loc
   │  物料清单 - v0.1.0                                      │
   ├─────────────────────────────────────────────────────────┤
   │  Apple Silicon (ARM64)                                  │
-  │    ✓ DMG:    MyAgents_0.1.0_aarch64.dmg              │
-  │    ✓ tar.gz: MyAgents.app.tar.gz                      │
-  │    ✓ 签名:   MyAgents.app.tar.gz.sig                  │
+  │    ✓ DMG:    NextTools_0.1.0_aarch64.dmg              │
+  │    ✓ tar.gz: NextTools.app.tar.gz                      │
+  │    ✓ 签名:   NextTools.app.tar.gz.sig                  │
   │                                                         │
   │  Intel (x86_64)                                         │
-  │    ✓ DMG:    MyAgents_0.1.0_x64.dmg                   │
-  │    ✓ tar.gz: MyAgents.app.tar.gz                      │
-  │    ✓ 签名:   MyAgents.app.tar.gz.sig                  │
+  │    ✓ DMG:    NextTools_0.1.0_x64.dmg                   │
+  │    ✓ tar.gz: NextTools.app.tar.gz                      │
+  │    ✓ 签名:   NextTools.app.tar.gz.sig                  │
   └─────────────────────────────────────────────────────────┘
 ```
 
@@ -190,7 +190,7 @@ native inference 的受支持 target 由 `src-tauri/document-worker/resource-loc
 
 ### publish_managed_codex_runtime.sh
 
-**用途**：单独打包并上传 MyAgents 托管的 Codex Runtime 到 R2。它是开发 / 发版准备阶段的资源发布入口，不属于桌面 App 的 `publish_release.sh` / `publish_windows.ps1` 流程。
+**用途**：单独打包并上传 NextTools 托管的 Codex Runtime 到 R2。它是开发 / 发版准备阶段的资源发布入口，不属于桌面 App 的 `publish_release.sh` / `publish_windows.ps1` 流程。
 
 桌面 App 客户端会锁定一个固定的 runtime set manifest 地址，例如 `runtimes/codex/sets/<runtime-set>/...`。多个 App 版本可以复用同一个 runtime set；只有决定升级内置 Codex runtime 时，才修改唯一权威锁 `src/shared/managed-codex-runtime.json::version` 并上传新的 runtime set。`runtimeSet` 固定派生为 `codex-<version>`；Rust、TypeScript、打包器与两端发布脚本都从该值派生，不再手工同步版本。正式发布入口不接受 version / runtime set 覆盖，防止不同平台向同一个 immutable set 上传不同 Codex 版本。脚本默认会检查远端 manifest，发现同一个 runtime set 已存在时拒绝覆盖；只有显式传 `--force-republish` 才允许重发同一路径。
 
@@ -237,7 +237,7 @@ npm run publish:speech-model-set -- -y
 
 ### 可选「浏览器」Runtime 资源
 
-`myagents-browser` /「浏览器」直接下载 Playwright 锁定版本对应的官方 Chromium artifact。桌面 App 只包含 `@playwright/mcp` / Playwright 控制代码；三个锁定控制包以原生目录结构位于 `Resources/node_modules`，不合并进 ESM `server-dist.js`。MyAgents 不镜像、不重新打包、也不上传浏览器资源。`tauri:dev`、`tauri:build`、`build_macos.sh`、`build_windows.ps1` 和桌面发布脚本均不得访问 Playwright CDN 或下载 Chromium。
+`nexttools-browser` /「浏览器」直接下载 Playwright 锁定版本对应的官方 Chromium artifact。桌面 App 只包含 `@playwright/mcp` / Playwright 控制代码；三个锁定控制包以原生目录结构位于 `Resources/node_modules`，不合并进 ESM `server-dist.js`。NextTools 不镜像、不重新打包、也不上传浏览器资源。`tauri:dev`、`tauri:build`、`build_macos.sh`、`build_windows.ps1` 和桌面发布脚本均不得访问 Playwright CDN 或下载 Chromium。
 
 唯一版本锁是 `src/shared/managed-browser-runtime.json`。它必须同时满足：
 
@@ -247,7 +247,7 @@ npm run publish:speech-model-set -- -y
 - `archiveSizeBytes`、SHA-256、archive root 与 executable path 来自同一个 exact artifact；
 - 每个平台只描述有头 Chromium，不包含 Headless Shell、FFmpeg、winldd、Firefox 或 WebKit。
 
-升级 Playwright 时，维护者在显式网络核对流程中下载五个官方 artifact、复核 URL 跳转链并计算 size/SHA-256，再提交新的版本锁。这个动作不是 App build 或发布脚本的一部分，也不产生待上传的 MyAgents Browser artifact。发布 App 前必须在对应 release-like 真机完成首次显式安装、进度、重启恢复、自动更新与有头 Chromium smoke。
+升级 Playwright 时，维护者在显式网络核对流程中下载五个官方 artifact、复核 URL 跳转链并计算 size/SHA-256，再提交新的版本锁。这个动作不是 App build 或发布脚本的一部分，也不产生待上传的 NextTools Browser artifact。发布 App 前必须在对应 release-like 真机完成首次显式安装、进度、重启恢复、自动更新与有头 Chromium smoke。
 
 首次安装由用户在工具卡点击“安装资源”触发；只有首次完整成功后，Rust owner 才在后续 App 版本需要新 set 时自动维护。App/installer/updater artifact scan 必须确认不存在 `playwright-browsers`、Chromium、Headless Shell 或 FFmpeg 可执行资源。
 
@@ -261,15 +261,15 @@ npm run publish:speech-model-set -- -y
 {
   "version": "0.1.0",
   "pub_date": "2026-01-24T10:00:00Z",
-  "release_notes": "MyAgents v0.1.0",
+  "release_notes": "NextTools v0.1.0",
   "downloads": {
     "mac_arm64": {
       "name": "Apple Silicon",
-      "url": "https://download.myagents.io/releases/v0.1.0/MyAgents_0.1.0_aarch64.dmg"
+      "url": "https://download.myagents.io/releases/v0.1.0/NextTools_0.1.0_aarch64.dmg"
     },
     "mac_intel": {
       "name": "Intel Mac",
-      "url": "https://download.myagents.io/releases/v0.1.0/MyAgents_0.1.0_x64.dmg"
+      "url": "https://download.myagents.io/releases/v0.1.0/NextTools_0.1.0_x64.dmg"
     }
   }
 }
@@ -292,12 +292,12 @@ const downloadUrl = isMacARM
 ```json
 {
   "version": "0.1.0",
-  "notes": "MyAgents v0.1.0",
+  "notes": "NextTools v0.1.0",
   "pub_date": "2026-01-24T10:00:00Z",
   "platforms": {
     "darwin-aarch64": {
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6...",
-      "url": "https://download.myagents.io/releases/v0.1.0/MyAgents.app.tar.gz"
+      "url": "https://download.myagents.io/releases/v0.1.0/NextTools.app.tar.gz"
     }
   }
 }
@@ -336,7 +336,7 @@ cargo metadata --manifest-path src-tauri/Cargo.toml --locked --no-deps --format-
 
 - `package.json` 与 `package-lock.json` 根包版本；
 - `src-tauri/tauri.conf.json`；
-- `src-tauri/Cargo.toml` 与 `Cargo.lock` 中的 `myagents` 根包版本。
+- `src-tauri/Cargo.toml` 与 `Cargo.lock` 中的 `nexttools` 根包版本。
 
 构建脚本会校验 package / Tauri / Cargo 三处版本，不一致时拒绝继续。Managed Codex Runtime
 使用 `src/shared/managed-codex-runtime.json` 的独立版本锁，不能随桌面 App 版本自动递增。
@@ -423,7 +423,7 @@ R2_ACCOUNT_ID="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ### 生成 Tauri 签名密钥
 
 ```bash
-npx tauri signer generate -w ~/.tauri/myagents.key
+npx tauri signer generate -w ~/.tauri/nexttools.key
 ```
 
 生成后：

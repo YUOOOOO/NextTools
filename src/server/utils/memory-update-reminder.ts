@@ -21,7 +21,7 @@ export function buildMemoryUpdateReminder(input: MemoryUpdateReminderInput): str
   return [
     '<system-reminder>',
     '<MEMORY_UPDATE>',
-    '现在进入当前 Session 的强制记忆审计与巩固。使用 `myagents-memory-update` skill；不要假定本 Session 中值得保留的信息已经在日常工作阶段被主动写入。',
+    '现在进入当前 Session 的强制记忆审计与巩固。使用 `nexttools-memory-update` skill；不要假定本 Session 中值得保留的信息已经在日常工作阶段被主动写入。',
     `执行前先锁定最终输出：完成所有工具调用后，只能发送 ${MEMORY_UPDATE_COMPLETION_MARKER}，不要发送任何过程或状态说明。`,
     '',
     '重新检查完整对话、实际产物和现有记忆，至少完成两类审计：',

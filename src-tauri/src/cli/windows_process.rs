@@ -166,11 +166,11 @@ fn environment_block(global_port: Option<&str>) -> io::Result<Vec<u16>> {
         .filter(|(key, _)| {
             let key = key.to_string_lossy();
             !key.eq_ignore_ascii_case("NO_PROXY")
-                && (global_port.is_none() || !key.eq_ignore_ascii_case("MYAGENTS_PORT"))
+                && (global_port.is_none() || !key.eq_ignore_ascii_case("NEXTTOOLS_PORT"))
         })
         .collect();
     if let Some(port) = global_port {
-        variables.push(("MYAGENTS_PORT".into(), port.into()));
+        variables.push(("NEXTTOOLS_PORT".into(), port.into()));
     }
     variables.push((
         "no_proxy".into(),

@@ -67,7 +67,7 @@ function activationEventLines(activation: TaskActivationPayload | undefined): st
 
 export function buildCronTaskReminder(input: CronReminderInput): string {
   const lines = [
-    'You are running inside a MyAgents scheduled task execution.',
+    'You are running inside a NextTools scheduled task execution.',
     'The user-visible text after this reminder is the task prompt for this execution.',
     '',
     ...[
@@ -87,7 +87,7 @@ export function buildCronTaskReminder(input: CronReminderInput): string {
       'Task collaboration:',
       '- Normal assistant output is not copied into the local Task timeline automatically.',
       '- If a result, issue, lesson, or question is worth preserving across Task Sessions, append an explicit local Task comment with:',
-      '  myagents task comment --body-file <path>',
+      '  nexttools task comment --body-file <path>',
       '- Do not record every assistant response; use comments only for durable Task-level collaboration.',
     );
   }
@@ -95,8 +95,8 @@ export function buildCronTaskReminder(input: CronReminderInput): string {
   if (input.aiCanExit) {
     lines.push(
       '',
-      'If this MyAgents scheduled task goal is complete and future executions should stop, run:',
-      '  myagents task exit --reason "<brief reason>"',
+      'If this NextTools scheduled task goal is complete and future executions should stop, run:',
+      '  nexttools task exit --reason "<brief reason>"',
       '',
       'The command is bound to the current cron execution context; do not pass a task id.',
     );

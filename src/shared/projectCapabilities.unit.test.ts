@@ -11,14 +11,14 @@ import type { EffectiveProjectCapabilitySnapshot } from './projectCapabilities';
 
 function productSnapshot(overrides: Partial<EffectiveProjectCapabilitySnapshot['enabledSkills'][number]> = {}): EffectiveProjectCapabilitySnapshot {
   const candidate = {
-    id: 'global:skill:myagents-task-alignment',
+    id: 'global:skill:nexttools-task-alignment',
     kind: 'skill' as const,
     source: 'global' as const,
-    sourceLocalId: 'myagents-task-alignment',
-    canonicalName: 'myagents-task-alignment',
-    name: 'myagents-task-alignment',
+    sourceLocalId: 'nexttools-task-alignment',
+    canonicalName: 'nexttools-task-alignment',
+    name: 'nexttools-task-alignment',
     description: 'Task discussion',
-    path: '/skills/myagents-task-alignment/SKILL.md',
+    path: '/skills/nexttools-task-alignment/SKILL.md',
     required: true,
     systemOwned: true,
     enabled: true,
@@ -88,11 +88,11 @@ describe('project capability selection contract', () => {
   it('canonicalizes global Required disables without guessing project frontmatter identity', () => {
     expect(normalizeProjectCapabilitySelection({
       version: 1,
-      disabled: { skills: ['global:skill:myagents-cli'] },
+      disabled: { skills: ['global:skill:nexttools-cli'] },
     }).disabled.skills).toEqual([]);
     expect(normalizeProjectCapabilitySelection({
       version: 1,
-      disabled: { skills: ['project:skill:myagents-cli'] },
-    }).disabled.skills).toEqual(['project:skill:myagents-cli']);
+      disabled: { skills: ['project:skill:nexttools-cli'] },
+    }).disabled.skills).toEqual(['project:skill:nexttools-cli']);
   });
 });

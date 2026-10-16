@@ -18,7 +18,7 @@ describe('MCP connection test lifecycle', () => {
   });
 
   it('times out a stalled stdio initialize and terminates the child process', async () => {
-    const scratch = mkdtempSync(join(tmpdir(), 'myagents-mcp-probe-'));
+    const scratch = mkdtempSync(join(tmpdir(), 'nexttools-mcp-probe-'));
     scratchDirs.push(scratch);
     const pidFile = join(scratch, 'child.pid');
     const serverCode = [
@@ -49,7 +49,7 @@ describe('MCP connection test lifecycle', () => {
   });
 
   it('passes the Session executable PATH and workspace cwd to a stdio probe', async () => {
-    const scratch = mkdtempSync(join(tmpdir(), 'myagents-mcp-probe-env-'));
+    const scratch = mkdtempSync(join(tmpdir(), 'nexttools-mcp-probe-env-'));
     scratchDirs.push(scratch);
     const resultFile = join(scratch, 'probe.json');
     const pathKey = process.platform === 'win32' ? 'Path' : 'PATH';

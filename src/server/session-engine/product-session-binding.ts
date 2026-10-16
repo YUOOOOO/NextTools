@@ -137,9 +137,9 @@ export function resetProductSessionMaterializationState(options?: {
 
 function publishCurrentProductSessionEnv(): void {
   if (currentProductSessionId) {
-    process.env.MYAGENTS_SESSION_ID = currentProductSessionId;
+    process.env.NEXTTOOLS_SESSION_ID = currentProductSessionId;
   } else {
-    delete process.env.MYAGENTS_SESSION_ID;
+    delete process.env.NEXTTOOLS_SESSION_ID;
   }
 }
 

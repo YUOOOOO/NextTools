@@ -1,5 +1,5 @@
 (() => {
-  const windowLabel = __MYAGENTS_WINDOW_LABEL__;
+  const windowLabel = __NEXTTOOLS_WINDOW_LABEL__;
   const describeError = (value) => {
     try {
       if (value && typeof value === 'object') {
@@ -27,8 +27,8 @@
     }
   };
 
-  if (!globalThis.__MYAGENTS_BOOT_OBSERVABILITY_INSTALLED__ && typeof globalThis.addEventListener === 'function') {
-    globalThis.__MYAGENTS_BOOT_OBSERVABILITY_INSTALLED__ = true;
+  if (!globalThis.__NEXTTOOLS_BOOT_OBSERVABILITY_INSTALLED__ && typeof globalThis.addEventListener === 'function') {
+    globalThis.__NEXTTOOLS_BOOT_OBSERVABILITY_INSTALLED__ = true;
     globalThis.addEventListener('error', (event) => {
       const source = event.filename ? ` source=${event.filename}:${event.lineno}:${event.colno}` : '';
       report('renderer-uncaught-error', `${source} error=${describeError(event.error ?? event.message)}`);
@@ -40,15 +40,15 @@
   report('native-init-script');
 
   try {
-    const key = 'myagents:theme-bootstrap';
-    const runKey = 'myagents:theme-native-bootstrap-run';
-    const runId = __MYAGENTS_BOOTSTRAP_RUN_ID__;
+    const key = 'nexttools:theme-bootstrap';
+    const runKey = 'nexttools:theme-native-bootstrap-run';
+    const runId = __NEXTTOOLS_BOOTSTRAP_RUN_ID__;
     if (localStorage.getItem(runKey) === runId) {
       report('theme-native-bootstrap-skipped');
       return;
     }
 
-    let themeId = 'myagents-light';
+    let themeId = 'nexttools-light';
     let themeSelectionExplicit = false;
     const raw = localStorage.getItem(key);
 
@@ -64,7 +64,7 @@
             : '';
           themeSelectionExplicit = snapshot.version === 2
             ? snapshot.themeSelectionExplicit === true && storedThemeId !== ''
-            : storedThemeId !== '' && storedThemeId !== 'myagents-default';
+            : storedThemeId !== '' && storedThemeId !== 'nexttools-default';
           if (themeSelectionExplicit) themeId = storedThemeId;
         }
       } catch {
@@ -75,7 +75,7 @@
     localStorage.setItem(key, JSON.stringify({
       version: 2,
       themeId,
-      appearanceMode: __MYAGENTS_APPEARANCE_MODE__,
+      appearanceMode: __NEXTTOOLS_APPEARANCE_MODE__,
       themeSelectionExplicit,
     }));
     // initialization_script runs again on reload. Mark this native process

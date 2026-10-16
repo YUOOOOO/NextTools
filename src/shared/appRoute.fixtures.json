@@ -1,7 +1,7 @@
 {
   "accepted": [
     {
-      "url": "myagents://open/v1/spaces/official/tools",
+      "url": "nexttools://open/v1/spaces/official/tools",
       "route": {
         "version": 1,
         "name": "space.tools",
@@ -11,7 +11,7 @@
       }
     },
     {
-      "url": "myagents://open/v1/spaces/team-1/tools",
+      "url": "nexttools://open/v1/spaces/team-1/tools",
       "route": {
         "version": 1,
         "name": "space.tools",
@@ -21,7 +21,7 @@
       }
     },
     {
-      "url": "myagents://open/v1/spaces/%6Ffficial/tools",
+      "url": "nexttools://open/v1/spaces/%6Ffficial/tools",
       "route": {
         "version": 1,
         "name": "space.tools",
@@ -31,7 +31,7 @@
       }
     },
     {
-      "url": "myagents://open/v1/spaces",
+      "url": "nexttools://open/v1/spaces",
       "route": {
         "version": 1,
         "name": "space.home",
@@ -39,7 +39,7 @@
       }
     },
     {
-      "url": "myagents://open/v1/spaces/official/issues",
+      "url": "nexttools://open/v1/spaces/official/issues",
       "route": {
         "version": 1,
         "name": "space.issues",
@@ -49,17 +49,17 @@
       }
     },
     {
-      "url": "myagents://open/v1/spaces/myagents/issues",
+      "url": "nexttools://open/v1/spaces/nexttools/issues",
       "route": {
         "version": 1,
         "name": "space.issues",
         "params": {
-          "spaceId": "myagents"
+          "spaceId": "nexttools"
         }
       }
     },
     {
-      "url": "myagents://open/v1/spaces/team-1/issues",
+      "url": "nexttools://open/v1/spaces/team-1/issues",
       "route": {
         "version": 1,
         "name": "space.issues",
@@ -69,7 +69,7 @@
       }
     },
     {
-      "url": "myagents://open/v1/spaces/%6Ffficial/issues",
+      "url": "nexttools://open/v1/spaces/%6Ffficial/issues",
       "route": {
         "version": 1,
         "name": "space.issues",
@@ -79,46 +79,46 @@
       }
     },
     {
-      "url": "myagents://open/v1/spaces/myagents/issues/iss_123",
+      "url": "nexttools://open/v1/spaces/nexttools/issues/iss_123",
       "route": {
         "version": 1,
         "name": "space.issue",
         "params": {
-          "spaceId": "myagents",
+          "spaceId": "nexttools",
           "issueId": "iss_123"
         }
       }
     }
   ],
   "rejected": [
-    "myagents://open/v2/spaces/official/tools",
-    "myagents://open/v1/spaces/official/tools/",
-    "myagents://open/v1/spaces/official/tools/extra",
-    "myagents://open/v1/tasks/official/tools",
-    "myagents://open/v1/spaces/official/skills",
-    "myagents://open/v1/spaces//tools",
-    "myagents://open//v1/spaces/official/tools",
-    "myagents://open/v1/spaces/a%2Fb/tools",
-    "myagents://open/v1/spaces/%ZZ/tools",
-    "myagents://open/v1/spaces/official/tools?prompt=run",
-    "myagents://open/v1/spaces/official/tools#x",
-    "myagents://user@open/v1/spaces/official/tools",
-    "myagents://open:42/v1/spaces/official/tools",
+    "nexttools://open/v2/spaces/official/tools",
+    "nexttools://open/v1/spaces/official/tools/",
+    "nexttools://open/v1/spaces/official/tools/extra",
+    "nexttools://open/v1/tasks/official/tools",
+    "nexttools://open/v1/spaces/official/skills",
+    "nexttools://open/v1/spaces//tools",
+    "nexttools://open//v1/spaces/official/tools",
+    "nexttools://open/v1/spaces/a%2Fb/tools",
+    "nexttools://open/v1/spaces/%ZZ/tools",
+    "nexttools://open/v1/spaces/official/tools?prompt=run",
+    "nexttools://open/v1/spaces/official/tools#x",
+    "nexttools://user@open/v1/spaces/official/tools",
+    "nexttools://open:42/v1/spaces/official/tools",
     "https://open/v1/spaces/official/tools",
-    "myagents://open/v1/spaces/",
-    "myagents://open/v1/spaces?login=true",
-    "myagents://open/v1/spaces/official/issues/",
-    "myagents://open/v1/spaces//issues",
-    "myagents://open/v1/spaces/a%2Fb/issues",
-    "myagents://open/v1/spaces/%ZZ/issues",
-    "myagents://open/v1/spaces/official/issues?title=run",
-    "myagents://open/v1/spaces/official/issues#x",
-    "myagents://open/v1/spaces/official/issues/new/extra",
-    "myagents://user@open/v1/spaces",
-    "myagents://open:42/v1/spaces",
-    "myagents://open/v1/spaces/a/../official/issues",
-    "myagents://open/v1/spaces/%2e%2e/spaces",
-    "myagents://open/v1/spaces/a/./issues",
-    "myagents://open/v1/spaces/a/issues/x/../iss_123"
+    "nexttools://open/v1/spaces/",
+    "nexttools://open/v1/spaces?login=true",
+    "nexttools://open/v1/spaces/official/issues/",
+    "nexttools://open/v1/spaces//issues",
+    "nexttools://open/v1/spaces/a%2Fb/issues",
+    "nexttools://open/v1/spaces/%ZZ/issues",
+    "nexttools://open/v1/spaces/official/issues?title=run",
+    "nexttools://open/v1/spaces/official/issues#x",
+    "nexttools://open/v1/spaces/official/issues/new/extra",
+    "nexttools://user@open/v1/spaces",
+    "nexttools://open:42/v1/spaces",
+    "nexttools://open/v1/spaces/a/../official/issues",
+    "nexttools://open/v1/spaces/%2e%2e/spaces",
+    "nexttools://open/v1/spaces/a/./issues",
+    "nexttools://open/v1/spaces/a/issues/x/../iss_123"
   ]
 }

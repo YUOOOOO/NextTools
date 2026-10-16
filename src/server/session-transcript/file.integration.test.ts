@@ -46,7 +46,7 @@ vi.mock('node:fs/promises', async importOriginal => {
 
 const roots: string[] = [];
 async function setup(publishBirth?: () => Promise<void>) {
-  const root = await mkdtemp(join(tmpdir(), 'myagents-transcript-v2-'));
+  const root = await mkdtemp(join(tmpdir(), 'nexttools-transcript-v2-'));
   roots.push(root);
   const filePath = join(root, 'session-test.jsonl');
   const file = new TranscriptFile({

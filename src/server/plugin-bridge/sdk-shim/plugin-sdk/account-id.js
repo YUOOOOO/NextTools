@@ -4,7 +4,7 @@
 export * from "./account-id.auto.js";
 // === END AUTO-AUGMENT ===
 
-// OpenClaw plugin-sdk/account-id shim for MyAgents Plugin Bridge
+// OpenClaw plugin-sdk/account-id shim for NextTools Plugin Bridge
 
 export const DEFAULT_ACCOUNT_ID = 'default';
 

@@ -8,7 +8,7 @@ describe('external CLI shell discovery', () => {
   beforeEach(() => {
     vi.resetModules();
     shell.execFile.mockReset();
-    vi.stubEnv('HOME', '/myagents-test-no-home');
+    vi.stubEnv('HOME', '/nexttools-test-no-home');
     vi.stubEnv('PATH', '/inherited/bin:/usr/bin');
   });
   afterEach(() => vi.unstubAllEnvs());
@@ -20,7 +20,7 @@ describe('external CLI shell discovery', () => {
     const [, args, , complete] = shell.execFile.mock.calls[0];
     expect(args.slice(0, 3)).toEqual(['-i', '-l', '-c']);
     const selected = '/user-selected-node/bin';
-    complete(null, `banner\n__MYAGENTS_PATH_${process.pid}__${selected}:/opt/homebrew/bin:/usr/bin__MYAGENTS_PATH_${process.pid}__\n`);
+    complete(null, `banner\n__NEXTTOOLS_PATH_${process.pid}__${selected}:/opt/homebrew/bin:/usr/bin__NEXTTOOLS_PATH_${process.pid}__\n`);
     expect((await discovering).split(':').slice(0, 3)).toEqual([selected, '/opt/homebrew/bin', '/usr/bin']);
     expect(getShellPath().split(':')[0]).toBe(selected);
     await ensureShellPath();

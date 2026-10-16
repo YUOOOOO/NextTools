@@ -32,14 +32,14 @@ export interface BaseEventParams {
  * 触发来源 — GUI/CLI/Cron/IM 共用枚举。
  *
  * 适用规则：当一个事件可以由多个入口触发（例如任务创建既可以通过 GUI
- * 的"+ 新建"按钮，也可以通过 `myagents task create-direct` CLI），就必须
+ * 的"+ 新建"按钮，也可以通过 `nexttools task create-direct` CLI），就必须
  * 带上这个字段，方便后续按渠道做拆分分析。详见 `specs/tech_docs/analytics_design.md`。
  *
  * 取值约定：
  *   - `desktop`     桌面端 GUI（未来若有移动端 app，再加 `mobile`）
  *   - `floating_ball` 桌面悬浮球伴侣窗（独立于主 Tab 的 AI turn）
- *   - `cli`         用户在终端手动跑 `myagents` 命令
- *   - `cli_agent`   AI 子进程（agent）通过 CLI 调用（`MYAGENTS_PORT` 在环境里）
+ *   - `cli`         用户在终端手动跑 `nexttools` 命令
+ *   - `cli_agent`   AI 子进程（agent）通过 CLI 调用（`NEXTTOOLS_PORT` 在环境里）
  *   - `cron`        定时任务调度器
  *   - `im`          IM Bot（飞书 / Telegram / 钉钉）
  */
@@ -56,7 +56,7 @@ export type Source =
  *
  * `source` 回答"哪个进程触发"（desktop/cli/cron/im），`surface` 回答
  * "desktop 内部哪个 UI 表面触发"。两者正交，配合解释"用户究竟是怎么开始
- * 用 MyAgents 的"。详见 `specs/tech_docs/analytics_design.md`。
+ * 用 NextTools 的"。详见 `specs/tech_docs/analytics_design.md`。
  *
  * 取值约定：
  *   - `launcher_input`   启动页输入框直接发首条消息（New Tab 空状态 + 用户打字）
@@ -205,7 +205,7 @@ export type EventName =
   | 'tts_play'
   | 'task_center_open'
   | 'bug_report_submit'
-  // MyAgents Space
+  // NextTools Space
   | 'space_open'
   | 'space_auth_start'
   | 'space_auth_complete'
@@ -427,7 +427,7 @@ export interface TaskDeleteParams {
  *
  * 双触发面：
  *   - GUI（ChannelWizard / ChannelDetailView）→ source: 'desktop'
- *   - CLI（`myagents agent channel add/remove`）→ source: cliSource()
+ *   - CLI（`nexttools agent channel add/remove`）→ source: cliSource()
  */
 export interface AgentChannelMutationParams {
   source: Source;

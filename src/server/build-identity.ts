@@ -10,7 +10,7 @@ export type SidecarBuildIdentity = Readonly<{
   dirty: boolean | null;
 }>;
 
-declare const __MYAGENTS_BUILD_IDENTITY__: SidecarBuildIdentity | undefined;
+declare const __NEXTTOOLS_BUILD_IDENTITY__: SidecarBuildIdentity | undefined;
 
 // Capture source identity once at startup. Reading HEAD in a diagnostic request
 // would misidentify an existing process after a checkout or commit.
@@ -32,10 +32,10 @@ function sourceIdentity(): SidecarBuildIdentity {
 }
 
 export const SIDECAR_BUILD_IDENTITY: SidecarBuildIdentity = Object.freeze(
-  typeof __MYAGENTS_BUILD_IDENTITY__ !== 'undefined' ? __MYAGENTS_BUILD_IDENTITY__ : sourceIdentity(),
+  typeof __NEXTTOOLS_BUILD_IDENTITY__ !== 'undefined' ? __NEXTTOOLS_BUILD_IDENTITY__ : sourceIdentity(),
 );
 export const SIDECAR_STARTED_AT = new Date().toISOString();
 export const APP_BUILD_IDENTITY = Object.freeze({
-  version: process.env.MYAGENTS_APP_VERSION ?? null,
-  mode: process.env.MYAGENTS_APP_BUILD_MODE ?? null,
+  version: process.env.NEXTTOOLS_APP_VERSION ?? null,
+  mode: process.env.NEXTTOOLS_APP_BUILD_MODE ?? null,
 });

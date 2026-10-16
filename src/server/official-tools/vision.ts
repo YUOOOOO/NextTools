@@ -39,7 +39,7 @@ const DEFAULT_VISION_PROMPT = [
 ].join(' ');
 
 const SYSTEM_PROMPT = [
-  'You are MyAgents Vision Helper.',
+  'You are NextTools Vision Helper.',
   'Your job is to inspect the provided images and produce precise textual observations for another AI agent.',
   'Do not invent details. If something is unclear, say so.',
 ].join('\n');
@@ -92,16 +92,16 @@ class VisionToolError extends Error {
 }
 
 export function getVisionToolReadme(): string {
-  return `myagents vision — official image-understanding helper
+  return `nexttools vision — official image-understanding helper
 
 Usage:
-  myagents vision analyze --image <path> [--image <path> ...] [--prompt "..."] [--json]
-  myagents vision analyze --image <path> --prompt-file <workspace-relative-text-file>
-  myagents vision analyze --image @myagents_files/screenshot.png --prompt "Read the error message"
-  myagents vision readme
+  nexttools vision analyze --image <path> [--image <path> ...] [--prompt "..."] [--json]
+  nexttools vision analyze --image <path> --prompt-file <workspace-relative-text-file>
+  nexttools vision analyze --image @nexttools_files/screenshot.png --prompt "Read the error message"
+  nexttools vision readme
 
-The tool only accepts local image paths inside the current MyAgents workspace.
-Use @myagents_files/... paths when the conversation shows attached images as
+The tool only accepts local image paths inside the current NextTools workspace.
+Use @nexttools_files/... paths when the conversation shows attached images as
 workspace references. URLs are not supported.
 
 For long or quoted inspection instructions, write a text file inside the current
@@ -114,7 +114,7 @@ export async function analyzeImages(input: VisionAnalyzeInput): Promise<VisionAn
   const workspacePath = input.workspacePath?.trim();
   if (!workspacePath) {
     throw new VisionToolError('No current workspace is available for image path resolution.', 400, {
-      message: 'Run this command from an active MyAgents session with a workspace.',
+      message: 'Run this command from an active NextTools session with a workspace.',
     });
   }
   const enabledIds = getEffectiveOfficialToolIdsForSession(
@@ -461,7 +461,7 @@ async function runVisionQueryInner(args: {
     options: {
       maxTurns: 1,
       sessionId,
-      cwd: args.workspacePath || resolve(homedir(), '.myagents', 'projects'),
+      cwd: args.workspacePath || resolve(homedir(), '.nexttools', 'projects'),
       settingSources: [],
       strictMcpConfig: true,
       permissionMode: 'bypassPermissions',

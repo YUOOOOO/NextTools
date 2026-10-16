@@ -45,7 +45,7 @@ import {
   loadProjects,
   withAgentConfigIntentLock,
 } from './utils/admin-config';
-import { getMyAgentsUserDir } from './utils/project-user-config-sync';
+import { getNextToolsUserDir } from './utils/project-user-config-sync';
 
 const MAX_CAPABILITY_FILE_BYTES = 1024 * 1024;
 const MAX_COMMAND_SCAN_DEPTH = 8;
@@ -171,7 +171,7 @@ function scanSkills(params: {
     }
     params.projectSlots?.add(projectSlot);
     // A symlink under the project Skill root is itself a project-owned
-    // declaration. Follow it just like Claude/Codex do; only MyAgents' own
+    // declaration. Follow it just like Claude/Codex do; only NextTools' own
     // global projection links are excluded above so they retain global
     // provenance.
     const folder = canonicalDirectory(diskFolder, true);
@@ -337,7 +337,7 @@ export function resolveEffectiveProjectCapabilities(
   } = {},
 ): EffectiveProjectCapabilitySnapshot {
   const resolvedWorkspace = resolve(workspacePath);
-  const userRoot = getMyAgentsUserDir();
+  const userRoot = getNextToolsUserDir();
   const globalSkillsRoot = resolve(userRoot, 'skills');
   const globalCommandsRoot = resolve(userRoot, 'commands');
   const config = loadConfig();

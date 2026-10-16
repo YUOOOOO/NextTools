@@ -100,13 +100,13 @@ class InstalledResourceTests(unittest.TestCase):
         document = {'files': {'onnxRuntime': {'path': 'native/onnxruntime.so'},
                               'pdfium': {'path': 'native/pdfium.so'}}}
         speech = {'files': {'sherpaOnnx': {'path': 'native/sherpa-onnx-c-api.so'},
-                            'adapter': {'path': 'native/myagents-speech-adapter.so'}}}
+                            'adapter': {'path': 'native/nexttools-speech-adapter.so'}}}
         calls = []
 
         def load(path, mode=None):
             if path.endswith('/sherpa-onnx-c-api.so'):
                 self.assertIn(('/document/native/onnxruntime.so', smoke.ctypes.RTLD_GLOBAL), calls)
-            if path.endswith('/myagents-speech-adapter.so'):
+            if path.endswith('/nexttools-speech-adapter.so'):
                 self.assertIn(('/speech/native/sherpa-onnx-c-api.so', smoke.ctypes.RTLD_GLOBAL), calls)
             calls.append((path, mode))
             return MagicMock()

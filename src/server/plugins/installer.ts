@@ -1,6 +1,6 @@
 /**
  * installer.ts — Decide where in a fetched tree the plugin root lives and
- * write the filtered subtree to ~/.myagents/plugins/<name>/.
+ * write the filtered subtree to ~/.nexttools/plugins/<name>/.
  *
  * Single entry: `analysePluginTree(tree, subPathHint?)` → returns either the
  * resolved plugin manifest + the slice of the tree to write, or one of the

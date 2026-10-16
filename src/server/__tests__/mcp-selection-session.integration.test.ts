@@ -7,7 +7,7 @@ import { createSessionMetadata } from '../types/session';
 let scratch: string;
 let store: typeof import('../SessionStore');
 beforeAll(async () => {
-  scratch = mkdtempSync(join(tmpdir(), 'myagents-mcp-session-'));
+  scratch = mkdtempSync(join(tmpdir(), 'nexttools-mcp-session-'));
   vi.stubEnv('HOME', scratch);
   vi.stubEnv('USERPROFILE', scratch);
   vi.resetModules();
@@ -20,7 +20,7 @@ afterAll(() => {
 
 describe('historical Session MCP selection authority', () => {
   it('repairs frozen IDs on read/write without adopting changed Agent defaults', async () => {
-    const configDir = join(scratch, '.myagents');
+    const configDir = join(scratch, '.nexttools');
     mkdirSync(configDir, { recursive: true });
     const metadata = createSessionMetadata(scratch, {
       mcpEnabledServers: '[playwright,tavily-search]' as unknown as string[],
@@ -57,7 +57,7 @@ describe('historical Session MCP selection authority', () => {
     });
     expect(updated?.mcpEnabledServers).toEqual(['tavily-search']);
     expect(await store.publishSessionForHandoff(session.id)).toBe(true);
-    const rows = JSON.parse(readFileSync(join(scratch, '.myagents', 'sessions.json'), 'utf8'));
+    const rows = JSON.parse(readFileSync(join(scratch, '.nexttools', 'sessions.json'), 'utf8'));
     expect(rows.find((row: { id: string }) => row.id === session.id).mcpEnabledServers).toEqual(['tavily-search']);
   });
 });

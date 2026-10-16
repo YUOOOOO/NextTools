@@ -1,7 +1,7 @@
 import type { RuntimeType } from '../../shared/types/runtime';
 import { RUNTIME_PRESENTATION } from './runtimePresentation';
 
-/** Integrated runtimes pair MyAgents with their engine; external CLIs use their own mark. */
+/** Integrated runtimes pair NextTools with their engine; external CLIs use their own mark. */
 export default function RuntimeIcon({ type, size = 20 }: { type: RuntimeType; size?: number }) {
   const { icon, engineIcon } = RUNTIME_PRESENTATION[type];
   if (!engineIcon) {

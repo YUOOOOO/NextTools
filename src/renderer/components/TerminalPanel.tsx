@@ -15,7 +15,7 @@ interface TerminalPanelProps {
   onTerminalExited: () => void;
   /** Whether this panel is currently the visible view (for fit-on-show) */
   isVisible?: boolean;
-  /** Session ID for this Tab — used to resolve sidecar port for MYAGENTS_PORT env var */
+  /** Session ID for this Tab — used to resolve sidecar port for NEXTTOOLS_PORT env var */
   sessionId?: string | null;
 }
 
@@ -154,7 +154,7 @@ export function TerminalPanel({
       if (cancelled) { unlistenExit(); unlistenData?.(); creatingRef.current = false; return; }
 
       // Step 2: Create PTY with pre-generated ID. Rust resolves the current
-      // Session generation before injecting MYAGENTS_PORT.
+      // Session generation before injecting NEXTTOOLS_PORT.
       const id = await invoke<string>('cmd_terminal_create', {
         workspacePath, rows, cols,
         sessionId: sessionIdProp ?? null,

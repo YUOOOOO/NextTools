@@ -3,7 +3,7 @@
 //! sherpa-onnx intentionally stays behind the C++ adapter in `native/`.
 //! Reproducing sherpa's aggregate configuration structs here would make every
 //! upstream field addition an implicit Rust ABI change. This module instead
-//! mirrors only the fixed MyAgents operations and validates the table prefix
+//! mirrors only the fixed NextTools operations and validates the table prefix
 //! before a verified native bundle may call it.
 
 use crate::diarization::{LocalSegment, LocalSpeakerObservation, WindowObservation, WindowSpec};
@@ -1075,7 +1075,7 @@ fn take_optional_label(buffer: &[u8], length: u32) -> Result<Option<String>, Nat
 }
 
 /// Validate the fixed table prefix returned by
-/// `myagents_speech_adapter_get_api(2)`.
+/// `nexttools_speech_adapter_get_api(2)`.
 ///
 /// # Safety
 ///

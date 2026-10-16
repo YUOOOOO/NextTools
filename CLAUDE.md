@@ -1,4 +1,4 @@
-# MyAgents — Desktop AI Agent
+# NextTools — Desktop AI Agent
 
 内置 Claude Agent SDK 与 DSH，并支持外部 Runtime 的桌面端通用 Agent 产品。开源（AGPL-3.0-only）并提供单独商业授权；使用 Conventional Commits；不得提交密钥、令牌或用户隐私数据。
 
@@ -30,14 +30,14 @@
 | `src/renderer/` | React 19 + TypeScript + Vite + TailwindCSS；桌面 WebView UI |
 | `src/server/` | Node.js v24 Sidecar；SessionEngine 与各 Runtime adapter；每 Session 独立实例 |
 | `src/server/plugin-bridge/` | 独立 Node 进程；OpenClaw Plugin Bridge |
-| `src/cli/` | `myagents` CLI 源码；业务 bundle 随 app 发布，`~/.myagents/bin/` 仅投影薄启动器 |
+| `src/cli/` | `nexttools` CLI 源码；业务 bundle 随 app 发布，`~/.nexttools/bin/` 仅投影薄启动器 |
 | `src/shared/` | renderer / server 共用的纯类型与逻辑 |
 | `src-tauri/` | Tauri v2 Rust 壳、进程与持久化 owner、HTTP/SSE 代理 |
 | `src-tauri/document-worker/` | 独立 Rust 文档转换 Worker；单 job 计算，不拥有队列或持久化 |
 | `src-tauri/media-worker/`、`src-tauri/media-worker-protocol/` | 独立 Rust 音频推理 Worker 与共享 wire protocol；单 workload / generation 计算，不拥有队列或持久化 |
 | `src-tauri/src/agent_network/`、`src/server/agent-network/` | 跨设备 Agent 网络客户端：Rust App 持有设备身份、连接与 TLS，Node 侧只适配进既有 Inbox / SessionEngine；公共中转/自部署属于 `MyAgents-Agenthub`，官方组合属于私有 `MyAgents_AgentNet` |
 | `vendor/agent-network-protocol/`、`src-tauri/agent-network-protocol/` | 固定版本的 Agent 网络协议包及其 Rust 投影；协议源码不在本仓库，只能按 `agent_network.md` 更新 vendored 包 |
-| `bundled-agents/myagents_helper/` | 内置 MA 小助理 |
+| `bundled-agents/nexttools_helper/` | 内置 NextTools 小助理 |
 | `bundled-workspaces/` | 随 App 发布的只读工作区模板源码；复制出的用户工作区不由此目录升级覆盖 |
 | `specs/` | 当前架构、设计规范、模块技术文档与构建指南 |
 
@@ -91,7 +91,7 @@ Builtin SDK、Integrated DSH 与 Claude Code / Codex 等外部 Runtime 的 sessi
 | Sidecar 冷启动 / pre-warm 性能 | `specs/tech_docs/sidecar_cold_start.md` |
 | Session ID、状态同步、恢复、配置归置、builtin Query / pre-warm 生命周期、Inbox 与 `session start/send/watch` | `specs/tech_docs/session_architecture.md`；transcript 持久化与回放再读 `specs/tech_docs/session_transcript_v2.md` |
 | 系统提示词组装、场景 Prompt、Workspace 指令注入 | `specs/tech_docs/system_prompt_architecture.md`；逐轮隐藏消息再读 `specs/tech_docs/system_reminder_protocol.md` |
-| Agent Runtime | `specs/tech_docs/multi_agent_runtime.md`；Integrated DSH 再读 `specs/tech_docs/myagents_dsh_integrated_runtime.md` |
+| Agent Runtime | `specs/tech_docs/multi_agent_runtime.md`；Integrated DSH 再读 `specs/tech_docs/nexttools_dsh_integrated_runtime.md` |
 | Task / Thought / Goal / Cron provider routing | `specs/tech_docs/task_center.md`、`specs/tech_docs/task_provider_routing.md` |
 | Cloud Space / Space Issue / registered agent | `specs/tech_docs/space_cloud.md`；改云 API、鉴权、数据或 quota 时再读 `../MyAgents_space/specs/ARCHITECTURE.md` |
 | Space IssueDelivery / registered-agent prompt 协议 | `specs/tech_docs/space_issue_delivery_protocol.md`、`specs/tech_docs/space_cloud.md`、`specs/tech_docs/system_reminder_protocol.md` |
@@ -100,7 +100,7 @@ Builtin SDK、Integrated DSH 与 Claude Code / Codex 等外部 Runtime 的 sessi
 | Plugin Bridge / OpenClaw / SDK shim | `specs/tech_docs/plugin_bridge_architecture.md` |
 | Claude Plugin 加载与安装 | `specs/tech_docs/plugin_loading.md` |
 | SDK 权限 hook / 自定义 Tool | `specs/tech_docs/sdk_canUseTool_guide.md`、`specs/tech_docs/sdk_custom_tools_guide.md` |
-| `myagents` CLI、Admin API、内置小助理、system skill | `specs/tech_docs/cli_architecture.md` |
+| `nexttools` CLI、Admin API、内置小助理、system skill | `specs/tech_docs/cli_architecture.md` |
 | 本地文档转换 / AnyDoc / OCR / Document Worker | `specs/tech_docs/document_processing.md` |
 | Record / 桌面录音 / 本地 Speech / 语音模型包 / Media Worker | `specs/tech_docs/recording_and_speech_recognition.md` |
 | 前端 UI、布局、交互、字号 | `specs/DESIGN.md` 的相关章节；只在主题工作时追加 `specs/tech_docs/theme_system.md` |

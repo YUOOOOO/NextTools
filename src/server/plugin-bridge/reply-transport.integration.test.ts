@@ -168,7 +168,7 @@ async function postJson(baseUrl: string, path: string, body: unknown): Promise<R
 
 describe('Plugin Bridge request-scoped reply transport', () => {
   it('ACKs slow partials, isolates same-chat requests, and preserves canonical finals', async () => {
-    const scratch = mkdtempSync(join(tmpdir(), 'myagents-reply-transport-'));
+    const scratch = mkdtempSync(join(tmpdir(), 'nexttools-reply-transport-'));
     const eventsPath = join(scratch, 'events.ndjson');
     const releasePath = join(scratch, 'release');
     const pluginDir = join(scratch, 'openclaw-plugins', 'fixture-install');

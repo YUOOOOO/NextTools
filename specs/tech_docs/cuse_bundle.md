@@ -1,6 +1,6 @@
 # Cuse 内置 Skill+CLI
 
-Cuse 的独立仓库负责桌面操作、CLI/help/Skill 内容及版本发布；MyAgents 消费完整 Skill 包。它是全局 **可关闭的 system-owned Skill**：首次默认启用，内容由客户端更新覆盖，关闭状态由现有 `skills-config.json.disabled` 保留。它不在 `REQUIRED_SYSTEM_SKILLS` 中，也不注册内置 MCP。
+Cuse 的独立仓库负责桌面操作、CLI/help/Skill 内容及版本发布；NextTools 消费完整 Skill 包。它是全局 **可关闭的 system-owned Skill**：首次默认启用，内容由客户端更新覆盖，关闭状态由现有 `skills-config.json.disabled` 保留。它不在 `REQUIRED_SYSTEM_SKILLS` 中，也不注册内置 MCP。
 
 ## 构建 owner 与交付结构
 
@@ -20,11 +20,11 @@ Mac 和 Windows 的正式/开发构建脚本调用 `scripts/prepare-cuse-bundle.
 
 ## Mac 签名与启动同步
 
-Cuse 上游包采用 ad-hoc 签名。MyAgents Mac 发布构建在下载验证后，用 `APPLE_SIGNING_IDENTITY` 对资源中的 Cuse CLI 执行 Developer ID / hardened runtime / timestamp 签名，再由 Tauri 封装 App。开发构建配置同一身份时也签名。Tauri 不自动签任意 Resources 下的可执行文件，这个显式步骤与 Node/Claude 的现有签名路径一致。
+Cuse 上游包采用 ad-hoc 签名。NextTools Mac 发布构建在下载验证后，用 `APPLE_SIGNING_IDENTITY` 对资源中的 Cuse CLI 执行 Developer ID / hardened runtime / timestamp 签名，再由 Tauri 封装 App。开发构建配置同一身份时也签名。Tauri 不自动签任意 Resources 下的可执行文件，这个显式步骤与 Node/Claude 的现有签名路径一致。
 
 `package.json` 保留上游交付 metadata；签名改变 CLI 字节，所以上游二进制哈希只用于**签名前构建下载验证**。下次构建会将签名后的 staging 判为需要恢复，从已验证的原始 ZIP 重新解包；双架构共用 universal ZIP，签名不会污染缓存。历史 checkout 第一次补齐 ZIP 缓存需要下载一次。启动时以**当前 App bundle 中实际文件**为权威比较、复制，不能拿上游 hash 拒绝正确签名的 App。
 
-Rust `cmd_sync_system_skills` 在原有同步锁内管理安装到 `~/.myagents/skills/cuse/`。Cuse 除系统 Skill 版本戳外还比较 App source 与已安装目录的完整 metadata/文件字节，并检查必需文件、普通路径与 Mac 可执行位。因此仅 Cuse 版本改变、不手工 bump 系统 Skill 版本也能更新；文件缺失、内容损坏或执行权限丢失会重新同步。源不完整时先保留旧副本，不先删除。Linux 跳过 Cuse 同步，不因此阻断其它系统 Skills。
+Rust `cmd_sync_system_skills` 在原有同步锁内管理安装到 `~/.nexttools/skills/cuse/`。Cuse 除系统 Skill 版本戳外还比较 App source 与已安装目录的完整 metadata/文件字节，并检查必需文件、普通路径与 Mac 可执行位。因此仅 Cuse 版本改变、不手工 bump 系统 Skill 版本也能更新；文件缺失、内容损坏或执行权限丢失会重新同步。源不完整时先保留旧副本，不先删除。Linux 跳过 Cuse 同步，不因此阻断其它系统 Skills。
 
 同步只写 Skill 目录；不写 `skills-config.json`。用户在「全局 Skills」关闭 Cuse 后，App 更新仍会覆盖内容，但不会重新启用。UI 复用既有 `systemOwned: true, required: false` 语义：内容只读、可启停；项目自己维护的同名 Skill 仍遵守原有 project winner 规则。
 
@@ -32,7 +32,7 @@ Rust `cmd_sync_system_skills` 在原有同步锁内管理安装到 `~/.myagents/
 
 所有 Runtime 继续走现有全局 inventory 和 capability selection。Builtin / Claude Code 工作区链接以及 Codex 的临时 Skill roots 链接整个目录，保留相对 `scripts/` 与 `references/`。Agent 从实际加载的 Skill 根目录读取 `package.json.entrypoint` 并解析成绝对路径，再按需使用 `--help` 和 `readme`，不依赖系统 PATH。更新由下次启动同步、既有 Runtime admission/idle replacement 生效。
 
-Mac 提供 Cuse 的后台窗口定向输入；前台输入仍共享用户鼠标/焦点。Windows 支持前台操作，后台计划返回 unsupported；Linux 不提供这份 Skill。权限和操作契约由随包 Skill 与 CLI help/readme 渐进披露，MyAgents 不在全局提示词镜像这些细节。首次实际操作可能仍需系统辅助功能/屏幕录制权限。
+Mac 提供 Cuse 的后台窗口定向输入；前台输入仍共享用户鼠标/焦点。Windows 支持前台操作，后台计划返回 unsupported；Linux 不提供这份 Skill。权限和操作契约由随包 Skill 与 CLI help/readme 渐进披露，NextTools 不在全局提示词镜像这些细节。首次实际操作可能仍需系统辅助功能/屏幕录制权限。
 
 关闭 Skill 控制能力发现与后续投影；它不是撤销操作系统权限、禁止已知绝对路径执行或强行取消当前 Agent 操作的安全开关。
 
@@ -45,4 +45,4 @@ Mac 提供 Cuse 的后台窗口定向输入；前台输入仍共享用户鼠标/
 
 构建下载每次允许 5 分钟，临时网络错误、408/429/500/502/503/504 最多尝试三次，间隔 1 秒、2 秒。元数据仍每次联网核对最新版本；不缓存 latest 作为离线 authority。下载日志包含 URL、尝试次数和超时，永久 HTTP 错误与完整性失败直接报错；最后失败保留旧 staging，修复网络后重跑原平台脚本。用户端文件不完整时由下次启动从 App bundle 补全；若 App 自身缺包则需修复客户端构建，不能让 Agent 自行下载另一份 CLI。
 
-可选原生验收：准备并签名 Cuse 后，将 `MYAGENTS_CUSE_SMOKE_SOURCE` 指向完整 `cuse/` 目录，显式运行 ignored Rust 测试 `cuse_prepared_bundle_native_smoke`。它通过真实系统 Skill 同步 helper 安装到临时目录，再执行同包 CLI 的 version/help/readme，不触碰用户 Skill 或桌面输入。
+可选原生验收：准备并签名 Cuse 后，将 `NEXTTOOLS_CUSE_SMOKE_SOURCE` 指向完整 `cuse/` 目录，显式运行 ignored Rust 测试 `cuse_prepared_bundle_native_smoke`。它通过真实系统 Skill 同步 helper 安装到临时目录，再执行同包 CLI 的 version/help/readme，不触碰用户 Skill 或桌面输入。

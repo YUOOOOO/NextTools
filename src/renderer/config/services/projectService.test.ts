@@ -45,7 +45,7 @@ describe('system preset workspace helpers', () => {
     const patch = getSystemPresetProjectMetadataPatch(project({
       displayName: 'My Mino',
       icon: 'star',
-      path: '/Users/me/.myagents/projects/mino',
+      path: '/Users/me/.nexttools/projects/mino',
     }), 'mino');
 
     expect(patch).toMatchObject({
@@ -75,7 +75,7 @@ describe('applyProjectRemovalIntent', () => {
   it('soft-deletes system preset workspaces', () => {
     const mino = project({
       id: 'mino-project',
-      path: '/Users/me/.myagents/projects/mino',
+      path: '/Users/me/.nexttools/projects/mino',
       workspaceType: 'system-preset',
       systemPresetId: 'mino',
     });

@@ -9,7 +9,7 @@ import {
 const scratchDirs: string[] = [];
 
 function scratchDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'myagents-crash-diagnostics-'));
+  const dir = mkdtempSync(join(tmpdir(), 'nexttools-crash-diagnostics-'));
   scratchDirs.push(dir);
   return dir;
 }

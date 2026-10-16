@@ -66,7 +66,7 @@ import type { ToolAttachment } from '../../shared/types/tool-attachment';
 import type { SubagentLifecycleStatus } from '../../shared/types/subagent-lifecycle';
 import { MCP_PREWARM_GRACE_MS } from '../session-core/mcp-prewarm-policy';
 import { classifyMcpFailure, type McpFailureCode } from '../../shared/mcpFailure';
-import { MYAGENTS_TOOL_CALL_TIMEOUT_MS } from '../session-core/tool-call-policy';
+import { NEXTTOOLS_TOOL_CALL_TIMEOUT_MS } from '../session-core/tool-call-policy';
 import { summarizeSensitiveValueForLog } from '../utils/log-summary';
 import { supportsCodexConversationBranch } from '../../shared/codex-conversation-capability';
 import type {
@@ -265,7 +265,7 @@ export const CODEX_INITIALIZE_CAPABILITIES = Object.freeze({
 
 export function buildCodexInitializeParams(experimentalApi = false): Record<string, unknown> {
   return {
-    clientInfo: { name: 'MyAgents', title: null, version: process.env.MYAGENTS_VERSION || '0.1.60' },
+    clientInfo: { name: 'NextTools', title: null, version: process.env.NEXTTOOLS_VERSION || '0.1.60' },
     capabilities: experimentalApi
       ? { ...CODEX_INITIALIZE_CAPABILITIES, experimentalApi: true }
       : CODEX_INITIALIZE_CAPABILITIES,
@@ -305,7 +305,7 @@ function summarizeCodexErrorForLog(error: unknown): string {
 
 const CODEX_PROJECT_DOC_FALLBACK_CONFIG = 'project_doc_fallback_filenames=["CLAUDE.md"]';
 const CODEX_FILE_AUTH_CONFIG = 'cli_auth_credentials_store="file"';
-const MANAGED_CODEX_HTTP_PROVIDER_ID = 'myagents_managed_http';
+const MANAGED_CODEX_HTTP_PROVIDER_ID = 'nexttools_managed_http';
 export type CodexMcpStartupState = 'starting' | 'ready' | 'failed' | 'cancelled';
 
 export interface CodexMcpStartupStatusNotification {
@@ -393,7 +393,7 @@ export interface CodexMcpStartupResult {
 }
 
 /**
- * Runtime-native startup barrier for the MCP servers MyAgents injected into a
+ * Runtime-native startup barrier for the MCP servers NextTools injected into a
  * managed Codex process. Unknown Codex-owned servers are intentionally ignored:
  * this owner can only wait on configuration it owns.
  */
@@ -582,7 +582,7 @@ export function materializeManagedCodexExtensions(
   }
   let root: string;
   try {
-    root = mkdtempSync(join(tmpdir(), 'myagents-codex-extensions-'));
+    root = mkdtempSync(join(tmpdir(), 'nexttools-codex-extensions-'));
   } catch (error) {
     console.warn(
       '[codex] managed extension materialization unavailable; continuing without projected Agents and Skills:',
@@ -885,7 +885,7 @@ export function resolveCodexThreadModelProvider(
   if (!resumeSessionId || model?.trim()) return launchModelProvider;
 
   // A legacy thread can carry a different persisted model/provider pair. When
-  // MyAgents has no authoritative model snapshot, let Codex restore that pair
+  // NextTools has no authoritative model snapshot, let Codex restore that pair
   // together instead of overriding only its provider and resetting the model.
   return undefined;
 }
@@ -1071,7 +1071,7 @@ export function buildCodexCompletedFileChangeInput(
 // ─── Temp image directory for Codex (which requires file paths, not base64) ───
 const TEMP_IMG_DIR = join(
   process.env.HOME || process.env.USERPROFILE || '/tmp',
-  '.myagents', 'tmp', 'codex-images',
+  '.nexttools', 'tmp', 'codex-images',
 );
 
 /**
@@ -1631,7 +1631,7 @@ export function resolveTopLevelSpawnCard(
 }
 
 /**
- * Notification methods that drive the MAIN MyAgents session and carry a
+ * Notification methods that drive the MAIN NextTools session and carry a
  * top-level `threadId`. When such an event comes from a spawned sub-agent
  * thread it must be ignored (see the guard in parseNotification). Two reasons a
  * method belongs here:
@@ -2749,9 +2749,9 @@ class CodexProcess implements RuntimeProcess {
   reasoningEffort = '';
   models: RuntimeModelInfo[] = [];
 
-  /** MyAgents sessionId (from SessionStartOptions). Used as the attachment scope key
+  /** NextTools sessionId (from SessionStartOptions). Used as the attachment scope key
    *  so refPath /api/attachment/tool/<sessionId>/<turnId>/<file> stays consistent
-   *  across runtime resumes within the same MyAgents session. */
+   *  across runtime resumes within the same NextTools session. */
   sessionId = '';
   // True when the startSession catch-handler killed the process itself (stale
   // resume, init failure, etc.). Suppresses the synthetic "Codex process
@@ -2885,7 +2885,7 @@ const CODEX_STDERR_PATTERNS: StderrPattern[] = [
   { re: /not (signed in|logged in|authenticated)|authentication required|please sign in/i, level: 'error', prefix: 'Codex authentication required' },
   { re: /(401|403)\b.*?(unauthor|forbid)/i, level: 'error', prefix: 'Codex authorization rejected' },
   // Network / proxy diagnostics.
-  { re: /proxyconnect tcp: dial tcp 127\.[0-9.]+:\d+: connect: operation not permitted/i, level: 'error', prefix: 'Codex sandbox blocks MyAgents proxy' },
+  { re: /proxyconnect tcp: dial tcp 127\.[0-9.]+:\d+: connect: operation not permitted/i, level: 'error', prefix: 'Codex sandbox blocks NextTools proxy' },
   { re: /(connection (refused|reset)|tls handshake|dns (failure|resolve))/i, level: 'error', prefix: 'Codex network error' },
 ];
 
@@ -3074,7 +3074,7 @@ function sanitizeProxyUrl(url: string | undefined): string | undefined {
 function buildEffectiveEnvSnapshot(
   env: Record<string, string | undefined>,
   cwd: string,
-  proxyPolicy: RuntimeProxyPolicy = 'myagents',
+  proxyPolicy: RuntimeProxyPolicy = 'nexttools',
 ): RuntimeEffectiveEnv {
   const path = env.PATH || env.Path || '';
   const pathHead = path.split(process.platform === 'win32' ? ';' : ':')
@@ -3089,11 +3089,11 @@ function buildEffectiveEnvSnapshot(
       no: env.NO_PROXY || env.no_proxy || undefined,
     },
     // Reflects the agent's runtimeConfig.envPolicy.proxy resolved at session
-    // start (issue #194). 'myagents' = MyAgents-configured proxy is injected;
+    // start (issue #194). 'nexttools' = NextTools-configured proxy is injected;
     // 'terminal' = inherited from user's interactive shell.
     proxyPolicy,
     pathHead,
-    myagentsProxyInjected: env.MYAGENTS_PROXY_INJECTED === '1',
+    nexttoolsProxyInjected: env.NEXTTOOLS_PROXY_INJECTED === '1',
     hasOpenaiApiKey: !!(env.OPENAI_API_KEY && env.OPENAI_API_KEY.length > 0),
     hasAnthropicApiKey: !!(env.ANTHROPIC_API_KEY && env.ANTHROPIC_API_KEY.length > 0),
     hasCodexHome: !!(env.CODEX_HOME && env.CODEX_HOME.length > 0),
@@ -3211,9 +3211,9 @@ export function codexProxyProbeIssue(
     title: 'Codex network access requires approval',
     message: 'The unapproved proxy probe was blocked by the network sandbox. Agent commands can request network approval.',
   } : {
-    code: 'codex_sandbox_blocks_myagents_proxy',
+    code: 'codex_sandbox_blocks_nexttools_proxy',
     severity: 'error',
-    title: 'Codex sandbox blocks the MyAgents proxy',
+    title: 'Codex sandbox blocks the NextTools proxy',
     message: `Codex could not connect to loopback proxy ${proxy.url}: ${proxy.error ?? 'unreachable'}`,
     hint: 'Check the proxy connection and the effective Codex network policy.',
   };
@@ -3229,7 +3229,7 @@ async function collectCodexDiagnostics(
    * declares this nullable. Earlier code passed `''`, which serde could reject.
    */
   threadId: string | null,
-  proxyPolicy: RuntimeProxyPolicy = 'myagents',
+  proxyPolicy: RuntimeProxyPolicy = 'nexttools',
   sandboxPolicy?: CodexSandboxPolicy,
   runtimeSource: import('../../shared/types/runtime').RuntimeSource = 'system-cli',
 ): Promise<RuntimeDiagnostics> {
@@ -3276,7 +3276,7 @@ async function collectCodexDiagnostics(
   // (apikey / chatgpt / chatgptAuthTokens / agentIdentity), so the user must
   // sign in. Earlier code derived requiresLogin from `requiresOpenaiAuth`
   // alone, which flagged every authed Codex user as needing login — surfacing
-  // a false-positive "需要登录 Codex" banner in MyAgents (cross-bugfix #1).
+  // a false-positive "需要登录 Codex" banner in NextTools (cross-bugfix #1).
   let auth: RuntimeAuthStatus | undefined;
   if (authR[0] === 'ok') {
     status.auth = 'ok';
@@ -3296,7 +3296,7 @@ async function collectCodexDiagnostics(
         message: 'Codex reported no active auth method for this runtime session.',
         hint: runtimeSource === 'managed-provider'
           ? 'Open Settings → Model Providers → Codex (订阅), then log in again.'
-          : 'Run `codex login` in a terminal, then retry from MyAgents.',
+          : 'Run `codex login` in a terminal, then retry from NextTools.',
       });
     }
   } else if (authR[0] === 'unsupported') {
@@ -3558,7 +3558,7 @@ export class CodexRuntime implements AgentRuntime {
   }
 
   /**
-   * Standalone diagnostic run (issue #194 — used by `myagents diagnose runtime
+   * Standalone diagnostic run (issue #194 — used by `nexttools diagnose runtime
    * codex`). Spawns a short-lived `codex app-server`, runs initialize, fans
    * out the four diagnostic RPCs, and tears down. Does NOT start a thread —
    * the three core RPCs (`getAuthStatus`, `experimentalFeature/list`,
@@ -3570,7 +3570,7 @@ export class CodexRuntime implements AgentRuntime {
    * snapshot reflects what production Codex would see. Pass `envPolicy` from
    * the same `agent.runtimeConfig.envPolicy` that the real session would
    * resolve — otherwise the diagnostic would silently report the legacy
-   * `myagents` proxy view even when the agent is set to `terminal`/`direct`
+   * `nexttools` proxy view even when the agent is set to `terminal`/`direct`
    * (Codex review #3 catch).
    */
   async runStandaloneDiagnostics(
@@ -3622,7 +3622,7 @@ export class CodexRuntime implements AgentRuntime {
         env,
         cwd,
         null,
-        envPolicy?.proxy ?? 'myagents',
+        envPolicy?.proxy ?? 'nexttools',
         // Without a thread, let command/exec inherit the native configuration.
         undefined,
         'system-cli',
@@ -3658,7 +3658,7 @@ export class CodexRuntime implements AgentRuntime {
     // consults `$PWD` (vs. the kernel-level cwd Rust's spawn passes) sees the
     // workspace, not the sidecar's launch directory. Codex review SM finding.
     codexEnv.PWD = options.workspacePath;
-    codexEnv.MYAGENTS_SESSION_ID = options.sessionId;
+    codexEnv.NEXTTOOLS_SESSION_ID = options.sessionId;
     const extensionSnapshot = runtimeSource === 'managed-provider'
       ? options.managedCodexExtensions
       : undefined;
@@ -4272,7 +4272,7 @@ export class CodexRuntime implements AgentRuntime {
         scheduleMcpToolCatalogRefresh();
       }
 
-      // MyAgents owns a 10s dispatch grace; Codex's native attempt remains
+      // NextTools owns a 10s dispatch grace; Codex's native attempt remains
       // alive under its independent 60s bound so a late-ready server can be
       // observed and used without replaying this turn.
       if (launchConfig.mcpServerNames.length > 0) {
@@ -4333,7 +4333,7 @@ export class CodexRuntime implements AgentRuntime {
             codexEnv,
             options.workspacePath,
             codexProc.threadId,
-            options.envPolicy?.proxy ?? 'myagents',
+            options.envPolicy?.proxy ?? 'nexttools',
             buildCodexSandboxPolicy(sandbox, options.workspacePath, codexProc.workspacePolicy),
             runtimeSource,
           );
@@ -5026,7 +5026,7 @@ export class CodexRuntime implements AgentRuntime {
     // PRD 0.2.27 — sub-agent threads run their OWN turns/lifecycle multiplexed
     // over this connection (verified live: a spawned child emits its own
     // turn/started + turn/completed with isMain=false, plus thread lifecycle).
-    // Those MUST NOT drive the MAIN MyAgents session: a child's turn/completed
+    // Those MUST NOT drive the MAIN NextTools session: a child's turn/completed
     // would otherwise finalize the user's turn early and resetTurnAccumulators()
     // mid-fan-out — wiping currentContentBlocks (the spawn card + its nested
     // calls) and breaking both turn integrity and the nesting itself.
@@ -5199,7 +5199,7 @@ export class CodexRuntime implements AgentRuntime {
       // Managed Codex 0.144.1 raw protocol item. The typed terminal activity
       // intentionally omits whether `interacted` came from send_message or
       // followup_task; retain only that one semantic bit, keyed by the shared
-      // call id, and keep the rest of the raw model payload out of MyAgents.
+      // call id, and keep the rest of the raw model payload out of NextTools.
       case 'rawResponseItem/completed': {
         const item = objectValue(p.item);
         if (item.type !== 'function_call') return null;
@@ -6006,7 +6006,7 @@ export class CodexRuntime implements AgentRuntime {
     }
     pending.timeout = setTimeout(() => {
       codexProc.abortPendingHostCall(callId, `Managed Codex Host tool timed out: ${tool}`);
-    }, MYAGENTS_TOOL_CALL_TIMEOUT_MS);
+    }, NEXTTOOLS_TOOL_CALL_TIMEOUT_MS);
     const call: ManagedCodexHostToolCall = {
       processGeneration: codexProc.processGeneration,
       threadId: pending.threadId,
@@ -6192,11 +6192,11 @@ export class CodexRuntime implements AgentRuntime {
         break;
 
       case 'account/chatgptAuthTokens/refresh':
-        codexProc.rpc.respondError(rpcId, -32000, 'MyAgents does not refresh Codex ChatGPT tokens; run `codex login` in a terminal');
+        codexProc.rpc.respondError(rpcId, -32000, 'NextTools does not refresh Codex ChatGPT tokens; run `codex login` in a terminal');
         break;
 
       case 'attestation/generate':
-        codexProc.rpc.respondError(rpcId, -32000, 'MyAgents did not request Codex attestation');
+        codexProc.rpc.respondError(rpcId, -32000, 'NextTools did not request Codex attestation');
         break;
 
       case 'currentTime/read':

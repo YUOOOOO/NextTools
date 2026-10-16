@@ -1,23 +1,23 @@
-use myagents_media_worker::attachment_audio::{AttachmentAudioDecoder, AttachmentAudioError};
-use myagents_media_worker::diarization::{
+use nexttools_media_worker::attachment_audio::{AttachmentAudioDecoder, AttachmentAudioError};
+use nexttools_media_worker::diarization::{
     BoundedDiarization, BoundedDiarizationConfig, DiarizationError, LocalSegment,
     SourceWindowBuffer, WindowObservation,
 };
-use myagents_media_worker::model_pack_source::verify_installed_pack;
-use myagents_media_worker::native_adapter::{
+use nexttools_media_worker::model_pack_source::verify_installed_pack;
+use nexttools_media_worker::native_adapter::{
     AsrEngine, NativeAdapterError, NativeStatus, VadEngine,
 };
-use myagents_media_worker::native_bundle::{LoadedNativeAdapter, verify_native_bundle};
-use myagents_media_worker::protocol::record_timeline::CaptureTimeQuality;
-use myagents_media_worker::protocol::{
+use nexttools_media_worker::native_bundle::{LoadedNativeAdapter, verify_native_bundle};
+use nexttools_media_worker::protocol::record_timeline::CaptureTimeQuality;
+use nexttools_media_worker::protocol::{
     Checkpoint, ManagerFrame, PROTOCOL_VERSION, PcmFrame, PcmStreamCheckpoint, PcmStreamEnd,
     PcmStreamStart, RecordArtifactInput, TrackKind, WorkerCommand, WorkerMetrics, WorkerResponse,
     WorkerStage, WorkloadIdentity, WorkloadInput, WorkloadKind, read_manager_frame,
     write_control_frame,
 };
-use myagents_media_worker::record_live::LiveRecordAudio;
-use myagents_media_worker::record_preprocessing::RecordAudioReader;
-use myagents_media_worker::record_source::SourceAudioChunk;
+use nexttools_media_worker::record_live::LiveRecordAudio;
+use nexttools_media_worker::record_preprocessing::RecordAudioReader;
+use nexttools_media_worker::record_source::SourceAudioChunk;
 use std::collections::VecDeque;
 use std::io::{self, BufReader, BufWriter, StdinLock, StdoutLock, Write};
 use std::path::Path;
@@ -28,7 +28,7 @@ use zeroize::Zeroize;
 
 fn main() {
     if let Err(code) = run() {
-        eprintln!("myagents-media-worker terminated: {code}");
+        eprintln!("nexttools-media-worker terminated: {code}");
         std::process::exit(2);
     }
 }
@@ -62,7 +62,7 @@ fn run() -> Result<(), &'static str> {
 }
 
 fn run_started(
-    start: myagents_media_worker::protocol::StartRequest,
+    start: nexttools_media_worker::protocol::StartRequest,
     writer: &mut BufWriter<StdoutLock<'_>>,
 ) -> Result<(), &'static str> {
     if let (WorkloadKind::AttachmentProbe, WorkloadInput::Attachment { input_path }) =
@@ -157,7 +157,7 @@ fn run_attachment_probe(
 fn run_model_pack_probe(
     identity: &WorkloadIdentity,
     adapter: &LoadedNativeAdapter,
-    models: &myagents_media_worker::model_pack_source::VerifiedModelPack,
+    models: &nexttools_media_worker::model_pack_source::VerifiedModelPack,
     writer: &mut BufWriter<StdoutLock<'_>>,
 ) -> Result<(), &'static str> {
     {
@@ -188,10 +188,10 @@ fn run_record_diarization(
     identity: &WorkloadIdentity,
     inputs: &[RecordArtifactInput],
     identity_anchors: Option<
-        &myagents_media_worker::protocol::record_identity::IdentityAnchorInput,
+        &nexttools_media_worker::protocol::record_identity::IdentityAnchorInput,
     >,
     adapter: &LoadedNativeAdapter,
-    models: &myagents_media_worker::model_pack_source::VerifiedModelPack,
+    models: &nexttools_media_worker::model_pack_source::VerifiedModelPack,
     writer: &mut BufWriter<StdoutLock<'_>>,
 ) -> Result<(), &'static str> {
     let started_at = Instant::now();
@@ -364,7 +364,7 @@ fn run_record_diarization(
         },
     )?;
     let anchors = identity_anchors
-        .map(myagents_media_worker::record_identity::read_anchors)
+        .map(nexttools_media_worker::record_identity::read_anchors)
         .transpose()?;
     let mut identity_error = None;
     let projection = fusion.finish_with_identity(
@@ -377,7 +377,7 @@ fn run_record_diarization(
             let Some(anchors) = &anchors else {
                 return Ok(Vec::new());
             };
-            let result = myagents_media_worker::record_identity::reconcile(
+            let result = nexttools_media_worker::record_identity::reconcile(
                 anchors,
                 inputs,
                 view,
@@ -432,7 +432,7 @@ fn run_record_diarization(
     let turns = projection
         .segments
         .iter()
-        .map(|segment| myagents_media_worker::protocol::SpeakerTurn {
+        .map(|segment| nexttools_media_worker::protocol::SpeakerTurn {
             source: segment.source,
             start_sample: segment.start_sample,
             end_sample: segment.end_sample,
@@ -459,7 +459,7 @@ fn run_record_diarization(
         )?;
     }
     let evidence = &projection.identity_evidence;
-    let batch_size = myagents_media_worker::protocol::record_identity::MAX_IDENTITY_BATCH;
+    let batch_size = nexttools_media_worker::protocol::record_identity::MAX_IDENTITY_BATCH;
     let batches = evidence.len().max(1).div_ceil(batch_size);
     for index in 0..batches {
         if poll_batch_control(identity, &controls, &checkpoints, writer)? {
@@ -499,7 +499,7 @@ fn run_record_backfill(
     identity: &WorkloadIdentity,
     inputs: &[RecordArtifactInput],
     adapter: &LoadedNativeAdapter,
-    models: &myagents_media_worker::model_pack_source::VerifiedModelPack,
+    models: &nexttools_media_worker::model_pack_source::VerifiedModelPack,
     writer: &mut BufWriter<StdoutLock<'_>>,
 ) -> Result<(), &'static str> {
     let started_at = Instant::now();
@@ -626,7 +626,7 @@ impl<'adapter> SourceVad<'adapter> {
     fn new(
         track: TrackKind,
         adapter: &'adapter LoadedNativeAdapter,
-        models: &myagents_media_worker::model_pack_source::VerifiedModelPack,
+        models: &nexttools_media_worker::model_pack_source::VerifiedModelPack,
     ) -> Result<Self, &'static str> {
         Ok(Self {
             track,
@@ -645,7 +645,7 @@ fn run_attachment_asr(
     identity: &WorkloadIdentity,
     input_path: &str,
     adapter: &LoadedNativeAdapter,
-    models: &myagents_media_worker::model_pack_source::VerifiedModelPack,
+    models: &nexttools_media_worker::model_pack_source::VerifiedModelPack,
     writer: &mut BufWriter<StdoutLock<'_>>,
 ) -> Result<(), &'static str> {
     let started_at = Instant::now();
@@ -1027,7 +1027,7 @@ fn run_live(
     identity: &WorkloadIdentity,
     stream_starts: &[PcmStreamStart],
     adapter: &LoadedNativeAdapter,
-    models: &myagents_media_worker::model_pack_source::VerifiedModelPack,
+    models: &nexttools_media_worker::model_pack_source::VerifiedModelPack,
     reader: &mut BufReader<StdinLock<'_>>,
     writer: &mut BufWriter<StdoutLock<'_>>,
 ) -> Result<(), &'static str> {
@@ -1301,7 +1301,7 @@ fn checkpoint(tracks: &[LiveTrack], transcription: &[SourceVad<'_>]) -> Checkpoi
                     .map(|source| {
                         let floor = if source.has_input {
                             source.end_sample.saturating_sub(
-                                myagents_media_worker::native_adapter::MAX_ASR_SAMPLES as u64,
+                                nexttools_media_worker::native_adapter::MAX_ASR_SAMPLES as u64,
                             )
                         } else {
                             source.end_sample

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create a MyAgents/Codex-compatible pet run folder, prompts, and imagegen job manifest."""
+"""Create a NextTools/Codex-compatible pet run folder, prompts, and imagegen job manifest."""
 
 from __future__ import annotations
 
@@ -243,12 +243,12 @@ def infer_description(args: argparse.Namespace, reference_paths: list[Path]) -> 
     if args.description.strip():
         return sentence(args.description)
     if args.pet_notes.strip():
-        return sentence(f"A compact MyAgents/Codex-compatible pet: {args.pet_notes}")
+        return sentence(f"A compact NextTools/Codex-compatible pet: {args.pet_notes}")
     if args.brand_name.strip():
-        return sentence(f"A compact MyAgents/Codex-compatible pet inspired by {args.brand_name}")
+        return sentence(f"A compact NextTools/Codex-compatible pet inspired by {args.brand_name}")
     if reference_paths:
-        return "A compact MyAgents/Codex-compatible pet based on the provided reference image."
-    return "A compact original MyAgents/Codex-compatible pet ready for animation."
+        return "A compact NextTools/Codex-compatible pet based on the provided reference image."
+    return "A compact original NextTools/Codex-compatible pet ready for animation."
 
 
 def infer_pet_notes(args: argparse.Namespace, reference_paths: list[Path]) -> str:
@@ -260,7 +260,7 @@ def infer_pet_notes(args: argparse.Namespace, reference_paths: list[Path]) -> st
         return f"a compact mascot inspired by {args.brand_name.strip()}"
     if reference_paths:
         return "the pet shown in the reference image(s)"
-    return "a compact original MyAgents/Codex-compatible pet"
+    return "a compact original NextTools/Codex-compatible pet"
 
 
 def default_output_dir(pet_id: str) -> Path:
@@ -491,7 +491,7 @@ def base_pet_prompt(args: argparse.Namespace) -> str:
     brand_block = f"\nBrand inspiration: {brand_line}\n" if brand_line else "\n"
     chroma_key = args.chroma_key["hex"]
     chroma_name = args.chroma_key["name"]
-    return f"""Create one clean full-body reference sprite for MyAgents/Codex-compatible pet {args.display_name}.
+    return f"""Create one clean full-body reference sprite for NextTools/Codex-compatible pet {args.display_name}.
 
 Pet identity: {pet_notes}.
 Style: {style_contract}
@@ -508,7 +508,7 @@ def row_prompt(
     chroma_name = args.chroma_key["name"]
     state_prompt = STATE_PROMPTS[state]
     state_requirements = "\n".join(f"- {line}" for line in STATE_REQUIREMENTS[state])
-    return f"""Create one horizontal animation strip for MyAgents/Codex-compatible pet `{args.pet_id}`, state `{state}`.
+    return f"""Create one horizontal animation strip for NextTools/Codex-compatible pet `{args.pet_id}`, state `{state}`.
 
 Use the attached canonical base for identity. Use the attached layout guide only for slot count, spacing, centering, and padding; do not draw the guide.
 
@@ -534,7 +534,7 @@ def retry_row_prompt(
     chroma_name = args.chroma_key["name"]
     state_prompt = STATE_PROMPTS[state]
     state_requirements = "\n".join(f"- {line}" for line in STATE_REQUIREMENTS[state])
-    return f"""Create MyAgents/Codex-compatible pet row `{state}` for `{args.pet_id}`: exactly {frames} full-body frames in one horizontal strip on flat pure {chroma_name} {chroma_key}.
+    return f"""Create NextTools/Codex-compatible pet row `{state}` for `{args.pet_id}`: exactly {frames} full-body frames in one horizontal strip on flat pure {chroma_name} {chroma_key}.
 
 Use the attached canonical base for identity and the layout guide only for spacing. Same pet in every frame: {pet_notes}. Preserve silhouette, face, palette, material, proportions, markings, and props.
 

@@ -11,7 +11,7 @@ describe('loadSkillTree local sources', () => {
   let root: string;
 
   beforeEach(() => {
-    root = mkdtempSync(join(tmpdir(), 'myagents-skill-source-'));
+    root = mkdtempSync(join(tmpdir(), 'nexttools-skill-source-'));
   });
 
   afterEach(() => {

@@ -22,7 +22,7 @@ vi.mock('@tauri-apps/api/core', () => tauriCoreMocks);
 const mocks = vi.hoisted(() => {
   const project = {
     id: 'helper-project',
-    path: '/Users/me/.myagents',
+    path: '/Users/me/.nexttools',
     displayName: 'MA Helper',
     agentId: 'helper-agent',
   };
@@ -2246,7 +2246,7 @@ describe('App helper launch', () => {
     const routes = [
       { version: 1, name: 'space.home', params: {} },
       { version: 1, name: 'space.issues', params: { spaceId: 'official' } },
-      { version: 1, name: 'space.issue', params: { spaceId: 'myagents', issueId: 'iss_123' } },
+      { version: 1, name: 'space.issue', params: { spaceId: 'nexttools', issueId: 'iss_123' } },
     ];
     let spaceTabId: string | undefined;
     for (const [index, route] of routes.entries()) {
@@ -2481,15 +2481,15 @@ describe('App helper launch', () => {
       if (command === 'cmd_record_discussion_context') {
         return {
           documentPath:
-            '/Users/me/.myagents/records/2026-08/record-audio/content.md',
+            '/Users/me/.nexttools/records/2026-08/record-audio/content.md',
           audioSources: [
             {
               track: 'microphone',
-              path: '/Users/me/.myagents/records/2026-08/record-audio/audio/microphone.opus',
+              path: '/Users/me/.nexttools/records/2026-08/record-audio/audio/microphone.opus',
             },
             {
               track: 'system',
-              path: '/Users/me/.myagents/records/2026-08/record-audio/audio/system.opus',
+              path: '/Users/me/.nexttools/records/2026-08/record-audio/audio/system.opus',
             },
           ],
         };
@@ -2543,13 +2543,13 @@ describe('App helper launch', () => {
 
     const prompt = composeQueryReminder({ visibleText: initial?.text ?? '', primaryContext: initial?.primaryContext });
     expect(prompt).toContain(
-      'sourceRecordDocumentPath: /Users/me/.myagents/records/2026-08/record-audio/content.md',
+      'sourceRecordDocumentPath: /Users/me/.nexttools/records/2026-08/record-audio/content.md',
     );
     expect(prompt).toContain(
-      '- microphone: /Users/me/.myagents/records/2026-08/record-audio/audio/microphone.opus',
+      '- microphone: /Users/me/.nexttools/records/2026-08/record-audio/audio/microphone.opus',
     );
     expect(prompt).toContain(
-      '- system: /Users/me/.myagents/records/2026-08/record-audio/audio/system.opus',
+      '- system: /Users/me/.nexttools/records/2026-08/record-audio/audio/system.opus',
     );
     expect(prompt).toContain(
       '请完整读取 sourceRecordDocumentPath 指向的录音文稿',

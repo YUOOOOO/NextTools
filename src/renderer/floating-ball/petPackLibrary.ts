@@ -14,7 +14,7 @@ export interface InstalledPetRecord {
     license?: string;
     spritesheetFilePath: string;
     spritesheetPath: string;
-    source: 'myagents' | 'codex';
+    source: 'nexttools' | 'codex';
     atlas?: unknown;
 }
 

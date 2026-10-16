@@ -279,7 +279,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-const PROMPT_CACHE_KEY_VALUE_RE = /myagents:(?:chat_completions|responses):[a-f0-9]{32}/g;
+const PROMPT_CACHE_KEY_VALUE_RE = /nexttools:(?:chat_completions|responses):[a-f0-9]{32}/g;
 const ERROR_REQUEST_ECHO_KEYS = new Set([
   'content',
   'input',
@@ -424,7 +424,7 @@ export function createBridgeHandler(config: BridgeConfig): BridgeHandler {
     let effectivePromptCacheKey = capabilities.key
       && affinity?.promptCacheKeyMode === 'session'
       && !upstream.cacheCompatibility?.isKeyDisabled(cacheTarget)
-      ? buildPromptCacheKey({ appNamespace: 'myagents', providerId: upstream.providerId,
+      ? buildPromptCacheKey({ appNamespace: 'nexttools', providerId: upstream.providerId,
           model: targetModel, sessionId: affinity.sessionId, upstreamFormat })
       : undefined;
     let promptCacheBreakpointsEnabled = capabilities.breakpoints

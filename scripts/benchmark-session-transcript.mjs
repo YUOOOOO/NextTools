@@ -14,7 +14,7 @@ import {
 import { TranscriptFile } from "../src/server/session-transcript/file.ts";
 import { TranscriptWriter } from "../src/server/session-transcript/writer.ts";
 import { ProductTranscriptContent } from "../src/server/session-transcript/content.ts";
-const root = await mkdtemp(join(tmpdir(), "myagents-v2-perf-"));
+const root = await mkdtemp(join(tmpdir(), "nexttools-v2-perf-"));
 // Emits retained fixtures for the opt-in Rust index benchmark. The same
 // searchable text and message boundaries are encoded through both formats.
 if (process.argv.includes("--index-fixtures")) {
@@ -44,7 +44,7 @@ if (process.argv.includes("--index-fixtures")) {
     }
     console.log(JSON.stringify({ mib, version, logBytes: (await stat(path)).size }));
   }
-  console.log(JSON.stringify({ root, purpose: "MYAGENTS_TRANSCRIPT_INDEX_BENCH_DIR" }));
+  console.log(JSON.stringify({ root, purpose: "NEXTTOOLS_TRANSCRIPT_INDEX_BENCH_DIR" }));
   process.exit(0);
 }
 const metrics = {

@@ -45,7 +45,7 @@ function hasSdkDisallowedSkillNameCharacter(value: string): boolean {
 /**
  * Mirror the SDK 0.3.221+ `Options.skills` admission contract at Query birth.
  *
- * The SDK throws before spawning when any one entry is malformed. MyAgents has
+ * The SDK throws before spawning when any one entry is malformed. NextTools has
  * a real installed base whose project/global/plugin Skills predate that stricter
  * contract, so one incompatible name must not make an otherwise valid historical
  * Session impossible to resume. Keep this exact-name filter narrow: names the SDK

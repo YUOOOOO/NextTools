@@ -732,7 +732,7 @@ impl SessionRouter {
     }
 
     /// True only while this peer binding points at a Rust-minted session_id that
-    /// has not yet been accepted by the sidecar as a real MyAgents session.
+    /// has not yet been accepted by the sidecar as a real NextTools session.
     pub fn metadata_birth_pending(&self, session_key: &str) -> bool {
         self.peer_sessions
             .get(session_key)

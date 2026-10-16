@@ -22,7 +22,7 @@ on:
       - 'workflow-disabled-do-not-use'
 
 env:
-  APP_NAME: MyAgents
+  APP_NAME: NextTools
 
 jobs:
   build:
@@ -109,7 +109,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: v__VERSION__
-          releaseName: 'MyAgents v__VERSION__'
+          releaseName: 'NextTools v__VERSION__'
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: true
           prerelease: false
@@ -207,12 +207,12 @@ jobs:
             SIGNATURE=$(cat "$SIG")
 
             # Upload tar.gz to R2 (for updater)
-            rclone copy "$TAR_GZ" "r2:myagents-releases/releases/v${VERSION}/"
+            rclone copy "$TAR_GZ" "r2:nexttools-releases/releases/v${VERSION}/"
 
             # Upload DMG to R2 (for website download)
             if [ -n "$DMG" ]; then
               DMG_FILENAME=$(basename "$DMG")
-              rclone copy "$DMG" "r2:myagents-releases/releases/v${VERSION}/"
+              rclone copy "$DMG" "r2:nexttools-releases/releases/v${VERSION}/"
 
               # Store DMG filename for latest.json
               if [ "$target" = "aarch64-apple-darwin" ]; then
@@ -233,7 +233,7 @@ jobs:
             printf '%s\n' \
               '{' \
               "  \"version\": \"${VERSION}\"," \
-              "  \"notes\": \"MyAgents v${VERSION}\"," \
+              "  \"notes\": \"NextTools v${VERSION}\"," \
               "  \"pub_date\": \"${PUB_DATE}\"," \
               '  "platforms": {' \
               "    \"${MANIFEST_NAME}\": {" \
@@ -252,7 +252,7 @@ jobs:
             '{' \
             "  \"version\": \"${VERSION}\"," \
             "  \"pub_date\": \"${PUB_DATE}\"," \
-            "  \"release_notes\": \"MyAgents v${VERSION}\"," \
+            "  \"release_notes\": \"NextTools v${VERSION}\"," \
             '  "downloads": {' \
             '    "mac_arm64": {' \
             '      "name": "Apple Silicon",' \
@@ -269,7 +269,7 @@ jobs:
           echo "Generated latest.json"
 
           # Upload all manifests to R2
-          rclone copy update-manifests/ "r2:myagents-releases/update/"
+          rclone copy update-manifests/ "r2:nexttools-releases/update/"
 
           echo "Upload complete!"
           echo "Update endpoints:"

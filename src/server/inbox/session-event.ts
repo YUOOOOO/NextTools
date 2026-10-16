@@ -130,7 +130,7 @@ const TAG_BRACKET_OPEN = '[<\\uFF1C]';
 const TAG_BRACKET_CLOSE = '[>\\uFF1E]';
 
 const STRUCTURAL_TAGS = [
-  'myagents-session-event',
+  'nexttools-session-event',
   'event-summary',
   'payload',
   'latest-result',
@@ -212,30 +212,30 @@ function renderOpenTag(event: RenderableSessionEvent): string {
     attr('created_at', event.createdAt),
   ].filter(Boolean);
 
-  return `<myagents-session-event\n  ${attrs.join('\n  ')}>`;
+  return `<nexttools-session-event\n  ${attrs.join('\n  ')}>`;
 }
 
 function summaryForEvent(event: RenderableSessionEvent): string {
   switch (event.type) {
     case 'network.return_unavailable':
-      return 'MyAgents could not deliver the remote result after connection recovery ended. This notification does not determine whether the remote task succeeded or failed.';
+      return 'NextTools could not deliver the remote result after connection recovery ended. This notification does not determine whether the remote task succeeded or failed.';
     case 'send.request':
       if (event.sourceKind === 'external-cli') {
-        return 'An authenticated local program sent this session a one-way request through MyAgents. There is no source Session and no automatic result delivery.';
+        return 'An authenticated local program sent this session a one-way request through NextTools. There is no source Session and no automatic result delivery.';
       }
       return event.sourceNotification === 'none'
-        ? "Another MyAgents session sent this session a one-way request or notification. The source session will not automatically receive this turn's final result."
-        : "Another MyAgents session sent this session a request. Work on it normally in this session. When this turn finishes, MyAgents will automatically deliver this turn's final result back to the source session.";
+        ? "Another NextTools session sent this session a one-way request or notification. The source session will not automatically receive this turn's final result."
+        : "Another NextTools session sent this session a request. Work on it normally in this session. When this turn finishes, NextTools will automatically deliver this turn's final result back to the source session.";
     case 'send.result':
       return event.status === 'error'
-        ? 'MyAgents attempted to deliver the final result of the target session turn triggered by your previous `session send` request, but that turn did not complete successfully.'
-        : 'MyAgents automatically delivered the final result of the target session turn triggered by your previous `session send` request.';
+        ? 'NextTools attempted to deliver the final result of the target session turn triggered by your previous `session send` request, but that turn did not complete successfully.'
+        : 'NextTools automatically delivered the final result of the target session turn triggered by your previous `session send` request.';
     case 'watch.already_idle':
       return 'The target session was already idle when this watch was registered, so no long-running watcher was created.';
     case 'watch.completed':
       return 'The watched target session has finished the turn that was active when this watch was registered.';
     case 'watch.error':
-      return 'MyAgents could not confirm normal completion for the watched target session.';
+      return 'NextTools could not confirm normal completion for the watched target session.';
   }
 }
 

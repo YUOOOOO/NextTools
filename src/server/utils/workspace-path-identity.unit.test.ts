@@ -22,8 +22,8 @@ function readJson<T>(path: string): T {
 }
 
 beforeEach(() => {
-  scratch = mkdtempSync(join(tmpdir(), 'myagents-win-path-'));
-  mkdirSync(join(scratch, '.myagents'), { recursive: true });
+  scratch = mkdtempSync(join(tmpdir(), 'nexttools-win-path-'));
+  mkdirSync(join(scratch, '.nexttools'), { recursive: true });
   prevHome = process.env.HOME;
   prevUserProfile = process.env.USERPROFILE;
   process.env.HOME = scratch;
@@ -40,7 +40,7 @@ afterEach(() => {
 
 describe('Windows workspace path identity for server config helpers', () => {
   it('resolves effective MCP servers across Windows separator, drive-case, and trailing-slash variants', () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpServers: [{
         id: 'win-custom',
         name: 'Windows Custom',
@@ -50,7 +50,7 @@ describe('Windows workspace path identity for server config helpers', () => {
       }],
       mcpEnabledServers: ['win-custom'],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Win Project',
       path: 'C:\\Users\\Me\\Project',
@@ -62,7 +62,7 @@ describe('Windows workspace path identity for server config helpers', () => {
   });
 
   it('does not match malformed empty project paths when resolving effective MCP servers', () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpServers: [{
         id: 'win-custom',
         name: 'Windows Custom',
@@ -72,7 +72,7 @@ describe('Windows workspace path identity for server config helpers', () => {
       }],
       mcpEnabledServers: ['win-custom'],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Malformed Project',
       mcpEnabledServers: ['win-custom'],
@@ -82,7 +82,7 @@ describe('Windows workspace path identity for server config helpers', () => {
   });
 
   it('reads Agent plugin defaults across Windows path identity variants', () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-1',
         name: 'Agent',
@@ -90,7 +90,7 @@ describe('Windows workspace path identity for server config helpers', () => {
         enabledPluginIds: ['reviewer', 'charts'],
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Win Project',
       path: 'C:\\Users\\Me\\Project',
@@ -102,10 +102,10 @@ describe('Windows workspace path identity for server config helpers', () => {
   });
 
   it('falls back to Project plugin defaults across Windows path identity variants', () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Win Project',
       path: 'C:\\Users\\Me\\Project',
@@ -117,7 +117,7 @@ describe('Windows workspace path identity for server config helpers', () => {
   });
 
   it('commits workspace plugin defaults to both Agent and Project under one intent', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-1',
         name: 'Agent',
@@ -126,7 +126,7 @@ describe('Windows workspace path identity for server config helpers', () => {
         enabledPluginIds: ['old-plugin'],
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Win Project',
       path: 'c:/users/me/project/',
@@ -140,10 +140,10 @@ describe('Windows workspace path identity for server config helpers', () => {
     )).resolves.toEqual({ scope: 'agent', ids: ['reviewer', 'charts'] });
 
     const config = readJson<{ agents: Array<{ enabledPluginIds?: string[]; workspacePath?: string }> }>(
-      join(scratch, '.myagents', 'config.json'),
+      join(scratch, '.nexttools', 'config.json'),
     );
     const projects = readJson<Array<{ enabledPluginIds?: string[] }>>(
-      join(scratch, '.myagents', 'projects.json'),
+      join(scratch, '.nexttools', 'projects.json'),
     );
     expect(config.agents[0].enabledPluginIds).toEqual(['reviewer', 'charts']);
     expect(config.agents[0].workspacePath).toBe('C:\\Users\\Me\\Project');
@@ -151,7 +151,7 @@ describe('Windows workspace path identity for server config helpers', () => {
   });
 
   it('rolls back the Agent plugin default when its Project mirror cannot be written', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-1',
         name: 'Agent',
@@ -160,20 +160,20 @@ describe('Windows workspace path identity for server config helpers', () => {
         enabledPluginIds: ['old-plugin'],
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Project',
       path: '/tmp/workspace',
       agentId: 'agent-1',
       enabledPluginIds: ['old-plugin'],
     }]);
-    mkdirSync(join(scratch, '.myagents', 'projects.json.tmp'));
+    mkdirSync(join(scratch, '.nexttools', 'projects.json.tmp'));
 
     await expect(setWorkspaceEnabledPlugins('/tmp/workspace', ['new-plugin']))
       .rejects.toThrow();
 
     const config = readJson<{ agents: Array<{ enabledPluginIds?: string[] }> }>(
-      join(scratch, '.myagents', 'config.json'),
+      join(scratch, '.nexttools', 'config.json'),
     );
     expect(config.agents[0].enabledPluginIds).toEqual(['old-plugin']);
   });

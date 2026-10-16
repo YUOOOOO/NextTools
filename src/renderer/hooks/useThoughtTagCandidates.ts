@@ -8,7 +8,7 @@
 // card on the right, pressing `#` should offer `#wishpool` on the left.
 // Reading from `config.agents` (which only contains IM-upgraded workspaces)
 // dropped plain workspaces from the picker AND leaked internal Agents
-// (e.g. the `~/.myagents` diagnostic workspace shown as `MyAgents_诊断`)
+// (e.g. the `~/.nexttools` diagnostic workspace shown as `NextTools_诊断`)
 // that the Launcher itself filters out.
 //
 // Output shape matches `ThoughtInput.existingTags` verbatim

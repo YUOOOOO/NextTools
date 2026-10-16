@@ -290,7 +290,7 @@ mod tests {
             .expect("default UPDATE_MEMORY.md closing frontmatter");
         let body = &content[closing + "\n---".len()..];
 
-        assert!(content.contains("myagents-memory-update"));
+        assert!(content.contains("nexttools-memory-update"));
         assert!(body.trim().is_empty());
         assert!(!content.contains("{{MEMORY_RULE_PATH}}"));
     }

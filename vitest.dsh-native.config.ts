@@ -4,13 +4,13 @@ import { defineConfig } from 'vitest/config';
 
 // Explicit native smoke must consume one prepared artifact's lock AND public
 // contract, just like the build. Normal test pools retain the source snapshot.
-const resourceRoot = resolve(process.env.MYAGENTS_DSH_NATIVE_SMOKE_RESOURCE_ROOT ?? 'src-tauri/resources');
+const resourceRoot = resolve(process.env.NEXTTOOLS_DSH_NATIVE_SMOKE_RESOURCE_ROOT ?? 'src-tauri/resources');
 const selection = JSON.parse(readFileSync(resolve(resourceRoot, 'integrated-runtimes/dsh-build-selection-v1.json'), 'utf8'));
 
 export default defineConfig({
   define: {
-    __MYAGENTS_DSH_BUILD_LOCK__: JSON.stringify(selection.lock),
-    __MYAGENTS_DSH_BUILD_COMPATIBILITY__: JSON.stringify(selection.compatibility),
+    __NEXTTOOLS_DSH_BUILD_LOCK__: JSON.stringify(selection.lock),
+    __NEXTTOOLS_DSH_BUILD_COMPATIBILITY__: JSON.stringify(selection.compatibility),
   },
   plugins: [{
     name: 'selected-dsh-native-test-contract',

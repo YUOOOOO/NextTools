@@ -23,7 +23,7 @@ function managementError(result: Record<string, unknown>, fallback: string): Err
 export async function acquireBrowserCapability(
   signal?: AbortSignal,
 ): Promise<BrowserCapabilityProjection> {
-  const sidecarId = process.env.MYAGENTS_SIDECAR_ID?.trim();
+  const sidecarId = process.env.NEXTTOOLS_SIDECAR_ID?.trim();
   if (!sidecarId) throw new Error('Browser capability requires a Sidecar process identity');
   const result = await managementApi(
     '/api/browser/capability/acquire',
@@ -53,7 +53,7 @@ export async function adoptBrowserProductSession(
   productSessionId: string,
   signal?: AbortSignal,
 ): Promise<void> {
-  const sidecarId = process.env.MYAGENTS_SIDECAR_ID?.trim();
+  const sidecarId = process.env.NEXTTOOLS_SIDECAR_ID?.trim();
   if (!sidecarId) throw new Error('Browser Session adoption requires a Sidecar process identity');
   const result = await managementApi(
     '/api/browser/session/adopt',
@@ -70,7 +70,7 @@ export async function verifyBrowserCapability(
   token: string,
   signal?: AbortSignal,
 ): Promise<VerifiedBrowserCapability> {
-  const sidecarId = process.env.MYAGENTS_SIDECAR_ID?.trim();
+  const sidecarId = process.env.NEXTTOOLS_SIDECAR_ID?.trim();
   if (sidecarId !== '__global__') {
     throw new Error('Only the current Global Sidecar may verify Browser capabilities');
   }

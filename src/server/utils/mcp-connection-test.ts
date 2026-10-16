@@ -285,7 +285,7 @@ export async function testMcpServerConnection(
 ): Promise<McpConnectionTestResult> {
   const timeoutMs = options.timeoutMs ?? MCP_CONNECTION_TEST_TIMEOUT_MS;
   const probe = createProbeTransport(server, options);
-  const client = new Client({ name: 'myagents-mcp-test', version: '1.0.0' });
+  const client = new Client({ name: 'nexttools-mcp-test', version: '1.0.0' });
   let stderr = '';
   const onStderr = (chunk: unknown): void => {
     stderr = appendBoundedStderr(stderr, chunk);

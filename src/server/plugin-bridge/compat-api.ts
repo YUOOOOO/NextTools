@@ -31,7 +31,7 @@ export interface CapturedPlugin {
 }
 
 /**
- * OpenClaw plugins receive MyAgents' logger and may emit a debug line for
+ * OpenClaw plugins receive NextTools' logger and may emit a debug line for
  * every full-snapshot partial callback. Those callbacks are transport detail:
  * pending-dispatch already owns terminal counts and canonical final logging.
  * Keep the rule protocol-shaped (callback name), never plugin-id-shaped.
@@ -76,7 +76,7 @@ export function createCompatApi(config: Record<string, unknown>) {
     },
 
     /**
-     * Plugin config — pass through from MyAgents config.
+     * Plugin config — pass through from NextTools config.
      */
     config,
 
@@ -140,7 +140,7 @@ export function createCompatApi(config: Record<string, unknown>) {
     registerAction() {},
     registerProvider() {},
     registerHttpRoute(_route: Record<string, unknown>) {
-      // No-op in Bridge mode — MyAgents doesn't run OpenClaw's HTTP server.
+      // No-op in Bridge mode — NextTools doesn't run OpenClaw's HTTP server.
       // Plugins register webhook routes here; silently ignore.
     },
 

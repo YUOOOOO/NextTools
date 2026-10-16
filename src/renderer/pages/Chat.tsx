@@ -1113,7 +1113,7 @@ export default function Chat({
     setBrowserCurrentUrl(u);
   }, []);
 
-  // Browser links stay inside MyAgents even when the split layout has no room.
+  // Browser links stay inside NextTools even when the split layout has no room.
   // In that case the same BrowserPanel owner fills the Chat surface instead of
   // falling back to a system browser.
   const browserUsesFullscreen = shouldPresentBrowserFullscreen({
@@ -2794,7 +2794,7 @@ export default function Chat({
     onFilesDropped: handleFileDrop,
   });
 
-  // Handle Tauri file drop on chat area (copy to myagents_files + insert reference)
+  // Handle Tauri file drop on chat area (copy to nexttools_files + insert reference)
   const handleTauriChatDrop = useCallback(
     async (paths: string[]) => {
       if (isDebugMode()) {
@@ -3897,7 +3897,7 @@ export default function Chat({
     // Known limitation: this gate accepts `currentAgent` as authoritative
     // before `sessionRuntime` arrives via SSE chat:system-init / REST
     // loadSession. For the vast majority of opens that's correct — the
-    // sidecar was just spawned with `MYAGENTS_RUNTIME` derived from the
+    // sidecar was just spawned with `NEXTTOOLS_RUNTIME` derived from the
     // same `currentAgent.runtime` we read here. The narrow race window is:
     // user changes agent.runtime in another tab AFTER its sidecar spawned
     // with the old value but BEFORE this tab's first render. Tightening

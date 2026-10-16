@@ -14,7 +14,7 @@ import {
 const EDGE_TTS_RESULT = [
   '语音已生成。',
   '',
-  'filePath: /Users/me/.myagents/generated_audio/tts_abc12345.mp3',
+  'filePath: /Users/me/.nexttools/generated_audio/tts_abc12345.mp3',
   'voice: zh-CN-XiaoxiaoNeural',
   'duration: 23.1s',
   'format: mp3',
@@ -29,7 +29,7 @@ const GEMINI_RESULT = [
   '图片已生成。',
   '',
   'contextId: imgctx_abcd',
-  'filePath: /Users/me/.myagents/generated/imgctx_abcd_0.png',
+  'filePath: /Users/me/.nexttools/generated/imgctx_abcd_0.png',
   'resolution: 1K | aspectRatio: auto',
   'model: gemini-2.5-flash-image',
   '',
@@ -42,7 +42,7 @@ describe('parseEdgeTtsResult', () => {
   it('parses all card-meta fields', () => {
     const r = parseEdgeTtsResult(EDGE_TTS_RESULT);
     expect(r).toMatchObject({
-      filePath: '/Users/me/.myagents/generated_audio/tts_abc12345.mp3',
+      filePath: '/Users/me/.nexttools/generated_audio/tts_abc12345.mp3',
       voice: 'zh-CN-XiaoxiaoNeural',
       duration: '23.1s',
       format: 'mp3',
@@ -72,7 +72,7 @@ describe('parseGeminiImageResult', () => {
     const r = parseGeminiImageResult(GEMINI_RESULT);
     expect(r).toMatchObject({
       contextId: 'imgctx_abcd',
-      filePath: '/Users/me/.myagents/generated/imgctx_abcd_0.png',
+      filePath: '/Users/me/.nexttools/generated/imgctx_abcd_0.png',
       resolution: '1K',
       aspectRatio: 'auto',
       model: 'gemini-2.5-flash-image',
@@ -94,7 +94,7 @@ describe('parseBuiltinMediaToolResult', () => {
     const specs = parseBuiltinMediaToolResult(EDGE_TTS_TOOL, EDGE_TTS_RESULT);
     expect(specs).toHaveLength(1);
     expect(specs[0]).toMatchObject({
-      filePath: '/Users/me/.myagents/generated_audio/tts_abc12345.mp3',
+      filePath: '/Users/me/.nexttools/generated_audio/tts_abc12345.mp3',
       mimeType: 'audio/mpeg',
       kind: 'audio',
       producedBy: 'mcp.edge-tts.text_to_speech',
@@ -146,11 +146,11 @@ describe('parseBuiltinMediaToolResult', () => {
 
   it('handles windows absolute paths (drive colon in value)', () => {
     const win = EDGE_TTS_RESULT.replace(
-      '/Users/me/.myagents/generated_audio/tts_abc12345.mp3',
-      'C:\\Users\\me\\.myagents\\generated_audio\\tts_abc12345.mp3',
+      '/Users/me/.nexttools/generated_audio/tts_abc12345.mp3',
+      'C:\\Users\\me\\.nexttools\\generated_audio\\tts_abc12345.mp3',
     );
     expect(parseBuiltinMediaToolResult(EDGE_TTS_TOOL, win)[0].filePath).toBe(
-      'C:\\Users\\me\\.myagents\\generated_audio\\tts_abc12345.mp3',
+      'C:\\Users\\me\\.nexttools\\generated_audio\\tts_abc12345.mp3',
     );
   });
 });

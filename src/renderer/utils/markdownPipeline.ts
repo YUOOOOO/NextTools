@@ -48,7 +48,7 @@ function remarkOriginalReferences() {
       const offset = node.position?.start.offset;
       if (url !== undefined && offset !== undefined) references.set(offset, url);
     });
-    file.data.myagentsOriginalReferences = references;
+    file.data.nexttoolsOriginalReferences = references;
   };
 }
 
@@ -62,7 +62,7 @@ interface MarkdownNode {
 
 function rehypeLocalFileReferences() {
   return (tree: MarkdownNode, file: VFile) => {
-    const references = file.data.myagentsOriginalReferences as Map<number, string> | undefined;
+    const references = file.data.nexttoolsOriginalReferences as Map<number, string> | undefined;
     const visit = (node: MarkdownNode) => {
       const property = node.tagName === 'img' ? 'src' : node.tagName === 'a' ? 'href' : null;
       if (property && typeof node.properties?.[property] === 'string') {
@@ -93,7 +93,7 @@ export const MARKDOWN_SANITIZE_SCHEMA = {
   ...defaultSchema,
   protocols: {
     ...defaultSchema.protocols,
-    href: [...(defaultSchema.protocols?.href ?? []), 'file', 'myagents'],
+    href: [...(defaultSchema.protocols?.href ?? []), 'file', 'nexttools'],
     src: [...(defaultSchema.protocols?.src ?? []), 'file'],
   },
   tagNames: [

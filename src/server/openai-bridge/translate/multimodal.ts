@@ -26,16 +26,16 @@ export function translateImageBlock(block: AnthropicImageBlock): OpenAIContentPa
 
 /**
  * Callback type for saving tool result images to disk.
- * Returns the relative path (e.g., "myagents_files/temp/tool_xxx.png").
+ * Returns the relative path (e.g., "nexttools_files/temp/tool_xxx.png").
  */
 export type ToolImageSaver = (base64: string, mimeType: string) => string;
 
 /**
- * Create a ToolImageSaver that writes images to {workspace}/myagents_files/temp/.
+ * Create a ToolImageSaver that writes images to {workspace}/nexttools_files/temp/.
  * Tool result images are temporary — the AI references them by relative path.
  */
 export function createToolImageSaver(workspacePath: string): ToolImageSaver {
-  const dir = join(workspacePath, 'myagents_files', 'temp');
+  const dir = join(workspacePath, 'nexttools_files', 'temp');
   let dirEnsured = false;
 
   return (base64: string, mimeType: string): string => {
@@ -44,7 +44,7 @@ export function createToolImageSaver(workspacePath: string): ToolImageSaver {
       if (!existsSync(dir)) {
         ensureDirSync(dir);
       }
-      ensureGitignorePattern(workspacePath, 'myagents_files/');
+      ensureGitignorePattern(workspacePath, 'nexttools_files/');
       // Clean up stale temp images older than 1 hour
       try {
         const cutoff = Date.now() - 60 * 60 * 1000;
@@ -67,6 +67,6 @@ export function createToolImageSaver(workspacePath: string): ToolImageSaver {
     writeFileSync(filepath, buf);
 
     // Return relative path from workspace root (for AI reference)
-    return `myagents_files/temp/${filename}`;
+    return `nexttools_files/temp/${filename}`;
   };
 }

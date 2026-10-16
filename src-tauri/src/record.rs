@@ -5,7 +5,7 @@
 //! commits through this store.
 
 use chrono::{DateTime, Datelike, Utc};
-use myagents_media_worker_protocol::record_timeline::RecordTrackTimeline;
+use nexttools_media_worker_protocol::record_timeline::RecordTrackTimeline;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
@@ -6782,8 +6782,8 @@ mod tests {
 
     #[tokio::test]
     async fn processing_publishes_one_generation_and_migrates_latest_human_name_by_evidence() {
-        use myagents_media_worker_protocol::record_identity::PersonMatchEvidence;
-        use myagents_media_worker_protocol::record_timeline::{CaptureTimeQuality, TrackTimeSpan};
+        use nexttools_media_worker_protocol::record_identity::PersonMatchEvidence;
+        use nexttools_media_worker_protocol::record_timeline::{CaptureTimeQuality, TrackTimeSpan};
         let temp = tempdir().unwrap();
         let store = store_at(temp.path());
         let (id, root) = speech_projection_fixture(&store).await;
@@ -7004,7 +7004,7 @@ mod tests {
 
     #[tokio::test]
     async fn partial_manual_reassignment_survives_reruns_without_reviving_superseded_scope() {
-        use myagents_media_worker_protocol::record_identity::PersonMatchEvidence;
+        use nexttools_media_worker_protocol::record_identity::PersonMatchEvidence;
         let temp = tempdir().unwrap();
         let store = store_at(temp.path());
         let (id, _) = speech_projection_fixture(&store).await;
@@ -7337,7 +7337,7 @@ mod tests {
 
     #[tokio::test]
     async fn manual_merge_preserves_original_identities_before_and_during_reruns() {
-        use myagents_media_worker_protocol::record_identity::PersonMatchEvidence;
+        use nexttools_media_worker_protocol::record_identity::PersonMatchEvidence;
         for merge_during_processing in [false, true] {
             let temp = tempdir().unwrap();
             let store = store_at(temp.path());

@@ -287,14 +287,14 @@ function providerHeaders(
         ...anthropicAuthHeaders(authType, apiKey),
         accept: 'application/json',
         'accept-encoding': 'identity',
-        'user-agent': 'MyAgents/DSH-Host-Web-v1',
+        'user-agent': 'NextTools/DSH-Host-Web-v1',
       })
     : Object.freeze({
         accept: 'application/json',
         'accept-encoding': 'identity',
         authorization: `Bearer ${apiKey}`,
         'content-type': 'application/json',
-        'user-agent': 'MyAgents/DSH-Host-Web-v1',
+        'user-agent': 'NextTools/DSH-Host-Web-v1',
       });
 }
 
@@ -624,7 +624,7 @@ export class DshCanonicalWebProvider implements DshCanonicalWebProviderPort {
           'accept-encoding': 'identity',
           authorization: `Bearer ${input.apiKey}`,
           'content-type': 'application/json',
-          'user-agent': 'MyAgents/DSH-Host-Web-v1',
+          'user-agent': 'NextTools/DSH-Host-Web-v1',
         }),
         body: jsonBytes({
           search_query: input.query,

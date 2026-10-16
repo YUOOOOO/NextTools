@@ -13,7 +13,7 @@ use super::types::{
 };
 
 const HTTP_TIMEOUT: Duration = Duration::from_secs(30);
-const GROK_OAUTH_USER_AGENT: &str = concat!("MyAgents/", env!("CARGO_PKG_VERSION"), " Grok OAuth");
+const GROK_OAUTH_USER_AGENT: &str = concat!("NextTools/", env!("CARGO_PKG_VERSION"), " Grok OAuth");
 
 #[derive(Debug, Deserialize)]
 struct DiscoveryDocument {
@@ -169,7 +169,7 @@ pub async fn request_device_code(
     if !response.status().is_success() {
         return Err(http_error(
             response.status(),
-            "Grok 登录服务当前不接受此客户端，请更新 MyAgents 或稍后再试",
+            "Grok 登录服务当前不接受此客户端，请更新 NextTools 或稍后再试",
         ));
     }
     let result: DeviceCodeResponse = response.json().await.map_err(|_| {
@@ -265,7 +265,7 @@ pub async fn poll_device_token(
         _ => DevicePollOutcome::Denied(GrokAuthError::http(
             GrokAuthErrorCode::LoginUnavailable,
             status.as_u16(),
-            "Grok 登录服务当前不接受此客户端，请更新 MyAgents 或稍后再试",
+            "Grok 登录服务当前不接受此客户端，请更新 NextTools 或稍后再试",
             false,
         )),
     }

@@ -2,7 +2,7 @@
  * Renderer perf instrumentation (P0). No-op unless enabled, so call sites are
  * safe to leave in production. Enabled in dev (Vite dev server) OR a debug build
  * (build_dev.sh sets VITE_DEBUG_MODE=true — the same signals as @/utils/debug's
- * isDebugMode()), OR when `localStorage['myagents:perf'] === '1'` (to profile a
+ * isDebugMode()), OR when `localStorage['nexttools:perf'] === '1'` (to profile a
  * production build). The env is read directly here, rather than importing
  * debug.ts, to avoid its `__DEBUG_MODE__` vite-define global under unit tests.
  *
@@ -22,7 +22,7 @@ import { formatPerfLine, type PerfTraceDetail } from '../../shared/perfTrace';
 export function isPerfEnabled(isDebug: boolean, lsGet: (key: string) => string | null): boolean {
     if (isDebug) return true;
     try {
-        return lsGet('myagents:perf') === '1';
+        return lsGet('nexttools:perf') === '1';
     } catch {
         return false;
     }

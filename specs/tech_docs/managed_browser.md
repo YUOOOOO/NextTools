@@ -1,6 +1,6 @@
 # 托管浏览器工具
 
-`myagents-browser` 是工具页的应用自有 Playwright MCP；普通 `playwright` preset 与 Tauri `BrowserPanel` 页面预览分别有自己的配置与生命周期。
+`nexttools-browser` 是工具页的应用自有 Playwright MCP；普通 `playwright` preset 与 Tauri `BrowserPanel` 页面预览分别有自己的配置与生命周期。
 
 ## Owner 与生命周期
 
@@ -11,7 +11,7 @@
 
 ## Runtime 接入与侧栏边界
 
-内置 Claude SDK、托管 Codex 和 Integrated DSH 在各自 adapter 中将 `myagents-browser` 的 `__browser_host__` 产品标记解析为 Rust 颁发的 HTTP capability。DSH 首启、恢复和 live extension replacement 共用 `projectDshManagedBrowser`：先以 canonical Product Session ID adoption，再 acquire；不能使用 DSH native Session ID。既有 Session 的产品 MCP 选择无需迁移。
+内置 Claude SDK、托管 Codex 和 Integrated DSH 在各自 adapter 中将 `nexttools-browser` 的 `__browser_host__` 产品标记解析为 Rust 颁发的 HTTP capability。DSH 首启、恢复和 live extension replacement 共用 `projectDshManagedBrowser`：先以 canonical Product Session ID adoption，再 acquire；不能使用 DSH native Session ID。既有 Session 的产品 MCP 选择无需迁移。
 
 DSH 现有扩展 owner 将原始 source 与其 compiled plane 存入同一 generation 记录，按 desired/effective plane 读取配对来源；候选被拒绝并释放后自动回到 effective 的配对来源。下一次 Root turn admission 内沿同一个串行 replacement 边界重新取得 capability。该刷新只重新投影浏览器组件与凭据，其余组件、Skill 内容资源和授权根沿用已准入快照；不能因刷新浏览器而重新读取磁盘中的 Skill 或触发完整能力发现。Host generation、endpoint 或 token 变化使公开的 opaque credential revision 改变；真实 Authorization 仅留在 generation-scoped reverse credential binding，不进入公开 snapshot、argv 或配置文件。旧 effective plane 的凭据与 dispatcher 按既有 native background-work 生命周期保留到进程退出；同一 source 刷新不得 dispose 仍被有效 plane 引用的 dispatcher。Host 获取失败成为单组件诊断，基础 Runtime 可用；下一个边界可重新接入。这不承诺当前进行中的浏览器操作跨 Host 重启续跑。
 
@@ -29,7 +29,7 @@ Host 因此在公开 transport 的收发边界记录尚未响应的 request id �
 
 ## 登录保存与兼容
 
-Context 按 Product Session 隔离，但持久登录身份由当前 OS 用户共用的 Rust `browser_identity_store.rs` 保存（`~/.myagents/browser-identity-store.json`），不按 Session 或 workspace 分库。新 Context 从共享 identity snapshot 加载 Cookie；同一 Context 在重连窗口内复用其内存状态。不能把 Context 隔离解释为账号数据隔离。
+Context 按 Product Session 隔离，但持久登录身份由当前 OS 用户共用的 Rust `browser_identity_store.rs` 保存（`~/.nexttools/browser-identity-store.json`），不按 Session 或 workspace 分库。新 Context 从共享 identity snapshot 加载 Cookie；同一 Context 在重连窗口内复用其内存状态。不能把 Context 隔离解释为账号数据隔离。
 
 托管登录状态有意仅保存 Cookie：全量 `storageState()` 可能创建历史 origin 的临时页面并导致可见闪烁。Rust 的 CAS 存储是持久 authority，Context 同时保存权威 base 与实际 observed base，以避免反复提交被其他 Session 否决的旧值。
 

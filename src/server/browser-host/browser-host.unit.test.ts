@@ -76,12 +76,12 @@ describe('PlaywrightBrowserHost', () => {
     const server = { listRoots: vi.fn() } as unknown as Server;
     bindAuthorizedWorkspaceRoot(server, '/workspace/authorized');
     await expect(server.listRoots()).resolves.toEqual({
-      roots: [{ uri: 'file:///workspace/authorized', name: 'MyAgents workspace' }],
+      roots: [{ uri: 'file:///workspace/authorized', name: 'NextTools workspace' }],
     });
   });
 
   it('canonicalizes upload paths and rejects a workspace symlink escape', () => {
-    const root = mkdtempSync(join(tmpdir(), 'myagents-browser-root-'));
+    const root = mkdtempSync(join(tmpdir(), 'nexttools-browser-root-'));
     const workspace = join(root, 'workspace');
     const outside = join(root, 'outside');
     mkdirSync(workspace);

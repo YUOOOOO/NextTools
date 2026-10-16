@@ -78,7 +78,7 @@ export async function createGuardedSdkQuery<T>(
   createQuery: () => T,
   options: GuardOptions = {},
 ): Promise<T> {
-  const sidecarId = options.sidecarId ?? process.env.MYAGENTS_SIDECAR_ID?.trim();
+  const sidecarId = options.sidecarId ?? process.env.NEXTTOOLS_SIDECAR_ID?.trim();
   if (!sidecarId) {
     return continueWithoutCircuit(createQuery, 'missing sidecar identity');
   }

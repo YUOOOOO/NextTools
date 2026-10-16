@@ -40,7 +40,7 @@ describe("DSH ModelExecutionProfile compiler", () => {
         provider: "deepseek",
         modelId,
         baseUrl: "https://api.deepseek.com/anthropic",
-        credentialRef: "MYAGENTS_PROVIDER_DEEPSEEK_API_KEY",
+        credentialRef: "NEXTTOOLS_PROVIDER_DEEPSEEK_API_KEY",
         contextWindow: 1_000_000,
         maxTokens: 384_000,
         inputModalities: modelId === "deepseek-flash" ? ["text", "image"] : ["text"],
@@ -82,7 +82,7 @@ describe("DSH ModelExecutionProfile compiler", () => {
     });
     expect(anthropic).toMatchObject({
       api: "anthropic-messages",
-      providerRouteId: "myagents-zhipu-anthropic-messages",
+      providerRouteId: "nexttools-zhipu-anthropic-messages",
       baseUrl: "https://open.bigmodel.cn/api/anthropic",
       compatibility: { version: 1, family: "anthropic-messages" },
     });
@@ -93,7 +93,7 @@ describe("DSH ModelExecutionProfile compiler", () => {
     });
     expect(chat).toMatchObject({
       api: "openai-completions",
-      providerRouteId: "myagents-zhipu-ai-openai-completions",
+      providerRouteId: "nexttools-zhipu-ai-openai-completions",
       baseUrl: "https://open.bigmodel.cn/api/paas/v4",
       compatibility: { version: 1, family: "openai-completions" },
     });
@@ -108,7 +108,7 @@ describe("DSH ModelExecutionProfile compiler", () => {
     });
     expect(responseProfile).toMatchObject({
       api: "openai-responses",
-      providerRouteId: "myagents-custom-responses-openai-responses",
+      providerRouteId: "nexttools-custom-responses-openai-responses",
       baseUrl: "https://responses.example.test/v1",
       compatibility: { version: 1, family: "openai-responses" },
     });

@@ -105,7 +105,7 @@ function nonEmptyModel(model: string | undefined | null): string | undefined {
  *
  * SDK result `modelUsage` keys can be provider-resolved aliases (for example
  * `deepseek-v4-pro-260425[1m]`) that are useful for stats but not present in
- * MyAgents' registry. The configured session model is the authority for the
+ * NextTools' registry. The configured session model is the authority for the
  * auto-compact cap and UI ring. Prefer the SDK key only when the registry knows
  * it; otherwise fall back to the configured model instead of defaulting to 200K.
  */

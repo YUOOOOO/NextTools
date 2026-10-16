@@ -40,7 +40,7 @@ define_class!(
     // main-thread-only because every observed NSWindow is main-thread-only.
     #[unsafe(super(NSObject))]
     #[thread_kind = MainThreadOnly]
-    #[name = "MyAgentsTrafficLightLayoutObserver"]
+    #[name = "NextToolsTrafficLightLayoutObserver"]
     #[ivars = TrafficLightObserverIvars]
     struct TrafficLightObserver;
 

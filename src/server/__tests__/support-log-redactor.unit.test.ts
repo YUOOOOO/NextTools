@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createLogRedactor } from '../../../bundled-agents/myagents_helper/.claude/skills/support/scripts/redact-log-core.mjs';
+import { createLogRedactor } from '../../../bundled-agents/nexttools_helper/.claude/skills/support/scripts/redact-log-core.mjs';
 
 function runRedactor(input: string): string {
   const redact = createLogRedactor();
@@ -19,8 +19,8 @@ describe('support log redactor', () => {
       splitToken: 'short-split-secret-456',
       encoded: `${'A'.repeat(78)}==`,
       pemTail: 'QUJDREVGR0hJSktMTQ==',
-      databaseUrl: 'postgres://demo:database-secret@example.com/myagents',
-      mongoUri: 'mongodb://demo:mongo-secret@example.com/myagents',
+      databaseUrl: 'postgres://demo:database-secret@example.com/nexttools',
+      mongoUri: 'mongodb://demo:mongo-secret@example.com/nexttools',
     };
     const input = [
       `AWS_ACCESS_KEY_ID=${secrets.accessKey}`,

@@ -61,8 +61,8 @@ function launchDeniedMessages(
   const system = platform === 'darwin' ? 'macOS' : platform === 'win32' ? 'Windows' : '操作系统';
   const suffix = originalErrorSuffix(originalMessage);
   return {
-    userMessage: `Claude 运行组件被 ${system} 拒绝执行（${code}）。MyAgents 已暂停密集自动重试；请更新或重新安装应用后重试。${suffix}`,
-    imMessage: `AI 引擎被 ${system} 拒绝执行（${code}）。MyAgents 已暂停密集自动重试；请在桌面端更新或重新安装应用后重试。`,
+    userMessage: `Claude 运行组件被 ${system} 拒绝执行（${code}）。NextTools 已暂停密集自动重试；请更新或重新安装应用后重试。${suffix}`,
+    imMessage: `AI 引擎被 ${system} 拒绝执行（${code}）。NextTools 已暂停密集自动重试；请在桌面端更新或重新安装应用后重试。`,
   };
 }
 

@@ -3,7 +3,7 @@
 use super::timing::CaptureTimePoint;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Device, SampleFormat, SupportedStreamConfig};
-use myagents_media_worker_protocol::record_timeline::CaptureTimeQuality;
+use nexttools_media_worker_protocol::record_timeline::CaptureTimeQuality;
 use serde::{Deserialize, Serialize};
 use std::any::Any;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
@@ -155,7 +155,7 @@ impl CaptureTrackSink {
 
     pub(crate) fn timeline(
         &self,
-    ) -> Result<Option<myagents_media_worker_protocol::record_timeline::RecordTrackTimeline>, String>
+    ) -> Result<Option<nexttools_media_worker_protocol::record_timeline::RecordTrackTimeline>, String>
     {
         self.archive.capture_timeline()
     }
@@ -813,7 +813,7 @@ mod capture_sink_tests {
         assert_eq!(timeline.spans[0].source_end, 2);
         assert_eq!(
             timeline.spans[0].quality,
-            myagents_media_worker_protocol::record_timeline::CaptureTimeQuality::Clock
+            nexttools_media_worker_protocol::record_timeline::CaptureTimeQuality::Clock
         );
     }
 

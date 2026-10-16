@@ -9,10 +9,10 @@ const repo = resolve(import.meta.dirname, '..');
 const hooksPath = join(repo, 'src-tauri/nsis/hooks.nsh');
 const hooks = readFileSync(hooksPath, 'utf8').replaceAll('\r\n', '\n');
 const template = readFileSync(join(repo, 'src-tauri/nsis/installer.nsi'), 'utf8').replaceAll('\r\n', '\n');
-const cleanupMacro = '_MYAGENTS_REMOVE_NODE_RUNTIME';
-const compiler = process.env.MYAGENTS_TEST_MAKENSIS || 'makensis';
+const cleanupMacro = '_NEXTTOOLS_REMOVE_NODE_RUNTIME';
+const compiler = process.env.NEXTTOOLS_TEST_MAKENSIS || 'makensis';
 const hasCompiler = spawnSync(compiler, [process.platform === 'win32' ? '/VERSION' : '-VERSION']).status === 0;
-if (process.env.MYAGENTS_TEST_MAKENSIS && !hasCompiler) throw new Error('Requested NSIS compiler is unavailable');
+if (process.env.NEXTTOOLS_TEST_MAKENSIS && !hasCompiler) throw new Error('Requested NSIS compiler is unavailable');
 const nsisQuote = value => value.replaceAll('$', '$$').replaceAll('"', '$\\"');
 
 function put(path, source) {
@@ -20,7 +20,7 @@ function put(path, source) {
   writeFileSync(path, source);
 }
 function fixture(t) {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-node-install-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-node-install-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   return root;
 }
@@ -88,7 +88,7 @@ test('NSIS install and uninstall clean the complete app-owned Node tree after qu
     const body = hooks.match(new RegExp(`!macro ${name}\\n([\\s\\S]*?)!macroend`))?.[1];
     assert.ok(body);
     assert.ok(body.includes(`!insertmacro ${cleanupMacro}`), `${name} must remove obsolete runtime dependencies`);
-    const quiesceAt = body.indexOf('_MYAGENTS_KILL_PROCESSES');
+    const quiesceAt = body.indexOf('_NEXTTOOLS_KILL_PROCESSES');
     assert.ok(quiesceAt >= 0 && quiesceAt < body.indexOf(cleanupMacro));
   }
   const install = template.slice(template.indexOf('Section Install'), template.indexOf('; Copy external binaries'));
@@ -106,7 +106,7 @@ test('runtime cleanup stops on deletion failure and cannot defer deletion until 
   assert.ok(body, 'the installer must own full runtime replacement');
   assert.match(body, /ClearErrors[\s\S]*RMDir \/r "\$INSTDIR\\nodejs"[\s\S]*IfErrors/);
   assert.match(body, /SetErrorLevel 2[\s\S]*Abort/);
-  assert.doesNotMatch(body, /REBOOTOK|\$PROFILE|\.myagents|RMDir \/r "\$INSTDIR"/);
+  assert.doesNotMatch(body, /REBOOTOK|\$PROFILE|\.nexttools|RMDir \/r "\$INSTDIR"/);
 });
 
 test('offline reconstruction: overlay retains a nested dependency that shadows the valid new export', t => {

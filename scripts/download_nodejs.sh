@@ -1,5 +1,5 @@
 #!/bin/bash
-# Download Node.js LTS binaries for bundling with MyAgents.
+# Download Node.js LTS binaries for bundling with NextTools.
 #
 # This script downloads the official Node.js distribution into an
 # architecture-specific cache, then stages the requested runtime into
@@ -80,9 +80,9 @@ write_metadata() {
     local platform="$2"
     local arch
     arch=$(normalize_arch "$3")
-    printf "%s\n" "$NODE_VERSION" > "${dir}/.myagents-nodejs-version"
-    printf "%s\n" "$platform" > "${dir}/.myagents-nodejs-platform"
-    printf "%s\n" "$arch" > "${dir}/.myagents-nodejs-arch"
+    printf "%s\n" "$NODE_VERSION" > "${dir}/.nexttools-nodejs-version"
+    printf "%s\n" "$platform" > "${dir}/.nexttools-nodejs-platform"
+    printf "%s\n" "$arch" > "${dir}/.nexttools-nodejs-arch"
 }
 
 check_arch() {
@@ -141,15 +141,15 @@ check_existing() {
     if [[ -f "$node_bin" ]]; then
         case "$dir" in
             "$CACHE_ROOT"/*)
-                if [[ ! -f "${dir}/.myagents-nodejs-version" ]]; then
+                if [[ ! -f "${dir}/.nexttools-nodejs-version" ]]; then
                     return 1
                 fi
                 ;;
         esac
         # Check version
         local existing_ver
-        if [[ -f "${dir}/.myagents-nodejs-version" ]]; then
-            existing_ver=$(cat "${dir}/.myagents-nodejs-version" 2>/dev/null || echo "")
+        if [[ -f "${dir}/.nexttools-nodejs-version" ]]; then
+            existing_ver=$(cat "${dir}/.nexttools-nodejs-version" 2>/dev/null || echo "")
         else
             # Cross-arch binaries may not execute on every host, so metadata is
             # the source of truth after the first cache population. This fallback
@@ -159,16 +159,16 @@ check_existing() {
         if [[ "$existing_ver" != "${NODE_VERSION}" ]]; then
             return 1
         fi
-        if [[ -f "${dir}/.myagents-nodejs-platform" ]]; then
+        if [[ -f "${dir}/.nexttools-nodejs-platform" ]]; then
             local existing_platform
-            existing_platform=$(cat "${dir}/.myagents-nodejs-platform" 2>/dev/null || echo "")
+            existing_platform=$(cat "${dir}/.nexttools-nodejs-platform" 2>/dev/null || echo "")
             if [[ "$existing_platform" != "$platform" ]]; then
                 return 1
             fi
         fi
-        if [[ -n "$expected_arch" && -f "${dir}/.myagents-nodejs-arch" ]]; then
+        if [[ -n "$expected_arch" && -f "${dir}/.nexttools-nodejs-arch" ]]; then
             local existing_arch
-            existing_arch=$(normalize_arch "$(cat "${dir}/.myagents-nodejs-arch" 2>/dev/null || echo "")")
+            existing_arch=$(normalize_arch "$(cat "${dir}/.nexttools-nodejs-arch" 2>/dev/null || echo "")")
             if [[ "$existing_arch" != "$expected_arch" ]]; then
                 return 1
             fi

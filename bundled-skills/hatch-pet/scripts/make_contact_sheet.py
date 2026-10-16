@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create a labeled contact sheet from a MyAgents/Codex-compatible pet atlas."""
+"""Create a labeled contact sheet from a NextTools/Codex-compatible pet atlas."""
 
 from __future__ import annotations
 

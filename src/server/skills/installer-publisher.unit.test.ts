@@ -35,7 +35,7 @@ describe('publishSkillInstallPlan', () => {
   let baseDir: string;
 
   beforeEach(() => {
-    scratch = mkdtempSync(join(tmpdir(), 'myagents-skill-publish-'));
+    scratch = mkdtempSync(join(tmpdir(), 'nexttools-skill-publish-'));
     baseDir = join(scratch, 'skills');
   });
 

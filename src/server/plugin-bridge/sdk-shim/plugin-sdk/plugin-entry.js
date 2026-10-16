@@ -4,7 +4,7 @@
 export * from "./plugin-entry.auto.js";
 // === END AUTO-AUGMENT ===
 
-// OpenClaw plugin-sdk/plugin-entry shim for MyAgents Plugin Bridge
+// OpenClaw plugin-sdk/plugin-entry shim for NextTools Plugin Bridge
 // Provides definePluginEntry() and type stubs for 3.22+ plugins.
 
 /**

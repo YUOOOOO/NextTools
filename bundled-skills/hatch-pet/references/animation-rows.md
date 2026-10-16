@@ -1,6 +1,6 @@
 # Animation Rows
 
-MyAgents/Codex-compatible pets use one fixed atlas: 8 columns, 9 rows, 192x208 pixels per cell.
+NextTools/Codex-compatible pets use one fixed atlas: 8 columns, 9 rows, 192x208 pixels per cell.
 
 | Row | State | Used columns | Durations |
 | --- | --- | ---: | --- |

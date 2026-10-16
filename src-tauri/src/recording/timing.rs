@@ -1,6 +1,6 @@
 //! Capture-owned observations, compressed off the realtime callback thread.
 
-use myagents_media_worker_protocol::record_timeline::{
+use nexttools_media_worker_protocol::record_timeline::{
     CaptureTimeQuality, RecordTrackTimeline, TrackTimeSpan, MAX_TRACK_TIME_SPANS,
 };
 
@@ -85,7 +85,7 @@ impl CaptureTimeline {
             }
         }
         let record_end = record_start.saturating_add(end - start);
-        if record_end > myagents_media_worker_protocol::MAX_MEDIA_SAMPLES_PER_TRACK {
+        if record_end > nexttools_media_worker_protocol::MAX_MEDIA_SAMPLES_PER_TRACK {
             self.error = Some("RECORDING_CAPTURE_TIME_LIMIT");
             return;
         }

@@ -22,8 +22,8 @@ describe('Task provider routing recovery owner', () => {
   });
 
   it.each([
-    [{ kind: 'task', taskId: 'task-1' } as const, "Task 'task-1'", 'myagents task update task-1 --providerId <providerId> --model <model>'],
-    [{ kind: 'agent', agentId: 'agent-1' } as const, "Agent 'agent-1'", 'myagents agent set agent-1 providerId <providerId>'],
+    [{ kind: 'task', taskId: 'task-1' } as const, "Task 'task-1'", 'nexttools task update task-1 --providerId <providerId> --model <model>'],
+    [{ kind: 'agent', agentId: 'agent-1' } as const, "Agent 'agent-1'", 'nexttools agent set agent-1 providerId <providerId>'],
     [{ kind: 'session', sessionId: 'session-1' } as const, "Session 'session-1'", 'create a new Session'],
   ])('points a disabled provider at its %s owner', (owner, ownerText, recoveryText) => {
     expect(() => resolveTaskProviderRouting('provider-disabled', owner)).toThrow(ownerText);

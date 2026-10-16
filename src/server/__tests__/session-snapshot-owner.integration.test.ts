@@ -8,7 +8,7 @@ vi.mock('os', async original => ({ ...await original<typeof import('os')>(), hom
 let store: typeof import('../SessionStore');
 let sessionId: string;
 beforeEach(async () => {
-  state.home = await mkdtemp(join(tmpdir(), 'myagents-snapshot-owner-'));
+  state.home = await mkdtemp(join(tmpdir(), 'nexttools-snapshot-owner-'));
   vi.resetModules();
   store = await import('../SessionStore');
 });
@@ -35,7 +35,7 @@ it.each(['managed-provider', 'system-cli'] as const)('publishes every %s permiss
     // native event/flush refreshing it from Global's on-disk metadata.
     expect(store.getSessionMetadata(sessionId)?.permissionMode).toBe(permissionMode);
     expect(store.getActiveSessionTranscript(sessionId)?.metadata.permissionMode).toBe(permissionMode);
-    const disk = JSON.parse(await readFile(join(state.home, '.myagents', 'sessions.json'), 'utf8'));
+    const disk = JSON.parse(await readFile(join(state.home, '.nexttools', 'sessions.json'), 'utf8'));
     expect(disk.find((row: { id: string }) => row.id === sessionId).permissionMode).toBe(permissionMode);
   }
 });

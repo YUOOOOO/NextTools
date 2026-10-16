@@ -21,7 +21,7 @@ export async function deliverNetworkReturn(
   reference: NetworkReturnReference,
   event: SessionEvent,
 ): Promise<NetworkReturnSettlement> {
-  const sidecarId = process.env.MYAGENTS_SIDECAR_ID?.trim();
+  const sidecarId = process.env.NEXTTOOLS_SIDECAR_ID?.trim();
   const invalid = !sidecarId ? "SOURCE_OWNER_UNAVAILABLE"
     : !parseNetworkReturnReference(reference) ? "RETURN_REFERENCE_INVALID"
     : !returnSessionEventSchema.safeParse(event).success ? "RETURN_EVENT_INVALID" : null;

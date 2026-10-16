@@ -13,7 +13,7 @@ describe('buildCronScope', () => {
     // result is workspace-scoped AND name the (only) broadening command.
     expect(hint).toContain('C:/Users/me/projects/mino');
     expect(hint).toContain('其他工作区');
-    expect(hint).toContain('myagents cron list --workspace');
+    expect(hint).toContain('nexttools cron list --workspace');
   });
 
   it('drops the broaden nudge for an explicit --workspace caller (they already know)', () => {
@@ -33,6 +33,6 @@ describe('buildCronScope', () => {
     expect(scope.workspacePath).toBe('');
     expect(hint).toContain('(无活动工作区)');
     // Still tells the consumer how to scope to a real workspace.
-    expect(hint).toContain('myagents cron list --workspace');
+    expect(hint).toContain('nexttools cron list --workspace');
   });
 });

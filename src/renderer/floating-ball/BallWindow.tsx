@@ -293,7 +293,7 @@ export default function BallWindow() {
     }, [handleMouseEnter, handleMouseLeave]);
 
     // ── click → summon ──
-    // Pin activates MyAgents on macOS so IME/text services bind to the
+    // Pin activates NextTools on macOS so IME/text services bind to the
     // companion WebView. That means context capture must finish first: once
     // activation happens, frontmost-window and selection probes would target us
     // instead of the user's app. D3 red line stays intact: hover never captures.

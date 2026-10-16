@@ -1,5 +1,7 @@
 # MyAgents Trademark Policy / MyAgents 商标政策
 
+> **NextTools fork notice / 分叉声明:** NextTools is not an official MyAgents release and does not claim ownership of the MyAgents marks. References to MyAgents identify the upstream work or external dependencies only. NextTools 不是官方 MyAgents 发行版，不主张 MyAgents 商标权；保留该名称仅用于上游来源及外部依赖标识。
+
 ## English
 
 The software licenses for MyAgents, including the AGPL and any commercial

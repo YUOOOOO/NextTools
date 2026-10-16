@@ -163,14 +163,14 @@ describe('chat Markdown fenced code horizontal scroll ownership', () => {
 
 describe('Space issue system-reminder user bubble', () => {
     it('hides the operational payload and renders the Space issue badge with visible text', () => {
-        const visibleText = 'MyAgents Space 已投递一个 Issue 通知，Registered Agent 开始处理。';
+        const visibleText = 'NextTools Space 已投递一个 Issue 通知，Registered Agent 开始处理。';
         const content = [
             '<system-reminder>',
             `<${SPACE_ISSUE_CONTEXT_TAG}>`,
-            '<myagents-space-event version="1" type="issue-delivery">',
+            '<nexttools-space-event version="1" type="issue-delivery">',
             '<issue-instruction>hidden issue instructions</issue-instruction>',
             '<issue id="issue_1">hidden issue facts</issue>',
-            '</myagents-space-event>',
+            '</nexttools-space-event>',
             `</${SPACE_ISSUE_CONTEXT_TAG}>`,
             '</system-reminder>',
             visibleText,
@@ -188,10 +188,10 @@ describe('Space issue system-reminder user bubble', () => {
         const content = [
             '<system-reminder>',
             `<${SPACE_ISSUE_CONTEXT_TAG}>`,
-            '<myagents-space-event version="1" type="issue-delivery">',
+            '<nexttools-space-event version="1" type="issue-delivery">',
             '<issue-instruction>hidden issue instructions</issue-instruction>',
             '<issue id="issue_1">hidden issue facts</issue>',
-            '</myagents-space-event>',
+            '</nexttools-space-event>',
             `</${SPACE_ISSUE_CONTEXT_TAG}>`,
             '</system-reminder>',
         ].join('\n');
@@ -243,7 +243,7 @@ describe('Goal system-reminder user bubble', () => {
         expect(container.querySelector('[data-role="user"]')).not.toBeNull();
         expect(container).toHaveTextContent(/Goal Mode|目标模式/);
         expect(container).toHaveTextContent(objective);
-        expect(container).not.toHaveTextContent('Continue working toward the active MyAgents Goal');
+        expect(container).not.toHaveTextContent('Continue working toward the active NextTools Goal');
     });
 
     it('does not render pure hidden Goal reminders as user bubbles', () => {
@@ -286,7 +286,7 @@ describe('Cross-session request system-reminder user bubble', () => {
     ])('renders request source %s without leaking protocol metadata', (sourceAttribute, sourceLabel) => {
         const content = [
             '<system-reminder>',
-            '<myagents-session-event',
+            '<nexttools-session-event',
             '  version="1"',
             '  type="send.request"',
             '  event_id="evt-visible-request"',
@@ -300,7 +300,7 @@ describe('Cross-session request system-reminder user bubble', () => {
             '<payload>',
             'Please review the release checklist.',
             '</payload>',
-            '</myagents-session-event>',
+            '</nexttools-session-event>',
             '</system-reminder>',
         ].join('\n');
 

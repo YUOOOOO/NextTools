@@ -350,11 +350,11 @@ describe("DSH RuntimeProcessHost", () => {
     });
     await test.host.start();
     expect(test.spawnedEnvironment).toMatchObject({
-      MYAGENTS_PORT: "31417",
-      MYAGENTS_SESSION_ID: "product-session-1",
-      MYAGENTS_INTERNAL_CLI_TOKEN: "app-capability",
+      NEXTTOOLS_PORT: "31417",
+      NEXTTOOLS_SESSION_ID: "product-session-1",
+      NEXTTOOLS_INTERNAL_CLI_TOKEN: "app-capability",
     });
-    expect(test.spawnedEnvironment?.MYAGENTS_API_TOKEN).toBeUndefined();
+    expect(test.spawnedEnvironment?.NEXTTOOLS_API_TOKEN).toBeUndefined();
     expect(JSON.stringify(test.host.diagnosticSnapshot)).not.toContain("app-capability");
     await test.host.stop();
   });

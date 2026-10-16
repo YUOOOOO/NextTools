@@ -232,7 +232,7 @@
   --space-12: 48px;
 }
 
-/* Brand spark: the amber point in the MYAGENTS logotype. Deeper on paper for
+/* Brand spark: the amber point in the NEXTTOOLS logotype. Deeper on paper for
    contrast, brighter on dark surfaces. */
 :root {
   --brand-spark: #c98a2e;
@@ -431,7 +431,7 @@ html[data-color-scheme='dark'] {
   border-radius: 22%;
 }
 
-/* MYAGENTS logotype is outline art: size it by cap height (em-relative so each
+/* NEXTTOOLS logotype is outline art: size it by cap height (em-relative so each
    surface keeps its own type scale) and let the width follow the viewBox. */
 .global-sidebar-brand-logotype {
   display: block;
@@ -1418,20 +1418,20 @@ code {
   padding-right: 16px;
 }
 
-.monaco-editor-host .myagents-monaco-search-focus-line {
+.monaco-editor-host .nexttools-monaco-search-focus-line {
   background-color: var(--accent-warm-subtle) !important;
 }
 
 /* Monaco's find widget creates its own hover popovers for the Aa/ab/.* controls.
  * Those popovers can sit directly over the button and intercept clicks. The editor
- * wrapper renders a scoped MyAgents tooltip instead, so the built-in one is hidden
+ * wrapper renders a scoped NextTools tooltip instead, so the built-in one is hidden
  * only for Monaco instances mounted through this host.
  */
 .monaco-editor-host .monaco-hover {
   display: none !important;
 }
 
-.myagents-monaco-find-tooltip {
+.nexttools-monaco-find-tooltip {
   pointer-events: none;
   position: fixed;
   z-index: 330;

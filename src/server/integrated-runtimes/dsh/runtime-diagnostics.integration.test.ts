@@ -36,7 +36,7 @@ vi.mock('./process-host', async original => ({
     };
     request = async (method: string, params: DshRpcObject) => {
       if (method === 'extension/replace') {
-        const registry = new DshAttachmentRegistry(dshSessionOwnedPaths(join(fixture.home, '.myagents'), 'product-diagnostics').attachmentRoot);
+        const registry = new DshAttachmentRegistry(dshSessionOwnedPaths(join(fixture.home, '.nexttools'), 'product-diagnostics').attachmentRoot);
         await registry.initialize();
         const snapshot = await registry.readJson(params.snapshotAttachment as { attachmentId: string; mimeType: string; sizeBytes: number; sha256: string }) as DshRpcObject;
         fixture.revision = String(snapshot.revision);
@@ -69,9 +69,9 @@ describe('DSH failed admission diagnostics', () => {
     await writeFile(join(fixture.home, 'node'), 'synthetic');
     await mkdir(join(fixture.home, 'integrated-runtimes/dsh/runtime-artifact'), { recursive: true });
     const workspacePath = join(fixture.home, 'workspace'); await mkdir(workspacePath);
-    vi.stubEnv('MYAGENTS_INTERNAL_CLI_TOKEN', 'must-not-be-forwarded');
+    vi.stubEnv('NEXTTOOLS_INTERNAL_CLI_TOKEN', 'must-not-be-forwarded');
     const host = await startDshStorageManagement({ sessionId: 'storage-only', workspacePath });
-    expect(fixture.host?.childEnvironment.env.MYAGENTS_INTERNAL_CLI_TOKEN).toBeUndefined();
+    expect(fixture.host?.childEnvironment.env.NEXTTOOLS_INTERNAL_CLI_TOKEN).toBeUndefined();
     expect(() => fixture.host?.hostHandlers['host/credential/resolve']({} as never, {} as never)).toThrow('cannot execute');
     await host.stop();
   });
@@ -82,7 +82,7 @@ describe('DSH failed admission diagnostics', () => {
     await writeFile(join(fixture.home, 'node'), 'synthetic');
     await mkdir(join(fixture.home, 'integrated-runtimes/dsh/runtime-artifact'), { recursive: true });
     const workspacePath = join(fixture.home, 'workspace'); await mkdir(workspacePath);
-    vi.stubEnv('MYAGENTS_INTERNAL_CLI_TOKEN', 'synthetic');
+    vi.stubEnv('NEXTTOOLS_INTERNAL_CLI_TOKEN', 'synthetic');
     const logs: Array<{ message: string; sessionId?: string; runtime?: string }> = [];
     const capture = (...args: unknown[]) => logs.push({ message: args.join(' '), ...getLogContext() });
     vi.spyOn(console, 'log').mockImplementation(capture);

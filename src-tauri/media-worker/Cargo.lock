@@ -241,12 +241,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
-name = "myagents-media-worker"
+name = "nexttools-media-worker"
 version = "0.4.10"
 dependencies = [
  "libc",
  "libloading",
- "myagents-media-worker-protocol",
+ "nexttools-media-worker-protocol",
  "ogg",
  "opus2",
  "rubato",
@@ -261,7 +261,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "myagents-media-worker-protocol"
+name = "nexttools-media-worker-protocol"
 version = "0.4.10"
 dependencies = [
  "serde",

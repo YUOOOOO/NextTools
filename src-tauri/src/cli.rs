@@ -1,9 +1,9 @@
-//! CLI mode and launcher authority for the `myagents` binary.
+//! CLI mode and launcher authority for the `nexttools` binary.
 //!
 //! The app bundle is the only owner of CLI business code. The files under
-//! `~/.myagents/bin/` are deterministic thin launchers that re-enter the
-//! current MyAgents executable with [`CLI_BOOTSTRAP_ARG`]; this module then
-//! runs the bundled Node.js runtime against the bundled `cli/myagents.cjs`.
+//! `~/.nexttools/bin/` are deterministic thin launchers that re-enter the
+//! current NextTools executable with [`CLI_BOOTSTRAP_ARG`]; this module then
+//! runs the bundled Node.js runtime against the bundled `cli/nexttools.cjs`.
 //! No CLI business payload is copied into the user's home directory.
 
 use std::fmt;
@@ -17,13 +17,13 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, OnceLock};
 
 /// Private launcher → app-binary marker. It is stripped before Node sees argv.
-pub const CLI_BOOTSTRAP_ARG: &str = "--myagents-cli-entry";
+pub const CLI_BOOTSTRAP_ARG: &str = "--nexttools-cli-entry";
 
 /// CLI subcommands retained for backwards-compatible direct app-binary calls.
 ///
-/// The canonical `myagents` launcher uses [`CLI_BOOTSTRAP_ARG`], so adding a new
+/// The canonical `nexttools` launcher uses [`CLI_BOOTSTRAP_ARG`], so adding a new
 /// business group no longer depends on mirroring it here. This list only keeps
-/// previously published `MyAgents <group> ...` invocations working.
+/// previously published `NextTools <group> ...` invocations working.
 const CLI_COMMANDS: &[&str] = &[
     "mcp", "vision", "model", "agent", "runtime", "config", "status", "reload", "version", "cron",
     "goal", "plugin", "skill", "task", "thought", "im", "session", "widget", "space", "diagnose",
@@ -85,7 +85,7 @@ impl CliBootstrapError {
 
 impl fmt::Display for CliBootstrapError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        const ACTION: &str = "Confirm the install path exists, close processes holding the launcher, then retry or restart MyAgents; reinstall if bundled resources are missing";
+        const ACTION: &str = "Confirm the install path exists, close processes holding the launcher, then retry or restart NextTools; reinstall if bundled resources are missing";
         let path = self
             .path
             .as_ref()
@@ -145,8 +145,8 @@ pub fn run(args: &[String]) -> i32 {
 
     // Preserve an explicit Session port. Only terminal-style invocations with
     // no inherited port may fall back to the Global Sidecar port file.
-    let inherited_port = std::env::var("MYAGENTS_PORT").ok();
-    let inherited_session = std::env::var("MYAGENTS_SESSION_ID").ok();
+    let inherited_port = std::env::var("NEXTTOOLS_PORT").ok();
+    let inherited_session = std::env::var("NEXTTOOLS_SESSION_ID").ok();
     let global_port =
         should_inject_global_port(inherited_port.as_deref(), inherited_session.as_deref())
             .then(discover_sidecar_port)
@@ -188,7 +188,7 @@ fn run_node(
     command.stdout(Stdio::inherit());
     command.stderr(Stdio::inherit());
     if let Some(port) = global_port {
-        command.env("MYAGENTS_PORT", port);
+        command.env("NEXTTOOLS_PORT", port);
     }
     command.env("NO_PROXY", crate::proxy_config::LOCALHOST_NO_PROXY);
     command.env("no_proxy", crate::proxy_config::LOCALHOST_NO_PROXY);
@@ -224,7 +224,7 @@ fn should_inject_global_port(
 pub(crate) fn ensure_launcher() -> Result<bool, String> {
     // Rust unit tests exercise the pure locator/reconciler cores with temp
     // directories. Sidecar lifecycle tests must never mutate the developer's
-    // real ~/.myagents directory merely because they cross this admission.
+    // real ~/.nexttools directory merely because they cross this admission.
     #[cfg(test)]
     return Ok(false);
 
@@ -249,12 +249,12 @@ pub(crate) fn ensure_launcher() -> Result<bool, String> {
             )
             .to_string()
         })?;
-        let data_dir = crate::app_dirs::myagents_data_dir().ok_or_else(|| {
+        let data_dir = crate::app_dirs::nexttools_data_dir().ok_or_else(|| {
             CliBootstrapError::new(
                 "CLI_DATA_DIR_UNAVAILABLE",
                 "resolve",
                 None,
-                "cannot determine the MyAgents data directory",
+                "cannot determine the NextTools data directory",
             )
             .to_string()
         })?;
@@ -299,8 +299,8 @@ fn reconcile_launchers(
     // Install the extensionless entry first. If the second rename fails, an
     // old Windows .cmd will try to parse this shell launcher as JavaScript and
     // fail closed instead of executing the old business payload.
-    let mut changed = install_launcher(&bin_dir.join("myagents"), posix.as_bytes(), true)?;
-    changed |= install_launcher(&bin_dir.join("myagents.cmd"), windows.as_bytes(), false)?;
+    let mut changed = install_launcher(&bin_dir.join("nexttools"), posix.as_bytes(), true)?;
+    changed |= install_launcher(&bin_dir.join("nexttools.cmd"), windows.as_bytes(), false)?;
 
     let retired_marker = data_dir.join(".cli-version");
     match fs::symlink_metadata(&retired_marker) {
@@ -396,7 +396,7 @@ fn build_posix_launcher(executable: &str, platform: CliPlatform) -> String {
         executable = executable.replace('\\', "/");
     }
     format!(
-        "#!/bin/sh\n# Generated by MyAgents; this is a thin launcher, not CLI business code.\nexec {} {} \"$@\"\n",
+        "#!/bin/sh\n# Generated by NextTools; this is a thin launcher, not CLI business code.\nexec {} {} \"$@\"\n",
         shell_quote(&executable),
         shell_quote(CLI_BOOTSTRAP_ARG),
     )
@@ -408,7 +408,7 @@ fn build_windows_launcher(executable: &str) -> String {
     let executable = executable.replace('%', "%%");
     format!(
         "@echo off\r\n\
-         :: Generated by MyAgents; this is a thin launcher, not CLI business code.\r\n\
+         :: Generated by NextTools; this is a thin launcher, not CLI business code.\r\n\
          setlocal DisableDelayedExpansion\r\n\
          \"{}\" {} %*\r\n\
          exit /b %ERRORLEVEL%\r\n",
@@ -463,7 +463,7 @@ fn install_launcher(
     let file_name = path
         .file_name()
         .and_then(|value| value.to_str())
-        .unwrap_or("myagents");
+        .unwrap_or("nexttools");
     let (mut file, temp_path) = create_launcher_temp(parent, file_name)?;
 
     let install_result = (|| -> Result<(), CliBootstrapError> {
@@ -669,7 +669,7 @@ fn resolve_cli_runtime_from_executable(
             let install_root = executable_dir.join("..");
             push_unique_root(
                 &mut resource_roots,
-                executable_dir.join("..").join("lib").join("MyAgents"),
+                executable_dir.join("..").join("lib").join("NextTools"),
                 install_root,
             );
             push_unique_root(
@@ -695,7 +695,7 @@ fn resolve_cli_runtime_from_executable(
     let mut unsafe_resource = None;
     for (root, install_boundary) in &resource_roots {
         let node = node_path_in_resources(root, platform);
-        let script = root.join("cli").join("myagents.cjs");
+        let script = root.join("cli").join("nexttools.cjs");
         if is_executable_regular_file(&node, platform) && is_regular_file(&script) {
             let canonicalize = |path: &Path| {
                 fs::canonicalize(path).map_err(|error| {
@@ -732,7 +732,7 @@ fn resolve_cli_runtime_from_executable(
             "CLI_BUNDLE_RESOURCES_UNSAFE",
             "validate",
             Some(path),
-            "bundled Node.js or cli/myagents.cjs resolves outside the current installation tree",
+            "bundled Node.js or cli/nexttools.cjs resolves outside the current installation tree",
         ));
     }
 
@@ -741,7 +741,7 @@ fn resolve_cli_runtime_from_executable(
         "validate",
         Some(executable.to_path_buf()),
         format!(
-            "bundled Node.js and cli/myagents.cjs were not both present under any resource root: {}",
+            "bundled Node.js and cli/nexttools.cjs were not both present under any resource root: {}",
             resource_roots
                 .iter()
                 .map(|(path, _)| path.display().to_string())
@@ -788,7 +788,7 @@ fn is_executable_regular_file(path: &Path, _platform: CliPlatform) -> bool {
 
 /// Read the Global Sidecar port from the product data directory.
 fn discover_sidecar_port() -> Option<String> {
-    let port_file = crate::app_dirs::myagents_data_dir()?.join("sidecar.port");
+    let port_file = crate::app_dirs::nexttools_data_dir()?.join("sidecar.port");
     let port = fs::read_to_string(port_file).ok()?.trim().to_string();
     let parsed = port.parse::<u16>().ok()?;
     (parsed != 0).then_some(port)
@@ -812,7 +812,7 @@ mod tests {
             )
             .unwrap();
         }
-        fs::write(root.join("cli").join("myagents.cjs"), b"cli").unwrap();
+        fs::write(root.join("cli").join("nexttools.cjs"), b"cli").unwrap();
     }
 
     #[test]
@@ -830,7 +830,7 @@ mod tests {
     fn direct_binary_groups_remain_backwards_compatible() {
         assert!(is_cli_mode(&["--version".to_string()]));
         assert!(is_cli_mode(&["mcp".to_string(), "list".to_string()]));
-        assert!(!is_cli_mode(&["myagents://open".to_string()]));
+        assert!(!is_cli_mode(&["nexttools://open".to_string()]));
     }
 
     #[test]
@@ -849,14 +849,14 @@ mod tests {
 
     #[test]
     fn launchers_only_reenter_the_app_binary() {
-        let executable = Path::new("/Applications/My Agents.app/Contents/MacOS/MyAgents");
+        let executable = Path::new("/Applications/My Agents.app/Contents/MacOS/NextTools");
         let posix = build_posix_launcher(executable.to_str().unwrap(), CliPlatform::Macos);
-        let windows = build_windows_launcher(r"C:\Program Files\MyAgents 100%\MyAgents.exe");
+        let windows = build_windows_launcher(r"C:\Program Files\NextTools 100%\NextTools.exe");
 
-        assert!(posix.contains("exec '/Applications/My Agents.app/Contents/MacOS/MyAgents'"));
+        assert!(posix.contains("exec '/Applications/My Agents.app/Contents/MacOS/NextTools'"));
         assert!(posix.contains(CLI_BOOTSTRAP_ARG));
         assert!(!posix.contains("node"));
-        assert!(windows.contains(r#""C:\Program Files\MyAgents 100%%\MyAgents.exe""#));
+        assert!(windows.contains(r#""C:\Program Files\NextTools 100%%\NextTools.exe""#));
         assert!(windows.contains(CLI_BOOTSTRAP_ARG));
         assert!(!windows.contains("node.exe"));
         assert!(windows.contains(" %*\r\n"));
@@ -872,15 +872,15 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let executable_dir = temp.path().join("My Agent's 应用");
         fs::create_dir_all(&executable_dir).unwrap();
-        let executable = executable_dir.join("MyAgents");
+        let executable = executable_dir.join("NextTools");
         fs::write(
             &executable,
-            "#!/bin/sh\nprintf 'arg=<%s>\\n' \"$@\"\nprintf 'cwd=<%s>\\n' \"$PWD\"\nprintf 'env=<%s>\\n' \"$MYAGENTS_TEST_ENV\"\nIFS= read -r line\nprintf 'stdin=<%s>\\n' \"$line\"\nprintf 'stderr-line\\n' >&2\nexit 23\n",
+            "#!/bin/sh\nprintf 'arg=<%s>\\n' \"$@\"\nprintf 'cwd=<%s>\\n' \"$PWD\"\nprintf 'env=<%s>\\n' \"$NEXTTOOLS_TEST_ENV\"\nIFS= read -r line\nprintf 'stdin=<%s>\\n' \"$line\"\nprintf 'stderr-line\\n' >&2\nexit 23\n",
         )
         .unwrap();
         fs::set_permissions(&executable, fs::Permissions::from_mode(0o755)).unwrap();
 
-        let launcher = temp.path().join("myagents");
+        let launcher = temp.path().join("nexttools");
         fs::write(
             &launcher,
             build_posix_launcher(executable.to_str().unwrap(), CliPlatform::Macos),
@@ -894,7 +894,7 @@ mod tests {
         let mut child = Command::new(&launcher)
             .args(["", "space value", "你好", r"trailing\", "double\"quote"])
             .current_dir(&cwd)
-            .env("MYAGENTS_TEST_ENV", "环境 value")
+            .env("NEXTTOOLS_TEST_ENV", "环境 value")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -934,8 +934,8 @@ mod tests {
     fn resource_locator_covers_packaged_platform_layouts() {
         let temp = tempfile::tempdir().unwrap();
 
-        let mac_executable = temp.path().join("MyAgents.app/Contents/MacOS/MyAgents");
-        let mac_resources = temp.path().join("MyAgents.app/Contents/Resources");
+        let mac_executable = temp.path().join("NextTools.app/Contents/MacOS/NextTools");
+        let mac_resources = temp.path().join("NextTools.app/Contents/Resources");
         fs::create_dir_all(mac_executable.parent().unwrap()).unwrap();
         write_runtime(&mac_resources, CliPlatform::Macos);
         assert_eq!(
@@ -944,10 +944,10 @@ mod tests {
                 .script,
             fs::canonicalize(&mac_resources)
                 .unwrap()
-                .join("cli/myagents.cjs"),
+                .join("cli/nexttools.cjs"),
         );
 
-        let windows_executable = temp.path().join("Program Files/MyAgents/MyAgents.exe");
+        let windows_executable = temp.path().join("Program Files/NextTools/NextTools.exe");
         let windows_resources = windows_executable.parent().unwrap().join("resources");
         fs::create_dir_all(windows_executable.parent().unwrap()).unwrap();
         write_runtime(&windows_resources, CliPlatform::Windows);
@@ -961,8 +961,8 @@ mod tests {
         );
 
         let appdir = temp.path().join("appimage-mount");
-        let linux_executable = appdir.join("usr/bin/myagents");
-        let linux_resources = appdir.join("usr/lib/MyAgents");
+        let linux_executable = appdir.join("usr/bin/nexttools");
+        let linux_resources = appdir.join("usr/lib/NextTools");
         fs::create_dir_all(linux_executable.parent().unwrap()).unwrap();
         write_runtime(&linux_resources, CliPlatform::Linux);
         assert_eq!(
@@ -971,7 +971,7 @@ mod tests {
                 .script,
             fs::canonicalize(&linux_resources)
                 .unwrap()
-                .join("cli/myagents.cjs"),
+                .join("cli/nexttools.cjs"),
         );
     }
 
@@ -982,13 +982,13 @@ mod tests {
 
         let temp = tempfile::tempdir().unwrap();
         let install_root = temp.path().join("appimage-mount/usr");
-        let executable = install_root.join("bin/myagents");
+        let executable = install_root.join("bin/nexttools");
         fs::create_dir_all(executable.parent().unwrap()).unwrap();
         fs::create_dir_all(install_root.join("lib")).unwrap();
 
         let external_root = temp.path().join("external-runtime");
         write_runtime(&external_root, CliPlatform::Linux);
-        symlink(&external_root, install_root.join("lib/MyAgents")).unwrap();
+        symlink(&external_root, install_root.join("lib/NextTools")).unwrap();
 
         let error =
             resolve_cli_runtime_from_executable(&executable, CliPlatform::Linux, None).unwrap_err();
@@ -1002,11 +1002,11 @@ mod tests {
 
         let temp = tempfile::tempdir().unwrap();
         let install_root = temp.path().join("appimage-mount/usr");
-        let executable = install_root.join("bin/myagents");
-        let resources = install_root.join("lib/MyAgents");
+        let executable = install_root.join("bin/nexttools");
+        let resources = install_root.join("lib/NextTools");
         fs::create_dir_all(executable.parent().unwrap()).unwrap();
         fs::create_dir_all(resources.join("cli")).unwrap();
-        fs::write(resources.join("cli/myagents.cjs"), b"cli").unwrap();
+        fs::write(resources.join("cli/nexttools.cjs"), b"cli").unwrap();
 
         let external_root = temp.path().join("external-runtime");
         write_runtime(&external_root, CliPlatform::Linux);
@@ -1020,26 +1020,26 @@ mod tests {
     #[test]
     fn legacy_payload_and_truthy_marker_converge_without_a_version_gate() {
         let temp = tempfile::tempdir().unwrap();
-        let data_dir = temp.path().join(".myagents");
+        let data_dir = temp.path().join(".nexttools");
         let bin_dir = data_dir.join("bin");
         fs::create_dir_all(&bin_dir).unwrap();
         fs::write(
-            bin_dir.join("myagents"),
+            bin_dir.join("nexttools"),
             b"#!/usr/bin/env node\n// stale CLI business payload",
         )
         .unwrap();
-        fs::write(bin_dir.join("myagents.cmd"), b"node old-cli.js %*").unwrap();
+        fs::write(bin_dir.join("nexttools.cmd"), b"node old-cli.js %*").unwrap();
         fs::write(data_dir.join(".cli-version"), b"50").unwrap();
-        fs::write(bin_dir.join(".myagents.tmp.new"), b"partial legacy write").unwrap();
+        fs::write(bin_dir.join(".nexttools.tmp.new"), b"partial legacy write").unwrap();
 
-        let executable = Path::new("/Applications/MyAgents.app/Contents/MacOS/MyAgents");
+        let executable = Path::new("/Applications/NextTools.app/Contents/MacOS/NextTools");
         assert!(reconcile_launchers(&data_dir, executable, CliPlatform::Macos).unwrap());
         assert!(!data_dir.join(".cli-version").exists());
-        let launcher = fs::read_to_string(bin_dir.join("myagents")).unwrap();
+        let launcher = fs::read_to_string(bin_dir.join("nexttools")).unwrap();
         assert!(launcher.contains(CLI_BOOTSTRAP_ARG));
         assert!(!launcher.contains("stale CLI business payload"));
         assert_eq!(
-            fs::read(bin_dir.join(".myagents.tmp.new")).unwrap(),
+            fs::read(bin_dir.join(".nexttools.tmp.new")).unwrap(),
             b"partial legacy write",
         );
         assert!(!reconcile_launchers(&data_dir, executable, CliPlatform::Macos).unwrap());
@@ -1048,11 +1048,11 @@ mod tests {
     #[test]
     fn launcher_installation_failure_is_retryable_without_a_marker() {
         let temp = tempfile::tempdir().unwrap();
-        let data_dir = temp.path().join(".myagents");
+        let data_dir = temp.path().join(".nexttools");
         fs::create_dir_all(&data_dir).unwrap();
         fs::write(data_dir.join("bin"), b"not a directory").unwrap();
 
-        let executable = Path::new("/Applications/MyAgents.app/Contents/MacOS/MyAgents");
+        let executable = Path::new("/Applications/NextTools.app/Contents/MacOS/NextTools");
         let error = reconcile_launchers(&data_dir, executable, CliPlatform::Macos).unwrap_err();
         assert_eq!(error.code, "CLI_LAUNCHER_DIR_UNSAFE");
         assert!(!data_dir.join(".cli-version").exists());
@@ -1064,14 +1064,14 @@ mod tests {
     #[test]
     fn missing_bundle_resources_fail_closed_and_can_be_repaired() {
         let temp = tempfile::tempdir().unwrap();
-        let executable = temp.path().join("usr/bin/myagents");
+        let executable = temp.path().join("usr/bin/nexttools");
         fs::create_dir_all(executable.parent().unwrap()).unwrap();
 
         let error =
             resolve_cli_runtime_from_executable(&executable, CliPlatform::Linux, None).unwrap_err();
         assert_eq!(error.code, "CLI_BUNDLE_RESOURCES_MISSING");
 
-        let resources = temp.path().join("usr/lib/MyAgents");
+        let resources = temp.path().join("usr/lib/NextTools");
         write_runtime(&resources, CliPlatform::Linux);
         assert!(resolve_cli_runtime_from_executable(&executable, CliPlatform::Linux, None).is_ok());
     }
@@ -1082,22 +1082,22 @@ mod tests {
         use std::os::unix::fs::symlink;
 
         let temp = tempfile::tempdir().unwrap();
-        let data_dir = temp.path().join(".myagents");
+        let data_dir = temp.path().join(".nexttools");
         let bin_dir = data_dir.join("bin");
         fs::create_dir_all(&bin_dir).unwrap();
         let external = temp.path().join("external-cli");
         fs::write(&external, b"do not change").unwrap();
-        symlink(&external, bin_dir.join("myagents")).unwrap();
+        symlink(&external, bin_dir.join("nexttools")).unwrap();
 
         reconcile_launchers(
             &data_dir,
-            Path::new("/Applications/MyAgents.app/Contents/MacOS/MyAgents"),
+            Path::new("/Applications/NextTools.app/Contents/MacOS/NextTools"),
             CliPlatform::Macos,
         )
         .unwrap();
 
         assert_eq!(fs::read(&external).unwrap(), b"do not change");
-        assert!(fs::symlink_metadata(bin_dir.join("myagents"))
+        assert!(fs::symlink_metadata(bin_dir.join("nexttools"))
             .unwrap()
             .file_type()
             .is_file());
@@ -1109,7 +1109,7 @@ mod tests {
         use std::os::unix::fs::symlink;
 
         let temp = tempfile::tempdir().unwrap();
-        let data_dir = temp.path().join(".myagents");
+        let data_dir = temp.path().join(".nexttools");
         let external_bin = temp.path().join("external-bin");
         fs::create_dir_all(&data_dir).unwrap();
         fs::create_dir_all(&external_bin).unwrap();
@@ -1117,7 +1117,7 @@ mod tests {
 
         let error = reconcile_launchers(
             &data_dir,
-            Path::new("/Applications/MyAgents.app/Contents/MacOS/MyAgents"),
+            Path::new("/Applications/NextTools.app/Contents/MacOS/NextTools"),
             CliPlatform::Macos,
         )
         .unwrap_err();

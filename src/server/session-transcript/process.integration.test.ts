@@ -12,7 +12,7 @@ describe("V2 physical process termination", () => {
   it.each(["committed", "partial", "candidate", "renamed", "published"])(
     "recovers a complete prefix when killed at %s",
     async (stage) => {
-      const root = await mkdtemp(join(tmpdir(), "myagents-transcript-kill-"));
+      const root = await mkdtemp(join(tmpdir(), "nexttools-transcript-kill-"));
       const child = fork(
         fileURLToPath(new URL("./fixtures/crash-writer.ts", import.meta.url)),
         [root, stage],

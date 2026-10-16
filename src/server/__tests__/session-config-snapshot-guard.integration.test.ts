@@ -186,8 +186,8 @@ describe('#327 — snapshot authority for IM config sync (setSessionPermissionMo
 
 describe('#512 — layered MCP snapshot authority', () => {
   it('keeps snapshot IDs, refreshes definitions, and honors the global disable lever', () => {
-    const scratch = mkdtempSync(join(tmpdir(), 'myagents-mcp-snapshot-'));
-    const configDir = join(scratch, '.myagents');
+    const scratch = mkdtempSync(join(tmpdir(), 'nexttools-mcp-snapshot-'));
+    const configDir = join(scratch, '.nexttools');
     mkdirSync(configDir, { recursive: true });
     const configPath = join(configDir, 'config.json');
     const envKey = process.platform === 'win32' ? 'USERPROFILE' : 'HOME';

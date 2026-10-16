@@ -1,4 +1,4 @@
-// OpenClaw plugin-sdk/feishu shim for MyAgents Plugin Bridge
+// OpenClaw plugin-sdk/feishu shim for NextTools Plugin Bridge
 // Complete shim of all ~44 runtime symbols exported by openclaw/src/plugin-sdk/feishu.ts
 // Source of truth: openclaw/src/plugin-sdk/feishu.ts (82-line re-export file)
 // See: specs/research/openclaw_sdk_shim_analysis.md
@@ -382,7 +382,7 @@ export function applyBasicWebhookRequestGuards(_params) {
 // ===== plugin-sdk/temp-path =====
 
 export async function withTempDownloadPath(ext, callback) {
-  const dir = join(tmpdir(), 'myagents-bridge-media');
+  const dir = join(tmpdir(), 'nexttools-bridge-media');
   mkdirSync(dir, { recursive: true });
   const filePath = join(dir, `dl-${Date.now()}${ext || ''}`);
   try {

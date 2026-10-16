@@ -2,7 +2,7 @@
 
 ## 概述
 
-MyAgents 使用统一日志系统聚合来自三个来源的日志：
+NextTools 使用统一日志系统聚合来自三个来源的日志：
 - **React** - 前端 `console.log/error/warn/debug`
 - **NODE** - Node.js Sidecar 后端日志
 - **Rust** - Tauri 原生层日志
@@ -55,11 +55,11 @@ Node/Rust 日志都不是 per-call 同步写入：
 
 同一条 Node 日志必须只有一个文件持久化 owner。Sidecar logger 初始化后，`console.log/warn/error/debug` 与 `sendLog()` 由 Node `UnifiedLogger.ts` 落盘；`console.info` 没有被该 logger 接管，不能用它记录需要排障留存的 Sidecar 诊断。Rust 只保留真实的原始 stderr（native/runtime crash 与 logger 初始化前输出），不得让已被 Node 落盘的 `console.warn/error` 再经 stderr 进入 `[bun-err]`。stdout 仅承担初始化握手，Rust 看到 `[Logger] Unified logging initialized` 后停止捕获。Plugin Bridge 不初始化 Node UnifiedLogger，因此它的 stdout/stderr 仍由 Rust Bridge owner 落盘。
 
-Rust unit-test binary 不写用户真实的 `~/.myagents/logs/unified-*.log`；测试日志只进入测试 runner 的标准日志捕获。这样 synthetic failure 不会污染随后用于产品排障的本机日志。
+Rust unit-test binary 不写用户真实的 `~/.nexttools/logs/unified-*.log`；测试日志只进入测试 runner 的标准日志捕获。这样 synthetic failure 不会污染随后用于产品排障的本机日志。
 
 统一日志已有 correlation fields，可直接用于性能 trace 和排障过滤：`sessionId / tabId / ownerId / requestId / turnId / runtime`。
 
-Renderer HTTP 请求通过 `x-myagents-log-session-id` 传递日志关联 Session；Tab / Companion 提供各自关联值，通用请求入口仅在缺失时补当前界面关联。该字段不决定 Global / Session 路由，也不参与 CLI scope 准入。Node HTTP 日志入口优先读取它，CLI 请求则沿用 `x-myagents-session-id` 作为日志关联回退；后者仍由 CLI scope owner 独立校验执行身份，不能把界面关联写入该身份头。
+Renderer HTTP 请求通过 `x-nexttools-log-session-id` 传递日志关联 Session；Tab / Companion 提供各自关联值，通用请求入口仅在缺失时补当前界面关联。该字段不决定 Global / Session 路由，也不参与 CLI scope 准入。Node HTTP 日志入口优先读取它，CLI 请求则沿用 `x-nexttools-session-id` 作为日志关联回退；后者仍由 CLI scope owner 独立校验执行身份，不能把界面关联写入该身份头。
 
 ## 日志类型
 
@@ -110,7 +110,7 @@ console.log('[MyComponent] something happened');  // 自动分发
 
 ### 2. UnifiedLogger.ts (服务端持久化)
 
-将日志写入每日文件 `~/.myagents/logs/unified-{YYYY-MM-DD}.log`。
+将日志写入每日文件 `~/.nexttools/logs/unified-{YYYY-MM-DD}.log`。
 
 ```typescript
 // 服务端使用
@@ -134,13 +134,13 @@ appendUnifiedLog({
 
 ```typescript
 // 文件命名：{YYYY-MM-DD}-{sessionId}.log
-// 存储位置：~/.myagents/logs/
+// 存储位置：~/.nexttools/logs/
 // 特性：懒加载创建（首次写入时才创建文件）
 ```
 
 ### 4. 异常 crash artifact（不属于 unified log）
 
-`~/.myagents/logs/crash/*.log` 只记录 `uncaughtException`、`unhandledRejection`、异常 stdio 等真正异常事件；正常 STARTUP / EXIT / SIGTERM 只进入 unified log，健康生命周期不会创建 crash 目录或文件。
+`~/.nexttools/logs/crash/*.log` 只记录 `uncaughtException`、`unhandledRejection`、异常 stdio 等真正异常事件；正常 STARTUP / EXIT / SIGTERM 只进入 unified log，健康生命周期不会创建 crash 目录或文件。
 
 Node Sidecar 只拥有自己的懒写文件：文件名含 timestamp + PID + nonce，单文件硬上限 50MB，并按创建时间在 30 天边界轮转。共享目录清理归始终存在的 Tauri 应用进程单一持有，在应用启动立即执行并每小时复查，覆盖升级前 backlog 与没有 Global Sidecar 的 idle 场景：
 
@@ -154,8 +154,8 @@ Node Sidecar 只拥有自己的懒写文件：文件名含 timestamp + PID + non
 ### 5. logUtils.ts (共享常量)
 
 ```typescript
-export const MYAGENTS_DIR = join(homedir(), '.myagents');
-export const LOGS_DIR = join(MYAGENTS_DIR, 'logs');
+export const NEXTTOOLS_DIR = join(homedir(), '.nexttools');
+export const LOGS_DIR = join(NEXTTOOLS_DIR, 'logs');
 export const LOG_RETENTION_DAYS = 30;
 ```
 
@@ -260,7 +260,7 @@ HTTP client 的错误文本通常携带完整请求 URL。若协议把凭据放�
 ## 文件结构
 
 ```
-~/.myagents/
+~/.nexttools/
 └── logs/
     ├── unified-2025-01-25.log      # 统一日志（React/NODE/Rust）
     ├── unified-2025-01-24.log
@@ -296,7 +296,7 @@ HTTP client 的错误文本通常携带完整请求 URL。若协议把凭据放�
 应用启动时输出 Rust `[boot]` 自检；每个 Session Sidecar 完成 Runtime 初始化后输出 Node `[boot]` 自检。Global Sidecar 不创建 Session Runtime，因此没有第二行 Session 自检：
 
 ```
-[boot] v=0.3.1 build=release os=macos-aarch64 provider=deepseek mcp=2 agents=3 channels=5 scheduled_tasks=12 proxy=false dir=/Users/xxx/.myagents
+[boot] v=0.3.1 build=release os=macos-aarch64 provider=deepseek mcp=2 agents=3 channels=5 scheduled_tasks=12 proxy=false dir=/Users/xxx/.nexttools
 [boot] pid=12345 port=31415 node=24.14.0 workspace=/path session=abc-123 resume=true model=deepseek-chat bridge=yes mcp=playwright builtin-mcp-meta=gemini-image,edge-tts
 ```
 
@@ -315,7 +315,7 @@ HTTP client 的错误文本通常携带完整请求 URL。若协议把凭据放�
 | `react-root-created` / `react-commit` | renderer | React root 创建与真实 effect commit |
 | `renderer-uncaught-error` / `renderer-unhandled-rejection` | initialization script | 模块加载或早期 promise 的有界错误 |
 
-所有阶段都带 `window=<label>`，并进入同一个 `~/.myagents/logs/unified-*.log`：Rust page-load 直接走 `ulog_*!`；initialization script 与 `main.tsx` 在 App/Sidecar logger 尚未可用时调用受限 Tauri command `cmd_record_renderer_boot_event`，由 Rust unified logger 持久化。该 command 只接受白名单 stage、有界单行 detail 和合法 window label，不是第二个通用日志 API；禁止绕回 raw `plugin:log|log`，否则阶段链会分裂到 OS LogDir。
+所有阶段都带 `window=<label>`，并进入同一个 `~/.nexttools/logs/unified-*.log`：Rust page-load 直接走 `ulog_*!`；initialization script 与 `main.tsx` 在 App/Sidecar logger 尚未可用时调用受限 Tauri command `cmd_record_renderer_boot_event`，由 Rust unified logger 持久化。该 command 只接受白名单 stage、有界单行 detail 和合法 window label，不是第二个通用日志 API；禁止绕回 raw `plugin:log|log`，否则阶段链会分裂到 OS LogDir。
 
 `tauri_plugin_log::Builder::default()` 已自带 `Stdout + LogDir`。应用自定义 target 时必须先 `clear_targets()` 再各注册一次；直接在 default builder 上追加同名 target 会让每条原生日志成倍输出。启动观测只能记录证据，不得据此自动 reload、retry 或切换 Theme。
 
@@ -342,7 +342,7 @@ SDK user message 摘要通过 `contentKind`、`textLength`、`isEmptyContent` �
 
 ## 故障排查
 
-先确认报告的机器、版本与时间窗口，并优先读取用户提供的日志或日志包。未指定来源时，读取本机 `~/.myagents/logs/unified-{YYYY-MM-DD}.log`，日期按故障发生地的本地时间选择；跨日问题读取相邻日期。不要用本机当天日志推断另一台机器或旧版本的行为。按 Session / Record / job 等关联字段缩小范围，避免整份日志无差别输出。
+先确认报告的机器、版本与时间窗口，并优先读取用户提供的日志或日志包。未指定来源时，读取本机 `~/.nexttools/logs/unified-{YYYY-MM-DD}.log`，日期按故障发生地的本地时间选择；跨日问题读取相邻日期。不要用本机当天日志推断另一台机器或旧版本的行为。按 Session / Record / job 等关联字段缩小范围，避免整份日志无差别输出。
 
 ### 日志不显示
 
@@ -367,15 +367,15 @@ SDK user message 摘要通过 `contentKind`、`textLength`、`isEmptyContent` �
 先按本地日期检索结构化模块与错误码：
 
 ```bash
-grep -E '\[(record|recording|speech)\]|RECORDING_|SPEECH_' ~/.myagents/logs/unified-*.log | tail -80
+grep -E '\[(record|recording|speech)\]|RECORDING_|SPEECH_' ~/.nexttools/logs/unified-*.log | tail -80
 ```
 
 - `RECORDING_*` 优先检查平台权限、设备 identity 与 PipeWire/WASAPI/ScreenCaptureKit；模型重装不能修复 capture 问题。
 - `SPEECH_RESOURCE_*` / `SPEECH_MODEL_*` 检查 native manifest、共享 ORT、签名 manifest、pack hash 与最小加载。
-- Agent 的 `SPEECH_JOB_NOT_FOUND` 先回到原发起 Session 执行 `myagents speech list`；不要要求暴露全局 job 列表。
+- Agent 的 `SPEECH_JOB_NOT_FOUND` 先回到原发起 Session 执行 `nexttools speech list`；不要要求暴露全局 job 列表。
 - 音频 artifact 已存在但 transcript 为空时，确认该 Record 是否只需要用户手动点击“开始转录”；缺少自动 backfill 本身不一定是故障。
 
-排查过程中不要把用户音频、转录全文或 `~/.myagents/records/` 打包进日志附件。
+排查过程中不要把用户音频、转录全文或 `~/.nexttools/records/` 打包进日志附件。
 
 ### 前端整页崩溃（「界面渲染出错」/ 白屏）
 
@@ -384,7 +384,7 @@ grep -E '\[(record|recording|speech)\]|RECORDING_|SPEECH_' ~/.myagents/logs/unif
 排查：
 
 ```bash
-grep -E '\[AppErrorBoundary\]|\[REACT\] \[ERROR\]' ~/.myagents/logs/unified-*.log | tail -30
+grep -E '\[AppErrorBoundary\]|\[REACT\] \[ERROR\]' ~/.nexttools/logs/unified-*.log | tail -30
 ```
 
 - **`error.message`** 保真（运行时字符串，如 `Cannot read properties of undefined (reading 'trim')`）——主要定位线索；配合时间线看崩前发生了什么（常见诱因：**恢复旧 session**、渲染恢复态/流式数据时把可选字段当必有 string）。

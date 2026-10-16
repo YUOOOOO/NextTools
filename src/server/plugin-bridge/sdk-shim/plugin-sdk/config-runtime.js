@@ -1,6 +1,6 @@
 // HAND-WRITTEN BRIDGE SHIM — listed in _handwritten.json.
 //
-// MyAgents Plugin Bridge does not own an openclaw.json file. The authoritative
+// NextTools Plugin Bridge does not own an openclaw.json file. The authoritative
 // OpenClaw config for a loaded channel is the in-process normalized snapshot
 // built by src/server/plugin-bridge/openclaw-config.ts. This shim exposes the
 // subset of config-runtime that channel plugins use for runtime reload paths
@@ -11,7 +11,7 @@ function _w(fn) {
   if (!_warned.has(fn)) { _warned.add(fn); console.warn('[sdk-shim] openclaw/plugin-sdk/config-runtime.' + fn + '() not implemented in Bridge mode'); }
 }
 
-const CONFIG_GLOBAL_KEY = '__MYAGENTS_OPENCLAW_CONFIG__';
+const CONFIG_GLOBAL_KEY = '__NEXTTOOLS_OPENCLAW_CONFIG__';
 
 function _clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -45,7 +45,7 @@ export function resolveLivePluginConfigObject() { return _getConfig(); }
 export function resolvePluginConfigObject() { return _getConfig(); }
 export function clearConfigCache() { return undefined; }
 export function clearRuntimeConfigSnapshot() { globalThis[CONFIG_GLOBAL_KEY] = { channels: {} }; return undefined; }
-export function getRuntimeConfigSourceSnapshot() { return { source: 'myagents-plugin-bridge' }; }
+export function getRuntimeConfigSourceSnapshot() { return { source: 'nexttools-plugin-bridge' }; }
 export function getRuntimeConfigSnapshot() { return _getConfig(); }
 export function getRuntimeConfig() { return _getConfig(); }
 export function loadConfig() { return _getConfig(); }

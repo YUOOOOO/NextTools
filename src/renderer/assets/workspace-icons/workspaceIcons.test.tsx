@@ -50,7 +50,7 @@ describe('workspace identity icons', () => {
     // Robot stays a selectable identity, no longer the fallback.
     expect(resolveWorkspaceIconId('robot')).toBe('robot');
     expect(resolveWorkspaceIconId(getSystemPresetProjectMetadata('mino').icon)).toBe('lightning');
-    expect(resolveWorkspaceIconId(PRESET_TEMPLATES.find(t => t.name === 'Mino')?.icon)).toBe('lightning');
+    expect(resolveWorkspaceIconId(PRESET_TEMPLATES.find(t => t.name === 'Nexo')?.icon)).toBe('lightning');
   });
 
   it('binds the default project hue to the Theme accent', () => {

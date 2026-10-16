@@ -4,7 +4,7 @@
  * Used by both frontend and backend for consistent file type detection.
  */
 
-/** Image file extensions that should be treated as image attachments (not copied to myagents_files) */
+/** Image file extensions that should be treated as image attachments (not copied to nexttools_files) */
 export const IMAGE_EXTENSIONS = new Set([
   'png',
   'jpg',

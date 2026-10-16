@@ -11,7 +11,7 @@ Each candidate folder contains:
 - `contact-sheet.png` — hatch-pet contact sheet for quick visual review.
 - `validation.json` — output from `hatch-pet/scripts/validate_atlas.py`.
 
-All 11 candidates pass `validate_atlas.py` with zero errors and zero warnings. Matching packages are also copied to local Codex/MyAgents pet libraries for manual import testing.
+All 11 candidates pass `validate_atlas.py` with zero errors and zero warnings. Matching packages are also copied to local Codex/NextTools pet libraries for manual import testing.
 
 ## Candidates
 

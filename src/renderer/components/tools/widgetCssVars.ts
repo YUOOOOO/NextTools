@@ -3,7 +3,7 @@
  *
  * Sandbox iframes cannot inherit parent CSS variables, so the resolved Theme
  * adapter supplies literal values that we inject into the iframe's :root.
- * Widget code uses --widget-* variables that map to MyAgents design tokens.
+ * Widget code uses --widget-* variables that map to NextTools design tokens.
  *
  * Covers: text, background, border, accent, semantic, radius.
  * Values never come from getComputedStyle(): child render precedes the parent

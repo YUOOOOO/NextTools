@@ -1,4 +1,4 @@
-# MyAgents Design System
+# NextTools Design System
 
 > **Status**: Active
 >
@@ -6,7 +6,7 @@
 >
 > **Last reviewed against implementation**: 2026-08-30
 
-本文只描述 MyAgents 当前有效的全局设计系统：品牌原则、视觉语义、通用组件、跨页面交互、可访问性、布局与内容呈现。它不是功能 PRD、技术架构说明或变更日志。
+本文只描述 NextTools 当前有效的全局设计系统：品牌原则、视觉语义、通用组件、跨页面交互、可访问性、布局与内容呈现。它不是功能 PRD、技术架构说明或变更日志。
 
 精确 Token 值、Theme 清单和组件 API 以代码为准；复杂功能的当前交互放在 `specs/design/`，owner、状态机、进程边界和事故防复发规则放在 `specs/tech_docs/`。历史动机通过 Git 和 PRD 查询，不在本文保留已经失效的旧规范。
 
@@ -24,7 +24,7 @@
 
 ## 2. 设计理念
 
-MyAgents 是以长时间阅读、持续协作和多任务切换为核心的桌面 AI Agent。视觉使用温暖、克制、有纸张层次的语言，但不把品牌风格等同于固定浅色调。
+NextTools 是以长时间阅读、持续协作和多任务切换为核心的桌面 AI Agent。视觉使用温暖、克制、有纸张层次的语言，但不把品牌风格等同于固定浅色调。
 
 核心原则：
 
@@ -41,7 +41,7 @@ MyAgents 是以长时间阅读、持续协作和多任务切换为核心的桌�
 
 `Theme` 是一套完整视觉语言；`system / light / dark` 是 `AppearanceMode`。每套 Theme 必须同时交付 light 和 dark，system 只解析当前系统明暗，不产生第三套 Theme。
 
-当前生产目录包含 MyAgents Light、MyAgents Classic、MyAgents Classic2、Sage、Claude、Linear、Proof、Codex、Raycast 九套 Theme。产品顺序、默认值、fallback、完整 Token 与 embedded adapters 由 `src/renderer/theme/registry.ts` 和 [`tech_docs/theme_system.md`](tech_docs/theme_system.md) 负责，本文不复制注册表。
+当前生产目录包含 NextTools Light、NextTools Classic、NextTools Classic2、Sage、Claude、Linear、Proof、Codex、Raycast 九套 Theme。产品顺序、默认值、fallback、完整 Token 与 embedded adapters 由 `src/renderer/theme/registry.ts` 和 [`tech_docs/theme_system.md`](tech_docs/theme_system.md) 负责，本文不复制注册表。
 
 组件必须消费语义 Token 或 `useResolvedTheme()`，不得：
 
@@ -220,7 +220,7 @@ Tip 在悬停或聚焦时显示；触发动作后立即关闭，保留按钮焦�
 
 ### 5.7 图标与产品文案
 
-- 界面图标只来自 `components/icons/` 的 MyAgents 自绘图标集（ESLint 禁止 `lucide-react`）：20 网格、圆头圆角、容器圆角 3–3.5，经 16.5 单位裁切显示，默认线宽在 16px 下约 1.31px。缺图标时在 `AppIcons.tsx` 按同一规格补画，不从其它图标库混入。`strokeWidth` 沿用 lucide 等效单位（2 为默认），选中态通过 `--app-icon-tint` 浮出主体淡填充，而不是另换实心图标或加强调条。
+- 界面图标只来自 `components/icons/` 的 NextTools 自绘图标集（ESLint 禁止 `lucide-react`）：20 网格、圆头圆角、容器圆角 3–3.5，经 16.5 单位裁切显示，默认线宽在 16px 下约 1.31px。缺图标时在 `AppIcons.tsx` 按同一规格补画，不从其它图标库混入。`strokeWidth` 沿用 lucide 等效单位（2 为默认），选中态通过 `--app-icon-tint` 浮出主体淡填充，而不是另换实心图标或加强调条。
 - 文字按钮和工具栏图标通常为 14px，导航与列表图标通常为 16px，独立空态图标通常为 24px；视觉尺寸不能代替至少 32px 的命中区域。
 - 图标默认使用 `--ink-muted`，hover 提升到 `--ink`；success/error 等颜色只表达真实业务状态。
 - Agent 工作区身份统一使用 `WorkspaceIcon`（字形在 `assets/workspace-icons/`）：“点睛”风格，即彩色线条（1.3）、主体 14% 淡填充，再加一处实心焦点，动物的眼睛统一尺寸。颜色跟图标绑定，配置只存图标 ID；未设置图标时（如添加本地文件夹）显示中性的“项目文件夹”，颜色跟随 Theme 主色；模板创建的 Agent 使用模板图标（Mino 为闪电），旧 Phosphor ID 在渲染时映射，不改写用户配置。选择器是一个不分组的网格，只有 `WorkspaceIconGrid` 一份实现（Agent 设置与新建 Agent 面板共用），选默认图标时不写入图标字段。

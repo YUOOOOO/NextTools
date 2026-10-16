@@ -43,22 +43,22 @@ import {
   type DshRuntimeNotificationHandlers,
 } from "./protocol-types";
 
-const nativeSmokeEnabled = process.env.MYAGENTS_DSH_NATIVE_SMOKE === "1";
+const nativeSmokeEnabled = process.env.NEXTTOOLS_DSH_NATIVE_SMOKE === "1";
 const nativeSmokeResourceRoot =
-  process.env.MYAGENTS_DSH_NATIVE_SMOKE_RESOURCE_ROOT;
-const nativeSoakEnabled = process.env.MYAGENTS_DSH_NATIVE_SOAK === "1";
+  process.env.NEXTTOOLS_DSH_NATIVE_SMOKE_RESOURCE_ROOT;
+const nativeSoakEnabled = process.env.NEXTTOOLS_DSH_NATIVE_SOAK === "1";
 
 function requestedNativeSoakIterations(): number {
-  const raw = process.env.MYAGENTS_DSH_NATIVE_SOAK_ITERATIONS ?? "12";
+  const raw = process.env.NEXTTOOLS_DSH_NATIVE_SOAK_ITERATIONS ?? "12";
   if (!/^\d+$/.test(raw)) {
     throw new Error(
-      "MYAGENTS_DSH_NATIVE_SOAK_ITERATIONS must be an integer from 1 to 50",
+      "NEXTTOOLS_DSH_NATIVE_SOAK_ITERATIONS must be an integer from 1 to 50",
     );
   }
   const iterations = Number(raw);
   if (iterations < 1 || iterations > 50) {
     throw new Error(
-      "MYAGENTS_DSH_NATIVE_SOAK_ITERATIONS must be an integer from 1 to 50",
+      "NEXTTOOLS_DSH_NATIVE_SOAK_ITERATIONS must be an integer from 1 to 50",
     );
   }
   return iterations;
@@ -456,7 +456,7 @@ readline.createInterface({ input: process.stdin }).on('line', line => {
       if (!address || typeof address === 'string') throw new Error('No loopback address');
       const compile = (revision: string) => compileDshProductExtensionPlane({
         revision: 'browser-config', workspacePath: fixture.workspace, skills: [], commands: [], agents: [], dynamicTools: [],
-        mcpServers: [{ id: 'myagents-browser', name: 'Browser', type: 'http', isBuiltin: true,
+        mcpServers: [{ id: 'nexttools-browser', name: 'Browser', type: 'http', isBuiltin: true,
           url: `http://127.0.0.1:${address.port}/mcp/playwright`, headers: { Authorization: `Bearer ${token}` }, runtimeConfigRevision: revision }],
       });
       let plane = compile('browser-credential-1');
@@ -475,9 +475,9 @@ readline.createInterface({ input: process.stdin }).on('line', line => {
           expect(JSON.stringify(plane.snapshot)).not.toContain(token);
           const result = await host.request('extension/replace', plane.snapshot);
           expect(result, JSON.stringify({ stderr: fixture.stderr, authorizedMethods, credentialPurposes })).toMatchObject({
-            state: 'applied', components: [{ key: 'mcp:myagents-browser', state: 'ready' }],
+            state: 'applied', components: [{ key: 'mcp:nexttools-browser', state: 'ready' }],
           });
-          expect((await host.request('extension/catalog', {})).tools).toContain('mcp__myagents-browser__browser_snapshot');
+          expect((await host.request('extension/catalog', {})).tools).toContain('mcp__nexttools-browser__browser_snapshot');
         }
         expect(authorizedMethods.filter(method => method === 'initialize')).toHaveLength(2);
         expect(credentialPurposes.filter(purpose => purpose === 'connection')).toHaveLength(2);
@@ -490,7 +490,7 @@ readline.createInterface({ input: process.stdin }).on('line', line => {
       }
     }, 60_000);
 
-    it.runIf(Boolean(process.env.MYAGENTS_BROWSER_SMOKE_EXECUTABLE))('operates real Chromium through the production Browser Host from a native DSH turn', async () => {
+    it.runIf(Boolean(process.env.NEXTTOOLS_BROWSER_SMOKE_EXECUTABLE))('operates real Chromium through the production Browser Host from a native DSH turn', async () => {
       const fixture = await createNativeHostFixture('real-browser', undefined, undefined, undefined, { mode: 'host-policy', policyRef: 'native-browser' });
       const [{ chromium }, { BrowserContextRegistry }, { PlaywrightBrowserHost }] = await Promise.all([
         import('playwright'), import('../../browser-host/context-registry'), import('../../browser-host/browser-host'),
@@ -528,7 +528,7 @@ readline.createInterface({ input: process.stdin }).on('line', line => {
         response.writeHead(200, { 'content-type': 'text/event-stream' });
         emit('message_start', { type: 'message_start', message: { id: `browser-${modelInputs.length}`, type: 'message', role: 'assistant', model: 'claude-sonnet-4-6', content: [], stop_reason: null, stop_sequence: null, usage: { input_tokens: 10, output_tokens: 0 } } });
         emit('content_block_start', { type: 'content_block_start', index: 0, content_block: first
-          ? { type: 'tool_use', id: 'navigate-browser', name: 'mcp__myagents-browser__browser_navigate', input: {} } : { type: 'text', text: '' } });
+          ? { type: 'tool_use', id: 'navigate-browser', name: 'mcp__nexttools-browser__browser_navigate', input: {} } : { type: 'text', text: '' } });
         emit('content_block_delta', { type: 'content_block_delta', index: 0, delta: first
           ? { type: 'input_json_delta', partial_json: JSON.stringify({ url: `${origin}/page` }) } : { type: 'text_delta', text: 'Browser verified.' } });
         emit('content_block_stop', { type: 'content_block_stop', index: 0 });
@@ -542,7 +542,7 @@ readline.createInterface({ input: process.stdin }).on('line', line => {
       const registry = new BrowserContextRegistry({
         readIdentity: async () => ({ revision: 0, state: { cookies: [], origins: [] } }),
         checkpointIdentity: async (_id, base, _observed, state) => ({ revision: base.revision + 1, state, conflictCount: 0 }),
-        resolveResource: async () => ({ revision: 'chromium-1212', executablePath: process.env.MYAGENTS_BROWSER_SMOKE_EXECUTABLE! }),
+        resolveResource: async () => ({ revision: 'chromium-1212', executablePath: process.env.NEXTTOOLS_BROWSER_SMOKE_EXECUTABLE! }),
         loadBrowserType: async () => new Proxy(chromium, { get(target, property, receiver) {
           if (property === 'launch') return (options: Parameters<typeof chromium.launch>[0]) => chromium.launch({ ...options, headless: true });
           return Reflect.get(target, property, receiver);
@@ -554,7 +554,7 @@ readline.createInterface({ input: process.stdin }).on('line', line => {
         return { productSessionId: 'native-real-browser-product-session', workspacePath: fixture.workspace, hostGeneration: 1 };
       } });
       const plane = compileDshProductExtensionPlane({ revision: 'native-real-browser', workspacePath: fixture.workspace,
-        skills: [], commands: [], agents: [], dynamicTools: [], mcpServers: [{ id: 'myagents-browser', name: 'Browser', type: 'http', isBuiltin: true,
+        skills: [], commands: [], agents: [], dynamicTools: [], mcpServers: [{ id: 'nexttools-browser', name: 'Browser', type: 'http', isBuiltin: true,
           url: `${origin}/mcp/playwright`, headers: { Authorization: `Bearer ${token}` }, runtimeConfigRevision: 'native-browser-credential' }] });
       const host = fixture.createHost({ ...fixture.hostHandlers,
         'host/credential/resolve': params => params.subject === 'mcp'
@@ -565,9 +565,9 @@ readline.createInterface({ input: process.stdin }).on('line', line => {
       });
       try {
         await host.start();
-        expect(await host.request('extension/replace', plane.snapshot)).toMatchObject({ state: 'applied', components: [{ key: 'mcp:myagents-browser', state: 'ready' }] });
+        expect(await host.request('extension/replace', plane.snapshot)).toMatchObject({ state: 'applied', components: [{ key: 'mcp:nexttools-browser', state: 'ready' }] });
         const catalog = await host.request('extension/catalog', {});
-        expect(catalog.tools).toContain('mcp__myagents-browser__browser_navigate');
+        expect(catalog.tools).toContain('mcp__nexttools-browser__browser_navigate');
         const provider = structuredClone(PRESET_PROVIDERS.find(({ id }) => id === 'anthropic-api'))!;
         provider.id = 'native-browser-model'; provider.config.baseUrl = origin;
         const profile = compileDshModelExecutionProfile({ provider, modelId: 'claude-sonnet-4-6' });
@@ -770,12 +770,12 @@ readline.createInterface({ input: process.stdin }).on('line', line => {
 
     it.runIf(process.platform !== 'win32').each([false, true])('allows Action tools and routes child Shell approval after a shared grant (large review: %s)', async largeReview => {
       const productSessionId = randomUUID();
-      const cliBundlePath = join(resolve(nativeSmokeResourceRoot ?? 'src-tauri/resources'), 'cli/myagents.cjs');
+      const cliBundlePath = join(resolve(nativeSmokeResourceRoot ?? 'src-tauri/resources'), 'cli/nexttools.cjs');
       const cliCommand = `node '${cliBundlePath.replaceAll("'", "'\\''")}' status --json`;
       const curl = '/usr/bin/curl -q -fsS --max-time 5';
-      const command = 'printf "%s|%s" "$MYAGENTS_PORT" "$MYAGENTS_SESSION_ID"'
+      const command = 'printf "%s|%s" "$NEXTTOOLS_PORT" "$NEXTTOOLS_SESSION_ID"'
         + `; ${curl} http://dsh-shell-fixture.invalid/root`
-        + `; ${curl} "http://127.0.0.1:$MYAGENTS_PORT/shell-loopback"`
+        + `; ${curl} "http://127.0.0.1:$NEXTTOOLS_PORT/shell-loopback"`
         + (largeReview ? ` # ${"example".repeat(10_000)}` : "");
       const spillSizes = [64_000, 64_001, 81_000, 1_053_000];
       const calls = [
@@ -818,7 +818,7 @@ readline.createInterface({ input: process.stdin }).on('line', line => {
         if (request.url === '/api/admin/status') {
           for await (const chunk of request) void chunk;
           const token = request.headers[INTERNAL_CLI_TOKEN_HEADER.toLowerCase()];
-          const sessionId = request.headers['x-myagents-session-id'];
+          const sessionId = request.headers['x-nexttools-session-id'];
           cliReceipts.push({
             token: typeof token === 'string' ? token : undefined,
             authorization: request.headers.authorization,
@@ -1191,7 +1191,7 @@ readline.createInterface({ input: process.stdin }).on('line', line => {
         );
         expect(extensionCatalog.agents).not.toContain("native-reviewer");
         expect(extensionCatalog.tools).toContain(
-          "mcp__myagents_host__native_fixture",
+          "mcp__nexttools_host__native_fixture",
         );
         const provider = PRESET_PROVIDERS.find(
           ({ id }) => id === "anthropic-api",
@@ -1311,7 +1311,7 @@ readline.createInterface({ input: process.stdin }).on('line', line => {
           ]),
         );
         expect(replacementCatalog.tools).not.toContain(
-          "mcp__myagents_host__native_fixture",
+          "mcp__nexttools_host__native_fixture",
         );
         await host.request("session/close", {
           clientOperationId: "native-smoke-session-close",

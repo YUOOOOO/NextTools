@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /**
- * MyAgents file/folder glyphs. Each glyph is drawn inside a 7×6 box centred at
+ * NextTools file/folder glyphs. Each glyph is drawn inside a 7×6 box centred at
  * (10, 12.5) on the shared 20-unit icon grid; `FileIcon` scales it to fill the
  * slot and colours it with the `--file-icon-<tone>` token, so light/dark
  * Themes stay legible without per-Theme assets.

@@ -16,12 +16,12 @@ Space IssueDelivery 在这层通用 envelope 内还有独立的 Registered Agent
 
 不适用场景：
 
-- 整个 Session 生命周期都稳定成立的 MyAgents 身份、场景与能力发现提示，走
+- 整个 Session 生命周期都稳定成立的 NextTools 身份、场景与能力发现提示，走
   [`system_prompt_architecture.md`](./system_prompt_architecture.md) 的产品级 system
   prompt append；Workspace 长期规则继续由 `CLAUDE.md` / rules / Runtime 原生项目指令
   拥有。
 - 普通跨 session send/watch 事件仍走 `session_architecture.md` 的
-  `<myagents-session-event>` 协议。协议整体位于隐藏 envelope 内；renderer 只对
+  `<nexttools-session-event>` 协议。协议整体位于隐藏 envelope 内；renderer 只对
   `send.request` 提取 `<payload>` 与 `source_label` 形成用户可见气泡，自动
   `send.result` / watch / 本地 `network.return_unavailable` 事件继续保持隐藏。不得把内部 summary / session id 暴露到气泡。
 - 工具产物、图片、文件不要塞进 prompt 字符串，走 `tool_attachment_pipeline.md`
@@ -91,7 +91,7 @@ payload，`[System]收到来自系统投送的信息` 是唯一 visible tail。�
 - 如果有 leading `<system-reminder>`，先解析 `kind` 和 `visibleText`。
 - `kind` 命中 `systemTagLabel()` 时，在用户气泡上显示对应 badge。
 - 当存在 `visibleText` 时，气泡正文只展示 `visibleText`。
-- `myagents-session-event type="send.request"` 是已有的可见请求例外：其 payload 虽位于 reminder 内，气泡与 CLI `session get` 共用 `parseSessionSendRequestDisplay` 提取请求正文；来源标签仅用于 badge，event-summary 与控制属性仍隐藏。有可见 tail 时优先 tail。自动 result/watch 等事件不享有该例外。
+- `nexttools-session-event type="send.request"` 是已有的可见请求例外：其 payload 虽位于 reminder 内，气泡与 CLI `session get` 共用 `parseSessionSendRequestDisplay` 提取请求正文；来源标签仅用于 badge，event-summary 与控制属性仍隐藏。有可见 tail 时优先 tail。自动 result/watch 等事件不享有该例外。
 - 当不存在 `visibleText`、可见 send.request payload 且没有附件时，整条 user bubble 不渲染；hidden payload
   不得走 raw fallback 泄漏到 UI。
 - 当不存在 `visibleText` 但有附件时，保留附件气泡和 badge，hidden payload 仍不展示。
@@ -105,7 +105,7 @@ payload，`[System]收到来自系统投送的信息` 是唯一 visible tail。�
 | `HEARTBEAT` | Heartbeat / 心跳感知 | 普通 heartbeat、Cron 结果转述投送 |
 | `CRON_TASK` | Cron task / 定时任务 | Cron task 执行 prompt |
 | `FLOATING_BALL_CONTEXT` | Floating context / 浮球上下文 | 浮球消息上下文注入 |
-| `myagents-space-issue` | Space issue | Agent 提及 | `src/shared/agentMentions.ts::composeQueryReminder`，调用方 SessionEngine facade | 单 leading envelope 内的 `<AGENT_MENTIONS>`；正文保留完整代号，不自动执行协作 |
+| `nexttools-space-issue` | Space issue | Agent 提及 | `src/shared/agentMentions.ts::composeQueryReminder`，调用方 SessionEngine facade | 单 leading envelope 内的 `<AGENT_MENTIONS>`；正文保留完整代号，不自动执行协作 |
 | Space IssueDelivery |
 | `GOAL_CONTINUATION` | 目标模式 | Goal 自动续跑 / Goal 第一轮启动 |
 | `GOAL_CONTEXT` | 目标模式 | Goal 运行中用户普通 query 的 hidden context |
@@ -135,16 +135,16 @@ payload，`[System]收到来自系统投送的信息` 是唯一 visible tail。�
 | Goal 普通 query context | `src/shared/systemReminder.ts::buildGoalContextReminder`，调用方 Goal-aware chat enqueue 路径 | `<system-reminder><GOAL_CONTEXT>...</GOAL_CONTEXT></system-reminder>` + 用户 visible query |
 | 浮球消息 | `src/shared/systemReminder.ts::buildFloatingBallContextReminder`，调用方 `src/renderer/floating-ball/useFloatingSession.ts` 提供 typed context，SessionEngine facade 组合 | `<system-reminder><FLOATING_BALL_CONTEXT>...</FLOATING_BALL_CONTEXT></system-reminder>` + 用户文本 |
 | Agent 提及 | `src/shared/agentMentions.ts::composeQueryReminder`，调用方 SessionEngine facade | 单 leading envelope 内的 `<AGENT_MENTIONS>`；正文保留完整代号，不自动执行协作 |
-| Space IssueDelivery | `src-tauri/src/space_cloud/delivery.rs::build_space_issue_delivery_message_for_locale` | `<system-reminder><myagents-space-issue>…</myagents-space-issue></system-reminder>` + 本地化可见提示 |
+| Space IssueDelivery | `src-tauri/src/space_cloud/delivery.rs::build_space_issue_delivery_message_for_locale` | `<system-reminder><nexttools-space-issue>…</nexttools-space-issue></system-reminder>` + 本地化可见提示 |
 | Cron 结果投送 IM session | `src/server/utils/cron-event-relay.ts::buildCronEventRelayMessage` | `<system-reminder><HEARTBEAT>...</HEARTBEAT></system-reminder>` + `[System]收到来自系统投送的信息` |
 
 command Trigger 命中时仍使用 `CRON_TASK` 这一兼容 tag；builder 在 hidden payload 中追加规范化 `<activation-event>`，只包含 event id/kind/time、reason code 与 untrusted handoff。Detector checkpoint、stderr、命令路径和 harness error 永不进入 Session。handoff 来自外部事实，必须被 XML escape 并明确作为不可信上下文；它不能覆盖 `task.md`、消息 role 或 Session/Runtime 配置。没有 Activation Event 的 always Task 保持原 reminder wire shape。
 
-`TASK_COMMENT` 与 `myagents-space-issue` 是相互独立的回复契约：前者只指向本地 `myagents task comment`，后者继续指向 Cloud Issue 命令。即使两种 query 进入同一个 Attached Task Session，也不得根据 Task 类型改写来源 reminder、自动镜像或双写。
+`TASK_COMMENT` 与 `nexttools-space-issue` 是相互独立的回复契约：前者只指向本地 `nexttools task comment`，后者继续指向 Cloud Issue 命令。即使两种 query 进入同一个 Attached Task Session，也不得根据 Task 类型改写来源 reminder、自动镜像或双写。
 
 相关但不是完整复用模板的入口：
 
-Space 的内部 trust boundary 不改变通用 reminder wire protocol：Cloud 提供权威 Registered Agent instruction/revision、transport 索引与轻量因果导航；Desktop 描述当前 CLI/workspace/Task 执行方法并组装 Prompt；Issue 用户文本必须有界 XML escape，不能伪造结构。Renderer 仍只消费外层 `myagents-space-issue` badge 与 reminder 后的 visible tail。Cloud 继续为受支持的旧 Desktop 提供版本化 projection；current Desktop builder 只生产当前结构。
+Space 的内部 trust boundary 不改变通用 reminder wire protocol：Cloud 提供权威 Registered Agent instruction/revision、transport 索引与轻量因果导航；Desktop 描述当前 CLI/workspace/Task 执行方法并组装 Prompt；Issue 用户文本必须有界 XML escape，不能伪造结构。Renderer 仍只消费外层 `nexttools-space-issue` badge 与 reminder 后的 visible tail。Cloud 继续为受支持的旧 Desktop 提供版本化 projection；current Desktop builder 只生产当前结构。
 
 - `src/server/index.ts` 普通 heartbeat：纯
   `<system-reminder><HEARTBEAT>...</HEARTBEAT></system-reminder>`，没有 visible tail；

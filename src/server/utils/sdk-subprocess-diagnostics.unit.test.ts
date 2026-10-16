@@ -8,7 +8,7 @@ describe('diagnoseSdkSubprocessFailure', () => {
   it('classifies Darwin spawn EPERM as a deterministic executable denial', () => {
     const diagnostic = diagnoseSdkSubprocessFailure({
       platform: 'darwin',
-      errorMessage: "Failed to spawn Claude Code process: EPERM: operation not permitted, spawn '/Applications/MyAgents.app/Contents/Resources/claude-agent-sdk/claude'",
+      errorMessage: "Failed to spawn Claude Code process: EPERM: operation not permitted, spawn '/Applications/NextTools.app/Contents/Resources/claude-agent-sdk/claude'",
     });
 
     expect(diagnostic).toMatchObject({

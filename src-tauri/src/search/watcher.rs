@@ -3,7 +3,7 @@
 //!
 //! # Why a watcher instead of call-site notifications
 //!
-//! MyAgents session files are written by the Bun Sidecar while the search
+//! NextTools session files are written by the Bun Sidecar while the search
 //! index lives in Rust. The obvious alternative — have Bun POST to Rust on
 //! every save — has two problems:
 //!
@@ -15,7 +15,7 @@
 //!    that forgets to notify silently orphans the index.
 //!
 //! Watching the filesystem makes the correct behavior the default: *any*
-//! process that touches `~/.myagents/sessions/` flows through to the index
+//! process that touches `~/.nexttools/sessions/` flows through to the index
 //! with zero coupling. Same "pit of success" pattern as `local_http` and
 //! `process_cmd`.
 //!
@@ -324,7 +324,7 @@ mod tests {
     fn classifies_both_formats_but_not_candidates_or_path_escapes() {
         for directory in ["sessions", "sessions-v2"] {
             assert!(
-                matches!(classify_path(Path::new(&format!("/System/Volumes/Data/home/.myagents/{directory}/abc-123.jsonl"))), Classified::SessionFile(id) if id == "abc-123")
+                matches!(classify_path(Path::new(&format!("/System/Volumes/Data/home/.nexttools/{directory}/abc-123.jsonl"))), Classified::SessionFile(id) if id == "abc-123")
             );
         }
         for path in [

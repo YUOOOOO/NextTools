@@ -3,7 +3,7 @@ import type { ListItem, ListRange } from 'react-virtuoso';
 
 import type { Message as MessageType } from '@/types/chat';
 
-const DEBUG_STORAGE_KEY = 'myagents:chat-scroll-debug';
+const DEBUG_STORAGE_KEY = 'nexttools:chat-scroll-debug';
 const MESSAGE_SCOPE_SELECTOR = '[data-chat-search-scope][data-message-id]';
 
 function isProbeEnabled(): boolean {

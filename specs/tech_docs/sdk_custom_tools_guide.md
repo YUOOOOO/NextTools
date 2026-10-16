@@ -1,6 +1,6 @@
 # In-process MCP 工具架构
 
-MyAgents 的 builtin custom tools 以 MCP server handler 为复用边界。Builtin Claude 通过 Claude Agent SDK 的 in-process MCP transport 使用它们；Managed Codex 与 Integrated DSH 经共享 `product-extensions` dispatcher，把同一 handler 投影到各自的原生 Host tool 协议。
+NextTools 的 builtin custom tools 以 MCP server handler 为复用边界。Builtin Claude 通过 Claude Agent SDK 的 in-process MCP transport 使用它们；Managed Codex 与 Integrated DSH 经共享 `product-extensions` dispatcher，把同一 handler 投影到各自的原生 Host tool 协议。
 
 本文不维护完整工具清单。当前注册项以 `src/server/tools/builtin-mcp-meta.ts`、动态 Channel owner 和测试为准。
 
@@ -11,7 +11,7 @@ MyAgents 的 builtin custom tools 以 MCP server handler 为复用边界。Built
 | User-toggleable builtin | `builtin-mcp-meta.ts` + `builtin-mcp-registry.ts` | Sidecar 内按 ID 懒加载、按 Session 配置 |
 | Context-injected Channel tools | 对应 Channel/context module，例如 `im-bridge-tools.ts` | 只在所需 context 已建立后创建，可 live sync |
 | External stdio / HTTP MCP | 用户或 preset 配置 + MCP resolver | 由 Runtime adapter 启动或连接 |
-| Task、Goal、Record、IM media 等产品命令 | `myagents` CLI | 不再复制为 SDK-only MCP |
+| Task、Goal、Record、IM media 等产品命令 | `nexttools` CLI | 不再复制为 SDK-only MCP |
 
 只有真正需要 in-process schema/handler、并且应暴露为模型工具的能力才进入 builtin MCP。普通应用 API、跨 Runtime 产品命令或一次性 helper 不应为了“方便调用”再造 MCP surface。
 
@@ -100,7 +100,7 @@ Live mutation 由单一 mutation owner 串行化，有 timeout、fingerprint 和
 5. 将 MCP result 映射为 Codex host result，并对大值 spill；
 6. generation 结束时关闭 client、server 和两个 transport。
 
-Codex 保留 `mcp` / `mcp__*` namespace，因此 host tool 使用独立的 `myagents__mcp__<server>__<tool>` wire name。这个名字只是 adapter projection，不能写回 MCP registry identity。
+Codex 保留 `mcp` / `mcp__*` namespace，因此 host tool 使用独立的 `nexttools__mcp__<server>__<tool>` wire name。这个名字只是 adapter projection，不能写回 MCP registry identity。
 
 同一 cached server reconnect 前要等待上一 connection 完整关闭；否则共享 `McpServer` 会发生 generation 间 transport 竞争。
 
@@ -110,7 +110,7 @@ Integrated DSH 使用同一 discovery/dispatcher，但由 DSH compiler 创建 `h
 
 ## 不应恢复的旧 surface
 
-Task/Cron completion、IM scheduled delivery 和 IM media 已由统一 `myagents` CLI / management API 拥有。继续在工具指南中保留它们的旧 schema 会诱导新代码建立第二套 owner。若某 Runtime 需要这些能力，应通过系统 Prompt 的 CLI discovery 和相同 CLI contract 暴露，而不是恢复退役 MCP。
+Task/Cron completion、IM scheduled delivery 和 IM media 已由统一 `nexttools` CLI / management API 拥有。继续在工具指南中保留它们的旧 schema 会诱导新代码建立第二套 owner。若某 Runtime 需要这些能力，应通过系统 Prompt 的 CLI discovery 和相同 CLI contract 暴露，而不是恢复退役 MCP。
 
 ## 新增工具检查
 

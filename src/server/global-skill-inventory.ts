@@ -56,7 +56,7 @@ export interface GlobalSkillInventoryOptions {
 
 function defaultSkillsRoot(): string {
   const { home, temp } = getCrossPlatformEnv();
-  return resolve(home || temp, '.myagents', 'skills');
+  return resolve(home || temp, '.nexttools', 'skills');
 }
 
 function stableValue(value: unknown): unknown {

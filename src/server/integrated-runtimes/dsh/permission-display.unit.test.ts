@@ -24,7 +24,7 @@ describe('DSH permission review projection', () => {
 
   it('resolves Runtime attachment bytes through the existing registry and spills full details for the renderer', async () => {
     const root = await mkdtemp(join(tmpdir(), 'dsh-permission-review-')); roots.push(root);
-    vi.stubEnv('MYAGENTS_REFS_DIR', join(root, 'refs'));
+    vi.stubEnv('NEXTTOOLS_REFS_DIR', join(root, 'refs'));
     const attachments = new DshAttachmentRegistry(root); await attachments.initialize();
     const operation = { kind: 'command' as const, dialect: 'pwsh' as const, command: `Write-Output '${'完整'.repeat(40_000)}'`, cwd: '/workspace/child' };
     const review: PermissionReview = { operation, actor: { agentId: 'child-review', origin: 'background_child' }, scope: { ...scope, tool: 'pwsh', target: '/workspace/child', permissionClass: 'process.execute' } };

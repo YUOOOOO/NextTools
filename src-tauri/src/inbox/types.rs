@@ -45,7 +45,7 @@ pub enum InboxSourceKind {
 
 /// 待投递的 inbox message——挂在 target sidecar 的 `pending_inbox_messages` 队列
 /// 上,Rust 端 push,sidecar drain handler 取出后用
-/// `<myagents-session-event>` 注入 enqueueUserMessage / sendExternalMessage。
+/// `<nexttools-session-event>` 注入 enqueueUserMessage / sendExternalMessage。
 ///
 /// 字段沿用 cron 的 camelCase serde 风格,跨 Rust↔TS 边界保持一致。
 /// 所有可选/新字段带 `#[serde(default)]`,后续加字段不影响旧版本反序列化。
@@ -97,8 +97,8 @@ pub struct PendingInboxMessage {
     #[serde(default)]
     pub in_reply_to: Option<String>,
 
-    /// Structured MyAgents Session Event Protocol v1 payload. Node sidecar
-    /// renders this into `<myagents-session-event>` before injecting it into
+    /// Structured NextTools Session Event Protocol v1 payload. Node sidecar
+    /// renders this into `<nexttools-session-event>` before injecting it into
     /// the target runtime. Optional for backwards compatibility with older
     /// request/reply payloads.
     #[serde(default)]

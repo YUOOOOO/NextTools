@@ -754,7 +754,7 @@ async fn create_bot_instance_with_pending_cron_events<R: Runtime>(
         .unwrap_or_else(|| {
             // Try bundled mino workspace first
             dirs::home_dir()
-                .map(|h| h.join(".myagents").join("projects").join("mino"))
+                .map(|h| h.join(".nexttools").join("projects").join("mino"))
                 .filter(|p| p.exists())
                 .unwrap_or_else(|| dirs::home_dir().unwrap_or_else(|| PathBuf::from(".")))
         });
@@ -873,7 +873,7 @@ async fn create_bot_instance_with_pending_cron_events<R: Runtime>(
 
             let plugin_dir = dirs::home_dir()
                 .unwrap_or_else(|| PathBuf::from("."))
-                .join(".myagents")
+                .join(".nexttools")
                 .join("openclaw-plugins")
                 .join(plugin_id);
             let bridge_state_dir = match &agent_id {
@@ -1459,9 +1459,9 @@ async fn create_bot_instance_with_pending_cron_events<R: Runtime>(
             for attachment in &msg.attachments {
                 match attachment.attachment_type {
                     ImAttachmentType::File => {
-                        let target_dir = workspace_path.join("myagents_files");
+                        let target_dir = workspace_path.join("nexttools_files");
                         if let Err(e) = tokio::fs::create_dir_all(&target_dir).await {
-                            ulog_error!("[im] Failed to create myagents_files dir: {}", e);
+                            ulog_error!("[im] Failed to create nexttools_files dir: {}", e);
                             continue;
                         }
                         let target_path = target_dir.join(&attachment.file_name);
@@ -1471,7 +1471,7 @@ async fn create_bot_instance_with_pending_cron_events<R: Runtime>(
                             continue;
                         }
                         let relative = format!(
-                            "myagents_files/{}",
+                            "nexttools_files/{}",
                             final_path.file_name().unwrap().to_string_lossy()
                         );
                         file_refs.push(format!("@{}", relative));
@@ -1627,7 +1627,7 @@ async fn create_bot_instance_with_pending_cron_events<R: Runtime>(
                             if let Err(e) = send_immediate_reply(
                                 adapter_for_reply.as_ref(),
                                 &msg,
-                                "❌ 绑定码无效或已过期，请在 MyAgents 设置中重新获取二维码。",
+                                "❌ 绑定码无效或已过期，请在 NextTools 设置中重新获取二维码。",
                             ).await {
                                 ulog_warn!("[im-cmd] send_message (bind invalid) failed: {}", e);
                             }
@@ -1656,7 +1656,7 @@ async fn create_bot_instance_with_pending_cron_events<R: Runtime>(
                         if let Err(e) = send_immediate_reply(
                             adapter_for_reply.as_ref(),
                             &msg,
-                            "👋 你好！我是 MyAgents Bot。\n\n\
+                            "👋 你好！我是 NextTools Bot。\n\n\
                              可用命令：\n\
                              /help — 查看所有命令\n\
                              /new — 开始新对话\n\

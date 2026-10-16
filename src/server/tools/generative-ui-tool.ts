@@ -5,7 +5,7 @@
 //
 // Loader contract:
 //   Both runtimes (builtin Claude Agent SDK and external CLIs) reach this
-//   content through `myagents widget readme <module>` invoked via their shell
+//   content through `nexttools widget readme <module>` invoked via their shell
 //   tool. The CLI command POSTs to `readme/widget` (admin-api.ts), which calls
 //   `buildReadMeContent()` below to assemble the modules.
 //
@@ -18,7 +18,7 @@
 // statically imported by admin-api.ts (handleReadme) which is on the hot path.
 
 // ===================================================================
-// Design Guideline Sections (loaded on-demand by `myagents widget readme`)
+// Design Guideline Sections (loaded on-demand by `nexttools widget readme`)
 // ===================================================================
 
 // 本节引用的字号契约（headings 20/18/16/14·600、.text-* 12-22、body 16px/1.7）
@@ -314,7 +314,7 @@ export function buildReadMeContent(modules: string[]): string {
 }
 
 // ===================================================================
-// Output Format Section (prepended to all `myagents widget readme` responses)
+// Output Format Section (prepended to all `nexttools widget readme` responses)
 // Teaches the AI how to output <generative-ui-widget> tags. Trigger judgment
 // (when to widget at all) lives in the system prompt — see SECTION_WIDGET in
 // system-prompt-cli-tools.ts — not here.

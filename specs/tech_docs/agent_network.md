@@ -122,7 +122,7 @@ Renderer 只合并同一账号/连接投影 revision 下完全相同的在途目
 2. 从已提交的 Agenthub 来源导入同一包到客户端 `vendor/agent-network-protocol/`，记录对应服务端源码提交，更新根依赖与锁文件；不修改包内定义或提交构建投影目录。
 3. 运行客户端产物校验、TS/Rust parity、受影响业务测试和构建，并运行服务端 source/artifact 校验。根据真实协议兼容责任决定部署顺序，不随客户端版本机械升级、不自动重发不确定调用。
 
-具体打包、tag 发布与显式导入命令由 Agenthub 的 `specs/RELEASE.md` 维护（`npm run release:import -- --target ../MyAgents --release v<version>`）；普通构建不执行跨仓库打包或拉取源码。包随公开客户端提交，使新的贡献者无需私有 AgentNet 权限即可构建。源码迁移不代表自部署认证、多网络 UI 或完整产品验收已经完成。
+具体打包、tag 发布与显式导入命令由 Agenthub 的 `specs/RELEASE.md` 维护（`npm run release:import -- --target ../NextTools --release v<version>`）；普通构建不执行跨仓库打包或拉取源码。包随公开客户端提交，使新的贡献者无需私有 AgentNet 权限即可构建。源码迁移不代表自部署认证、多网络 UI 或完整产品验收已经完成。
 
 ## Dev 环境
 

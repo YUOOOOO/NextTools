@@ -36,11 +36,11 @@ describe('MCP presets', () => {
       command: 'npx',
       args: ['@playwright/mcp@0.0.68'],
     });
-    expect(PRESET_MCP_SERVERS.find(server => server.id === 'myagents-browser')).toMatchObject({
+    expect(PRESET_MCP_SERVERS.find(server => server.id === 'nexttools-browser')).toMatchObject({
       name: '浏览器',
       command: '__browser_host__',
     });
-    expect(DEFAULT_CONFIG.mcpEnabledServers ?? []).not.toContain('myagents-browser');
+    expect(DEFAULT_CONFIG.mcpEnabledServers ?? []).not.toContain('nexttools-browser');
   });
 
   it('keeps Tavily credentials out of the URL and projects them through an auth header', () => {

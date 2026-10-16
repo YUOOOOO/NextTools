@@ -462,7 +462,7 @@ fn rebuild_state(entities: &BTreeMap<String, Value>) -> Result<Value, String> {
 
 fn identity_root() -> Result<PathBuf, String> {
     let home = dirs::home_dir().ok_or_else(|| "Cannot determine user home".to_string())?;
-    let root = home.join(".myagents");
+    let root = home.join(".nexttools");
     fs::create_dir_all(&root)
         .map_err(|_| "Cannot create Browser Identity Store root".to_string())?;
     let metadata = fs::symlink_metadata(&root)

@@ -96,7 +96,7 @@ impl<W: io::Write> pipeline::PipelineEvents for PipelineReporter<'_, W> {
 
 fn main() {
     if let Err(error) = run() {
-        eprintln!("myagents-document-worker protocol failure: {error}");
+        eprintln!("nexttools-document-worker protocol failure: {error}");
         std::process::exit(2);
     }
 }
@@ -284,10 +284,10 @@ fn public_error_message(code: &str) -> &'static str {
         "DOCUMENT_UNSUPPORTED_FORMAT" => "This file format is not supported.",
         "DOCUMENT_RESOURCE_LIMIT" => "The document exceeds a fixed processing safety limit.",
         code if code.starts_with("DOCUMENT_RESOURCE") => {
-            "The bundled document-processing resources are missing or corrupt. Reinstall MyAgents."
+            "The bundled document-processing resources are missing or corrupt. Reinstall NextTools."
         }
         "DOCUMENT_OCR_RUNTIME_UNAVAILABLE" | "DOCUMENT_PDFIUM_LOAD_FAILED" => {
-            "A bundled document-processing runtime could not be loaded. Reinstall MyAgents."
+            "A bundled document-processing runtime could not be loaded. Reinstall NextTools."
         }
         _ => "The document could not be converted safely.",
     }

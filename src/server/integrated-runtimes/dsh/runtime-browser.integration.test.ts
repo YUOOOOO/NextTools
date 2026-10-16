@@ -54,7 +54,7 @@ describe('DSH product Browser capability lifecycle', () => {
     await writeFile(join(fixture.home, 'node'), 'synthetic fixture');
     await mkdir(join(fixture.home, 'integrated-runtimes/dsh/runtime-artifact'), { recursive: true });
     const workspacePath = join(fixture.home, 'workspace'); await mkdir(workspacePath);
-    vi.stubEnv('MYAGENTS_INTERNAL_CLI_TOKEN', 'synthetic');
+    vi.stubEnv('NEXTTOOLS_INTERNAL_CLI_TOKEN', 'synthetic');
     fixture.adopt.mockReset().mockResolvedValue(undefined);
     fixture.acquire.mockReset().mockResolvedValue({ url: 'http://127.0.0.1:31337/mcp/playwright', token: 'a'.repeat(32), hostGeneration: 1 });
     let rejectNextReplacement = false;
@@ -62,7 +62,7 @@ describe('DSH product Browser capability lifecycle', () => {
     fixture.request.mockReset().mockImplementation(async (method: string, params: DshRpcObject) => {
       switch (method) {
         case 'extension/replace': {
-          const registry = new DshAttachmentRegistry(dshSessionOwnedPaths(join(fixture.home, '.myagents'), 'product-browser').attachmentRoot);
+          const registry = new DshAttachmentRegistry(dshSessionOwnedPaths(join(fixture.home, '.nexttools'), 'product-browser').attachmentRoot);
           await registry.initialize();
           const candidate = await registry.readJson(params.snapshotAttachment as { attachmentId: string; mimeType: string; sizeBytes: number; sha256: string }) as DshRpcObject;
           const revision = String(candidate.revision);
@@ -98,13 +98,13 @@ describe('DSH product Browser capability lifecycle', () => {
     const source = { revision: 'browser-config', workspacePath,
       skills: [{ name: 'fixture', description: 'Browser fixture', path: skillPath, scope: 'project' as const,
         sourceId: 'workspace', contentSha256: createHash('sha256').update(skillContent).digest('hex') }], commands: [], agents: [],
-      mcpServers: PRESET_MCP_SERVERS.filter(server => server.id === 'myagents-browser'), dynamicTools: [], hostToolDispatcher: dispatcher };
+      mcpServers: PRESET_MCP_SERVERS.filter(server => server.id === 'nexttools-browser'), dynamicTools: [], hostToolDispatcher: dispatcher };
     const process = await runtime.startSession({ sessionId: 'product-browser', workspacePath,
       resumeSessionId: resume ? 'native-browser' : undefined, permissionMode: 'full-autonomous', scenario: { type: 'desktop' }, dshExtensions: source }, event => events.push(event));
     try {
       expect(fixture.adopt).toHaveBeenCalledWith('product-browser');
       expect(fixture.adopt.mock.invocationCallOrder[0]).toBeLessThan(fixture.acquire.mock.invocationCallOrder[0]);
-      expect(fixture.snapshot.components).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'myagents-browser',
+      expect(fixture.snapshot.components).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'nexttools-browser',
         descriptor: expect.objectContaining({ transport: 'http', url: 'http://127.0.0.1:31337/mcp/playwright', credential: expect.objectContaining({ materialSlot: 'header' }) }) })]));
       expect(JSON.stringify(fixture.snapshot)).not.toContain('a'.repeat(32));
       const initialRevision = fixture.extensionRevision;
@@ -114,10 +114,10 @@ describe('DSH product Browser capability lifecycle', () => {
       expect(dispatcher.dispose).not.toHaveBeenCalled();
       // Live disable/enable and unavailable Host preserve optional-component behavior.
       await runtime.replaceDshExtensions(process, { ...source, revision: 'browser-off', mcpServers: [] });
-      expect(fixture.snapshot.components).not.toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'mcp', id: 'myagents-browser' })]));
+      expect(fixture.snapshot.components).not.toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'mcp', id: 'nexttools-browser' })]));
       fixture.acquire.mockRejectedValueOnce(new Error('Host unavailable'));
       const unavailable = await runtime.replaceDshExtensions(process, source);
-      expect(unavailable.components).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'myagents-browser', state: 'failed' })]));
+      expect(unavailable.components).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'nexttools-browser', state: 'failed' })]));
       // A repeated desired generation can arrive with a fresh dispatcher.
       // Keep its retained generation's dispatcher for the next capability refresh.
       fixture.acquire.mockRejectedValueOnce(new Error('Host still unavailable'));
@@ -136,7 +136,7 @@ describe('DSH product Browser capability lifecycle', () => {
       if (rejectReplacement) expect(fixture.extensionRevision).toBe(initialRevision);
       else expect(fixture.extensionRevision).not.toBe(initialRevision);
       expect(fixture.snapshot.components).toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'skill', id: 'fixture' })]));
-      expect(fixture.snapshot.components).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'myagents-browser',
+      expect(fixture.snapshot.components).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'nexttools-browser',
         descriptor: expect.objectContaining({ url: `http://127.0.0.1:${rejectReplacement ? 31337 : 31338}/mcp/playwright` }) })]));
       expect(JSON.stringify(fixture.snapshot)).not.toContain('b'.repeat(32));
       expect(source.mcpServers[0].command).toBe('__browser_host__');

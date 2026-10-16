@@ -7,7 +7,7 @@ export const PROJECT_CAPABILITY_SELECTION_VERSION = 1 as const;
 /**
  * Ordered workspace Skill roots owned by the Host product profile.
  *
- * `.claude/skills` remains first to preserve existing MyAgents behavior;
+ * `.claude/skills` remains first to preserve existing NextTools behavior;
  * `.agents/skills` adds the cross-harness Agent Skills convention. Runtime
  * adapters may pass an ordered subset when their native loader has a narrower
  * compatibility surface.

@@ -6,15 +6,15 @@ import { absolutelyThemeManifest } from './absolutely';
 import { codexThemeManifest } from './codex';
 import { defaultBlackThemeManifest } from './default-black';
 import { linearThemeManifest } from './linear';
-import { myAgentsLightThemeManifest } from './myagents-light';
-import { myAgentsDefaultTheme } from './myagents-default';
+import { nextToolsLightThemeManifest } from './nexttools-light';
+import { nextToolsDefaultTheme } from './nexttools-default';
 import { createPresetTheme } from './preset-theme';
 import { proofThemeManifest } from './proof';
 import { raycastThemeManifest } from './raycast';
 import { sageThemeManifest } from './sage';
 
 const manifests = [
-  myAgentsLightThemeManifest,
+  nextToolsLightThemeManifest,
   sageThemeManifest,
   absolutelyThemeManifest,
   linearThemeManifest,
@@ -50,30 +50,30 @@ describe('production-minified preset Theme Registry', () => {
         { loader: 'css', minify: true },
       );
       const registry = new ThemeRegistry(
-        [myAgentsDefaultTheme],
+        [nextToolsDefaultTheme],
         [
           {
             id: defaultBlackThemeManifest.id,
             create: () => ({
               ...defaultBlackThemeManifest,
               stylesheetText: defaultBlackStylesheetText,
-              hero: myAgentsDefaultTheme.hero,
-              schemes: myAgentsDefaultTheme.schemes,
+              hero: nextToolsDefaultTheme.hero,
+              schemes: nextToolsDefaultTheme.schemes,
             }),
           },
           ...factories,
         ],
         [
-          myAgentsLightThemeManifest.id,
-          myAgentsDefaultTheme.id,
+          nextToolsLightThemeManifest.id,
+          nextToolsDefaultTheme.id,
           defaultBlackThemeManifest.id,
           ...manifests.slice(1).map(manifest => manifest.id),
         ],
       );
 
       expect(registry.getProductionIds()).toEqual([
-        'myagents-light',
-        'myagents-default',
+        'nexttools-light',
+        'nexttools-default',
         'default-black',
         ...manifests.slice(1).map(manifest => manifest.id),
       ]);

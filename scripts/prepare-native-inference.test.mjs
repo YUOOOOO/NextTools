@@ -44,7 +44,7 @@ add_library(sherpa-onnx-c-api SHARED sherpa.cc)
 `);
   writeFileSync(join(dependency, 'sherpa.cc'), 'extern "C" int sherpa_value() { return 42; }\n');
   copyFileSync(new URL('../src-tauri/media-worker/native/CMakeLists.txt', import.meta.url), join(source, 'CMakeLists.txt'));
-  writeFileSync(join(source, 'myagents_speech_adapter.cc'), `
+  writeFileSync(join(source, 'nexttools_speech_adapter.cc'), `
 extern "C" int sherpa_value();
 extern "C" __attribute__((visibility("default"))) int adapter_value() { return sherpa_value(); }
 `);
@@ -59,14 +59,14 @@ extern "C" __attribute__((visibility("default"))) int adapter_value() { return s
   run('cmake', ['-S', dependency, '-B', sherpaBuild]);
   run('cmake', ['--build', sherpaBuild]);
   run('cmake', ['-S', source, '-B', adapterBuild, '-DBUILD_TESTING=ON',
-    `-DMYAGENTS_SHERPA_LIBRARY=${join(sherpaBuild, 'libsherpa-onnx-c-api.so')}`,
-    `-DMYAGENTS_SHERPA_INCLUDE_DIR=${dependency}`, `-DMYAGENTS_HCLUST_INCLUDE_DIR=${dependency}`]);
+    `-DNEXTTOOLS_SHERPA_LIBRARY=${join(sherpaBuild, 'libsherpa-onnx-c-api.so')}`,
+    `-DNEXTTOOLS_SHERPA_INCLUDE_DIR=${dependency}`, `-DNEXTTOOLS_HCLUST_INCLUDE_DIR=${dependency}`]);
   run('cmake', ['--build', adapterBuild]);
   // Match production's execution environment, without leaking it into linking.
   execFileSync('ctest', ['--test-dir', adapterBuild, '--output-on-failure'], {
     env: { ...env, LD_LIBRARY_PATH: `${adapterBuild}:${sherpaBuild}` }, stdio: 'pipe',
   });
-  const dynamic = run('readelf', ['-d', join(adapterBuild, 'libmyagents-speech-adapter.so')]);
+  const dynamic = run('readelf', ['-d', join(adapterBuild, 'libnexttools-speech-adapter.so')]);
   assert.match(dynamic, /\$ORIGIN/);
   assert.ok(!dynamic.includes(sherpaBuild), 'packaged adapter must not capture the build directory');
 });
@@ -82,9 +82,9 @@ function git(cwd, args) {
 function commit(cwd, message) {
   git(cwd, [
     '-c',
-    'user.name=MyAgents Test',
+    'user.name=NextTools Test',
     '-c',
-    'user.email=myagents-test@example.invalid',
+    'user.email=nexttools-test@example.invalid',
     '-c',
     'commit.gpgsign=false',
     'commit',
@@ -142,7 +142,7 @@ test('native inference preparation owns one lock and passes the document runtime
 test('native inference arguments define one target and reject conflicting preflight modes', () => {
   assert.deepEqual(
     parseNativeInferenceArgs(['aarch64-apple-darwin'], {
-      MYAGENTS_NATIVE_RESOURCES_OFFLINE: '1',
+      NEXTTOOLS_NATIVE_RESOURCES_OFFLINE: '1',
     }),
     {
       target: 'aarch64-apple-darwin',
@@ -188,7 +188,7 @@ test('speech preflight enforces the native adapter CMake floor', () => {
 });
 
 test('managed ORT source cache recovers interrupted Git states without refetching a locked HEAD', (t) => {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-ort-source-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-ort-source-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
 
   const upstreamWork = join(root, 'upstream-work');

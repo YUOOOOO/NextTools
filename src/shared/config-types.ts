@@ -549,9 +549,9 @@ export interface Project {
   /** PRD 0.2.17 — Claude plugins enabled for this workspace (subset of globally
    *  visible plugins). Mirrors mcpEnabledServers semantics exactly. */
   enabledPluginIds?: string[];
-  /** MyAgents official CLI tools enabled for this workspace. Separate from MCP ids. */
+  /** NextTools official CLI tools enabled for this workspace. Separate from MCP ids. */
   enabledOfficialToolIds?: OfficialToolId[];
-  /** Internal projects (e.g. ~/.myagents diagnostic workspace) hidden from Launcher */
+  /** Internal projects (e.g. ~/.nexttools diagnostic workspace) hidden from Launcher */
   internal?: boolean;
   /** Custom emoji icon for display, defaults to FolderOpen if absent */
   icon?: string;
@@ -607,7 +607,7 @@ export interface WorkspaceTemplate {
   description: string; // Description (can be empty)
   icon?: string; // Phosphor icon ID (e.g. "sparkle") or emoji fallback; defaults to cube icon if absent
   isBuiltin: boolean; // true = preset template bundled with app
-  path?: string; // User template: absolute path under ~/.myagents/templates/
+  path?: string; // User template: absolute path under ~/.nexttools/templates/
   /** Product-level Agent defaults applied when creating a workspace from this template. */
   agentDefaults?: WorkspaceTemplateAgentDefaults;
 }
@@ -662,7 +662,7 @@ export function getSystemPresetProjectMetadata(
         workspaceType: 'system-preset',
         systemPresetId: 'mino',
         icon: 'lightning',
-        displayName: 'Mino',
+        displayName: 'Nexo',
         templateId: DEFAULT_BUNDLED_WORKSPACE_TEMPLATE_ID,
         templateSource: 'builtin',
       };
@@ -706,7 +706,7 @@ export function getSystemPresetProjectMetadataPatch(
 export const PRESET_TEMPLATES: WorkspaceTemplate[] = [
   {
     id: DEFAULT_BUNDLED_WORKSPACE_TEMPLATE_ID,
-    name: 'Mino',
+    name: 'Nexo',
     description:
       '能记忆、会进化的 AI Agent。从 minimal 开始，长成你想要的样子。',
     icon: 'lightning',
@@ -815,7 +815,7 @@ export const MANAGED_CODEX_REQUIRED_RUNTIME = {
   version: managedCodexVersion,
   runtimeSet: managedCodexRuntimeSet,
   manifestBaseUrl: `https://download.myagents.io/runtimes/codex/sets/${managedCodexRuntimeSet}`,
-  manifestPublicKeyId: 'myagents-runtime-manifest-ed25519-2026-06',
+  manifestPublicKeyId: 'nexttools-runtime-manifest-ed25519-2026-06',
 } as const;
 
 /** Check if verification has expired */
@@ -864,7 +864,7 @@ export type ProxyScopeMode = 'all' | 'custom';
 export interface ProxyScopeSettings {
   mode: ProxyScopeMode;
   /**
-   * Whether non-provider-owned network requests use the MyAgents app proxy.
+   * Whether non-provider-owned network requests use the NextTools app proxy.
    * Missing on legacy custom scopes means `true` for backward compatibility.
    */
   generalRequests?: boolean;
@@ -979,12 +979,12 @@ export interface AppConfig {
   defaultIntegratedRuntime?: 'claude-agent-sdk' | 'dsh';
   experimentalSplitView?: boolean; // 实验性：文件预览在右侧分屏而非弹窗
   /** 实验室：用户注册 CLI 工具注册表（PRD 0.2.36）。默认关。
-   *  只控制工具箱里的 CLI 工具注册/管理/AI 自动发现；不影响 myagents CLI
+   *  只控制工具箱里的 CLI 工具注册/管理/AI 自动发现；不影响 nexttools CLI
    *  本身以及 cron / task / widget / thought 等已发布 CLI 能力。 */
   cliToolRegistryEnabled?: boolean;
   /** 隐藏开发者开关：桌面宠物功能门控。默认开；普通用户不可见。 */
   floatingBallDevGate?: boolean;
-  /** 隐藏开发者开关：协作空间（MyAgents Space / Cloud Space）。默认开。
+  /** 隐藏开发者开关：协作空间（NextTools Space / Cloud Space）。默认开。
    *  关闭时隐藏入口/普通 Space tab 并暂停 Connector；旧 teamSpaceEnabled 不再生效。 */
   teamSpaceDevGate?: boolean;
   /** 开发者：AgentNet 多网络/自部署。默认关闭；关闭保留配置与凭据并暂停自部署连接。 */
@@ -995,7 +995,7 @@ export interface AppConfig {
   floatingBallEnabled?: boolean;
   /** 悬浮球本体外观。缺省视同 'pet'（PRD 0.2.34 floating_ball_pet_mode Phase 1）。 */
   floatingBallAppearance?: 'pet' | 'orb';
-  /** 当前选中的桌宠资源包。缺省视同内置 Mino。 */
+  /** 当前选中的桌宠资源包。缺省视同内置 Nexo。 */
   floatingBallPetId?: string;
   /** 桌面渠道持久 session id（伴侣窗自铸 UUID v4；轮换见下两个字段，PRD §6.2）。 */
   floatingBallSessionId?: string;
@@ -1088,13 +1088,13 @@ export interface AppConfig {
 
   // ===== CLI Tool Registry (PRD 0.2.36) =====
   // Per-tool environment variables (API keys etc.) for registered CLI tools
-  // (~/.myagents/tools/). Same shape as mcpServerEnv. The ~/.myagents/bin
+  // (~/.nexttools/tools/). Same shape as mcpServerEnv. The ~/.nexttools/bin
   // launcher shims read this at runtime, so env changes apply on next launch
   // without re-registration.
   cliToolEnv?: Record<string, Record<string, string>>;
 
   // ===== Official CLI Tools =====
-  // Global visibility gate for MyAgents-owned CLI tools (not user registry tools).
+  // Global visibility gate for NextTools-owned CLI tools (not user registry tools).
   enabledOfficialToolIds?: OfficialToolId[];
   officialToolSettings?: OfficialToolSettings;
 
@@ -1127,7 +1127,7 @@ export interface AppConfig {
 
   // ===== Claude Plugin Configuration (PRD 0.2.17) =====
   /** Installed Claude plugins. Each entry's installPath points at a directory
-   *  under ~/.myagents/plugins/<name>/ containing .claude-plugin/plugin.json.
+   *  under ~/.nexttools/plugins/<name>/ containing .claude-plugin/plugin.json.
    *  Disk is the source of truth; this is the index. */
   plugins?: import('./types/plugin').PluginEntry[];
   /** Global VISIBILITY gate keyed by PluginEntry.id ("<name>@local").
@@ -2713,7 +2713,7 @@ export const PRESET_MCP_SERVERS: McpServerDefinition[] = [
   {
     id: MANAGED_BROWSER_MCP_ID,
     name: '浏览器',
-    description: 'MyAgents 托管的 Chromium，支持多对话隔离与登录状态复用',
+    description: 'NextTools 托管的 Chromium，支持多对话隔离与登录状态复用',
     type: 'stdio',
     // Product-owned sentinel. Runtime adapters project only this preset to the
     // authenticated application Browser Host; it is never spawned as stdio.

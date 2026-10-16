@@ -446,7 +446,7 @@ function remoteMcpComponent(
   };
 }
 
-/** Legacy MyAgents/Claude Agent selectors name the terminal capability; Runtime visibility selects its platform Shell. */
+/** Legacy NextTools/Claude Agent selectors name the terminal capability; Runtime visibility selects its platform Shell. */
 const dshAgentToolSelectors = (tools: readonly string[]): string[] => [...new Set(tools.flatMap(tool =>
   tool === 'Bash' ? ['bash', 'pwsh'] : tool === 'PowerShell' ? ['pwsh'] : [tool],
 ))];
@@ -646,7 +646,7 @@ export function compileDshProductExtensionPlane(
       diagnostics.push(componentStatus('host_tools', tool.name, 'failed', 'dsh_host_tool_dispatcher_missing'));
       continue;
     }
-    const serverId = 'myagents_host';
+    const serverId = 'nexttools_host';
     const publicToolName = `mcp__${serverId}__${tool.name}`;
     if (!HOST_TOOL_NAME.test(tool.name) || !HOST_TOOL_NAME.test(publicToolName)) {
       diagnostics.push(componentStatus('host_tools', tool.name, 'failed', 'dsh_host_tool_name_invalid'));

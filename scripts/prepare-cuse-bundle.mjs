@@ -106,7 +106,7 @@ export async function prepareCuseBundle({ target, destination = join(ROOT, 'bund
     return { platform, updated: false };
   }
   fetchBytes ??= (url, maxBytes) => downloadBuildResource(url, {
-    maxBytes, log, headers: { 'User-Agent': 'myagents-cuse-builder', 'Cache-Control': 'no-cache' },
+    maxBytes, log, headers: { 'User-Agent': 'nexttools-cuse-builder', 'Cache-Control': 'no-cache' },
   });
   log(`[resource:cuse ${platform}] CHECK: fetching current release metadata`);
   const pointer = JSON.parse((await fetchBytes(`${FEED}/latest.json`, 64 * 1024)).toString('utf8'));

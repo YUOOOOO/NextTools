@@ -39,7 +39,7 @@ import {
 function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     return {
         defaultPermissionMode: 'auto',
-        themeId: 'myagents-default',
+        themeId: 'nexttools-default',
         appearanceMode: 'system',
         minimizeToTray: false,
         showDevTools: false,

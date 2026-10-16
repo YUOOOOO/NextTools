@@ -83,7 +83,7 @@ CSP、custom protocol、`srcdoc`、clipboard、scrollbar和OS child WebView合�
 
 审查：
 
-- attachment使用 `myagents-resource` protocol，不把 Sidecar loopback URL直接喂给 subresource；
+- attachment使用 `nexttools-resource` protocol，不把 Sidecar loopback URL直接喂给 subresource；
 - widget外部库只能走已登记的本地 inline source；
 - 所有 WebView builder共用 native scrollbar policy；
 - Browser child geometry持续对账，transition/overlay期间按 contract隐藏；

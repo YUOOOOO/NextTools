@@ -25,10 +25,10 @@ describe('pre-React Theme bootstrap', () => {
   });
 
   it('establishes default system-dark root state even when the snapshot JSON is malformed', () => {
-    localStorage.setItem('myagents:theme-bootstrap', '{');
+    localStorage.setItem('nexttools:theme-bootstrap', '{');
     runBootstrap();
 
-    expect(document.documentElement.dataset.themeId).toBe('myagents-light');
+    expect(document.documentElement.dataset.themeId).toBe('nexttools-light');
     expect(document.documentElement.dataset.colorScheme).toBe('dark');
     expect(document.documentElement).toHaveClass('dark');
     expect(document.documentElement.style.colorScheme).toBe('dark');
@@ -40,12 +40,12 @@ describe('pre-React Theme bootstrap', () => {
     });
     runBootstrap();
 
-    expect(document.documentElement.dataset.themeId).toBe('myagents-light');
+    expect(document.documentElement.dataset.themeId).toBe('nexttools-light');
     expect(document.documentElement.dataset.colorScheme).toBe('dark');
   });
 
   it('preserves a future Theme ID for runtime resolution while still setting a complete scheme', () => {
-    localStorage.setItem('myagents:theme-bootstrap', JSON.stringify({
+    localStorage.setItem('nexttools:theme-bootstrap', JSON.stringify({
       version: 1,
       themeId: 'future-partner-theme',
       appearanceMode: 'light',
@@ -58,15 +58,15 @@ describe('pre-React Theme bootstrap', () => {
   });
 
   it('uses the current product default when the snapshot is not an explicit choice', () => {
-    localStorage.setItem('myagents:theme-bootstrap', JSON.stringify({
+    localStorage.setItem('nexttools:theme-bootstrap', JSON.stringify({
       version: 2,
-      themeId: 'myagents-default',
+      themeId: 'nexttools-default',
       appearanceMode: 'light',
       themeSelectionExplicit: false,
     }));
     runBootstrap();
 
-    expect(document.documentElement.dataset.themeId).toBe('myagents-light');
+    expect(document.documentElement.dataset.themeId).toBe('nexttools-light');
     expect(document.documentElement.dataset.colorScheme).toBe('light');
   });
 });

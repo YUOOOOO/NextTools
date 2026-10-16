@@ -1,4 +1,4 @@
-//! Bounded decoder for MyAgents-owned Record Ogg Opus artifacts.
+//! Bounded decoder for NextTools-owned Record Ogg Opus artifacts.
 //!
 //! This is intentionally separate from the untrusted attachment media probe.
 //! Record artifacts have one frozen Ogg Opus profile, so a small checked page
@@ -888,7 +888,7 @@ pub(crate) mod tests {
     }
 
     fn opus_tags() -> Vec<u8> {
-        let vendor = b"MyAgents record decoder fixture";
+        let vendor = b"NextTools record decoder fixture";
         let mut packet = Vec::new();
         packet.extend_from_slice(b"OpusTags");
         packet.extend_from_slice(&(vendor.len() as u32).to_le_bytes());

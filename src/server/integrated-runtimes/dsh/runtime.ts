@@ -107,7 +107,7 @@ import {
 } from './protocol-types';
 
 const OFFICIAL_INTERACTION_REVISION = 'host-interaction-v1';
-const DSH_CHECKPOINT_POLICY_REVISION = 'myagents-root-write-edit-checkpoint-v1';
+const DSH_CHECKPOINT_POLICY_REVISION = 'nexttools-root-write-edit-checkpoint-v1';
 
 type ProductPermissionMode = 'approval-required' | 'workspace-autonomous' | 'full-autonomous';
 
@@ -358,7 +358,7 @@ function nonNegativeInteger(value: unknown, description: string): number {
 function productPermissionMode(value: string | undefined): ProductPermissionMode {
   if (value === undefined || value === '') return 'approval-required';
   if (value === 'approval-required' || value === 'workspace-autonomous' || value === 'full-autonomous') return value;
-  throw new Error(`Unsupported MyAgents DSH permission mode: ${value}`);
+  throw new Error(`Unsupported NextTools DSH permission mode: ${value}`);
 }
 
 function reasoningSelection(value: string | undefined): DshReasoningEffortSelection {
@@ -405,7 +405,7 @@ async function resourceRootForNode(nodeExecutablePath: string): Promise<string> 
 
 async function installedRuntime() {
   const nodeExecutablePath = getBundledNodePath();
-  if (!nodeExecutablePath) throw new Error('MyAgents bundled Node is unavailable');
+  if (!nodeExecutablePath) throw new Error('NextTools bundled Node is unavailable');
   return await resolveDshRuntimeInstallation({
     nodeExecutablePath,
     resourceRoot: await resourceRootForNode(nodeExecutablePath),
@@ -530,7 +530,7 @@ async function createOwnedRoots(productSessionId: string): Promise<Readonly<{
   attachmentRoot: string;
 }>> {
   const { runtimeHome: requestedRuntimeHome, attachmentRoot: requestedAttachmentRoot } =
-    dshSessionOwnedPaths(join(getHomeDir(), '.myagents'), productSessionId);
+    dshSessionOwnedPaths(join(getHomeDir(), '.nexttools'), productSessionId);
   await Promise.all([
     mkdir(requestedRuntimeHome, { recursive: true, mode: 0o700 }),
     mkdir(requestedAttachmentRoot, { recursive: true, mode: 0o700 }),
@@ -588,7 +588,7 @@ async function prepareDshProcess(sessionId: string, requestedWorkspace: string, 
   const workspacePath = await realpath(requestedWorkspace);
   if (normalize(workspacePath) !== workspacePath) throw new Error('DSH workspace path is not canonical');
   const roots = await createOwnedRoots(sessionId);
-  const workspaceIdentity = `myagents-workspace-v1:${hash(workspacePath)}`;
+  const workspaceIdentity = `nexttools-workspace-v1:${hash(workspacePath)}`;
   const commandDirectories = (await ensureShellPath()).split(delimiter)
     .filter(entry => entry.length > 0 && isAbsolute(entry));
   const childEnvironment = buildDshChildEnvironment({
@@ -2116,7 +2116,7 @@ export class DshRuntime implements AgentRuntime {
       return;
     }
 
-    const placeholder = `myagents-plan-probe:${hash(process.runtimeSessionId)}`;
+    const placeholder = `nexttools-plan-probe:${hash(process.runtimeSessionId)}`;
     try {
       const already = await call(desired, placeholder);
       process.planRevision = string(already.revision, 'DSH Plan revision');

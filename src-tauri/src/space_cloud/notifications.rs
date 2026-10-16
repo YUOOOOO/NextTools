@@ -486,7 +486,7 @@ fn notification_state_path(data_dir: &Path) -> PathBuf {
 }
 
 fn state_path() -> PathBuf {
-    crate::app_dirs::myagents_data_dir()
+    crate::app_dirs::nexttools_data_dir()
         .map(|path| notification_state_path(&path))
         .unwrap_or_else(|| PathBuf::from(STATE_FILE))
 }
@@ -2010,7 +2010,7 @@ mod tests {
 
     #[test]
     fn notification_state_path_is_application_global() {
-        let root = PathBuf::from("/tmp/myagents-data");
+        let root = PathBuf::from("/tmp/nexttools-data");
         assert_eq!(
             notification_state_path(&root),
             root.join("notification-state.json")
@@ -2366,7 +2366,7 @@ mod tests {
         assert!(validate_external_url("http://localhost:3000/notice").is_ok());
         for value in [
             "/notice",
-            "myagents://open/v1/spaces/a/issues/b",
+            "nexttools://open/v1/spaces/a/issues/b",
             "file:///tmp/x",
         ] {
             assert!(validate_external_url(value).is_err(), "{value}");

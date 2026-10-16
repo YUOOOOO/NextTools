@@ -1,5 +1,5 @@
 #!/bin/bash
-# MyAgents macOS 正式发布构建脚本
+# NextTools macOS 正式发布构建脚本
 # 构建签名+公证的 DMG 安装包用于分发
 # 支持 ARM (M1/M2)、Intel 构建
 
@@ -20,7 +20,7 @@ NC='\033[0m'
 
 echo ""
 echo -e "${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║${NC}  ${GREEN}🤖 MyAgents macOS 签名发布构建${NC}                      ${CYAN}║${NC}"
+echo -e "${CYAN}║${NC}  ${GREEN}🤖 NextTools macOS 签名发布构建${NC}                      ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}  ${BLUE}Version: ${VERSION}${NC}                                      ${CYAN}║${NC}"
 echo -e "${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
 echo ""
@@ -102,7 +102,7 @@ echo ""
 echo -e "${BLUE}[准备] 清理残留进程...${NC}"
 pkill -f "node.*src/server/index.ts" 2>/dev/null || true
 pkill -f "node.*server-dist.js" 2>/dev/null || true
-pkill -f "MyAgents.app" 2>/dev/null || true
+pkill -f "NextTools.app" 2>/dev/null || true
 sleep 1
 echo -e "${GREEN}✓ 进程已清理${NC}"
 echo ""

@@ -18,13 +18,13 @@
     "agentNetwork": "AgentNet 局域网络"
   },
   "account": {
-    "signIn": "登录 MyAgents",
-    "menu": "MyAgents 账号",
+    "signIn": "登录",
+    "menu": "NextTools 账号",
     "editProfile": "编辑账号资料"
   },
   "globalSidebar": {
     "navigation": "全局导航",
-    "openWebsite": "打开 MyAgents 官网",
+    "openWebsite": "打开 NextTools 官网",
     "collapse": "收起侧边栏",
     "expand": "展开侧边栏",
     "newChat": "新对话",
@@ -35,8 +35,8 @@
     "capabilities": "技能与工具",
     "helper": "小助理",
     "settings": "设置",
-    "workspaces": "Agent 工作区",
-    "workspaceSection": "Agent 工作区",
+    "workspaces": "工作区",
+    "workspaceSection": "工作区",
     "workspaceViewOptions": "工作区与会话显示选项",
     "allSessions": "全部会话",
     "favoriteSessions": "只看收藏",
@@ -131,7 +131,7 @@
     "replyFailed": "回复出错了",
     "agentErrorOpenMainWindow": "Agent 出错了，点 ↗ 去主窗口查看",
     "sessionExpiredNewChat": "上一条会话已失效，已为你开启新对话",
-    "noWorkspace": "没有可用的工作区——请先在 MyAgents 中完成初始化",
+    "noWorkspace": "没有可用的工作区——请先在 NextTools 中完成初始化",
     "switchWorkspaceFailed": "切换工作区失败，请重试",
     "newConversationFailed": "新建对话失败，请重试",
     "engineNotReady": "AI 引擎尚未就绪，稍等片刻再试",
@@ -320,7 +320,7 @@
     "copyFailed": "复制失败",
     "reference": "引用",
     "openContainingFolder": "打开所在文件夹",
-    "openMyAgentsPreview": "打开 MyAgents 预览",
+    "openNextToolsPreview": "打开 NextTools 预览",
     "preview": "预览",
     "open": "打开",
     "revealInTree": "在文件目录中展示",
@@ -367,11 +367,11 @@
     "moreActions": "更多操作"
   },
   "notifications": {
-    "permissionTitle": "MyAgents - 权限请求",
+    "permissionTitle": "NextTools - 权限请求",
     "permissionBody": "AI 请求使用工具 - {{toolName}}",
-    "askUserTitle": "MyAgents - 需求确认",
+    "askUserTitle": "NextTools - 需求确认",
     "askUserBody": "AI 等待您的确认相关信息",
-    "planModeTitle": "MyAgents - 方案审核",
+    "planModeTitle": "NextTools - 方案审核",
     "planModeBody": "AI 等待您审核方案"
   },
   "notificationCenter": {
@@ -429,7 +429,7 @@
         "request": "Space 请求"
       },
       "templates": {
-        "relogin": "{{operation}}失败：请重新登录 MyAgents 社区",
+        "relogin": "{{operation}}失败：请重新登录 NextTools 社区",
         "permissionDenied": "{{operation}}失败：权限不足",
         "serviceUnavailable": "{{operation}}失败：服务暂时不可用，请稍后重试",
         "withDetail": "{{operation}}失败：{{detail}}",
@@ -453,13 +453,13 @@
     },
     "login": {
       "eyebrow": "Official Space",
-      "title": "MyAgents 社区",
+      "title": "NextTools 社区",
       "description": "使用 Google 账号进入官方 Space",
       "reauthDescription": "{{name}} 的登录已失效，请重新登录以继续使用协作空间。",
       "forgetAccount": "退出并清除本机账户",
       "waiting": "等待浏览器授权完成",
       "continueWithGoogle": "继续使用 Google",
-      "returnHint": "授权完成后会自动回到 MyAgents。"
+      "returnHint": "授权完成后会自动回到 NextTools。"
     },
     "sidebar": {
       "issues": "议题 Issue",
@@ -560,7 +560,7 @@
       "closeIssue": "关闭 Issue"
     },
     "toasts": {
-      "loginSuccess": "已登录 MyAgents 社区",
+      "loginSuccess": "已登录 NextTools 社区",
       "loginFailed": "登录失败",
       "loginSlow": "登录状态同步较慢，正在继续重试",
       "loginTimeout": "登录等待超时，请重新发起 Google 登录",
@@ -617,7 +617,7 @@
       "claimHandler": "经办：{{name}}"
     },
     "createIssue": {
-      "community": "MyAgents社区",
+      "community": "NextTools社区",
       "title": "New issue",
       "close": "关闭",
       "titlePlaceholder": "Issue title",
@@ -966,12 +966,12 @@
       "offline": "离线",
       "disabled": "已停用",
       "connecting": "连接中",
-      "clientOnline": "MyAgents 客户端在线",
+      "clientOnline": "NextTools 客户端在线",
       "lastOnline": "最后在线",
       "lastOnlineAt": "最后在线：{{time}}",
       "neverOnline": "尚未在线",
-      "offlineTroubleshooting": "请确认 MyAgents 客户端正在运行并能访问 Space Cloud。",
-      "connectingHint": "正在等待 MyAgents 客户端连接",
+      "offlineTroubleshooting": "请确认 NextTools 客户端正在运行并能访问 Space Cloud。",
+      "connectingHint": "正在等待 NextTools 客户端连接",
       "presenceMayBeStale": "在线状态可能不是最新，请检查网络后重试。",
       "workspace": "工作区",
       "localAgentWorkspace": "本地 Agent 工作区",
@@ -1043,7 +1043,7 @@
       "inviteEmailPlaceholder": "输入用户的 Google 邮箱",
       "inviteRoleLabel": "选择用户身份",
       "addMember": "添加",
-      "joinByShortSlug": "邀请用户使用短链加入 MyAgents：",
+      "joinByShortSlug": "邀请用户使用短链加入 NextTools：",
       "loadingMembers": "加载中...",
       "joinRequests": "申请加入",
       "pendingInvitations": "待接受邀请",
@@ -1302,9 +1302,9 @@
   "agentNetwork": {
     "networkName": "AgentNet 局域网络",
     "networkInfo": "网络说明",
-    "infoIntro": "AgentNet 是 MyAgents 提供的基于登录账号的多设备 Agent 私有中转网络。",
+    "infoIntro": "AgentNet 是 NextTools 提供的基于登录账号的多设备 Agent 私有中转网络。",
     "infoTitle": "端到端加密的私有网络",
-    "infoRelay": "设备之间的 Agent 通信内容都在设备端加密，MyAgents 服务器只转发密文。",
+    "infoRelay": "设备之间的 Agent 通信内容都在设备端加密，NextTools 服务器只转发密文。",
     "infoLocal": "任务由目标 Agent 在它所在的设备上执行，并遵守它自己的权限设置。",
     "statDevices": "台设备在网络中",
     "statAgents": "个 Agent 可协作",
@@ -1386,7 +1386,7 @@
       "featureDisabled": "请先在设置的开发者模式中开启 AgentNet 多网络。"
     },
     "chooseNetwork": "选择网络",
-    "officialNetwork": "MyAgents 官方网络",
+    "officialNetwork": "NextTools 官方网络",
     "joinSelfhost": "加入自部署网络",
     "serviceUrl": "服务 URL",
     "deviceKey": "设备 key",

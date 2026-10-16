@@ -134,7 +134,7 @@ export function resolveNpxMcpInvocation(
   const withYes = normalizedArgs.includes('-y') ? normalizedArgs : ['-y', ...normalizedArgs];
 
   if (process.platform === 'win32') {
-    // Codex owns the final stdio spawn, so MyAgents cannot route a `.cmd`
+    // Codex owns the final stdio spawn, so NextTools cannot route a `.cmd`
     // shim through its subprocess adapter. Hand Codex a real executable and
     // structured argv from one complete Node distribution instead.
     for (const npxPath of getSystemNpxPaths()) {

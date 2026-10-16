@@ -211,7 +211,7 @@ function buildPipeline(buffer: Buffer): Sharp {
 /**
  * Map sharp / libvips error messages to user-friendly Chinese strings.
  * Upstream claude-code has a 8-category `classifyImageError` used for analytics grouping —
- * MyAgents only needs UX mapping, so this is intentionally small.
+ * NextTools only needs UX mapping, so this is intentionally small.
  * Returns the original message unchanged if no pattern matches (surfaces to unified log).
  *
  * Exported for the user-upload broadcast path in agent-session.ts so users see Chinese

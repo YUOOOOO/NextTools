@@ -42,7 +42,7 @@ export function validateTsxRuntime(root, os, cpu) {
   if (!existsSync(join(root, 'node_modules/tsx/dist/esm/index.mjs'))) throw new Error('Missing tsx ESM loader');
   if (os === process.platform && cpu === process.arch) {
     execFileSync(process.execPath, ['--import', pathToFileURL(join(root, 'node_modules/tsx/dist/esm/index.mjs')).href, '-e',
-      'require("node:assert/strict").equal(require(process.argv[1]).name, "myagents-tsx-runtime")', join(root, 'package.json')], { cwd: root, stdio: 'pipe' });
+      'require("node:assert/strict").equal(require(process.argv[1]).name, "nexttools-tsx-runtime")', join(root, 'package.json')], { cwd: root, stdio: 'pipe' });
     execFileSync(binaries[0], ['--version'], { stdio: 'pipe' });
   }
 }

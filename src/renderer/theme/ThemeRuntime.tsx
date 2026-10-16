@@ -69,7 +69,7 @@ function syncMainWindowBackground(): void {
     .catch(error => console.warn('[theme] Failed to sync native window background:', error));
 }
 
-const ACTIVE_THEME_STYLESHEET_ID = 'myagents-active-theme-stylesheet';
+const ACTIVE_THEME_STYLESHEET_ID = 'nexttools-active-theme-stylesheet';
 
 function activateThemeStylesheet(resolvedTheme: ResolvedTheme): void {
   let style = document.getElementById(ACTIVE_THEME_STYLESHEET_ID) as HTMLStyleElement | null;

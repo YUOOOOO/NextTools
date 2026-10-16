@@ -16,7 +16,7 @@ export function runtimeLock(projectRoot, name) {
   if (!/^\d+\.\d+\.\d+$/.test(version ?? '')) throw new Error(`${name} must use an exact package version`);
   const source = readJson(join(projectRoot, 'package-lock.json'));
   if (source.lockfileVersion !== 3) throw new Error('npm runtime preparation requires package-lock v3');
-  const root = { name: `myagents-${name}-runtime`, version: '1.0.0', dependencies: { [name]: version } };
+  const root = { name: `nexttools-${name}-runtime`, version: '1.0.0', dependencies: { [name]: version } };
   const packages = { '': root };
   function visit(path) {
     if (packages[path]) return;

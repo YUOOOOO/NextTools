@@ -1,4 +1,4 @@
-// IM Health State — periodic persistence to ~/.myagents/im_bots/{botId}/state.json
+// IM Health State — periodic persistence to ~/.nexttools/im_bots/{botId}/state.json
 // Used for Desktop UI status display, restart recovery, and diagnostics.
 
 use std::collections::HashSet;
@@ -248,14 +248,14 @@ pub(crate) async fn persist_router_active_sessions(
 // Path helpers
 // ---------------------------------------------------------------------------
 
-/// ~/.myagents/
-fn myagents_dir() -> PathBuf {
+/// ~/.nexttools/
+fn nexttools_dir() -> PathBuf {
     dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join(".myagents")
+        .join(".nexttools")
 }
 
-/// ~/.myagents/im_bots/{botId}/
+/// ~/.nexttools/im_bots/{botId}/
 /// Panics if bot_id contains path separators or `..` (defense in depth).
 pub fn bot_data_dir(bot_id: &str) -> PathBuf {
     assert!(
@@ -266,20 +266,20 @@ pub fn bot_data_dir(bot_id: &str) -> PathBuf {
         "[im-health] Invalid bot_id for path construction: {:?}",
         bot_id
     );
-    myagents_dir().join("im_bots").join(bot_id)
+    nexttools_dir().join("im_bots").join(bot_id)
 }
 
-/// v3 path: ~/.myagents/im_bots/{botId}/state.json
+/// v3 path: ~/.nexttools/im_bots/{botId}/state.json
 pub fn bot_health_path(bot_id: &str) -> PathBuf {
     bot_data_dir(bot_id).join("state.json")
 }
 
-/// v3 path: ~/.myagents/im_bots/{botId}/buffer.json
+/// v3 path: ~/.nexttools/im_bots/{botId}/buffer.json
 pub fn bot_buffer_path(bot_id: &str) -> PathBuf {
     bot_data_dir(bot_id).join("buffer.json")
 }
 
-/// v3 path: ~/.myagents/im_bots/{botId}/dedup.json
+/// v3 path: ~/.nexttools/im_bots/{botId}/dedup.json
 pub fn bot_dedup_path(bot_id: &str) -> PathBuf {
     bot_data_dir(bot_id).join("dedup.json")
 }
@@ -288,7 +288,7 @@ pub fn bot_dedup_path(bot_id: &str) -> PathBuf {
 // Agent channel path helpers (v0.1.41 — TD-3)
 // ---------------------------------------------------------------------------
 
-/// ~/.myagents/agents/{agentId}/channels/{channelId}/
+/// ~/.nexttools/agents/{agentId}/channels/{channelId}/
 pub fn agent_channel_data_dir(agent_id: &str, channel_id: &str) -> PathBuf {
     debug_assert!(
         !agent_id.is_empty()
@@ -306,7 +306,7 @@ pub fn agent_channel_data_dir(agent_id: &str, channel_id: &str) -> PathBuf {
         "[im-health] Invalid channel_id for path construction: {:?}",
         channel_id
     );
-    myagents_dir()
+    nexttools_dir()
         .join("agents")
         .join(agent_id)
         .join("channels")
@@ -445,26 +445,26 @@ pub fn cleanup_agent_channel_data(agent_id: &str, channel_id: &str) {
 // Legacy path helpers (private, migration only)
 // ---------------------------------------------------------------------------
 
-/// v1 legacy: single-bot era — ~/.myagents/im_state.json
+/// v1 legacy: single-bot era — ~/.nexttools/im_state.json
 fn legacy_health_path() -> PathBuf {
-    myagents_dir().join("im_state.json")
+    nexttools_dir().join("im_state.json")
 }
-/// v1 legacy: single-bot era — ~/.myagents/im_buffer.json
+/// v1 legacy: single-bot era — ~/.nexttools/im_buffer.json
 fn legacy_buffer_path() -> PathBuf {
-    myagents_dir().join("im_buffer.json")
+    nexttools_dir().join("im_buffer.json")
 }
 
-/// v2 flat: multi-bot era — ~/.myagents/im_{botId}_state.json
+/// v2 flat: multi-bot era — ~/.nexttools/im_{botId}_state.json
 fn flat_health_path(bot_id: &str) -> PathBuf {
-    myagents_dir().join(format!("im_{}_state.json", bot_id))
+    nexttools_dir().join(format!("im_{}_state.json", bot_id))
 }
-/// v2 flat: multi-bot era — ~/.myagents/im_{botId}_buffer.json
+/// v2 flat: multi-bot era — ~/.nexttools/im_{botId}_buffer.json
 fn flat_buffer_path(bot_id: &str) -> PathBuf {
-    myagents_dir().join(format!("im_{}_buffer.json", bot_id))
+    nexttools_dir().join(format!("im_{}_buffer.json", bot_id))
 }
-/// v2 flat: multi-bot era — ~/.myagents/im_{botId}_dedup.json
+/// v2 flat: multi-bot era — ~/.nexttools/im_{botId}_dedup.json
 fn flat_dedup_path(bot_id: &str) -> PathBuf {
-    myagents_dir().join(format!("im_{}_dedup.json", bot_id))
+    nexttools_dir().join(format!("im_{}_dedup.json", bot_id))
 }
 
 // ---------------------------------------------------------------------------
@@ -582,7 +582,7 @@ pub fn cleanup_bot_data(bot_id: &str) {
 
 /// Remove v1 legacy `.migrated` marker files.
 fn cleanup_legacy_markers() {
-    let dir = myagents_dir();
+    let dir = nexttools_dir();
     for name in ["im_state.json.migrated", "im_buffer.json.migrated"] {
         let path = dir.join(name);
         if path.exists() {
@@ -592,9 +592,9 @@ fn cleanup_legacy_markers() {
     }
 }
 
-/// Scan ~/.myagents/ for orphaned v2 flat files (bot IDs not in config.json).
+/// Scan ~/.nexttools/ for orphaned v2 flat files (bot IDs not in config.json).
 fn cleanup_orphaned_flat_files() {
-    let dir = myagents_dir();
+    let dir = nexttools_dir();
     let active_ids = read_active_bot_ids(&dir);
     // If we can't read config, don't delete anything (safety)
     if active_ids.is_none() {
@@ -630,8 +630,8 @@ fn cleanup_orphaned_flat_files() {
 /// Read active bot IDs from config.json. Returns None on any read/parse error.
 /// Includes both legacy imBotConfigs IDs and agent channel IDs to prevent orphan cleanup
 /// from accidentally deleting data for either path.
-fn read_active_bot_ids(myagents: &Path) -> Option<HashSet<String>> {
-    let config_path = myagents.join("config.json");
+fn read_active_bot_ids(nexttools: &Path) -> Option<HashSet<String>> {
+    let config_path = nexttools.join("config.json");
     let content = std::fs::read_to_string(&config_path).ok()?;
     // Tolerate UTF-8 BOM (issue #170 #6) — without this a hand-edited
     // config.json silently drops all bot IDs, then orphan-cleanup deletes

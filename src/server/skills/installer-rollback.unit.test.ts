@@ -43,7 +43,7 @@ describe('publishSkillInstallPlan rollback', () => {
   let baseDir: string;
 
   beforeEach(() => {
-    scratch = mkdtempSync(join(tmpdir(), 'myagents-skill-rollback-'));
+    scratch = mkdtempSync(join(tmpdir(), 'nexttools-skill-rollback-'));
     baseDir = join(scratch, 'skills');
     renameFault.destinationSuffix = '';
   });

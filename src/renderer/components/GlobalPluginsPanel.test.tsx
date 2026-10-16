@@ -36,8 +36,8 @@ describe('GlobalPluginsPanel uninstall confirmation', () => {
       name: 'example-plugin',
       source: 'local',
       sourceUrl: 'file:///tmp/example-plugin',
-      installPath: '/Users/example/.myagents/plugins/example-plugin',
-      dataPath: '/Users/example/.myagents/plugins/data/example-plugin-local',
+      installPath: '/Users/example/.nexttools/plugins/example-plugin',
+      dataPath: '/Users/example/.nexttools/plugins/data/example-plugin-local',
       installedAt: '2026-09-20T00:00:00.000Z',
       enabled: true,
       status: 'ok',
@@ -66,7 +66,7 @@ describe('GlobalPluginsPanel uninstall confirmation', () => {
     await user.click(screen.getByRole('button', { name: 'Uninstall' }));
 
     expect(screen.getByText('Uninstall example-plugin?')).toBeInTheDocument();
-    expect(screen.getByText(/\/Users\/example\/\.myagents\/plugins\/data\/example-plugin-local/))
+    expect(screen.getByText(/\/Users\/example\/\.nexttools\/plugins\/data\/example-plugin-local/))
       .toBeInTheDocument();
     expect(screen.queryByText(/\$\{CLAUDE_PLUGIN_DATA\}/)).not.toBeInTheDocument();
     expect(mocks.post).not.toHaveBeenCalled();

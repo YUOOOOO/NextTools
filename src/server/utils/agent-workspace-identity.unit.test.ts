@@ -88,7 +88,7 @@ describe('persisted Agent workspace identity', () => {
 
   function workspace(): string {
     tempWorkspace ??= mkdtempSync(
-      join(process.cwd(), '.myagents-agent-register-'),
+      join(process.cwd(), '.nexttools-agent-register-'),
     );
     return tempWorkspace;
   }

@@ -8,7 +8,7 @@ import { createServer } from 'vite';
 import { chromium, webkit } from 'playwright';
 
 const repo = resolve(import.meta.dirname, '..');
-const output = await mkdtemp(resolve(tmpdir(), 'myagents-status-scroll-'));
+const output = await mkdtemp(resolve(tmpdir(), 'nexttools-status-scroll-'));
 const engine = process.argv[2] ?? 'webkit';
 assert.ok(['webkit', 'chrome'].includes(engine));
 const entryId = resolve(repo, 'src/renderer/__status_scroll_audit.tsx');

@@ -12,16 +12,16 @@ import {
   type GlobalSkillInventorySnapshot,
 } from '../global-skill-inventory';
 
-const MYAGENTS_USER_DIR = '.myagents';
+const NEXTTOOLS_USER_DIR = '.nexttools';
 
 /**
- * Get the MyAgents user directory path.
+ * Get the NextTools user directory path.
  * All user configs (MCP, providers, projects, etc.) are stored here.
  */
-export function getMyAgentsUserDir(): string {
+export function getNextToolsUserDir(): string {
   const { home, temp } = getCrossPlatformEnv();
   const homeDir = home || temp;
-  return join(homeDir, MYAGENTS_USER_DIR);
+  return join(homeDir, NEXTTOOLS_USER_DIR);
 }
 
 export interface ProjectUserConfigSyncOptions {
@@ -116,20 +116,20 @@ export function trySyncProjectUserConfigFiles(
  * Sync user-level skills and commands into a project's .claude/ as symlinks.
  *
  * This is the shared disk bridge used by builtin Claude SDK sessions and
- * external runtimes that want to consume the same MyAgents-managed project
- * protocol. It only mutates symlinks that point back into ~/.myagents and
+ * external runtimes that want to consume the same NextTools-managed project
+ * protocol. It only mutates symlinks that point back into ~/.nexttools and
  * never overwrites real project skill/command entries.
  */
 export function syncProjectUserConfigFiles(
   projectDir: string,
   options: ProjectUserConfigSyncOptions = {},
 ): ProjectUserConfigSyncResult {
-  const myagentsDir = getMyAgentsUserDir();
+  const nexttoolsDir = getNextToolsUserDir();
   const isWin = process.platform === 'win32';
   let changed = false;
   const unavailableSkillNames = new Set<string>();
 
-  const userSkillsDir = join(myagentsDir, 'skills');
+  const userSkillsDir = join(nexttoolsDir, 'skills');
   const projectSkillsDir = join(projectDir, '.claude', 'skills');
   const cliToolRegistryEnabled = options.cliToolRegistryEnabled ?? isCliToolRegistryEnabled(loadAdminConfig());
   const globalSkillInventory = options.globalSkillInventory
@@ -223,7 +223,7 @@ export function syncProjectUserConfigFiles(
     }
   }
 
-  const userCommandsDir = join(myagentsDir, 'commands');
+  const userCommandsDir = join(nexttoolsDir, 'commands');
   const projectCommandsDir = join(projectDir, '.claude', 'commands');
 
   if (existsSync(userCommandsDir)) {

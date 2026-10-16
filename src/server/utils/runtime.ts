@@ -41,17 +41,17 @@ function isWindows(): boolean {
  *
  * Directory structure:
  * - Windows: Flat structure, bun.exe and server-dist.js in same directory
- *   C:\Users\xxx\AppData\Local\MyAgents\
+ *   C:\Users\xxx\AppData\Local\NextTools\
  *   ├── bun.exe
  *   ├── server-dist.js
- *   └── myagents.exe
+ *   └── nexttools.exe
  *
  * - macOS: App bundle structure
- *   MyAgents.app/Contents/
+ *   NextTools.app/Contents/
  *   ├── MacOS/bun         <- bundled bun
  *   └── Resources/server-dist.js  <- scriptDir
  */
-// v0.2.0: Bun path-discovery helpers removed. MyAgents no longer bundles Bun;
+// v0.2.0: Bun path-discovery helpers removed. NextTools no longer bundles Bun;
 // the SDK's own native binary contains its embedded Bun (SDK-team managed,
 // unreachable to us). All bundled-runtime lookups now go through
 // getBundledNodePath() / getBundledNodeDir() below.

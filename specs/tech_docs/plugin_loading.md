@@ -1,6 +1,6 @@
 # Claude Plugin 加载架构
 
-> 本文描述 Claude Plugin 的安装、启用和 Runtime projection。MyAgents 拥有插件目录与启用状态；Builtin Runtime 把本地插件目录交给 Claude Agent SDK，Managed Codex 与 Integrated DSH 通过共享 Product Extension discovery 向各自原生协议转换可表达的组件。
+> 本文描述 Claude Plugin 的安装、启用和 Runtime projection。NextTools 拥有插件目录与启用状态；Builtin Runtime 把本地插件目录交给 Claude Agent SDK，Managed Codex 与 Integrated DSH 通过共享 Product Extension discovery 向各自原生协议转换可表达的组件。
 
 ## 系统边界
 
@@ -8,10 +8,10 @@ Claude Plugin 与 OpenClaw Plugin 是两套独立体系：
 
 | 体系 | 用途 | CLI / API | Owner |
 |------|------|-----------|-------|
-| Claude Plugin | Claude 协议的 Skills、Commands、Agents、MCP、Hooks 等组件 | `myagents cc-plugin *`、`/api/cc-plugin/*` | Node Plugin Store + AppConfig |
-| OpenClaw Plugin | Agent Channel 的第三方渠道适配器 | `myagents plugin *`、Rust `/api/plugin/*` | Rust Plugin Bridge lifecycle |
+| Claude Plugin | Claude 协议的 Skills、Commands、Agents、MCP、Hooks 等组件 | `nexttools cc-plugin *`、`/api/cc-plugin/*` | Node Plugin Store + AppConfig |
+| OpenClaw Plugin | Agent Channel 的第三方渠道适配器 | `nexttools plugin *`、Rust `/api/plugin/*` | Rust Plugin Bridge lifecycle |
 
-Builtin Runtime 不解析 Plugin 内部组件，也不复制 SDK 的 manifest、hook 或 MCP 语义。MyAgents 只校验受控安装目录并向 SDK 传递 `{ type: 'local', path }`。Managed Codex 与 Integrated DSH 是显式 projection 路径：各自的 Product Extension compiler 从可信安装目录读取组件，并逐项报告 converted、unsupported 或 conflict。
+Builtin Runtime 不解析 Plugin 内部组件，也不复制 SDK 的 manifest、hook 或 MCP 语义。NextTools 只校验受控安装目录并向 SDK 传递 `{ type: 'local', path }`。Managed Codex 与 Integrated DSH 是显式 projection 路径：各自的 Product Extension compiler 从可信安装目录读取组件，并逐项报告 converted、unsupported 或 conflict。
 
 ## Owner 与启用模型
 
@@ -69,7 +69,7 @@ resolvePluginUrl
 安装不得依赖用户系统 Node。远端获取复用公共 URL/SSRF policy，归档展开复用受限树与 zip-slip 防护；安装提交负责 broken-symlink 清理、staging 校验与锁内 rename/config 发布。`lstat + realpath` canonical 校验发生在向 SDK、Managed Codex 或 DSH 投影前：目录若在安装后被 symlink swap，必须拒绝执行，而不是把它交给 Runtime。插件最终位于：
 
 ```text
-~/.myagents/
+~/.nexttools/
 ├── config.json
 └── plugins/
     ├── <plugin-name>/
@@ -102,11 +102,11 @@ Plugin 变更不能原地修改正在运行的 SDK Query。Builtin adapter 在�
 - Hooks、LSP、monitors、bin、SSE MCP 和不能忠实映射的 Agent 字段按组件报告 unsupported；
 - 单个组件失败不能冒充整包成功，也不能阻断其它可转换组件。
 
-其它 `system-cli` Runtime 不消费 MyAgents-owned Claude Plugin projection。
+其它 `system-cli` Runtime 不消费 NextTools-owned Claude Plugin projection。
 
 ### Integrated DSH
 
-DSH 与 Managed Codex 共用 Product capability inventory、Plugin 组件 discovery 与 Host dispatcher，由 `integrated-runtimes/dsh/extension-compiler.ts` 输出原生声明。当前可用投影包括 Skills、Commands、MCP 和 Host tools。Host 会生成 Agent descriptor，但当前 DSH 尚无角色编译器，对应组件返回 `unsupported`；Plugin Hooks/LSP 等不可表达组件也保留逐项诊断，不能假装已经应用。原生 replacement 与 catalog/read-back 决定实际可用状态，Host 不重建 DSH 工具或子 Agent loop。详细边界见 [DSH 集成指南](myagents_dsh_integrated_runtime.md#6-prompt-与扩展)。
+DSH 与 Managed Codex 共用 Product capability inventory、Plugin 组件 discovery 与 Host dispatcher，由 `integrated-runtimes/dsh/extension-compiler.ts` 输出原生声明。当前可用投影包括 Skills、Commands、MCP 和 Host tools。Host 会生成 Agent descriptor，但当前 DSH 尚无角色编译器，对应组件返回 `unsupported`；Plugin Hooks/LSP 等不可表达组件也保留逐项诊断，不能假装已经应用。原生 replacement 与 catalog/read-back 决定实际可用状态，Host 不重建 DSH 工具或子 Agent loop。详细边界见 [DSH 集成指南](nexttools_dsh_integrated_runtime.md#6-prompt-与扩展)。
 
 ## Slash Command projection
 

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { getMyAgentsNpmGlobalBinDir } from './npm-prefix-env';
+import { getNextToolsNpmGlobalBinDir } from './npm-prefix-env';
 import { getCrossPlatformEnv } from './platform';
 import { getBundledNodeDir, getSystemNodeDirs } from './runtime';
 
@@ -31,8 +31,8 @@ export function buildSessionExecutablePath(
   // stale npm/AppData/inherited commands with the same name.
   if (home) {
     essentialPaths.push(isWindows
-      ? resolve(home, '.myagents', 'bin')
-      : `${home}/.myagents/bin`);
+      ? resolve(home, '.nexttools', 'bin')
+      : `${home}/.nexttools/bin`);
   }
 
   for (const dir of getSystemNodeDirs()) {
@@ -40,7 +40,7 @@ export function buildSessionExecutablePath(
   }
   if (bundledNodeDir) essentialPaths.push(bundledNodeDir);
 
-  const npmGlobalBinDir = getMyAgentsNpmGlobalBinDir(home);
+  const npmGlobalBinDir = getNextToolsNpmGlobalBinDir(home);
   if (npmGlobalBinDir) essentialPaths.push(npmGlobalBinDir);
 
   if (isWindows) {

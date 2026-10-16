@@ -1,10 +1,10 @@
 // Resolve a persisted attachment to a URL the WebView can render.
 //
-// Production (Tauri): `resolveMyAgentsResourceUrl('/attachment/<rel>')` hits
+// Production (Tauri): `resolveNextToolsResourceUrl('/attachment/<rel>')` hits
 // the async URI scheme handler in `src-tauri/src/attachment_protocol.rs`
-// (`myagents-resource://...` on macOS/Linux,
-// `http://myagents-resource.localhost/...` on
-// Windows). The handler serves bytes from `~/.myagents/attachments/<rel>`
+// (`nexttools-resource://...` on macOS/Linux,
+// `http://nexttools-resource.localhost/...` on
+// Windows). The handler serves bytes from `~/.nexttools/attachments/<rel>`
 // through the WebView resource pipeline. Zero JSON round-trip, zero base64
 // bloat, zero main-thread read.
 //
@@ -14,7 +14,7 @@
 // the vite dev server proxy without needing a Tauri bridge.
 
 import { isTauri } from '@/api/tauriClient';
-import { resolveMyAgentsResourceUrl } from '@/utils/myagentsProtocol';
+import { resolveNextToolsResourceUrl } from '@/utils/nexttoolsProtocol';
 
 function encodeRelative(rel: string): string {
   return rel.split('/').map(encodeURIComponent).join('/');
@@ -32,7 +32,7 @@ export function resolveAttachmentUrl(att: {
   }
   const encoded = encodeRelative(rel);
   if (isTauri()) {
-    return resolveMyAgentsResourceUrl(`/attachment/${encoded}`);
+    return resolveNextToolsResourceUrl(`/attachment/${encoded}`);
   }
   return `/api/attachment/${encoded}`;
 }

@@ -36,7 +36,7 @@ import { handleFreshSessionStart, type FreshSessionInjector } from './start-hand
 describe('fresh Agent Session collaboration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.MYAGENTS_MANAGEMENT_PORT = '31500';
+    process.env.NEXTTOOLS_MANAGEMENT_PORT = '31500';
     mocks.getSessionData.mockReturnValue(null);
     mocks.getSessionMetadata.mockImplementation((sessionId: string) => ({
       id: sessionId,

@@ -16,8 +16,8 @@ const execFileAsync = promisify(execFile);
 
 describe("admin config lock", () => {
   it("serializes concurrent config.json mutations across processes", async () => {
-    const home = mkdtempSync(join(tmpdir(), "myagents-config-lock-"));
-    const configDir = join(home, ".myagents");
+    const home = mkdtempSync(join(tmpdir(), "nexttools-config-lock-"));
+    const configDir = join(home, ".nexttools");
     const configPath = join(configDir, "config.json");
     const adminConfigUrl = pathToFileURL(
       join(process.cwd(), "src/server/utils/admin-config.ts"),
@@ -76,8 +76,8 @@ describe("admin config lock", () => {
   }, 10000);
 
   it("preserves agent-config-intent.lock identity on timeout", async () => {
-    const home = mkdtempSync(join(tmpdir(), "myagents-intent-lock-"));
-    const configDir = join(home, ".myagents");
+    const home = mkdtempSync(join(tmpdir(), "nexttools-intent-lock-"));
+    const configDir = join(home, ".nexttools");
     const lockDir = join(configDir, "agent-config-intent.lock");
     const adminConfigUrl = pathToFileURL(
       join(process.cwd(), "src/server/utils/admin-config.ts"),

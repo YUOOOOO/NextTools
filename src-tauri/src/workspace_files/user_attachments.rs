@@ -2,7 +2,7 @@
 //!
 //! Tauri owns OS path reads. For image drops that should remain visual
 //! attachments, copy bytes from the external path into the app-owned
-//! `~/.myagents/attachments/<session>/` store and return only a relative ref
+//! `~/.nexttools/attachments/<session>/` store and return only a relative ref
 //! to the renderer. The renderer then sends the ref to Sidecar instead of
 //! pushing large base64 through IPC/JSON.
 
@@ -11,7 +11,7 @@ use std::path::Path;
 use serde::Serialize;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-use crate::app_dirs::myagents_data_dir;
+use crate::app_dirs::nexttools_data_dir;
 
 use super::path_safety::{sanitize_filename, validate_external_read_path};
 
@@ -26,8 +26,8 @@ pub struct PreparedUserImageAttachment {
     pub name: String,
     pub mime_type: String,
     pub size_bytes: u64,
-    /// Relative path under `~/.myagents/attachments/`, suitable for
-    /// `myagents-resource://attachment/<relativePath>`.
+    /// Relative path under `~/.nexttools/attachments/`, suitable for
+    /// `nexttools-resource://attachment/<relativePath>`.
     pub relative_path: String,
 }
 
@@ -144,10 +144,10 @@ async fn prepare_one_user_image_attachment(
         ));
     }
 
-    let Some(data_dir) = myagents_data_dir() else {
+    let Some(data_dir) = nexttools_data_dir() else {
         return Err(make_err(
             "storage_unavailable",
-            "MyAgents data directory is unavailable".to_string(),
+            "NextTools data directory is unavailable".to_string(),
         ));
     };
     let session_dir = data_dir.join("attachments").join(session_id);

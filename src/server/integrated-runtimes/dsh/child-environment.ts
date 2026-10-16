@@ -79,8 +79,8 @@ export function buildDshChildEnvironment(options: {
     }
     // The Session owner supplies the App-lifecycle internal CLI capability;
     // ambient or external CLI credentials cannot select this command surface.
-    env.MYAGENTS_PORT = String(sidecarPort);
-    env.MYAGENTS_SESSION_ID = productSessionId;
+    env.NEXTTOOLS_PORT = String(sidecarPort);
+    env.NEXTTOOLS_SESSION_ID = productSessionId;
     env[INTERNAL_CLI_TOKEN_ENV] = internalCliToken;
   }
   const inheritedKeys: string[] = [];

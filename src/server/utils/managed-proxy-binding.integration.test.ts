@@ -25,7 +25,7 @@ describe('managed proxy Query resource', () => {
   });
 
   it('reports each real terminal for its exact lease and does not record cancellation or released results', async () => {
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', 'session-test');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', 'session-test');
     const grant = binding();
     api.mockImplementation(async path => path.endsWith('/acquire') ? { ok: true, binding: grant } : { ok: true });
     const controller = new AbortController();
@@ -39,7 +39,7 @@ describe('managed proxy Query resource', () => {
     expect(outcomes.every(body => body.leaseId === grant.leaseId && body.operationId === api.mock.calls[0][2].operationId)).toBe(true);
   });
   it('preserves explicit provider aliases instead of forcing every subagent onto the main model', async () => {
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', 'session-test');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', 'session-test');
     api.mockImplementation(async path => path.endsWith('/acquire') ? { ok: true, binding: binding() } : { ok: true });
     const resource = await prepareProviderBinding({ providerEnv: { ...provider, modelAliases: { sonnet: 'gemini-3.8-flash-high', opus: 'another-native-model' } }, model: 'approved', controller: new AbortController() });
     expect(resource.providerEnv?.modelAliases?.sonnet).toBe('gemini-3.8-flash-high');
@@ -47,7 +47,7 @@ describe('managed proxy Query resource', () => {
     await resource.release();
   });
   it('refuses unresolved or persisted bindings; keeps the original provider reference non-secret', async () => {
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', 'session-test');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', 'session-test');
     const grant = binding();
     api.mockImplementation(async path => path.endsWith('/acquire') ? { ok: true, binding: grant } : { ok: true });
     expect(() => assertManagedProviderPrepared(provider)).toThrow('必须先准备');
@@ -64,7 +64,7 @@ describe('managed proxy Query resource', () => {
     expect(() => assertManagedProviderPrepared(resource.providerEnv)).toThrow();
   });
   it('releases by operation ID when acquire has an unknown outcome', async () => {
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', 'session-test');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', 'session-test');
     api.mockResolvedValueOnce({ ok: false, code: 'transport_outcome_unknown' }).mockResolvedValue({ ok: true });
     await expect(prepareProviderBinding({ providerEnv: provider, model: 'approved', controller: new AbortController() })).rejects.toThrow();
     const acquire = api.mock.calls[0][2];
@@ -72,7 +72,7 @@ describe('managed proxy Query resource', () => {
     expect(api.mock.calls[1][3]).toBeUndefined();
   });
   it('settles a control that arrives before the acquire response', async () => {
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', 'session-test');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', 'session-test');
     const grant = binding();
     let respond!: (value: unknown) => void;
     api.mockImplementation(path => path.endsWith('/acquire') ? new Promise(resolve => { respond = resolve; }) : Promise.resolve({ ok: true }));
@@ -86,7 +86,7 @@ describe('managed proxy Query resource', () => {
     expect(api.mock.calls.at(-1)?.[0]).toBe('/api/cliproxy/binding/release');
   });
   it('drains the exact persistent Query and aborts auxiliary work independently', async () => {
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', 'session-test');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', 'session-test');
     const grants = [binding(), binding()];
     let next = 0;
     api.mockImplementation(async path => path.endsWith('/acquire') ? { ok: true, binding: grants[next++] } : { ok: true });
@@ -107,7 +107,7 @@ describe('managed proxy Query resource', () => {
     await persistent.release(); await auxiliary.release();
   });
   it('confirms a closed SDK owner through drain when its release could not reach Rust', async () => {
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', 'session-test');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', 'session-test');
     const grant = binding();
     api.mockResolvedValueOnce({ ok: true, binding: grant }).mockResolvedValue({ ok: false, code: 'transport_outcome_unknown' });
     const resource = await prepareProviderBinding({ providerEnv: provider, model: 'approved', controller: new AbortController() });
@@ -117,7 +117,7 @@ describe('managed proxy Query resource', () => {
       instanceGeneration: grant.instanceGeneration }, vi.fn())).toEqual({ accepted: true, settled: true });
   });
   it('repeated drain does not repeatedly restart a live persistent Query', async () => {
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', 'session-test');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', 'session-test');
     const grant = binding(); const drain = vi.fn();
     api.mockImplementation(async path => path.endsWith('/acquire') ? { ok: true, binding: grant } : { ok: true });
     const resource = await prepareProviderBinding({ providerEnv: provider, model: 'approved', controller: new AbortController(), onDrain: drain });

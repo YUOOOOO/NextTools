@@ -56,7 +56,7 @@ const GLOBAL_RESTRICTED_SYNTAX = [
   {
     // Red-line: `<expr>.toISOString().split('T')[0]` returns the
     // UTC date. The unified log filename is built from the *local* date
-    // (`~/.myagents/logs/unified-{YYYY-MM-DD}.log`), so using the UTC date
+    // (`~/.nexttools/logs/unified-{YYYY-MM-DD}.log`), so using the UTC date
     // here means writes land in the wrong file for ~1/3 of every day in
     // UTC+8. The bug manifests as missing log entries when a user grep's
     // "today's" log around midnight CN time.
@@ -216,7 +216,7 @@ export default defineConfig(
             },
             {
               name: 'lucide-react',
-              message: "Use the MyAgents icon set from '@/components/icons' (UI glyphs) or '@/components/file-icon' (file identity). lucide glyphs use a different grid, weight and corner language, so mixing them makes toolbars look uneven. Add a missing glyph to AppIcons.tsx instead.",
+              message: "Use the NextTools icon set from '@/components/icons' (UI glyphs) or '@/components/file-icon' (file identity). lucide glyphs use a different grid, weight and corner language, so mixing them makes toolbars look uneven. Add a missing glyph to AppIcons.tsx instead.",
             },
           ],
         },

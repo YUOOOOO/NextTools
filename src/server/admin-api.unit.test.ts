@@ -144,7 +144,7 @@ function writeJson(path: string, value: unknown): void {
 }
 
 function readConfig(): Record<string, unknown> {
-  return JSON.parse(readFileSync(join(scratch, '.myagents', 'config.json'), 'utf-8')) as Record<string, unknown>;
+  return JSON.parse(readFileSync(join(scratch, '.nexttools', 'config.json'), 'utf-8')) as Record<string, unknown>;
 }
 
 function readJson(path: string): Record<string, unknown>[] {
@@ -152,14 +152,14 @@ function readJson(path: string): Record<string, unknown>[] {
 }
 
 beforeEach(() => {
-  scratch = mkdtempSync(join(tmpdir(), 'myagents-admin-api-'));
-  mkdirSync(join(scratch, '.myagents'), { recursive: true });
+  scratch = mkdtempSync(join(tmpdir(), 'nexttools-admin-api-'));
+  mkdirSync(join(scratch, '.nexttools'), { recursive: true });
   prevHome = process.env.HOME;
   prevUserProfile = process.env.USERPROFILE;
-  prevSidecarId = process.env.MYAGENTS_SIDECAR_ID;
+  prevSidecarId = process.env.NEXTTOOLS_SIDECAR_ID;
   process.env.HOME = scratch;
   process.env.USERPROFILE = scratch;
-  process.env.MYAGENTS_SIDECAR_ID = 'test-session-sidecar';
+  process.env.NEXTTOOLS_SIDECAR_ID = 'test-session-sidecar';
   vi.resetModules();
   agentSessionMocks.agentDir = undefined;
   agentSessionMocks.getSidecarPort.mockReturnValue(0);
@@ -200,8 +200,8 @@ afterEach(() => {
   else process.env.HOME = prevHome;
   if (prevUserProfile === undefined) delete process.env.USERPROFILE;
   else process.env.USERPROFILE = prevUserProfile;
-  if (prevSidecarId === undefined) delete process.env.MYAGENTS_SIDECAR_ID;
-  else process.env.MYAGENTS_SIDECAR_ID = prevSidecarId;
+  if (prevSidecarId === undefined) delete process.env.NEXTTOOLS_SIDECAR_ID;
+  else process.env.NEXTTOOLS_SIDECAR_ID = prevSidecarId;
   rmSync(scratch, { recursive: true, force: true });
 });
 
@@ -221,7 +221,7 @@ describe('Record Admin routing', () => {
       expect(await response.json()).toEqual({ success: true, data: records });
       expect(managementApiMocks.managementApi).toHaveBeenLastCalledWith('/api/record/list?kind=text&limit=5');
     }
-    const recoveryHint = { recoveryCommand: 'myagents status', message: 'Retry when storage is available' };
+    const recoveryHint = { recoveryCommand: 'nexttools status', message: 'Retry when storage is available' };
     managementApiMocks.managementApi.mockResolvedValueOnce({ ok: false, error: 'Record store unavailable', recoveryHint });
     const response = await handler(new Request('http://localhost/api/admin/record/list', { method: 'POST', body: '{}' }));
     expect(await response.json()).toMatchObject({ success: false, error: 'Record store unavailable', recoveryHint });
@@ -246,8 +246,8 @@ describe('current Runtime configuration ownership', () => {
     sessionEngineMocks.state.context = { sessionId: 'dsh-session', workspacePath: workspace };
     agentSessionMocks.agentDir = join(scratch, 'stale-sdk-workspace');
     const server = { id: 'runtime-mcp', name: 'Runtime MCP', type: 'http', url: 'https://synthetic.invalid/mcp' };
-    writeJson(join(scratch, '.myagents', 'config.json'), { mcpServers: [server], mcpEnabledServers: [server.id] });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{ id: 'runtime-project', path: workspace, mcpEnabledServers: [server.id] }]);
+    writeJson(join(scratch, '.nexttools', 'config.json'), { mcpServers: [server], mcpEnabledServers: [server.id] });
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{ id: 'runtime-project', path: workspace, mcpEnabledServers: [server.id] }]);
     const { handleReload } = await import('./admin-api');
     expect(await handleReload()).toMatchObject({ success: true });
     expect(sessionEngineMocks.updateMcpServers).toHaveBeenCalledWith([expect.objectContaining({ id: server.id })]);
@@ -285,7 +285,7 @@ describe('admin-api help registry', () => {
     expect(record).toContain('--kind text|audio');
     expect(record).toContain('New workflows use this command');
     expect(thought).toContain('Legacy compatibility alias');
-    expect(thought).toContain("New Agent workflows use\n'myagents record'");
+    expect(thought).toContain("New Agent workflows use\n'nexttools record'");
   });
 
   it('provides exact multi-level AnyDoc help without a readme command', async () => {
@@ -300,7 +300,7 @@ describe('admin-api help registry', () => {
 
     for (const leaf of ['convert', 'status', 'wait', 'cancel', 'list']) {
       const text = String((handleHelp({ path: ['anydoc', leaf] }).data as { text?: string })?.text ?? '');
-      expect(text).toContain(`myagents anydoc ${leaf}`);
+      expect(text).toContain(`nexttools anydoc ${leaf}`);
       expect(text).toContain('WHEN TO CALL');
       expect(text).toContain('EFFECT');
       expect(text).toContain('OPTIONS');
@@ -328,7 +328,7 @@ describe('admin-api help registry', () => {
 
     for (const leaf of ['transcribe', 'status', 'wait', 'cancel', 'list']) {
       const text = String((handleHelp({ path: ['speech', leaf] }).data as { text?: string })?.text ?? '');
-      expect(text).toContain(`myagents speech ${leaf}`);
+      expect(text).toContain(`nexttools speech ${leaf}`);
       expect(text).not.toContain('--session-id');
       expect(text).not.toMatch(/^\s*--workspace\b/m);
     }
@@ -346,7 +346,7 @@ describe('admin-api help registry', () => {
       ['config', 'set'],
     ]) {
       const text = String((handleHelp({ path }).data as { text?: string })?.text ?? '');
-      expect(text).toContain(`myagents ${path.join(' ')}`);
+      expect(text).toContain(`nexttools ${path.join(' ')}`);
       expect(text).toContain('--dry-run');
       expect(text).toMatch(/without (writing|persisting)|does not (write|persist)/i);
     }
@@ -355,7 +355,7 @@ describe('admin-api help registry', () => {
   it('distinguishes API-key and subscription verification in exact model verify help', async () => {
     const { handleHelp } = await import('./admin-api');
     const text = String((handleHelp({ path: ['model', 'verify'] }).data as { text?: string })?.text ?? '');
-    expect(text).toContain('myagents model verify');
+    expect(text).toContain('nexttools model verify');
     expect(text).toContain('API-key');
     expect(text).toContain('subscription');
   });
@@ -374,7 +374,7 @@ describe('admin-api help registry', () => {
     for (const path of leaves) {
       const result = handleHelp({ path });
       const text = String((result.data as { text?: string })?.text ?? '');
-      expect(text).toContain(`myagents ${path.join(' ')}`);
+      expect(text).toContain(`nexttools ${path.join(' ')}`);
       expect(text).toContain('WHEN TO CALL');
       expect(text).toContain('EFFECT');
       expect(text).toContain('OPTIONS');
@@ -403,11 +403,11 @@ describe('admin-api help registry', () => {
       const text = String((handleHelp({ path }).data as { text: string }).text);
       const parent = String((handleHelp({ path: path.slice(0, 1) }).data as { text: string }).text);
       expect(text).not.toBe(parent);
-      expect(text).toContain(`myagents ${path.join(' ')}`);
+      expect(text).toContain(`nexttools ${path.join(' ')}`);
       expect(text).toContain('--');
     }
     const shared = String((handleHelp({ path: ['model', 'list'] }).data as { text: string }).text);
-    expect(shared).toContain('shared "myagents model" reference');
+    expect(shared).toContain('shared "nexttools model" reference');
     expect(shared).toContain('not a separate help page');
     const agentHelp = String((handleHelp({ path: ['agent'] }).data as { text: string }).text);
     expect(agentHelp).toContain('network-diagnose');
@@ -424,7 +424,7 @@ describe('admin-api help registry', () => {
       ['agent', 'show', 'agent-id'], ['space', 'issue', 'view', 'issue-id'],
     ]) {
       const text = String((handleHelp({ path }).data as { text: string }).text);
-      expect(text).not.toContain('shared "myagents');
+      expect(text).not.toContain('shared "nexttools');
     }
     const info = String((handleHelp({ path: ['skill', 'info'] }).data as { text: string }).text);
     expect(info).toContain('skill list for enabled');
@@ -458,7 +458,7 @@ describe('admin-api help registry', () => {
     ];
     for (const path of leaves) {
       const text = String((handleHelp({ path }).data as { text?: string })?.text ?? '');
-      expect(text).toContain(`myagents ${path.join(' ')}`);
+      expect(text).toContain(`nexttools ${path.join(' ')}`);
       expect(text).toContain('WHEN TO CALL');
       expect(text).toContain('EFFECT');
       expect(text).toContain('OPTIONS');
@@ -484,26 +484,26 @@ describe('admin-api help registry', () => {
     expect(text).not.toContain('send-media <path>');
   });
 
-  it('documents the official vision command group for myagents vision --help', async () => {
+  it('documents the official vision command group for nexttools vision --help', async () => {
     const { handleHelp } = await import('./admin-api');
 
     const result = handleHelp({ path: ['vision'] });
     const text = (result.data as { text?: string } | undefined)?.text ?? '';
 
     expect(result.success).toBe(true);
-    expect(text).toContain('myagents vision');
+    expect(text).toContain('nexttools vision');
     expect(text).toContain('analyze');
     expect(text).not.toContain('Unknown command group');
   });
 
-  it('documents Goal Mode for myagents goal --help', async () => {
+  it('documents Goal Mode for nexttools goal --help', async () => {
     const { handleHelp } = await import('./admin-api');
 
     const result = handleHelp({ path: ['goal'] });
     const text = (result.data as { text?: string } | undefined)?.text ?? '';
 
     expect(result.success).toBe(true);
-    expect(text).toContain('myagents goal');
+    expect(text).toContain('nexttools goal');
     expect(text).toContain('Goal Mode');
     expect(text).toContain('create --objective');
     expect(text).toContain('--deadline <ISO-8601-with-offset>');
@@ -541,14 +541,14 @@ describe('admin-api help registry', () => {
     const cronText = (cron.data as { text?: string } | undefined)?.text ?? '';
 
     expect(task.success).toBe(true);
-    expect(taskText).toContain('myagents-task-automation');
+    expect(taskText).toContain('nexttools-task-automation');
     expect(taskText).toContain('always');
     expect(taskText).toContain('command Detector');
-    expect(taskText).toContain('myagents task exit');
+    expect(taskText).toContain('nexttools task exit');
     expect(taskText).toContain('deduplicated');
     expect(taskText).toContain('event.id was already handled');
     expect(cron.success).toBe(true);
-    expect(cronText).toContain('myagents task readme');
+    expect(cronText).toContain('nexttools task readme');
     expect(cronText).toContain('Compatibility');
   });
 
@@ -572,7 +572,7 @@ describe('admin-api help registry', () => {
     const { handleHelp } = await import('./admin-api');
     const result = handleHelp({ path: [command] });
     expect(result.success).toBe(true);
-    expect((result.data as { text: string }).text).toContain(`myagents ${command}`);
+    expect((result.data as { text: string }).text).toContain(`nexttools ${command}`);
     expect((result.data as { text: string }).text).toContain('--json');
   });
 
@@ -605,12 +605,12 @@ describe('admin-api help registry', () => {
     const text = (result.data as { text?: string } | undefined)?.text ?? '';
 
     expect(result.success).toBe(true);
-    expect(text).toContain('myagents space issue attachment add');
+    expect(text).toContain('nexttools space issue attachment add');
     expect(text).toContain('WHEN TO CALL');
     expect(text).toContain('ACTOR AND PERMISSIONS');
     expect(text).toContain('FILE SAFETY');
     expect(text).toContain('--space <slug>');
-    expect(text).not.toContain('myagents space — Work with');
+    expect(text).not.toContain('nexttools space — Work with');
   });
 
   it('provides an independent Agent contract for every Space Issue leaf', async () => {
@@ -629,7 +629,7 @@ describe('admin-api help registry', () => {
       const text = (result.data as { text?: string } | undefined)?.text ?? '';
       expect(text, path.join(' ')).toContain('WHEN TO CALL');
       expect(text, path.join(' ')).toContain('RECOVERY');
-      expect(text, path.join(' ')).not.toContain('myagents space — Work with');
+      expect(text, path.join(' ')).not.toContain('nexttools space — Work with');
     }
   });
 
@@ -659,8 +659,8 @@ describe('admin-api help registry', () => {
     expect(updateText).toContain('--clear-goal');
     expect(updateText).toContain('does not change workflow state, assignee, claim');
     expect(updateText).toContain('does not support --dry-run');
-    expect(goalText).not.toContain('myagents space — Discover');
-    expect(updateText).not.toContain('myagents space — Discover');
+    expect(goalText).not.toContain('nexttools space — Discover');
+    expect(updateText).not.toContain('nexttools space — Discover');
   });
 
   it('keeps Space group and related Issue help aligned on discovery, Inbox, and Goal output', async () => {
@@ -685,7 +685,7 @@ describe('admin-api help registry', () => {
 
 describe('external CLI private config envelope', () => {
   it('cannot be read or mutated through generic config handlers', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       externalCliAccess: {
         enabled: true,
         token: 'mae_private',
@@ -921,10 +921,10 @@ describe('admin-api AnyDoc forwarding', () => {
 
 describe('admin-api speech forwarding', () => {
   function enableSpeechForCurrentSession(): void {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       enabledOfficialToolIds: ['speech-recognition'],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-speech',
       name: 'Speech Workspace',
       path: '/workspace/authoritative',
@@ -1021,7 +1021,7 @@ describe('admin-api Space workspace identity', () => {
   it('enriches Space commands with the stable project id for the requested workspace', async () => {
     const workspace = join(scratch, 'workspace');
     mkdirSync(workspace);
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-stable-id',
       name: 'Workspace',
       path: workspace,
@@ -1042,7 +1042,7 @@ describe('admin-api Space workspace identity', () => {
   it('preserves an explicit workspace id so identity mismatches fail closed downstream', async () => {
     const workspace = join(scratch, 'workspace-explicit');
     mkdirSync(workspace);
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-stable-id',
       name: 'Workspace',
       path: workspace,
@@ -1067,7 +1067,7 @@ describe('admin-api Space workspace identity', () => {
   it('forwards only the exact persisted Registered Agent Session origin as actor authority', async () => {
     const workspace = join(scratch, 'workspace-origin');
     mkdirSync(workspace);
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-origin',
       name: 'Origin Workspace',
       path: workspace,
@@ -1103,13 +1103,13 @@ describe('admin-api goal', () => {
     const { handleGoalCreate } = await import('./admin-api');
     sessionEngineMocks.state.context = {
       sessionId: 'session-im-goal',
-      workspacePath: '/tmp/myagents-goal-workspace',
+      workspacePath: '/tmp/nexttools-goal-workspace',
     };
     setImCronContext({
       botId: 'bot-feishu',
       chatId: 'chat-123',
       platform: 'feishu',
-      workspacePath: '/tmp/myagents-goal-workspace',
+      workspacePath: '/tmp/nexttools-goal-workspace',
     });
     managementApiMocks.managementApi.mockResolvedValueOnce({
       ok: true,
@@ -1121,7 +1121,7 @@ describe('admin-api goal', () => {
     expect(result.success).toBe(true);
     expect(managementApiMocks.managementApi).toHaveBeenCalledWith('/api/goal/create', 'POST', {
       sessionId: 'session-im-goal',
-      workspacePath: '/tmp/myagents-goal-workspace',
+      workspacePath: '/tmp/nexttools-goal-workspace',
       objective: 'Ship it',
     });
     clearImCronContext();
@@ -1131,7 +1131,7 @@ describe('admin-api goal', () => {
     const { handleGoalCreate } = await import('./admin-api');
     sessionEngineMocks.state.context = {
       sessionId: 'session-goal-with-limits',
-      workspacePath: '/tmp/myagents-goal-workspace',
+      workspacePath: '/tmp/nexttools-goal-workspace',
     };
     managementApiMocks.managementApi.mockResolvedValueOnce({
       ok: true,
@@ -1148,7 +1148,7 @@ describe('admin-api goal', () => {
     expect(result.success).toBe(true);
     expect(managementApiMocks.managementApi).toHaveBeenCalledWith('/api/goal/create', 'POST', {
       sessionId: 'session-goal-with-limits',
-      workspacePath: '/tmp/myagents-goal-workspace',
+      workspacePath: '/tmp/nexttools-goal-workspace',
       objective: 'Ship it',
       endConditions,
     });
@@ -1158,7 +1158,7 @@ describe('admin-api goal', () => {
     const { handleGoalUpdate } = await import('./admin-api');
     sessionEngineMocks.state.context = {
       sessionId: 'session-goal-turn',
-      workspacePath: '/tmp/myagents-goal-workspace',
+      workspacePath: '/tmp/nexttools-goal-workspace',
     };
     sessionEngineMocks.state.turnIdentity = {
       queueId: 'queue-current',
@@ -1171,7 +1171,7 @@ describe('admin-api goal', () => {
     expect(result.success).toBe(true);
     expect(managementApiMocks.managementApi).toHaveBeenCalledWith('/api/goal/update', 'POST', {
       sessionId: 'session-goal-turn',
-      workspacePath: '/tmp/myagents-goal-workspace',
+      workspacePath: '/tmp/nexttools-goal-workspace',
       goalId: 'goal-1',
       queueId: 'queue-current',
       status: 'complete',
@@ -1183,7 +1183,7 @@ describe('admin-api goal', () => {
     const { handleGoalUpdate } = await import('./admin-api');
     sessionEngineMocks.state.context = {
       sessionId: 'session-stale-goal-turn',
-      workspacePath: '/tmp/myagents-goal-workspace',
+      workspacePath: '/tmp/nexttools-goal-workspace',
     };
 
     const result = await handleGoalUpdate({ status: 'complete', reason: 'stale completion' });
@@ -1206,7 +1206,7 @@ describe('admin-api cron create', () => {
     const payload = {
       name: 'Codex automation',
       message: 'Review the workspace',
-      workspacePath: '/tmp/myagents-cron-codex',
+      workspacePath: '/tmp/nexttools-cron-codex',
       intervalMinutes: 30,
       runtime: 'codex',
       runtimeConfig: { source: 'managed-provider', model: 'gpt-5.6-sol' },
@@ -1266,8 +1266,8 @@ describe('admin-api cron create', () => {
   });
 
   it('leaves execution routing unset when the caller did not request a Task override', async () => {
-    const workspacePath = '/tmp/myagents-managed-codex-workspace';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    const workspacePath = '/tmp/nexttools-managed-codex-workspace';
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       defaultProviderId: 'anthropic-sub',
       agents: [{
         id: 'agent-managed-codex',
@@ -1278,7 +1278,7 @@ describe('admin-api cron create', () => {
         runtime: 'builtin',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-managed-codex', path: workspacePath, agentId: 'agent-managed-codex',
     }]);
     const { handleCronCreate } = await import('./admin-api');
@@ -1311,11 +1311,11 @@ describe('admin-api cron create', () => {
     const result = await handleCronCreate({
       prompt: 'Keep going',
       schedule: { kind: 'loop' },
-      workspacePath: '/tmp/myagents-goal-workspace',
+      workspacePath: '/tmp/nexttools-goal-workspace',
     });
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain('Use myagents goal create');
+    expect(result.error).toContain('Use nexttools goal create');
     expect(managementApiMocks.managementApi).not.toHaveBeenCalled();
   });
 });
@@ -1329,7 +1329,7 @@ describe('admin-api cron update', () => {
         task: {
           id: 'cron-codex',
           status: 'running',
-          workspacePath: '/tmp/myagents-cron-codex',
+          workspacePath: '/tmp/nexttools-cron-codex',
           runtime: 'codex',
           runtimeConfig: { source: 'managed-provider', model: 'old-model' },
         },
@@ -1359,11 +1359,11 @@ describe('admin-api cron update', () => {
 
 describe('admin-api accepted task attempt analytics', () => {
   it('uses the same semantic receipt path for Task create and get', async () => {
-    const workspacePath = '/tmp/myagents-task-receipt';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    const workspacePath = '/tmp/nexttools-task-receipt';
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{ id: 'agent-receipt', name: 'Receipt Agent', workspacePath }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-receipt', path: workspacePath, agentId: 'agent-receipt',
     }]);
     const persistedTask = {
@@ -1427,7 +1427,7 @@ describe('admin-api accepted task attempt analytics', () => {
     const result = await handleTaskCreateAttached({
       name: 'Attached receipt',
       currentSessionId: 'space-session',
-      workspacePath: '/tmp/myagents-space-attached',
+      workspacePath: '/tmp/nexttools-space-attached',
     });
 
     expect(result).toMatchObject({
@@ -1474,9 +1474,9 @@ describe('admin-api accepted task attempt analytics', () => {
           statusMeaning: expect.stringContaining('scheduler is enabled'),
           resultAccess: {
             mode: 'execution-session',
-            inspectTaskCommand: 'myagents task get task-run-accepted --json',
-            inspectRunsCommand: 'myagents task runs task-run-accepted --limit 5 --full --json',
-            inspectCommentsCommand: 'myagents task comments task-run-accepted --limit 50 --json',
+            inspectTaskCommand: 'nexttools task get task-run-accepted --json',
+            inspectRunsCommand: 'nexttools task runs task-run-accepted --limit 5 --full --json',
+            inspectCommentsCommand: 'nexttools task comments task-run-accepted --limit 50 --json',
           },
         },
       },
@@ -1685,10 +1685,10 @@ describe('admin-api Task Agent experience', () => {
     const workspacePath = join(scratch, 'current-workspace');
     mkdirSync(workspacePath, { recursive: true });
     agentSessionMocks.agentDir = workspacePath;
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{ id: 'agent-current', name: 'Current Agent', workspacePath }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-current',
       name: 'Current Project',
       path: workspacePath,
@@ -1750,7 +1750,7 @@ describe('admin-api Task Agent experience', () => {
     const workspacePath = configureCurrentWorkspace();
     const otherPath = join(scratch, 'other-workspace');
     mkdirSync(otherPath, { recursive: true });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [
       {
         id: 'project-current',
         name: 'Current Project',
@@ -1899,8 +1899,8 @@ describe('admin-api Task Agent experience', () => {
     });
     const { setCronTaskContext } = await import('./tools/cron-tools');
     const { handleTaskComment } = await import('./admin-api');
-    const previousSessionId = process.env.MYAGENTS_SESSION_ID;
-    process.env.MYAGENTS_SESSION_ID = 'session-active';
+    const previousSessionId = process.env.NEXTTOOLS_SESSION_ID;
+    process.env.NEXTTOOLS_SESSION_ID = 'session-active';
     setCronTaskContext('task-active', false, 'session-active');
 
     try {
@@ -1919,15 +1919,15 @@ describe('admin-api Task Agent experience', () => {
       );
     } finally {
       setCronTaskContext(null, false, 'session-active');
-      if (previousSessionId === undefined) delete process.env.MYAGENTS_SESSION_ID;
-      else process.env.MYAGENTS_SESSION_ID = previousSessionId;
+      if (previousSessionId === undefined) delete process.env.NEXTTOOLS_SESSION_ID;
+      else process.env.NEXTTOOLS_SESSION_ID = previousSessionId;
     }
   });
 
   it('rejects an omitted comment Task ID outside an active Task turn', async () => {
     const { handleTaskComment } = await import('./admin-api');
-    const previousSessionId = process.env.MYAGENTS_SESSION_ID;
-    process.env.MYAGENTS_SESSION_ID = 'session-idle';
+    const previousSessionId = process.env.NEXTTOOLS_SESSION_ID;
+    process.env.NEXTTOOLS_SESSION_ID = 'session-idle';
     try {
       expect(await handleTaskComment({ body: 'Ambiguous result.' })).toMatchObject({
         success: false,
@@ -1935,8 +1935,8 @@ describe('admin-api Task Agent experience', () => {
       });
       expect(managementApiMocks.managementApi).not.toHaveBeenCalled();
     } finally {
-      if (previousSessionId === undefined) delete process.env.MYAGENTS_SESSION_ID;
-      else process.env.MYAGENTS_SESSION_ID = previousSessionId;
+      if (previousSessionId === undefined) delete process.env.NEXTTOOLS_SESSION_ID;
+      else process.env.NEXTTOOLS_SESSION_ID = previousSessionId;
     }
   });
 
@@ -1946,8 +1946,8 @@ describe('admin-api Task Agent experience', () => {
       comment: { id: 'comment-agent' },
     });
     const { handleTaskComment } = await import('./admin-api');
-    const previousSessionId = process.env.MYAGENTS_SESSION_ID;
-    process.env.MYAGENTS_SESSION_ID = 'session-trusted';
+    const previousSessionId = process.env.NEXTTOOLS_SESSION_ID;
+    process.env.NEXTTOOLS_SESSION_ID = 'session-trusted';
     try {
       await handleTaskComment({
         id: 'task-1',
@@ -1965,16 +1965,16 @@ describe('admin-api Task Agent experience', () => {
         },
       );
     } finally {
-      if (previousSessionId === undefined) delete process.env.MYAGENTS_SESSION_ID;
-      else process.env.MYAGENTS_SESSION_ID = previousSessionId;
+      if (previousSessionId === undefined) delete process.env.NEXTTOOLS_SESSION_ID;
+      else process.env.NEXTTOOLS_SESSION_ID = previousSessionId;
     }
   });
 });
 
 describe('admin-api task runtime model identity', () => {
   it('treats an explicit Task providerId as builtin instead of inheriting an external Agent runtime', async () => {
-    const workspacePath = '/tmp/myagents-task-builtin-provider';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    const workspacePath = '/tmp/nexttools-task-builtin-provider';
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-external-default',
         name: 'External Default',
@@ -1982,7 +1982,7 @@ describe('admin-api task runtime model identity', () => {
         runtime: 'codex',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-external-default',
       path: workspacePath,
       agentId: 'agent-external-default',
@@ -2070,7 +2070,7 @@ describe('admin-api task runtime model identity', () => {
         ok: true,
         task: {
           id: 'task-managed-update',
-          workspacePath: '/tmp/myagents-managed-task-update',
+          workspacePath: '/tmp/nexttools-managed-task-update',
           runtime: 'codex',
           runtimeConfig: { source: 'managed-provider', model: 'old-model' },
         },
@@ -2108,7 +2108,7 @@ describe('admin-api task runtime model identity', () => {
         ok: true,
         task: {
           id: 'task-clear-provider-switch',
-          workspacePath: '/tmp/myagents-clear-provider-switch',
+          workspacePath: '/tmp/nexttools-clear-provider-switch',
           runtime: 'builtin',
           providerId: 'anthropic',
           model: 'claude-sonnet-4-6',
@@ -2135,8 +2135,8 @@ describe('admin-api task runtime model identity', () => {
   });
 
   it('rejects inherited managed source when the workspace runtime is not Codex', async () => {
-    const workspacePath = '/tmp/myagents-claude-code-task-source';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    const workspacePath = '/tmp/nexttools-claude-code-task-source';
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-claude-code-task-source',
         name: 'Claude Code Task Source',
@@ -2144,7 +2144,7 @@ describe('admin-api task runtime model identity', () => {
         runtime: 'claude-code',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-claude-code-task-source', path: workspacePath, agentId: 'agent-claude-code-task-source',
     }]);
     const { handleTaskCreateDirect } = await import('./admin-api');
@@ -2161,8 +2161,8 @@ describe('admin-api task runtime model identity', () => {
   });
 
   it('validates clearRuntimeOverride against the inherited Agent identity', async () => {
-    const workspacePath = '/tmp/myagents-clear-runtime-override';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    const workspacePath = '/tmp/nexttools-clear-runtime-override';
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-clear-runtime-override',
         name: 'Clear Runtime Override',
@@ -2170,7 +2170,7 @@ describe('admin-api task runtime model identity', () => {
         runtime: 'builtin',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-clear-runtime-override', path: workspacePath, agentId: 'agent-clear-runtime-override',
     }]);
     managementApiMocks.managementApi.mockResolvedValueOnce({
@@ -2196,8 +2196,8 @@ describe('admin-api task runtime model identity', () => {
   });
 
   it('uses the managed Codex catalog when a managed Agent Task only overrides model', async () => {
-    const workspacePath = '/tmp/myagents-managed-task-model';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    const workspacePath = '/tmp/nexttools-managed-task-model';
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-managed-task-model',
         name: 'Managed Task Model',
@@ -2207,7 +2207,7 @@ describe('admin-api task runtime model identity', () => {
         runtime: 'builtin',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-managed-task-model', path: workspacePath, agentId: 'agent-managed-task-model',
     }]);
     const { handleTaskCreateDirect } = await import('./admin-api');
@@ -2245,8 +2245,8 @@ describe('admin-api task runtime model identity', () => {
   });
 
   it('rejects system-only permission values for inherited managed Codex', async () => {
-    const workspacePath = '/tmp/myagents-managed-task-permission';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    const workspacePath = '/tmp/nexttools-managed-task-permission';
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-managed-task-permission',
         name: 'Managed Task Permission',
@@ -2256,7 +2256,7 @@ describe('admin-api task runtime model identity', () => {
         runtime: 'builtin',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-managed-task-permission', path: workspacePath, agentId: 'agent-managed-task-permission',
     }]);
     const { handleTaskCreateDirect } = await import('./admin-api');
@@ -2273,9 +2273,9 @@ describe('admin-api task runtime model identity', () => {
   });
 
   it('rejects inherited managed Codex when its runtime is not installed', async () => {
-    const workspacePath = '/tmp/myagents-managed-task-missing-runtime';
+    const workspacePath = '/tmp/nexttools-managed-task-missing-runtime';
     runtimeModelMocks.managedInstalled = false;
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-managed-task-missing-runtime',
         name: 'Managed Task Missing Runtime',
@@ -2285,7 +2285,7 @@ describe('admin-api task runtime model identity', () => {
         runtime: 'builtin',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-managed-task-missing-runtime', path: workspacePath, agentId: 'agent-managed-task-missing-runtime',
     }]);
     const { handleTaskCreateDirect } = await import('./admin-api');
@@ -2305,7 +2305,7 @@ describe('admin-api task runtime model identity', () => {
 
 describe('admin-api agent set configuration intent', () => {
   it('commits an IM model default without projecting Runtime changes before the caller releases its peer fence', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       providerVerifyStatus: { 'anthropic-sub': { status: 'valid' } },
       agents: [{ id: 'im-agent', name: 'IM Agent', runtime: 'builtin', enabled: true,
         providerId: 'anthropic-sub', model: 'old', permissionMode: 'plan', mcpEnabledServers: ['owned-mcp'] }],
@@ -2319,7 +2319,7 @@ describe('admin-api agent set configuration intent', () => {
 
   it('rejects unavailable default selections and new Channel execution overrides before writing', async () => {
     const config = { agents: [{ id: 'im-agent', name: 'IM Agent', permissionMode: 'auto', channels: [] }] };
-    writeJson(join(scratch, '.myagents', 'config.json'), config);
+    writeJson(join(scratch, '.nexttools', 'config.json'), config);
     const { commitAgentModelSelection, handleAgentChannelAdd } = await import('./admin-api');
     expect(await commitAgentModelSelection('im-agent', { kind: 'product-provider', providerId: 'anthropic-sub', model: 'claude-sonnet-4-6' }))
       .toMatchObject({ success: false });
@@ -2342,7 +2342,7 @@ describe('admin-api agent set configuration intent', () => {
         permissionMode: 'auto',
       }],
     };
-    writeJson(join(scratch, '.myagents', 'config.json'), config);
+    writeJson(join(scratch, '.nexttools', 'config.json'), config);
     const { handleAgentSet } = await import('./admin-api');
 
     const result = await handleAgentSet({
@@ -2358,8 +2358,8 @@ describe('admin-api agent set configuration intent', () => {
   });
 
   it('stores managed Codex product permission without changing provider or model', async () => {
-    const workspacePath = '/tmp/myagents-agent-set-managed-codex';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    const workspacePath = '/tmp/nexttools-agent-set-managed-codex';
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-managed-codex',
         name: 'Managed Codex',
@@ -2370,7 +2370,7 @@ describe('admin-api agent set configuration intent', () => {
         permissionMode: 'auto',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-managed-codex',
       name: 'Managed Codex',
       path: workspacePath,
@@ -2395,7 +2395,7 @@ describe('admin-api agent set configuration intent', () => {
       runtime: 'builtin',
       permissionMode: 'fullAgency',
     });
-    expect(readJson(join(scratch, '.myagents', 'projects.json'))[0]).toMatchObject({
+    expect(readJson(join(scratch, '.nexttools', 'projects.json'))[0]).toMatchObject({
       providerId: 'codex-sub',
       model: 'gpt-5.6-sol',
       permissionMode: 'fullAgency',
@@ -2408,11 +2408,11 @@ describe('admin-api agent set configuration intent', () => {
   });
 
   it('writes DSH runtimePreference atomically with the legacy Runtime projection', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-runtime-dsh',
         name: 'DSH Intent',
-        workspacePath: '/tmp/myagents-agent-runtime-dsh',
+        workspacePath: '/tmp/nexttools-agent-runtime-dsh',
         runtime: 'codex',
         runtimePreference: { family: 'external', id: 'codex' },
         runtimeConfig: { model: 'gpt-5.6-sol', permissionMode: 'full-auto' },
@@ -2447,7 +2447,7 @@ describe('admin-api agent set configuration intent', () => {
   });
 
   it('rejects an invalid permission mode without mutating either config store', async () => {
-    const workspacePath = '/tmp/myagents-agent-set-invalid';
+    const workspacePath = '/tmp/nexttools-agent-set-invalid';
     const config = {
       agents: [{
         id: 'agent-invalid',
@@ -2467,8 +2467,8 @@ describe('admin-api agent set configuration intent', () => {
       model: 'claude-opus-4-6',
       permissionMode: 'auto',
     }];
-    writeJson(join(scratch, '.myagents', 'config.json'), config);
-    writeJson(join(scratch, '.myagents', 'projects.json'), projects);
+    writeJson(join(scratch, '.nexttools', 'config.json'), config);
+    writeJson(join(scratch, '.nexttools', 'projects.json'), projects);
     const { handleAgentSet } = await import('./admin-api');
 
     const result = await handleAgentSet({
@@ -2480,12 +2480,12 @@ describe('admin-api agent set configuration intent', () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain('Valid');
     expect(readConfig()).toEqual(config);
-    expect(readJson(join(scratch, '.myagents', 'projects.json'))).toEqual(projects);
+    expect(readJson(join(scratch, '.nexttools', 'projects.json'))).toEqual(projects);
     expect(managementApiMocks.managementApi).not.toHaveBeenCalled();
   });
 
   it('rejects managed Codex full-auto instead of escalating it to no-restrictions', async () => {
-    const workspacePath = '/tmp/myagents-agent-set-full-auto';
+    const workspacePath = '/tmp/nexttools-agent-set-full-auto';
     const config = {
       agents: [{
         id: 'agent-full-auto',
@@ -2496,8 +2496,8 @@ describe('admin-api agent set configuration intent', () => {
         permissionMode: 'auto',
       }],
     };
-    writeJson(join(scratch, '.myagents', 'config.json'), config);
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'config.json'), config);
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-full-auto',
       name: 'Full Auto Guard',
       path: workspacePath,
@@ -2521,7 +2521,7 @@ describe('admin-api agent set configuration intent', () => {
   });
 
   it('rejects runtimeConfig permission values outside the selected system runtime vocabulary', async () => {
-    const workspacePath = '/tmp/myagents-agent-runtime-config-invalid';
+    const workspacePath = '/tmp/nexttools-agent-runtime-config-invalid';
     const config = {
       agents: [{
         id: 'agent-runtime-config-invalid',
@@ -2534,7 +2534,7 @@ describe('admin-api agent set configuration intent', () => {
         permissionMode: 'auto',
       }],
     };
-    writeJson(join(scratch, '.myagents', 'config.json'), config);
+    writeJson(join(scratch, '.nexttools', 'config.json'), config);
     const { handleAgentSet } = await import('./admin-api');
 
     const invalid = await handleAgentSet({
@@ -2561,14 +2561,14 @@ describe('admin-api agent set configuration intent', () => {
       agents: [{
         id: 'agent-managed-runtime-config',
         name: 'Managed Runtime Config Guard',
-        workspacePath: '/tmp/myagents-agent-managed-runtime-config',
+        workspacePath: '/tmp/nexttools-agent-managed-runtime-config',
         providerId: 'codex-sub',
         model: 'gpt-5.6-sol',
         runtime: 'builtin',
         permissionMode: 'auto',
       }],
     };
-    writeJson(join(scratch, '.myagents', 'config.json'), config);
+    writeJson(join(scratch, '.nexttools', 'config.json'), config);
     const { handleAgentSet } = await import('./admin-api');
 
     const result = await handleAgentSet({
@@ -2586,7 +2586,7 @@ describe('admin-api agent set configuration intent', () => {
     ['providerId', 'provider-that-does-not-exist', 'Unknown providerId'],
     ['model', 'claude-typo-does-not-exist', 'is not registered'],
   ])('rejects invalid %s before either store or live state changes', async (key, value, errorText) => {
-    const workspacePath = '/tmp/myagents-agent-set-invalid-provider-model';
+    const workspacePath = '/tmp/nexttools-agent-set-invalid-provider-model';
     const config = {
       providerVerifyStatus: {
         'anthropic-sub': { status: 'valid', verifiedAt: '2026-07-21T00:00:00.000Z' },
@@ -2609,8 +2609,8 @@ describe('admin-api agent set configuration intent', () => {
       model: 'claude-sonnet-4-6',
       permissionMode: 'auto',
     }];
-    writeJson(join(scratch, '.myagents', 'config.json'), config);
-    writeJson(join(scratch, '.myagents', 'projects.json'), projects);
+    writeJson(join(scratch, '.nexttools', 'config.json'), config);
+    writeJson(join(scratch, '.nexttools', 'projects.json'), projects);
     const { handleAgentSet } = await import('./admin-api');
 
     const result = await handleAgentSet({ id: 'agent-invalid-route', key, value });
@@ -2618,7 +2618,7 @@ describe('admin-api agent set configuration intent', () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain(errorText);
     expect(readConfig()).toEqual(config);
-    expect(readJson(join(scratch, '.myagents', 'projects.json'))).toEqual(projects);
+    expect(readJson(join(scratch, '.nexttools', 'projects.json'))).toEqual(projects);
     expect(managementApiMocks.managementApi).not.toHaveBeenCalled();
   });
 
@@ -2630,8 +2630,8 @@ describe('admin-api agent set configuration intent', () => {
     removedModels,
     addCustomModel,
   ) => {
-    const workspacePath = `/tmp/myagents-agent-effective-model-${value}`;
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    const workspacePath = `/tmp/nexttools-agent-effective-model-${value}`;
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       providerVerifyStatus: {
         'anthropic-sub': { status: 'valid', verifiedAt: '2026-07-21T00:00:00.000Z' },
       },
@@ -2655,7 +2655,7 @@ describe('admin-api agent set configuration intent', () => {
         permissionMode: 'auto',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-effective-model',
       name: 'Effective Model',
       path: workspacePath,
@@ -2671,14 +2671,14 @@ describe('admin-api agent set configuration intent', () => {
     expect(result.success).toBe(addCustomModel);
     if (addCustomModel) {
       expect((readConfig().agents as Record<string, unknown>[])[0]).toMatchObject({ model: value });
-      expect(readJson(join(scratch, '.myagents', 'projects.json'))[0]).toMatchObject({ model: value });
+      expect(readJson(join(scratch, '.nexttools', 'projects.json'))[0]).toMatchObject({ model: value });
     } else {
       expect(result.error).toContain('not registered');
     }
   });
 
   it('rolls back the Agent write when the Project mirror cannot be saved', async () => {
-    const workspacePath = '/tmp/myagents-agent-set-project-failure';
+    const workspacePath = '/tmp/nexttools-agent-set-project-failure';
     const config = {
       agents: [{
         id: 'agent-project-failure',
@@ -2698,8 +2698,8 @@ describe('admin-api agent set configuration intent', () => {
       model: 'claude-sonnet-4-6',
       permissionMode: 'auto',
     }];
-    writeJson(join(scratch, '.myagents', 'config.json'), config);
-    writeJson(join(scratch, '.myagents', 'projects.json'), projects);
+    writeJson(join(scratch, '.nexttools', 'config.json'), config);
+    writeJson(join(scratch, '.nexttools', 'projects.json'), projects);
     const { handleAgentSet } = await import('./admin-api');
     adminConfigBehavior.failProjectWrite = true;
 
@@ -2712,13 +2712,13 @@ describe('admin-api agent set configuration intent', () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain('Project mirror could not be saved');
     expect((readConfig().agents as Record<string, unknown>[])[0]).toEqual(config.agents[0]);
-    expect(readJson(join(scratch, '.myagents', 'projects.json'))).toEqual(projects);
+    expect(readJson(join(scratch, '.nexttools', 'projects.json'))).toEqual(projects);
     expect(managementApiMocks.managementApi).not.toHaveBeenCalled();
   });
 
   it('serializes concurrent Agent intents so Agent and Project end on the same value', async () => {
-    const workspacePath = '/tmp/myagents-agent-set-concurrent';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    const workspacePath = '/tmp/nexttools-agent-set-concurrent';
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       providerVerifyStatus: {
         'anthropic-sub': { status: 'valid', verifiedAt: '2026-07-21T00:00:00.000Z' },
       },
@@ -2731,7 +2731,7 @@ describe('admin-api agent set configuration intent', () => {
         permissionMode: 'auto',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-concurrent',
       name: 'Concurrent',
       path: workspacePath,
@@ -2749,14 +2749,14 @@ describe('admin-api agent set configuration intent', () => {
 
     expect(results.every(result => result.success)).toBe(true);
     const agentModel = ((readConfig().agents as Record<string, unknown>[])[0]).model;
-    const projectModel = readJson(join(scratch, '.myagents', 'projects.json'))[0].model;
+    const projectModel = readJson(join(scratch, '.nexttools', 'projects.json'))[0].model;
     expect(projectModel).toBe(agentModel);
     expect(['claude-opus-4-6', 'claude-haiku-4-5']).toContain(agentModel);
   });
 
   it('validates a delayed model intent against the provider committed before its lock turn', async () => {
-    const workspacePath = '/tmp/myagents-agent-set-validation-lock';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    const workspacePath = '/tmp/nexttools-agent-set-validation-lock';
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       providerVerifyStatus: {
         'anthropic-sub': { status: 'valid', verifiedAt: '2026-07-21T00:00:00.000Z' },
         'xai-sub': { status: 'valid', verifiedAt: '2026-07-21T00:00:00.000Z' },
@@ -2770,7 +2770,7 @@ describe('admin-api agent set configuration intent', () => {
         permissionMode: 'auto',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-validation-lock',
       name: 'Validation Lock',
       path: workspacePath,
@@ -2808,7 +2808,7 @@ describe('admin-api agent set configuration intent', () => {
       providerId: 'xai-sub',
       model: 'claude-sonnet-4-6',
     });
-    expect(readJson(join(scratch, '.myagents', 'projects.json'))[0]).toMatchObject({
+    expect(readJson(join(scratch, '.nexttools', 'projects.json'))[0]).toMatchObject({
       providerId: 'xai-sub',
       model: 'claude-sonnet-4-6',
     });
@@ -2818,10 +2818,10 @@ describe('admin-api agent set configuration intent', () => {
     ['providerId', 'anthropic-sub'],
     ['model', 'claude-opus-4-6'],
   ])('mirrors %s to the Project compatibility store and reloads the live Agent', async (key, value) => {
-    const workspacePath = '/tmp/myagents-agent-set-mirror';
+    const workspacePath = '/tmp/nexttools-agent-set-mirror';
     const initialProviderId = key === 'model' ? 'anthropic-sub' : 'codex-sub';
     const initialModel = key === 'model' ? 'claude-sonnet-4-6' : 'gpt-5.6-sol';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       providerVerifyStatus: {
         'anthropic-sub': { status: 'valid', verifiedAt: '2026-07-21T00:00:00.000Z' },
       },
@@ -2834,7 +2834,7 @@ describe('admin-api agent set configuration intent', () => {
         permissionMode: 'fullAgency',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-mirror',
       name: 'Mirror',
       path: workspacePath,
@@ -2848,7 +2848,7 @@ describe('admin-api agent set configuration intent', () => {
     const result = await handleAgentSet({ id: 'agent-mirror', key, value });
 
     expect(result.success).toBe(true);
-    expect(readJson(join(scratch, '.myagents', 'projects.json'))[0]).toMatchObject({ [key]: value });
+    expect(readJson(join(scratch, '.nexttools', 'projects.json'))[0]).toMatchObject({ [key]: value });
     expect(managementApiMocks.managementApi).toHaveBeenCalledWith(
       '/api/agent/reload-config',
       'POST',
@@ -2866,9 +2866,9 @@ describe('admin-api agent set configuration intent', () => {
     ['providerId', 'codex-sub'],
     ['model', 'gpt-5.6-sol'],
   ])('accepts managed Codex %s changes through the product provider catalog', async (key, value) => {
-    const workspacePath = `/tmp/myagents-agent-managed-${key}`;
+    const workspacePath = `/tmp/nexttools-agent-managed-${key}`;
     const settingProvider = key === 'providerId';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       managedCodexProviderDevGate: true,
       managedCodexRuntimeInstall: { status: 'installed', usable: true },
       managedCodexAuth: { status: 'valid', authMethod: 'chatgpt' },
@@ -2881,7 +2881,7 @@ describe('admin-api agent set configuration intent', () => {
         permissionMode: 'auto',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-managed-set',
       name: 'Managed Set',
       path: workspacePath,
@@ -2896,11 +2896,11 @@ describe('admin-api agent set configuration intent', () => {
 
     expect(result.success).toBe(true);
     expect((readConfig().agents as Record<string, unknown>[])[0]).toMatchObject({ [key]: value });
-    expect(readJson(join(scratch, '.myagents', 'projects.json'))[0]).toMatchObject({ [key]: value });
+    expect(readJson(join(scratch, '.nexttools', 'projects.json'))[0]).toMatchObject({ [key]: value });
   });
 
   it('rejects an unverified subscription provider before mutating either store', async () => {
-    const workspacePath = '/tmp/myagents-agent-unverified-subscription';
+    const workspacePath = '/tmp/nexttools-agent-unverified-subscription';
     const config = {
       agents: [{
         id: 'agent-unverified-subscription',
@@ -2920,8 +2920,8 @@ describe('admin-api agent set configuration intent', () => {
       model: 'claude-sonnet-4-6',
       permissionMode: 'auto',
     }];
-    writeJson(join(scratch, '.myagents', 'config.json'), config);
-    writeJson(join(scratch, '.myagents', 'projects.json'), projects);
+    writeJson(join(scratch, '.nexttools', 'config.json'), config);
+    writeJson(join(scratch, '.nexttools', 'projects.json'), projects);
     const { handleAgentSet } = await import('./admin-api');
 
     const result = await handleAgentSet({
@@ -2933,26 +2933,26 @@ describe('admin-api agent set configuration intent', () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain('not verified');
     expect(readConfig()).toEqual(config);
-    expect(readJson(join(scratch, '.myagents', 'projects.json'))).toEqual(projects);
+    expect(readJson(join(scratch, '.nexttools', 'projects.json'))).toEqual(projects);
     expect(managementApiMocks.managementApi).not.toHaveBeenCalled();
   });
 
   it('shows managed Codex as its effective runtime instead of the stored builtin carrier', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-managed-show',
         name: 'Managed Show',
-        workspacePath: '/tmp/myagents-agent-managed-show',
+        workspacePath: '/tmp/nexttools-agent-managed-show',
         providerId: 'codex-sub',
         model: 'gpt-5.6-sol',
         runtime: 'builtin',
         permissionMode: 'fullAgency',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-managed-show',
       name: 'Managed Show',
-      path: '/tmp/myagents-agent-managed-show',
+      path: '/tmp/nexttools-agent-managed-show',
       agentId: 'agent-managed-show',
     }]);
     const { handleAgentShow } = await import('./admin-api');
@@ -3075,7 +3075,7 @@ describe('admin-api model add', () => {
 
   it('keeps the provider definition when remove config cleanup fails', async () => {
     const { handleModelAdd, handleModelRemove } = await import('./admin-api');
-    const providerPath = join(scratch, '.myagents', 'providers', 'transaction-provider.json');
+    const providerPath = join(scratch, '.nexttools', 'providers', 'transaction-provider.json');
     const providerPayload = {
       id: 'transaction-provider',
       name: 'Transaction Provider',
@@ -3097,7 +3097,7 @@ describe('admin-api model add', () => {
 
 describe('admin-api model verify credential authority', () => {
   it('verifies sdk-native subscriptions without requiring an API key', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {});
+    writeJson(join(scratch, '.nexttools', 'config.json'), {});
     const { handleModelVerify } = await import('./admin-api');
 
     const result = await handleModelVerify({ id: 'anthropic-sub', model: 'claude-sonnet-5' });
@@ -3111,7 +3111,7 @@ describe('admin-api model verify credential authority', () => {
   });
 
   it('rejects host-managed subscriptions at their credential owner before the API-key path', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {});
+    writeJson(join(scratch, '.nexttools', 'config.json'), {});
     const { handleModelVerify } = await import('./admin-api');
 
     const result = await handleModelVerify({ id: 'xai-sub' });
@@ -3126,7 +3126,7 @@ describe('admin-api model verify credential authority', () => {
   });
 
   it('redirects runtime-managed subscriptions to the managed-provider owner', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), { managedCodexProviderDevGate: true });
+    writeJson(join(scratch, '.nexttools', 'config.json'), { managedCodexProviderDevGate: true });
     const { handleModelVerify } = await import('./admin-api');
 
     const result = await handleModelVerify({ id: 'codex-sub' });
@@ -3146,18 +3146,18 @@ describe('admin-api model verify credential authority', () => {
 
 describe('admin-api config dry-run contract', () => {
   it('previews config set without writing config.json', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), { uiLanguage: 'zh-CN' });
-    const before = readFileSync(join(scratch, '.myagents', 'config.json'), 'utf-8');
+    writeJson(join(scratch, '.nexttools', 'config.json'), { uiLanguage: 'zh-CN' });
+    const before = readFileSync(join(scratch, '.nexttools', 'config.json'), 'utf-8');
     const { handleConfigSet } = await import('./admin-api');
 
     const result = await handleConfigSet({ key: 'uiLanguage', value: 'en-US', dryRun: true });
 
     expect(result).toMatchObject({ success: true, dryRun: true, preview: { key: 'uiLanguage', value: 'en-US' } });
-    expect(readFileSync(join(scratch, '.myagents', 'config.json'), 'utf-8')).toBe(before);
+    expect(readFileSync(join(scratch, '.nexttools', 'config.json'), 'utf-8')).toBe(before);
   });
 
   it('rejects unknown keys in both dry-run and write, and removes an old stray key', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), { appearanceMode: 'system', notARealKey: 'x' });
+    writeJson(join(scratch, '.nexttools', 'config.json'), { appearanceMode: 'system', notARealKey: 'x' });
     const { handleConfigSet, handleConfigUnset } = await import('./admin-api');
     for (const dryRun of [true, false]) {
       await expect(handleConfigSet({ key: 'appearanceMod', value: 'dark', dryRun })).resolves.toMatchObject({
@@ -3175,7 +3175,7 @@ describe('admin-api config dry-run contract', () => {
 });
 
 describe('admin-api MCP add contract', () => {
-  it.each(['playwright', 'myagents-browser'])('rejects the reserved built-in Browser id %s', async id => {
+  it.each(['playwright', 'nexttools-browser'])('rejects the reserved built-in Browser id %s', async id => {
     const { handleMcpAdd } = await import('./admin-api');
 
     const result = await handleMcpAdd({
@@ -3186,7 +3186,7 @@ describe('admin-api MCP add contract', () => {
       success: false,
       error: expect.stringContaining('reserved by a built-in Browser tool'),
     });
-    expect(existsSync(join(scratch, '.myagents', 'config.json'))).toBe(false);
+    expect(existsSync(join(scratch, '.nexttools', 'config.json'))).toBe(false);
     expect(managementApiMocks.managementApi).not.toHaveBeenCalled();
   });
 
@@ -3232,7 +3232,7 @@ describe('admin-api MCP add contract', () => {
       env: { TOKEN: 'original-secret', MODE: 'production' },
       isBuiltin: false,
     };
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpServers: [original],
       mcpEnabledServers: ['existing-server'],
     });
@@ -3249,7 +3249,7 @@ describe('admin-api MCP add contract', () => {
     expect(result).toMatchObject({
       success: false,
       error: expect.stringContaining('mcp add only creates new servers'),
-      recoveryHint: { recoveryCommand: 'myagents mcp show existing-server' },
+      recoveryHint: { recoveryCommand: 'nexttools mcp show existing-server' },
     });
     expect(readConfig()).toMatchObject({
       mcpServers: [original],
@@ -3281,7 +3281,7 @@ describe('admin-api MCP add contract', () => {
 
 describe('admin-api MCP connectivity test', () => {
   it('explains global disablement without attempting a connection', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpServers: [{ id: 'ddg-search', type: 'stdio', command: 'uvx', isBuiltin: false }],
       mcpEnabledServers: [],
     });
@@ -3289,13 +3289,13 @@ describe('admin-api MCP connectivity test', () => {
     expect(await handleMcpTest({ id: 'ddg-search' })).toMatchObject({
       success: false,
       error: expect.stringContaining('disabled globally'),
-      recoveryHint: { recoveryCommand: 'myagents mcp enable ddg-search --scope global' },
+      recoveryHint: { recoveryCommand: 'nexttools mcp enable ddg-search --scope global' },
     });
   });
 
   it('diagnoses the managed Browser through its Session capability instead of spawning the sentinel', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
-      mcpEnabledServers: ['myagents-browser'],
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
+      mcpEnabledServers: ['nexttools-browser'],
     });
     managementApiMocks.managementApi.mockResolvedValueOnce({
       ok: true,
@@ -3305,12 +3305,12 @@ describe('admin-api MCP connectivity test', () => {
     });
 
     const { handleMcpTest } = await import('./admin-api');
-    const result = await handleMcpTest({ id: 'myagents-browser' });
+    const result = await handleMcpTest({ id: 'nexttools-browser' });
 
     expect(result).toMatchObject({
       success: true,
       data: {
-        id: 'myagents-browser',
+        id: 'nexttools-browser',
         type: 'application-host',
         state: 'ready',
         sessionScoped: true,
@@ -3327,7 +3327,7 @@ describe('admin-api MCP connectivity test', () => {
   });
 
   it('rejects a configured stdio command that exists but exits before MCP initialize', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpEnabledServers: ['broken-stdio'],
       mcpServers: [{
         id: 'broken-stdio',
@@ -3349,8 +3349,8 @@ describe('admin-api MCP connectivity test', () => {
   it('handshakes with the merged stdio args and env used by persisted MCP config', async () => {
     agentSessionMocks.agentDir = process.cwd();
     const expectedManagedBin = process.platform === 'win32'
-      ? join(scratch, '.myagents', 'npm-global')
-      : join(scratch, '.myagents', 'npm-global', 'bin');
+      ? join(scratch, '.nexttools', 'npm-global')
+      : join(scratch, '.nexttools', 'npm-global', 'bin');
     const serverCode = [
       "import { Server } from '@modelcontextprotocol/sdk/server/index.js';",
       "import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';",
@@ -3363,7 +3363,7 @@ describe('admin-api MCP connectivity test', () => {
       "const server = new Server({ name: 'issue-504-fixture', version: '1.0.0' }, { capabilities: {} });",
       'await server.connect(new StdioServerTransport());',
     ].join('\n');
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpEnabledServers: ['merged-stdio'],
       mcpServers: [{
         id: 'merged-stdio',
@@ -3393,7 +3393,7 @@ describe('admin-api MCP connectivity test', () => {
 
   it('redacts even short configured MCP environment values from stdio handshake diagnostics', async () => {
     const secret = 'z9';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpEnabledServers: ['redacted-stdio'],
       mcpServers: [{
         id: 'redacted-stdio',
@@ -3417,7 +3417,7 @@ describe('admin-api MCP connectivity test', () => {
   it.each(['http', 'sse'] as const)(
     'rejects a 200 response that does not complete an MCP initialize handshake for %s',
     async (type) => {
-      writeJson(join(scratch, '.myagents', 'config.json'), {
+      writeJson(join(scratch, '.nexttools', 'config.json'), {
         mcpEnabledServers: [`invalid-${type}`],
         mcpServers: [{
           id: `invalid-${type}`,
@@ -3445,7 +3445,7 @@ describe('admin-api MCP connectivity test', () => {
   );
 
   it('handshakes with resolved HTTP URL placeholders and configured headers', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpEnabledServers: ['resolved-http'],
       mcpServers: [{
         id: 'resolved-http',
@@ -3504,7 +3504,7 @@ describe('admin-api MCP connectivity test', () => {
   });
 
   it('completes the endpoint and initialize exchange for an SSE server', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpEnabledServers: ['valid-sse'],
       mcpServers: [{
         id: 'valid-sse',
@@ -3575,7 +3575,7 @@ describe('admin-api MCP connectivity test', () => {
   });
 
   it('matches Session OAuth precedence when a canonical configured header is empty', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpEnabledServers: ['oauth-http'],
       mcpServers: [{
         id: 'oauth-http',
@@ -3628,7 +3628,7 @@ describe('admin-api MCP connectivity test', () => {
   });
 
   it('bounds stored OAuth resolution within the overall 15 second test deadline', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpEnabledServers: ['stalled-oauth-http'],
       mcpServers: [{
         id: 'stalled-oauth-http',
@@ -3666,7 +3666,7 @@ describe('admin-api MCP connectivity test', () => {
   });
 
   it('rejects an unknown persisted transport type instead of falling through to valid', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpEnabledServers: ['unknown-transport'],
       mcpServers: [{
         id: 'unknown-transport',
@@ -3689,7 +3689,7 @@ describe('admin-api MCP project scope', () => {
   it('fails project-only enable when the current workspace is not registered', async () => {
     const { handleMcpEnable } = await import('./admin-api');
     agentSessionMocks.agentDir = 'c:/users/me/project/';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpServers: [{
         id: 'win-custom',
         name: 'Windows Custom',
@@ -3698,7 +3698,7 @@ describe('admin-api MCP project scope', () => {
       }],
       mcpEnabledServers: [],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), []);
+    writeJson(join(scratch, '.nexttools', 'projects.json'), []);
 
     const result = await handleMcpEnable({ id: 'win-custom', scope: 'project' });
 
@@ -3710,7 +3710,7 @@ describe('admin-api MCP project scope', () => {
   it('keeps global enable effective when project scope is skipped for an unregistered workspace', async () => {
     const { handleMcpEnable } = await import('./admin-api');
     agentSessionMocks.agentDir = 'c:/users/me/project/';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpServers: [{
         id: 'win-custom',
         name: 'Windows Custom',
@@ -3719,7 +3719,7 @@ describe('admin-api MCP project scope', () => {
       }],
       mcpEnabledServers: [],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), []);
+    writeJson(join(scratch, '.nexttools', 'projects.json'), []);
 
     const result = await handleMcpEnable({ id: 'win-custom', scope: 'both' });
 
@@ -3744,7 +3744,7 @@ describe('admin-api MCP remove/disable legacy HTTP servers', () => {
 
   it('removes HTTP MCP definitions from global config and Agent legacy payloads', async () => {
     const { handleMcpRemove } = await import('./admin-api');
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpServers: [remoteHttp],
       mcpEnabledServers: ['yuandian-law'],
       mcpServerEnv: { 'yuandian-law': { TOKEN: 'secret' } },
@@ -3776,7 +3776,7 @@ describe('admin-api MCP remove/disable legacy HTTP servers', () => {
 
   it('removes Agent-only legacy HTTP MCP servers after Admin API load-boundary promotion', async () => {
     const { handleMcpRemove } = await import('./admin-api');
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpServers: [],
       mcpEnabledServers: [],
       agents: [{
@@ -3804,7 +3804,7 @@ describe('admin-api MCP remove/disable legacy HTTP servers', () => {
 
   it('cascades custom MCP remove across config, projects, sessions, legacy Bot payloads, and Rust stores', async () => {
     const { handleMcpRemove } = await import('./admin-api');
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpServers: [remoteHttp],
       mcpEnabledServers: ['yuandian-law', 'keep'],
       mcpServerEnv: { 'yuandian-law': { TOKEN: 'secret' } },
@@ -3826,13 +3826,13 @@ describe('admin-api MCP remove/disable legacy HTTP servers', () => {
         mcpServersJson: JSON.stringify([remoteHttp]),
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Project',
       path: '/tmp/workspace',
       mcpEnabledServers: ['yuandian-law'],
     }]);
-    writeJson(join(scratch, '.myagents', 'sessions.json'), [{
+    writeJson(join(scratch, '.nexttools', 'sessions.json'), [{
       id: 'session-1',
       agentDir: '/tmp/workspace',
       createdAt: new Date().toISOString(),
@@ -3843,8 +3843,8 @@ describe('admin-api MCP remove/disable legacy HTTP servers', () => {
 
     const result = await handleMcpRemove({ id: 'yuandian-law' });
     const config = readConfig();
-    const project = readJson(join(scratch, '.myagents', 'projects.json'))[0];
-    const session = readJson(join(scratch, '.myagents', 'sessions.json'))[0];
+    const project = readJson(join(scratch, '.nexttools', 'projects.json'))[0];
+    const session = readJson(join(scratch, '.nexttools', 'sessions.json'))[0];
     const agent = (config.agents as Array<Record<string, unknown>>)[0];
     const bot = (config.imBotConfigs as Array<Record<string, unknown>>)[0];
 
@@ -3866,11 +3866,11 @@ describe('admin-api MCP remove/disable legacy HTTP servers', () => {
 
   it('keeps AppConfig definition when Rust Task/Cron cleanup fails', async () => {
     const { handleMcpRemove } = await import('./admin-api');
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpServers: [remoteHttp],
       mcpEnabledServers: ['yuandian-law'],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Project',
       path: '/tmp/workspace',
@@ -3879,15 +3879,15 @@ describe('admin-api MCP remove/disable legacy HTTP servers', () => {
     managementApiMocks.managementApi.mockResolvedValueOnce({
       ok: false,
       error: 'Task store unavailable',
-      recoveryHint: { recoveryCommand: 'myagents status', message: 'retry later' },
+      recoveryHint: { recoveryCommand: 'nexttools status', message: 'retry later' },
     });
 
     const result = await handleMcpRemove({ id: 'yuandian-law' });
     const config = readConfig();
-    const project = readJson(join(scratch, '.myagents', 'projects.json'))[0];
+    const project = readJson(join(scratch, '.nexttools', 'projects.json'))[0];
 
     expect(result.success).toBe(false);
-    expect(result.recoveryHint).toEqual({ recoveryCommand: 'myagents status', message: 'retry later' });
+    expect(result.recoveryHint).toEqual({ recoveryCommand: 'nexttools status', message: 'retry later' });
     expect((config.mcpServers as Array<Record<string, unknown>>).map(s => s.id)).toEqual(['yuandian-law']);
     expect(config.mcpEnabledServers).toEqual(['yuandian-law']);
     expect(project.mcpEnabledServers).toEqual(['yuandian-law']);
@@ -3895,28 +3895,28 @@ describe('admin-api MCP remove/disable legacy HTTP servers', () => {
 
   it('keeps AppConfig definition when session snapshot cleanup cannot be written', async () => {
     const { handleMcpRemove } = await import('./admin-api');
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpServers: [remoteHttp],
       mcpEnabledServers: ['yuandian-law'],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Project',
       path: '/tmp/workspace',
       mcpEnabledServers: ['yuandian-law'],
     }]);
-    writeJson(join(scratch, '.myagents', 'sessions.json'), [{
+    writeJson(join(scratch, '.nexttools', 'sessions.json'), [{
       id: 'session-1',
       agentDir: '/tmp/workspace',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       mcpEnabledServers: ['yuandian-law'],
     }]);
-    mkdirSync(join(scratch, '.myagents', 'sessions.json.tmp'));
+    mkdirSync(join(scratch, '.nexttools', 'sessions.json.tmp'));
 
     const result = await handleMcpRemove({ id: 'yuandian-law' });
     const config = readConfig();
-    const project = readJson(join(scratch, '.myagents', 'projects.json'))[0];
+    const project = readJson(join(scratch, '.nexttools', 'projects.json'))[0];
 
     expect(result.success).toBe(false);
     expect((config.mcpServers as Array<Record<string, unknown>>).map(s => s.id)).toEqual(['yuandian-law']);
@@ -3927,19 +3927,19 @@ describe('admin-api MCP remove/disable legacy HTTP servers', () => {
 
   it('does not delete a new same-id definition added during cleanup-only remove', async () => {
     const { handleMcpRemove } = await import('./admin-api');
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpServers: [],
       mcpEnabledServers: ['yuandian-law'],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Project',
       path: '/tmp/workspace',
       mcpEnabledServers: ['yuandian-law'],
     }]);
-    writeJson(join(scratch, '.myagents', 'sessions.json'), []);
+    writeJson(join(scratch, '.nexttools', 'sessions.json'), []);
     managementApiMocks.managementApi.mockImplementationOnce(async () => {
-      writeJson(join(scratch, '.myagents', 'config.json'), {
+      writeJson(join(scratch, '.nexttools', 'config.json'), {
         mcpServers: [remoteHttp],
         mcpEnabledServers: ['yuandian-law'],
       });
@@ -3948,7 +3948,7 @@ describe('admin-api MCP remove/disable legacy HTTP servers', () => {
 
     const result = await handleMcpRemove({ id: 'yuandian-law' });
     const config = readConfig();
-    const project = readJson(join(scratch, '.myagents', 'projects.json'))[0];
+    const project = readJson(join(scratch, '.nexttools', 'projects.json'))[0];
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('re-added during cleanup-only remove');
@@ -3959,7 +3959,7 @@ describe('admin-api MCP remove/disable legacy HTTP servers', () => {
 
   it('disables Agent-only legacy HTTP MCP servers without letting promotion re-enable them', async () => {
     const { handleMcpDisable } = await import('./admin-api');
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       mcpServers: [],
       mcpEnabledServers: [],
       agents: [{
@@ -3985,7 +3985,7 @@ describe('admin-api MCP remove/disable legacy HTTP servers', () => {
 
 describe('admin-api Agent runtime lifecycle convergence', () => {
   it('removes the durable channel before stopping that exact Rust runtime', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-channel-remove',
         name: 'Channel Remove',
@@ -4022,7 +4022,7 @@ describe('admin-api Agent runtime lifecycle convergence', () => {
   });
 
   it('retries exact runtime cleanup after the durable channel is already absent', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-channel-retry',
         name: 'Channel Retry',
@@ -4050,7 +4050,7 @@ describe('admin-api Agent runtime lifecycle convergence', () => {
   });
 
   it('reports a truthful partial failure when config deletion lands but runtime stop fails', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-channel-stop-fails',
         name: 'Channel Stop Fails',
@@ -4084,7 +4084,7 @@ describe('admin-api Agent runtime lifecycle convergence', () => {
       value: false,
     })],
   ])('%s resets proactive children without stopping Channel runtimes', async (_label, run) => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-disable',
         name: 'Disable',
@@ -4123,7 +4123,7 @@ describe('admin-api Agent runtime lifecycle convergence', () => {
   });
 
   it('returns failure when proactive config saves but runtime or managed tasks do not converge', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-reconcile-fails',
         name: 'Reconcile Fails',
@@ -4151,7 +4151,7 @@ describe('admin-api Agent runtime lifecycle convergence', () => {
   });
 
   it('agent enable resets all proactive children while preserving their settings', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-enable',
         name: 'Enable',
@@ -4161,7 +4161,7 @@ describe('admin-api Agent runtime lifecycle convergence', () => {
         channels: [{ id: 'channel-off', type: 'telegram', enabled: false }],
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-enable',
       name: 'Enable',
       path: '/tmp/enable',
@@ -4182,7 +4182,7 @@ describe('admin-api Agent runtime lifecycle convergence', () => {
   });
 
   it('still converges runtime state when archiving an already-disabled Agent', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-archive-disabled',
         name: 'Archive Disabled',
@@ -4191,7 +4191,7 @@ describe('admin-api Agent runtime lifecycle convergence', () => {
         channels: [{ id: 'channel-1', type: 'openclaw:weixin', enabled: true }],
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-archive-disabled',
       name: 'Archive Disabled',
       path: '/tmp/archive-disabled',
@@ -4214,13 +4214,13 @@ describe('admin-api Agent runtime lifecycle convergence', () => {
 
 describe('admin-api Agent / Session discovery', () => {
   it('projects only valid visible Workspace identities into the network catalog without leaking execution credentials', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), { agents: [
+    writeJson(join(scratch, '.nexttools', 'config.json'), { agents: [
       { id: 'active', name: 'Active', enabled: false, channels: [{ id: 'secret-channel', botToken: 'do-not-expose' }] },
       { id: 'archived', name: 'Archived', enabled: true, channels: [] },
       { id: 'orphan', name: 'Orphan', enabled: true, workspacePath: '/orphan', channels: [] },
       { id: 'conflicted', name: 'Conflicted', channels: [] },
     ] });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [
       { id: 'active-workspace', name: 'Active', path: '/active', agentId: 'active', icon: 'lightning' },
       { id: 'archived-workspace', name: 'Archived', path: '/archived', agentId: 'archived', archivedAt: '2026-10-01T00:00:00Z' },
       { id: 'hidden-workspace', name: 'Hidden', path: '/hidden', hidden: true },
@@ -4239,11 +4239,11 @@ describe('admin-api Agent / Session discovery', () => {
     expect(JSON.stringify(result)).not.toContain('enabled');
   });
   it('lists healthy Agents and exposes conflicted targets with paths but no credentials', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), { agents: [
+    writeJson(join(scratch, '.nexttools', 'config.json'), { agents: [
       { id: 'shared', name: 'Shared', channels: [{ id: 'secret-channel', botToken: 'do-not-expose' }] },
       { id: 'healthy', name: 'Healthy', channels: [] },
     ] });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [
       { id: 'one', name: 'One', path: '/one', agentId: 'shared' },
       { id: 'two', name: 'Two', path: '/two', agentId: 'shared', hidden: true },
       { id: 'three', name: 'Three', path: '/three', agentId: 'healthy' },
@@ -4260,14 +4260,14 @@ describe('admin-api Agent / Session discovery', () => {
 
   it('returns visible Project-backed and legacy orphan Agents while marking only the selected Project Agent current', async () => {
     agentSessionMocks.agentDir = '/tmp/current-workspace';
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [
         { id: 'agent-current', name: 'Current', enabled: false, workspacePath: '/tmp/current-workspace', channels: [] },
         { id: 'agent-other', name: 'Other', enabled: true, workspacePath: '/tmp/other-workspace', channels: [] },
         { id: 'agent-orphan', name: 'Orphan', enabled: true, workspacePath: '/tmp/orphan', channels: [] },
       ],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [
       { id: 'project-current', name: 'Current', path: '/tmp/current-workspace', agentId: 'agent-current' },
       { id: 'project-other', name: 'Other', path: '/tmp/other-workspace', agentId: 'agent-other' },
       { id: 'project-hidden', name: 'Hidden', path: '/tmp/hidden', hidden: true },
@@ -4307,8 +4307,8 @@ describe('admin-api Agent / Session discovery', () => {
     const agents = ['active', 'disabled', 'archived', 'internal', 'orphan'].map(id => ({
       id, name: id, enabled: id !== 'disabled', workspacePath: `/tmp/${id}`, channels: [],
     }));
-    writeJson(join(scratch, '.myagents', 'config.json'), { agents });
-    writeJson(join(scratch, '.myagents', 'projects.json'), agents.filter(agent => agent.id !== 'orphan').map(agent => ({
+    writeJson(join(scratch, '.nexttools', 'config.json'), { agents });
+    writeJson(join(scratch, '.nexttools', 'projects.json'), agents.filter(agent => agent.id !== 'orphan').map(agent => ({
       id: `project-${agent.id}`, name: agent.name, path: agent.workspacePath, agentId: agent.id,
       ...(agent.id === 'archived' ? { archivedAt: '2026-09-01T00:00:00.000Z' } : {}),
       ...(agent.id === 'internal' ? { internal: true } : {}),
@@ -4320,13 +4320,13 @@ describe('admin-api Agent / Session discovery', () => {
   });
 
   it('lists persisted history only, newest first, without exposing prepared Sessions', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{ id: 'agent-1', name: 'Workspace', enabled: true, workspacePath: '/tmp/workspace', channels: [] }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1', name: 'Workspace', path: '/tmp/workspace', agentId: 'agent-1',
     }]);
-    writeJson(join(scratch, '.myagents', 'sessions.json'), [
+    writeJson(join(scratch, '.nexttools', 'sessions.json'), [
       {
         id: 'session-old', agentDir: '/tmp/workspace', title: 'Old',
         createdAt: '2026-07-01T00:00:00.000Z', lastActiveAt: '2026-07-01T00:00:00.000Z',
@@ -4368,7 +4368,7 @@ describe('admin-api Agent / Session discovery', () => {
   });
 
   it('reports DSH Agent defaults and Session history as Integrated Product identity', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-dsh',
         name: 'DSH Workspace',
@@ -4382,13 +4382,13 @@ describe('admin-api Agent / Session discovery', () => {
         channels: [],
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-dsh',
       name: 'DSH Workspace',
       path: '/tmp/dsh-workspace',
       agentId: 'agent-dsh',
     }]);
-    writeJson(join(scratch, '.myagents', 'sessions.json'), [{
+    writeJson(join(scratch, '.nexttools', 'sessions.json'), [{
       id: 'session-dsh',
       agentDir: '/tmp/dsh-workspace',
       title: 'DSH Session',
@@ -4427,7 +4427,7 @@ describe('admin-api Agent / Session discovery', () => {
 describe('admin-api Agent workspace archive', () => {
   it('archives a linked agent workspace and pauses proactive agent state', async () => {
     const { handleAgentArchive, handleAgentList } = await import('./admin-api');
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-1',
         name: 'Workspace',
@@ -4436,7 +4436,7 @@ describe('admin-api Agent workspace archive', () => {
         channels: [{ id: 'channel-1', type: 'telegram', enabled: true }],
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Workspace',
       path: '/tmp/workspace',
@@ -4450,7 +4450,7 @@ describe('admin-api Agent workspace archive', () => {
     expect(result.success).toBe(true);
     const config = readConfig();
     expect((config.agents as Array<Record<string, unknown>>)[0].enabled).toBe(false);
-    const projects = readJson(join(scratch, '.myagents', 'projects.json'));
+    const projects = readJson(join(scratch, '.nexttools', 'projects.json'));
     expect(projects[0].archivedAt).toEqual(expect.any(String));
     expect(projects[0].archivedAgentEnabledBeforeArchive).toBe(true);
     expect(projects[0]).not.toHaveProperty('pinnedAt');
@@ -4477,7 +4477,7 @@ describe('admin-api Agent workspace archive', () => {
 
   it('keeps restore intent when archive is called repeatedly', async () => {
     const { handleAgentArchive, handleAgentUnarchive } = await import('./admin-api');
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-1',
         name: 'Workspace',
@@ -4489,7 +4489,7 @@ describe('admin-api Agent workspace archive', () => {
         channels: [{ id: 'channel-1', type: 'telegram', enabled: true }],
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Workspace',
       path: '/tmp/workspace',
@@ -4498,7 +4498,7 @@ describe('admin-api Agent workspace archive', () => {
 
     expect((await handleAgentArchive({ id: 'agent-1' })).success).toBe(true);
     expect((await handleAgentArchive({ id: 'agent-1' })).success).toBe(true);
-    let projects = readJson(join(scratch, '.myagents', 'projects.json'));
+    let projects = readJson(join(scratch, '.nexttools', 'projects.json'));
     expect(projects[0].archivedAgentEnabledBeforeArchive).toBe(true);
 
     expect((await handleAgentUnarchive({ id: 'agent-1' })).success).toBe(true);
@@ -4510,13 +4510,13 @@ describe('admin-api Agent workspace archive', () => {
       memoryEvolution: { enabled: false, lastGardenerStatus: 'completed' },
       channels: [{ id: 'channel-1', enabled: true }],
     });
-    projects = readJson(join(scratch, '.myagents', 'projects.json'));
+    projects = readJson(join(scratch, '.nexttools', 'projects.json'));
     expect(projects[0]).not.toHaveProperty('archivedAt');
   });
 
   it('rejects plain enable for archived agent workspaces', async () => {
     const { handleAgentEnable } = await import('./admin-api');
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-1',
         name: 'Workspace',
@@ -4525,7 +4525,7 @@ describe('admin-api Agent workspace archive', () => {
         channels: [],
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Workspace',
       path: '/tmp/workspace',
@@ -4539,7 +4539,7 @@ describe('admin-api Agent workspace archive', () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain('archived workspace');
     expect(result.recoveryHint).toMatchObject({
-      recoveryCommand: 'myagents agent unarchive agent-1',
+      recoveryCommand: 'nexttools agent unarchive agent-1',
     });
     const config = readConfig();
     expect((config.agents as Array<Record<string, unknown>>)[0].enabled).toBe(false);
@@ -4547,7 +4547,7 @@ describe('admin-api Agent workspace archive', () => {
 
   it('unarchives a workspace and restores proactive state only when recorded', async () => {
     const { handleAgentUnarchive } = await import('./admin-api');
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-1',
         name: 'Workspace',
@@ -4558,7 +4558,7 @@ describe('admin-api Agent workspace archive', () => {
         mcpServersJson: '[]',
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Workspace',
       path: '/tmp/workspace',
@@ -4575,7 +4575,7 @@ describe('admin-api Agent workspace archive', () => {
     expect(agents[0].mcpServersJson).toBe('[]');
     const config = readConfig();
     expect((config.agents as Array<Record<string, unknown>>)[0].enabled).toBe(true);
-    const projects = readJson(join(scratch, '.myagents', 'projects.json'));
+    const projects = readJson(join(scratch, '.nexttools', 'projects.json'));
     expect(projects[0]).not.toHaveProperty('archivedAt');
     expect(projects[0]).not.toHaveProperty('archivedAgentEnabledBeforeArchive');
     expect(managementApiMocks.managementApi).toHaveBeenCalledWith(
@@ -4588,7 +4588,7 @@ describe('admin-api Agent workspace archive', () => {
 
   it('reports projection failure after unarchive without hiding the saved lifecycle change', async () => {
     const { handleAgentUnarchive } = await import('./admin-api');
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{
         id: 'agent-1',
         name: 'Workspace',
@@ -4597,7 +4597,7 @@ describe('admin-api Agent workspace archive', () => {
         channels: [],
       }],
     });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{
       id: 'project-1',
       name: 'Workspace',
       path: '/tmp/workspace',
@@ -4613,7 +4613,7 @@ describe('admin-api Agent workspace archive', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('was unarchived');
-    const projects = readJson(join(scratch, '.myagents', 'projects.json'));
+    const projects = readJson(join(scratch, '.nexttools', 'projects.json'));
     expect(projects[0]).not.toHaveProperty('archivedAt');
   });
 });
@@ -4623,7 +4623,7 @@ describe('admin config discovery and MCP observations', () => {
   it('redacts serialized Agent credentials and secret maps through both parent and leaf reads', async () => {
     const secret = 'synthetic-provider-credential-123456789';
     const snapshot = JSON.stringify({ apiKey: secret, baseUrl: 'https://fixture.invalid' });
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       agents: [{ id: 'agent-fixture', name: 'Fixture', providerEnvJson: snapshot,
         channels: [{ overrides: { providerEnvJson: snapshot, mcpServersJson: snapshot } }] }],
       providerApiKeys: { fixture: secret },
@@ -4643,7 +4643,7 @@ describe('admin config discovery and MCP observations', () => {
   });
 
   it('lists stored keys and types without exposing secrets, including nested credentials', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), {
+    writeJson(join(scratch, '.nexttools', 'config.json'), {
       theme: 'dark', providerApiKeys: { deepseek: 'synthetic-private-value' },
       custom: { count: 3, nested: { password: 'synthetic-password' } },
     });
@@ -4664,8 +4664,8 @@ describe('admin config discovery and MCP observations', () => {
   });
 
   it('reads workspace MCP selection from the Session facade independently of global configuration', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), { agents: [], mcpEnabledServers: ['one'] });
-    writeJson(join(scratch, '.myagents', 'projects.json'), [{ id: 'project', name: 'Fixture', path: '/fixture/current', mcpEnabledServers: ['one', 'two'] }]);
+    writeJson(join(scratch, '.nexttools', 'config.json'), { agents: [], mcpEnabledServers: ['one'] });
+    writeJson(join(scratch, '.nexttools', 'projects.json'), [{ id: 'project', name: 'Fixture', path: '/fixture/current', mcpEnabledServers: ['one', 'two'] }]);
     sessionEngineMocks.state.context = { sessionId: 'current', workspacePath: '/fixture/current' };
     agentSessionMocks.agentDir = '/fixture/old-builtin';
     const { handleStatus } = await import('./admin-api');
@@ -4673,8 +4673,8 @@ describe('admin config discovery and MCP observations', () => {
   });
 
   it('counts only current ready MCP servers and keeps unknown observations distinct from zero', async () => {
-    writeJson(join(scratch, '.myagents', 'config.json'), { agents: [] });
-    writeJson(join(scratch, '.myagents', 'projects.json'), []);
+    writeJson(join(scratch, '.nexttools', 'config.json'), { agents: [] });
+    writeJson(join(scratch, '.nexttools', 'projects.json'), []);
     const { handleStatus } = await import('./admin-api');
     expect(await handleStatus()).toMatchObject({ data: {
       activeMcpInSession: null,

@@ -37,7 +37,7 @@ import {
   convertFrontmatter,
   remarkDisableSetextHeadings,
 } from '@/utils/markdownPipeline';
-import { canonicalizeLegacyMyAgentsResourceUrl } from '@/utils/myagentsProtocol';
+import { canonicalizeLegacyNextToolsResourceUrl } from '@/utils/nexttoolsProtocol';
 import { fileUrlToPath, resolveAgainstWorkspace } from '@/utils/workspaceFileLinks';
 
 // ── Streaming leading-edge fade ──
@@ -404,7 +404,7 @@ function MarkdownImageInner({ src, alt, basePath, workspacePath }: {
   if (srcType === 'url') {
     return (
       <img
-        src={canonicalizeLegacyMyAgentsResourceUrl(src!)}
+        src={canonicalizeLegacyNextToolsResourceUrl(src!)}
         alt={alt ?? ''}
         className="max-w-full"
       />

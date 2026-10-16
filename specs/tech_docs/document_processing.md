@@ -1,6 +1,6 @@
 # 本地文档转换与端侧 OCR 架构
 
-本文是 `myagents anydoc` 当前实现的模块规范，只维护 owner、状态机、协议、资源、限制、安全不变量和排查路径。若数值或字段与代码冲突，以 `src-tauri/src/document_processing.rs`、`src-tauri/document-worker/`、CLI exact help 和测试为准，并同步修正文档。
+本文是 `nexttools anydoc` 当前实现的模块规范，只维护 owner、状态机、协议、资源、限制、安全不变量和排查路径。若数值或字段与代码冲突，以 `src-tauri/src/document_processing.rs`、`src-tauri/document-worker/`、CLI exact help 和测试为准，并同步修正文档。
 
 ## 定位与边界
 
@@ -9,11 +9,11 @@ AnyDoc 是统一的“本地文件转 Markdown”能力，OCR 只是扫描 PDF �
 公开入口只有：
 
 ```text
-myagents anydoc convert --file <input> [--output <directory>] [--password <password>] [--wait] [--json]
-myagents anydoc status <job-id> [--json]
-myagents anydoc wait <job-id> [--json]
-myagents anydoc cancel <job-id> [--json]
-myagents anydoc list [--limit <1..100>] [--json]
+nexttools anydoc convert --file <input> [--output <directory>] [--password <password>] [--wait] [--json]
+nexttools anydoc status <job-id> [--json]
+nexttools anydoc wait <job-id> [--json]
+nexttools anydoc cancel <job-id> [--json]
+nexttools anydoc list [--limit <1..100>] [--json]
 ```
 
 不存在 `inspect`、`readme`、同步 backend、结果内联或分页协议。所有 backend conversion 都是异步 job；`wait` 只在 CLI 进程内轮询短 `status` 请求。
@@ -21,11 +21,11 @@ myagents anydoc list [--limit <1..100>] [--json]
 ## Owner 与调用链
 
 ```text
-myagents CLI bundle
+nexttools CLI bundle
   -> current Sidecar /api/admin/anydoc/*
   -> Rust loopback Management API /api/document/*
   -> App-global DocumentProcessingManager
-  -> one-job myagents-document-worker (ChildTree)
+  -> one-job nexttools-document-worker (ChildTree)
   -> AnyDoc / pdf-inspector / PDFium / PP-OCRv6 Small
 ```
 
@@ -33,7 +33,7 @@ myagents CLI bundle
 - Sidecar Admin API：注入当前 Sidecar 的 authoritative Workspace（仅默认输出需要），薄转发并保留结构化错误；不解析文档。
 - `DocumentProcessingManager`：queue、job store、active generation、资源 admission、source handle、取消、timeout、App shutdown、原子发布的唯一 owner。
 - Worker：只拥有当前 job 的 parser/OCR effective runtime state 和 staging 写入；不监听端口、不持久化、不重试、不接网络。
-- required system Skill `myagents-anydoc`：WHEN TO USE 与工作流说明；不执行转换、不保存状态。`myagents-cli` 只保留薄索引。
+- required system Skill `nexttools-anydoc`：WHEN TO USE 与工作流说明；不执行转换、不保存状态。`nexttools-cli` 只保留薄索引。
 
 AnyDoc 不属于 Session，因此关闭 Tab、切 Runtime 或 CLI 退出不会取消 job；App 退出会统一收敛所有 queued/running job。
 
@@ -53,7 +53,7 @@ YYYYMMDD_<12 lowercase hex>
   assets/               # 仅实际被 Markdown 引用时存在
 ```
 
-Manager 在输出根先创建 `.myagents-anydoc-<job-id>.staging`；只有 Worker 成功、artifact 校验通过、job/generation 仍是 active owner 且输出根 directory identity 未变化时，才同卷 rename 为公开 job 目录。rename 前先在私有 job 目录 crash-durable 写入 `publish-intent.json`；owner marker 随 staging 一起进入公开目录，输出根 directory sync 与 terminal `job.json` durable 后才移除 marker，marker 删除也 sync 后才清 intent。启动恢复因此能区分并完成已提交 success，或清理未提交的 authenticated public directory 后把非终态 job 收敛为 `interrupted`。一旦 durable job 是 success，终态不可逆：authenticated staging 会完成 no-replace publish；用户随后删除或修改 artifact 只改变查询时派生的 `artifactAvailable`，不会倒写 history 或移动用户目录。失败、取消、超时、crash、identity drift 均清理 staging，不发布 `conversion.json`、输入副本、解密副本、页图或 OCR crop。
+Manager 在输出根先创建 `.nexttools-anydoc-<job-id>.staging`；只有 Worker 成功、artifact 校验通过、job/generation 仍是 active owner 且输出根 directory identity 未变化时，才同卷 rename 为公开 job 目录。rename 前先在私有 job 目录 crash-durable 写入 `publish-intent.json`；owner marker 随 staging 一起进入公开目录，输出根 directory sync 与 terminal `job.json` durable 后才移除 marker，marker 删除也 sync 后才清 intent。启动恢复因此能区分并完成已提交 success，或清理未提交的 authenticated public directory 后把非终态 job 收敛为 `interrupted`。一旦 durable job 是 success，终态不可逆：authenticated staging 会完成 no-replace publish；用户随后删除或修改 artifact 只改变查询时派生的 `artifactAvailable`，不会倒写 history 或移动用户目录。失败、取消、超时、crash、identity drift 均清理 staging，不发布 `conversion.json`、输入副本、解密副本、页图或 OCR crop。
 
 状态机：
 
@@ -68,7 +68,7 @@ queued/running/cancelling --App restart/shutdown--> interrupted
 
 `succeeded_with_warnings` 是带可用 artifact 的成功。`status/list` 查询成功时退出 0，即使所查 job 已失败；`wait` 对 failed/cancelled/interrupted 退出 1。Ctrl-C wait 退出 130，job 继续运行。
 
-持久 metadata 位于 MyAgents data root 的 `document-processing/jobs/<job-id>/job.json`，可包含 source/output path、格式、大小/hash、timestamps、warning/error、metrics 和 pipeline provenance；不得包含密码、正文、资产、解密数据或 OCR crop。同目录的 `publish-intent.json` 只是 Manager-owned 两阶段发布恢复记录，不是第二份 job 状态源：它只保存 job/path/token identity；任何 metadata write 的未知结果都保留 intent，直到 terminal authority 与 artifact 结果明确且相关目录 mutation 已 sync 才删除。非终态记录在下次启动统一转 `interrupted`，不自动重放；已 durable 的终态不可逆。终态 metadata 可见期 30 天；过期清理 metadata，不删除已经发布到用户输出根的 artifact。
+持久 metadata 位于 NextTools data root 的 `document-processing/jobs/<job-id>/job.json`，可包含 source/output path、格式、大小/hash、timestamps、warning/error、metrics 和 pipeline provenance；不得包含密码、正文、资产、解密数据或 OCR crop。同目录的 `publish-intent.json` 只是 Manager-owned 两阶段发布恢复记录，不是第二份 job 状态源：它只保存 job/path/token identity；任何 metadata write 的未知结果都保留 intent，直到 terminal authority 与 artifact 结果明确且相关目录 mutation 已 sync 才删除。非终态记录在下次启动统一转 `interrupted`，不自动重放；已 durable 的终态不可逆。终态 metadata 可见期 30 天；过期清理 metadata，不删除已经发布到用户输出根的 artifact。
 
 ## Queue 与 Worker lifecycle
 
@@ -94,11 +94,11 @@ Manager 与 Worker 使用 4-byte big-endian payload length + UTF-8 JSON；单 fr
 
 ### 结构化文档 fast path
 
-AnyDoc 使用资源锁固定的 vendored 上游源码；MyAgents patch 只增加 typed recovery diagnostic 与 opt-in asset serialization。parser 生成 `Document` 后，由 caller 给安全 asset 分配相对路径，renderer 才写 `![alt](assets/...)`。Worker 对资产做 MIME + magic sniff，只发布 PNG/JPEG/WebP passive raster；SVG、HTML、OLE、executable、外部 payload、未引用资产均不写出并产生 warning。被省略的内嵌资产会在原文位置留下 `**[Embedded asset omitted]**`，同时在顶部 warning summary 汇总。
+AnyDoc 使用资源锁固定的 vendored 上游源码；NextTools patch 只增加 typed recovery diagnostic 与 opt-in asset serialization。parser 生成 `Document` 后，由 caller 给安全 asset 分配相对路径，renderer 才写 `![alt](assets/...)`。Worker 对资产做 MIME + magic sniff，只发布 PNG/JPEG/WebP passive raster；SVG、HTML、OLE、executable、外部 payload、未引用资产均不写出并产生 warning。被省略的内嵌资产会在原文位置留下 `**[Embedded asset omitted]**`，同时在顶部 warning summary 汇总。
 
 AnyDoc 的 recoverable 分支直接产生 typed `{code, message, location}` diagnostic；日志只供本地排查，不作为产品 warning 数据源。能定位的恢复项还必须占据原内容位置，例如不可读 PPTX slide 在对应 slide 顺序插入可见 warning placeholder；Worker 再于文首汇总同一 typed diagnostics。CSV 等结构化格式不加载 OCR native runtime。
 
-加密 OOXML/legacy Office 由资源锁固定的 `office-crypto` 在 Worker 内解密；MyAgents 的窄 patch 只把 legacy DOC verifier 的密码校验失败提升为独立 `InvalidPassword`，其余 `InvalidStructure` 继续映射 `DOCUMENT_MALFORMED`。解密 bytes 只存在内存；缺密码、错误密码和不支持 scheme 分别返回稳定错误，损坏文件不得默认映射成密码错误。
+加密 OOXML/legacy Office 由资源锁固定的 `office-crypto` 在 Worker 内解密；NextTools 的窄 patch 只把 legacy DOC verifier 的密码校验失败提升为独立 `InvalidPassword`，其余 `InvalidStructure` 继续映射 `DOCUMENT_MALFORMED`。解密 bytes 只存在内存；缺密码、错误密码和不支持 scheme 分别返回稳定错误，损坏文件不得默认映射成密码错误。
 
 ### PDF 逐页 routing
 
@@ -167,19 +167,19 @@ prepare owner 把生命周期分成三层：
 - `x86_64-unknown-linux-gnu`
 - `aarch64-unknown-linux-gnu`
 
-ONNX Runtime 官方 1.28 macOS arm64 archive 的最低系统版本是 macOS 14，且没有 macOS x64 binary；MyAgents 最低支持 macOS 13，因此两个 macOS target 都从精确 commit `da9b5e364c465de65c49d91e696cd6485270757f`、固定 recipe 与 deployment target 13.0 构建 shared library，其余 target 使用锁定官方 archive。该源码路径由 prepare owner 在 cache miss 后、任何资源网络/源码 mutation 前统一检查 Git、Python 3.10+、CMake 3.28+ 与 Apple Clang；Python 下限来自锁定 recipe 的 mandatory driver syntax 与 shared-library CMake `find_package`，不能沿用其执行顺序之后才运行的陈旧 3.8 自检。setup 与各平台 build 都在固定 Rust toolchain 就绪后、各自首个耗时下载/安装/清理/编译动作前调用同一 `--check-prerequisites` 只读预检，不复制工具规则。preflight 只以 exact target prepared cache 决定是否需要工具，不读取当前投影；已有对应 fingerprint 的有效 prepared bundle 时不要求源码工具，prepare owner 也不自动安装原生构建工具。PDFium 全部使用 `chromium/7999` 锁定 archive。安装资源同时包含 AnyDoc/Paddle/ORT/PDFium license 与 PDFium 第三方 license tree；顶层 `THIRD_PARTY_NOTICES.md` 保留组件分类。speech 使用锁定 sherpa-onnx/codec 源码及其 legal tree，构建时只从上游 archive 展开根 `CMakeLists.txt`、`LICENSE`、`cmake/` 与 `sherpa-onnx/`，显式关闭 CoreML 和 C API examples，并通过要求 CMake 3.28+ 的 App-owned native adapter 链接上述同一 CPU ORT。
+ONNX Runtime 官方 1.28 macOS arm64 archive 的最低系统版本是 macOS 14，且没有 macOS x64 binary；NextTools 最低支持 macOS 13，因此两个 macOS target 都从精确 commit `da9b5e364c465de65c49d91e696cd6485270757f`、固定 recipe 与 deployment target 13.0 构建 shared library，其余 target 使用锁定官方 archive。该源码路径由 prepare owner 在 cache miss 后、任何资源网络/源码 mutation 前统一检查 Git、Python 3.10+、CMake 3.28+ 与 Apple Clang；Python 下限来自锁定 recipe 的 mandatory driver syntax 与 shared-library CMake `find_package`，不能沿用其执行顺序之后才运行的陈旧 3.8 自检。setup 与各平台 build 都在固定 Rust toolchain 就绪后、各自首个耗时下载/安装/清理/编译动作前调用同一 `--check-prerequisites` 只读预检，不复制工具规则。preflight 只以 exact target prepared cache 决定是否需要工具，不读取当前投影；已有对应 fingerprint 的有效 prepared bundle 时不要求源码工具，prepare owner 也不自动安装原生构建工具。PDFium 全部使用 `chromium/7999` 锁定 archive。安装资源同时包含 AnyDoc/Paddle/ORT/PDFium license 与 PDFium 第三方 license tree；顶层 `THIRD_PARTY_NOTICES.md` 保留组件分类。speech 使用锁定 sherpa-onnx/codec 源码及其 legal tree，构建时只从上游 archive 展开根 `CMakeLists.txt`、`LICENSE`、`cmake/` 与 `sherpa-onnx/`，显式关闭 CoreML 和 C API examples，并通过要求 CMake 3.28+ 的 App-owned native adapter 链接上述同一 CPU ORT。
 
 macOS ORT source cache 是可中断状态机：仅存在 `.git` 不代表已有可用 checkout。prepare owner 必须校准锁定 repository 的 `origin`，把 unborn/missing/wrong `HEAD` 视为 cache miss 并 fetch + detached checkout 锁定 commit；只有验证到该 commit 的 `HEAD` 才能直接复用。该恢复只适用于 App 管理的 derived source cache，不得推广到用户仓库。
 
-App 启动同步路径只解析 manifest，并校验 target/pipeline、路径、regular-file、size 与 Worker 可执行位，不读取 ORT、PDFium、OCR 模型或字典的完整正文。App ready 后先等 10 秒安静窗口，再由最低优先级 `BackgroundResourceValidation` lease 分块校验：共享 ORT 只由 `LocalInferenceRuntimeRegistry` 校验一次，Document Manager 校验 Worker/PDFium/OCR 模型/字典；Record live 到来时 chunk-level yield，稍后重新等待安静窗口再试。后台失败会阻止新的对应 admission，但不阻止 MyAgents UI 启动；Worker 启动后仍再次完整校验它实际要加载的五个资源并 fail closed。运行时不得下载、访问 Hugging Face 或使用用户 cache。
+App 启动同步路径只解析 manifest，并校验 target/pipeline、路径、regular-file、size 与 Worker 可执行位，不读取 ORT、PDFium、OCR 模型或字典的完整正文。App ready 后先等 10 秒安静窗口，再由最低优先级 `BackgroundResourceValidation` lease 分块校验：共享 ORT 只由 `LocalInferenceRuntimeRegistry` 校验一次，Document Manager 校验 Worker/PDFium/OCR 模型/字典；Record live 到来时 chunk-level yield，稍后重新等待安静窗口再试。后台失败会阻止新的对应 admission，但不阻止 NextTools UI 启动；Worker 启动后仍再次完整校验它实际要加载的五个资源并 fail closed。运行时不得下载、访问 Hugging Face 或使用用户 cache。
 
 speech 的用户可移除模型权重不属于本节的 build cache，也不进入 Tauri resource projection。它们由 `SpeechModelPackManager` 在首次显式安装及后续已授权维护时写入 App data 下的版本目录；安装前仍复用本节同一 App-owned ORT identity，但下载/签名、模型最小加载、`active.json` 切换与 busy removal 由 speech domain owner 裁决。两者只共享受信任 runtime 和 compute lease，不共享 job store 或模型 activation authority。详见 [`recording_and_speech_recognition.md`](./recording_and_speech_recognition.md)。
 
 ## Skill 与 help 防漂移
 
-- `myagents-anydoc` 必须同时存在于 TS required set、Rust system bundle、workspace required mirror，并随 `SYSTEM_SKILLS_VERSION` 同步安装。
+- `nexttools-anydoc` 必须同时存在于 TS required set、Rust system bundle、workspace required mirror，并随 `SYSTEM_SKILLS_VERSION` 同步安装。
 - 其 frontmatter description 承担相关意图发现；正文说明异步 workflow、安全和边界。
-- `myagents-cli` frontmatter description 不得出现 AnyDoc；正文只含 AnyDoc 能力名、`myagents anydoc --help`、`/myagents-anydoc` 三个索引要素。
+- `nexttools-cli` frontmatter description 不得出现 AnyDoc；正文只含 AnyDoc 能力名、`nexttools anydoc --help`、`/nexttools-anydoc` 三个索引要素。
 - `system-prompt-cli-tools.ts` 不增加 AnyDoc section/hint。
 - exact group/leaf help 是当前 CLI 参数、输出、exit 和 recovery authority；没有 `readme` route。
 
@@ -191,7 +191,7 @@ speech 的用户可移除模型权重不属于本节的 build cache，也不进�
 
 ## 排查
 
-先看 `~/.myagents/logs/unified-<本地日期>.log` 中 `[document]` 的非敏感 Manager 生命周期事件：`accepted / started / stage_changed / cancel_requested / terminal / recovered_terminal`。固定投影只含 job ID、state、stage、format、artifact 可用性、warning/页/OCR/asset 数量、耗时、稳定 error code 与 retryable；不含 source/output 绝对路径、文件名、warning/error 正文、OCR 原文或密码。常见恢复：
+先看 `~/.nexttools/logs/unified-<本地日期>.log` 中 `[document]` 的非敏感 Manager 生命周期事件：`accepted / started / stage_changed / cancel_requested / terminal / recovered_terminal`。固定投影只含 job ID、state、stage、format、artifact 可用性、warning/页/OCR/asset 数量、耗时、稳定 error code 与 retryable；不含 source/output 绝对路径、文件名、warning/error 正文、OCR 原文或密码。常见恢复：
 
 | code | 含义 / 下一步 |
 |---|---|

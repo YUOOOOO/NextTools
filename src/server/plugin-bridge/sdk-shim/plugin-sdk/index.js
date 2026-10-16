@@ -4,7 +4,7 @@
 export * from "./index.auto.js";
 // === END AUTO-AUGMENT ===
 
-// OpenClaw plugin-sdk root shim for MyAgents Plugin Bridge
+// OpenClaw plugin-sdk root shim for NextTools Plugin Bridge
 // Covers all runtime symbols imported by installed plugins from 'openclaw/plugin-sdk'
 
 import crypto from 'node:crypto';
@@ -216,7 +216,7 @@ export function buildRandomTempFilePath(params) {
   }
   const now = typeof params.now === 'number' && Number.isFinite(params.now) ? Math.trunc(params.now) : Date.now();
   const uuid = params.uuid?.trim() || crypto.randomUUID();
-  const root = params.tmpDir ?? join(tmpdir(), 'myagents-bridge-media');
+  const root = params.tmpDir ?? join(tmpdir(), 'nexttools-bridge-media');
   mkdirSync(root, { recursive: true });
   return join(root, `${prefix}-${now}-${uuid}${ext}`);
 }
@@ -261,7 +261,7 @@ export function buildChannelConfigSchema(schema) {
 
 export async function resolveSenderCommandAuthorizationWithRuntime(params) {
   // Thin wrapper: extract functions from params.runtime and delegate to
-  // resolveSenderCommandAuthorization. In Bridge mode, MyAgents handles
+  // resolveSenderCommandAuthorization. In Bridge mode, NextTools handles
   // access control at Rust layer, so the base function already returns
   // senderAllowedForCommands: true.
   return resolveSenderCommandAuthorization({

@@ -18,14 +18,14 @@ let store: SessionStoreModule;
 let sessionsPath: string;
 
 beforeAll(async () => {
-  testHome = mkdtempSync(join(tmpdir(), "myagents-runtime-binding-migration-"));
+  testHome = mkdtempSync(join(tmpdir(), "nexttools-runtime-binding-migration-"));
   previousHome = process.env.HOME;
   previousUserProfile = process.env.USERPROFILE;
   process.env.HOME = testHome;
   process.env.USERPROFILE = testHome;
-  const myAgentsDir = join(testHome, ".myagents");
-  mkdirSync(myAgentsDir, { recursive: true });
-  sessionsPath = join(myAgentsDir, "sessions.json");
+  const nextToolsDir = join(testHome, ".nexttools");
+  mkdirSync(nextToolsDir, { recursive: true });
+  sessionsPath = join(nextToolsDir, "sessions.json");
   writeFileSync(
     sessionsPath,
     JSON.stringify([

@@ -3,8 +3,8 @@
 // A "plugin" here is the unit defined by Anthropic's Claude Code plugin
 // protocol: a self-contained directory containing `.claude-plugin/plugin.json`
 // plus any combination of `skills/`, `agents/`, `hooks/`, `.mcp.json`,
-// `.lsp.json`, `monitors/`, `bin/`, etc. MyAgents downloads the directory
-// to `~/.myagents/plugins/<name>/` and hands the absolute path to the
+// `.lsp.json`, `monitors/`, `bin/`, etc. NextTools downloads the directory
+// to `~/.nexttools/plugins/<name>/` and hands the absolute path to the
 // Claude Agent SDK via `Options.plugins: [{ type: 'local', path }]`. The
 // SDK is responsible for discovering and wiring the inner components — we
 // only manage the directory lifecycle and on/off state.
@@ -24,7 +24,7 @@ export type PluginSourceType = 'local';
 export interface PluginEntry {
   /** Stable identifier, "<name>@<source>" (v0.2.17: source is always "local") */
   id: string;
-  /** plugin.json::name (kebab-case) — also the directory basename under ~/.myagents/plugins/ */
+  /** plugin.json::name (kebab-case) — also the directory basename under ~/.nexttools/plugins/ */
   name: string;
   /** v0.2.17 always "local" */
   source: PluginSourceType;
@@ -35,7 +35,7 @@ export interface PluginEntry {
    *   - `file:///absolute/path`
    */
   sourceUrl: string;
-  /** Absolute path on disk (`~/.myagents/plugins/<name>/`) */
+  /** Absolute path on disk (`~/.nexttools/plugins/<name>/`) */
   installPath: string;
   /** plugin.json::version (may be absent for git-tracked plugins without an explicit version) */
   version?: string;
@@ -54,7 +54,7 @@ export interface PluginEntry {
 }
 
 /**
- * Parsed `.claude-plugin/plugin.json` metadata. Only the subset MyAgents
+ * Parsed `.claude-plugin/plugin.json` metadata. Only the subset NextTools
  * cares about for UI / record-keeping — component path fields are left
  * for the SDK to interpret.
  */

@@ -25,14 +25,14 @@ describe('installed pet pack loading', () => {
             {
                 id: 'pikachu',
                 displayName: 'Pikachu',
-                spritesheetFilePath: 'C:\\Users\\me\\.myagents\\pets\\pikachu\\spritesheet.webp',
+                spritesheetFilePath: 'C:\\Users\\me\\.nexttools\\pets\\pikachu\\spritesheet.webp',
                 spritesheetPath: 'spritesheet.webp',
-                source: 'myagents',
+                source: 'nexttools',
             },
         ]);
 
         expect(tauriMocks.convertFileSrc).toHaveBeenCalledWith(
-            'C:\\Users\\me\\.myagents\\pets\\pikachu\\spritesheet.webp',
+            'C:\\Users\\me\\.nexttools\\pets\\pikachu\\spritesheet.webp',
         );
         expect(pack?.spritesheetUrl).toMatch(/^http:\/\/asset\.localhost\//);
     });

@@ -36,7 +36,7 @@ const SOURCE_ASSISTANT_ENTRY: Record<SupportDiagnosticsSource, AssistantEntry> =
 
 const SUPPORT_TEXT_REDACTIONS: Array<[RegExp, string]> = [
   [/\b(Authorization\s*:\s*Bearer\s+)[^\s'"`]+/gi, '$1[redacted]'],
-  [/\b((?:OPENAI|ANTHROPIC|GOOGLE|GEMINI|CODEX|CLAUDE|MYAGENTS)?_?API_KEY\s*=\s*)[^\s'"`]+/gi, '$1[redacted]'],
+  [/\b((?:OPENAI|ANTHROPIC|GOOGLE|GEMINI|CODEX|CLAUDE|NEXTTOOLS)?_?API_KEY\s*=\s*)[^\s'"`]+/gi, '$1[redacted]'],
   [/\b(sk-[A-Za-z0-9_-]{8,})\b/g, '[redacted-api-key]'],
   [/\b((?:apiKey|api_key|accessToken|access_token|refreshToken|refresh_token|token)\s*[:=]\s*)[^\s'",`)}]+/gi, '$1[redacted]'],
   [/("(?:apiKey|api_key|accessToken|access_token|refreshToken|refresh_token|token)"\s*:\s*")[^"]+(")/gi, '$1[redacted]$2'],
@@ -149,7 +149,7 @@ export function sanitizeRuntimeDiagnosticsForSupport(diagnostics: RuntimeDiagnos
         noProxy: !!env.proxy?.no,
       },
       pathHead: env.pathHead?.slice(0, 5).map(path => sanitizePath(path, 500) ?? ''),
-      myagentsProxyInjected: env.myagentsProxyInjected === true,
+      nexttoolsProxyInjected: env.nexttoolsProxyInjected === true,
       codexSandbox: env.codexSandbox ? {
         detected: env.codexSandbox.detected === true,
         networkDisabled: env.codexSandbox.networkDisabled === true,
@@ -166,7 +166,7 @@ export function sanitizeRuntimeDiagnosticsForSupport(diagnostics: RuntimeDiagnos
 
 export function buildSupportDiagnosticsDescription(input: SupportDiagnosticsInput): string {
   const lines: string[] = [
-    '用户在 MyAgents 对话页遇到了需要诊断的问题。下面是前端自动收集的诊断上下文，请结合小助理 support 流程帮助用户解决问题。',
+    '用户在 NextTools 对话页遇到了需要诊断的问题。下面是前端自动收集的诊断上下文，请结合小助理 support 流程帮助用户解决问题。',
     '',
     '## 触发位置',
     `- 类型：${SOURCE_LABELS[input.source]}`,

@@ -78,7 +78,7 @@ function packageArtifact(args) {
   const input = resolve(args.source);
   const bytes = readFileSync(input);
   checkArchive(bytes, pin);
-  const scratch = mkdtempSync(join(tmpdir(), 'myagents-cliproxy-package-'));
+  const scratch = mkdtempSync(join(tmpdir(), 'nexttools-cliproxy-package-'));
   const executable = platform === 'win32-x64' ? 'cli-proxy-api.exe' : 'cli-proxy-api';
   try {
     if (platform === 'win32-x64') {
@@ -128,7 +128,7 @@ function packageArtifact(args) {
 function signManifest(path) {
   const privateKey = process.env.TAURI_SIGNING_PRIVATE_KEY;
   if (!privateKey) throw new Error('TAURI_SIGNING_PRIVATE_KEY is required; unsigned manifests cannot be staged');
-  const keyFile = join(tmpdir(), `myagents-cliproxy-signing-${randomUUID()}`);
+  const keyFile = join(tmpdir(), `nexttools-cliproxy-signing-${randomUUID()}`);
   writeFileSync(keyFile, privateKey, { flag: 'wx', mode: 0o600 });
   try {
     const env = { ...process.env };

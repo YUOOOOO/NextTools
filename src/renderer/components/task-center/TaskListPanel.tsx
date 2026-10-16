@@ -81,7 +81,7 @@ const BUCKET_STATUSES: Record<Bucket, TaskStatus[]> = {
   finished: ['done', 'archived'],
 };
 
-const VIEW_STORAGE_KEY = 'myagents:task-center:view';
+const VIEW_STORAGE_KEY = 'nexttools:task-center:view';
 const FINISHED_LIST_PAGE_SIZE = 10;
 
 function loadStoredView(): TaskView {

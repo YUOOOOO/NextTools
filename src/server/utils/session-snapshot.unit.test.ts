@@ -147,7 +147,7 @@ describe('snapshotForOwnedSession — reasoning effort capture (#324)', () => {
         model: 'stale-runtime-model',
         reasoningEffort: 'high',
       },
-      mcpEnabledServers: ['myagents'],
+      mcpEnabledServers: ['nexttools'],
     }), { managedCodexProviderReady: true });
 
     expect(snap).toMatchObject({
@@ -164,7 +164,7 @@ describe('snapshotForOwnedSession — reasoning effort capture (#324)', () => {
       },
       permissionMode: 'no-restrictions',
       reasoningEffort: 'high',
-      mcpEnabledServers: ['myagents'],
+      mcpEnabledServers: ['nexttools'],
     });
     expect(snap.providerRoute).toBeUndefined();
     expect(snap.providerEnvJson).toBeUndefined();

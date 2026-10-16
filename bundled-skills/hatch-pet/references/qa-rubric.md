@@ -21,7 +21,7 @@ Do not accept an atlas until all checks pass.
 
 ## Pet-Safe Style
 
-- Art reads as a MyAgents/Codex desktop pet, not a scene, app icon, logo sheet, or standalone illustration.
+- Art reads as a NextTools/Codex desktop pet, not a scene, app icon, logo sheet, or standalone illustration.
 - Silhouette is compact and clear enough to read inside a `192x208` cell.
 - The chosen style is consistent across every row, including edge treatment, material, lighting, and palette.
 - Pixel, plush, clay, sticker, flat vector, 3D toy, painterly mascot, ink, and brand-inspired styles are all acceptable when readable at pet size.

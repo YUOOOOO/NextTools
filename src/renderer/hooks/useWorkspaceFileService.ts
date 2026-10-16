@@ -248,7 +248,7 @@ export interface WorkspaceFileService {
   }): Promise<InternalCopyResult>;
   /** [workspace-free] Read absolute image paths and return base64 (for Tauri image drops). */
   readPathsAsBase64(args: { paths: string[] }): Promise<ReadAsBase64Response>;
-  /** [workspace-free] Copy absolute image paths into `~/.myagents/attachments/<sessionId>/`
+  /** [workspace-free] Copy absolute image paths into `~/.nexttools/attachments/<sessionId>/`
    *  and return ref metadata. This is the primary path for chat image drops. */
   prepareUserImageAttachments(args: {
     sessionId: string;
@@ -297,7 +297,7 @@ export interface WorkspaceFileService {
   openWithDefault(args: { path: string }): Promise<void>;
   /** [workspace-free] Reveal an absolute path (NOT workspace-relative) in the
    *  OS file manager. Used by Skill/Command detail panels for
-   *  `~/.myagents/skills/...`. The Rust side validates the path canonicalizes
+   *  `~/.nexttools/skills/...`. The Rust side validates the path canonicalizes
    *  to under home_dir or tmp AND passes the credential blacklist.
    *
    *  Optional `workspace` widens the trusted-prefix list for project-scope

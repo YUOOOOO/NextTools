@@ -34,7 +34,7 @@ afterEach(() => {
 });
 
 const session: SpaceSession = {
-  baseUrl: 'https://space.myagents.test',
+  baseUrl: 'https://space.nexttools.test',
   user: { id: 'u-1', email: 'user@example.com', name: 'User' },
   space: { id: 'space-1', slug: 'official', name: 'Official Space', joinPolicy: 'open' },
   membership: { id: 'membership-1', role: 'member' },
@@ -57,7 +57,7 @@ const detail: SpaceIssueDetail = {
     items: [
       {
         id: 'comment-1',
-        author: { id: 'u-2', type: 'user', name: 'Commenter', avatarUrl: 'https://r2-public.myagents.test/commenter.png' },
+        author: { id: 'u-2', type: 'user', name: 'Commenter', avatarUrl: 'https://r2-public.nexttools.test/commenter.png' },
         body: '## Comment heading\n\nComment with `inline code`.',
         attachments: [],
         createdAt: '2026-06-30T11:30:00.000Z',
@@ -140,7 +140,7 @@ describe('IssueDetailDrawer', () => {
   });
 
   it('uses the shared hierarchy label for a compact deep goal path', () => {
-    const compactPath = '../MyAgents BUGFIX/Windows 系统兼容性优化';
+    const compactPath = '../NextTools BUGFIX/Windows 系统兼容性优化';
     const deepGoal: SpaceGoal = {
       id: 'goal-deep',
       spaceId: 'space-1',
@@ -180,7 +180,7 @@ describe('IssueDetailDrawer', () => {
     );
 
     const goalLabel = screen.getByTitle(compactPath);
-    expect(within(goalLabel).getByText('../MyAgents BUGFIX')).toHaveClass('text-[var(--ink-muted)]/75');
+    expect(within(goalLabel).getByText('../NextTools BUGFIX')).toHaveClass('text-[var(--ink-muted)]/75');
     expect(within(goalLabel).getByText('Windows 系统兼容性优化')).toHaveClass('font-normal', 'text-[var(--ink)]');
   });
 

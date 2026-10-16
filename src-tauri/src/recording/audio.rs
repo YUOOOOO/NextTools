@@ -13,7 +13,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{mpsc, Arc, Mutex, RwLock};
 
 use super::timing::{CaptureTimePoint, CaptureTimeline};
-use myagents_media_worker_protocol::record_timeline::RecordTrackTimeline;
+use nexttools_media_worker_protocol::record_timeline::RecordTrackTimeline;
 
 const RESAMPLER_CHUNK_FRAMES: usize = 1_024;
 const RESAMPLER_SINC_LENGTH: usize = 128;

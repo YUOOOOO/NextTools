@@ -134,7 +134,7 @@ function traceTabSwipe(phase: string, detail?: PerfTraceDetail): void {
   let traceEnabled = false;
   try {
     traceEnabled = typeof localStorage !== 'undefined'
-      && localStorage.getItem('myagents:tab-swipe-trace') === '1';
+      && localStorage.getItem('nexttools:tab-swipe-trace') === '1';
   } catch {
     // localStorage may be unavailable in tests or hardened WebViews; tracing
     // should remain best-effort and never affect gesture handling.

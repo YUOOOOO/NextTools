@@ -34,12 +34,11 @@ import React, {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MyAgentsLogotype } from '@/components/brand/MyAgentsLogotype';
+import { NextToolsLogotype } from '@/components/brand/NextToolsLogotype';
 import { getVersion } from '@tauri-apps/api/app';
 import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
 import { listenWithCleanup } from '@/utils/tauriListen';
-import TokenDanceProvider from '@/components/tokendance/TokenDanceProvider';
 import { TOKENDANCE_PROVIDER_ID } from '../../../shared/tokendance';
 import { homeDir, join } from '@tauri-apps/api/path';
 
@@ -163,9 +162,9 @@ import {
   runFloatingBallToggleTransaction,
 } from '@/floating-ball/nativeFloatingBall';
 import {
-  MYAGENTS_GITHUB_URL,
-  MYAGENTS_RELEASES_URL,
-  MYAGENTS_SOURCE_CODE_URL,
+  NEXTTOOLS_GITHUB_URL,
+  NEXTTOOLS_RELEASES_URL,
+  NEXTTOOLS_SOURCE_CODE_URL,
   PLAYWRIGHT_DEVICE_PRESETS,
 } from './settingsSections';
 import {
@@ -850,13 +849,9 @@ export default function Settings({
 
   // App version from Tauri
   const [appVersion, setAppVersion] = useState<string>('');
-  const sourceRevision = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(
-    appVersion,
-  )
-    ? `v${appVersion}`
-    : 'main';
-  const sourceLicenseUrl = `${MYAGENTS_GITHUB_URL}/blob/${sourceRevision}/LICENSE`;
-  const sourceNoticesUrl = `${MYAGENTS_GITHUB_URL}/blob/${sourceRevision}/THIRD_PARTY_NOTICES.md`;
+  const sourceRevision = 'feature';
+  const sourceLicenseUrl = `${NEXTTOOLS_GITHUB_URL}/blob/${sourceRevision}/LICENSE`;
+  const sourceNoticesUrl = `${NEXTTOOLS_GITHUB_URL}/blob/${sourceRevision}/THIRD_PARTY_NOTICES.md`;
   useEffect(() => {
     if (mode !== 'settings') return;
     if (!isTauriEnvironment()) {
@@ -1217,7 +1212,7 @@ export default function Settings({
     {},
   );
 
-  // Official MyAgents CLI tools shown in the same Toolbox list as MCP.
+  // Official NextTools CLI tools shown in the same Toolbox list as MCP.
   const [officialToolEnabling, setOfficialToolEnabling] = useState<
     Record<string, boolean>
   >({});
@@ -3324,6 +3319,10 @@ export default function Settings({
   const showCliProxy = shouldShowCliProxyProvider(cliProxy.status);
   const allProviders = useMemo(() => providers.filter(provider =>
     provider.id !== ANTIGRAVITY_SUBSCRIPTION_PROVIDER_ID || showCliProxy), [providers, showCliProxy]);
+  const settingsProviders = useMemo(
+    () => allProviders.filter((provider) => provider.id !== TOKENDANCE_PROVIDER_ID),
+    [allProviders],
+  );
   const managedCodexProviderGateEnabled =
     !linuxDesktop && isManagedCodexProviderGateEnabled(config);
   const managedCodexReadiness = useMemo(
@@ -3331,8 +3330,8 @@ export default function Settings({
     [config],
   );
   const visibleProviders = useMemo(
-    () => allProviders.filter((provider) => provider.enabled !== false),
-    [allProviders],
+    () => settingsProviders.filter((provider) => provider.enabled !== false),
+    [settingsProviders],
   );
   const proxyScopeProviderIds = useMemo(
     // Hidden built-ins still exist. Do not let display filtering trigger the
@@ -3449,14 +3448,14 @@ export default function Settings({
   }, [config.proxySettings?.scope, patchProxySettings, proxyScopeProviderIds]);
 
   const openProviderOrderDialog = useCallback(() => {
-    setProviderOrderDraft(allProviders.map((provider) => provider.id));
+    setProviderOrderDraft(settingsProviders.map((provider) => provider.id));
     setDisabledProviderDraft(
-      allProviders
+      settingsProviders
         .filter((provider) => provider.enabled === false)
         .map((provider) => provider.id),
     );
     setShowProviderOrderDialog(true);
-  }, [allProviders]);
+  }, [settingsProviders]);
 
   const refreshManagedCodexStatus = useCallback(async () => {
     if (!isTauriEnvironment()) return;
@@ -3848,7 +3847,9 @@ export default function Settings({
     const nextOrder = normalizeProviderOrder(providerIds, providerOrderDraft);
     const nextDisabled = normalizeDisabledProviderIds(
       providerIds,
-      disabledProviderDraft,
+      allProviders.some((provider) => provider.id === TOKENDANCE_PROVIDER_ID && provider.enabled === false)
+        ? [...disabledProviderDraft, TOKENDANCE_PROVIDER_ID]
+        : disabledProviderDraft,
     );
     const updates: Partial<AppConfig> = {
       providerOrder: nextOrder,
@@ -5063,12 +5064,6 @@ export default function Settings({
               {visibleProviders.map((provider) =>
                 provider.id === CODEX_SUBSCRIPTION_PROVIDER_ID ? (
                   renderManagedCodexProviderCard(provider)
-                ) : provider.id === TOKENDANCE_PROVIDER_ID ? (
-                  <TokenDanceProvider
-                    key={provider.id}
-                    provider={provider}
-                    isActive={isActive}
-                  />
                 ) : (
                   <div
                     key={provider.id}
@@ -6080,9 +6075,9 @@ export default function Settings({
                     className="theme-product-wordmark theme-launcher-hero-title cursor-default select-none"
                     onClick={handleLogoTap}
                   >
-                    <MyAgentsLogotype
+                    <NextToolsLogotype
                       className="launcher-hero-logotype"
-                      title="MyAgents"
+                      title="NextTools"
                     />
                   </h1>
                   <div className="mt-1 flex items-center gap-2">
@@ -6120,7 +6115,7 @@ export default function Settings({
                       </button>
                     )}
                     <ExternalLink
-                      href={MYAGENTS_RELEASES_URL}
+                      href={NEXTTOOLS_RELEASES_URL}
                       className="rounded-lg bg-[var(--paper-inset)] px-2 py-0.5 text-xs text-[var(--ink-secondary)] transition-colors hover:bg-[var(--paper-elevated)]"
                     >
                       {tSettings('about.releaseNotes')}
@@ -6289,13 +6284,13 @@ export default function Settings({
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wider text-[var(--ink-muted)]">
-                      Developer
+                      Upstream developer
                     </p>
                     <p className="mt-1 text-[var(--ink)]">Ethan L</p>
                   </div>
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wider text-[var(--ink-muted)]">
-                      Website
+                      Upstream website
                     </p>
                     <ExternalLink
                       href="https://myagents.io"
@@ -6306,7 +6301,7 @@ export default function Settings({
                   </div>
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wider text-[var(--ink-muted)]">
-                      Contact
+                      Upstream licensing contact
                     </p>
                     <ExternalLink
                       href="mailto:myagents.io@gmail.com"
@@ -6320,10 +6315,10 @@ export default function Settings({
                       GitHub
                     </p>
                     <ExternalLink
-                      href={MYAGENTS_GITHUB_URL}
+                      href={NEXTTOOLS_GITHUB_URL}
                       className="mt-1 block text-[var(--accent)] hover:underline"
                     >
-                      github.com/hAcKlyc/MyAgents
+                      github.com/YU0000/NextTools
                     </ExternalLink>
                   </div>
                 </div>
@@ -6345,7 +6340,7 @@ export default function Settings({
                     {tSettings('about.communityLicense')}
                   </ExternalLink>
                   <ExternalLink
-                    href={MYAGENTS_SOURCE_CODE_URL}
+                    href={NEXTTOOLS_SOURCE_CODE_URL}
                     className="rounded-lg bg-[var(--paper-inset)] px-3 py-1.5 text-[var(--ink)] transition-colors hover:bg-[var(--hover-bg)]"
                   >
                     {tSettings('about.sourceCode')}
@@ -9277,7 +9272,7 @@ export default function Settings({
       {/* Provider Enablement / Ordering Modal */}
       {showProviderOrderDialog && (
         <ProviderEnableOrderDialog
-          providers={allProviders}
+          providers={settingsProviders}
           providerOrderDraft={providerOrderDraft}
           disabledProviderDraft={disabledProviderDraft}
           onProviderOrderDraftChange={setProviderOrderDraft}

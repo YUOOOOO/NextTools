@@ -223,7 +223,7 @@ fn write_export_file(destination: &Path, bytes: &[u8]) -> Result<(), String> {
 
     for nonce in 0..100u32 {
         let tmp_path = parent.join(format!(
-            ".{}.myagents-export-{}-{}.tmp",
+            ".{}.nexttools-export-{}-{}.tmp",
             file_name,
             std::process::id(),
             nonce

@@ -279,9 +279,9 @@ export default function RuntimeDiagnosticsBanner({
                   <div>HTTP_PROXY:  {diagnostics.effectiveEnv.proxy?.http ?? '(unset)'}</div>
                   <div>HTTPS_PROXY: {diagnostics.effectiveEnv.proxy?.https ?? '(unset)'}</div>
                   <div>NO_PROXY:    {diagnostics.effectiveEnv.proxy?.no ?? '(unset)'}</div>
-                  <div>proxyPolicy: {diagnostics.effectiveEnv.proxyPolicy ?? 'myagents'}</div>
+                  <div>proxyPolicy: {diagnostics.effectiveEnv.proxyPolicy ?? 'nexttools'}</div>
                   <div>
-                    MYAGENTS_PROXY_INJECTED: {diagnostics.effectiveEnv.myagentsProxyInjected
+                    NEXTTOOLS_PROXY_INJECTED: {diagnostics.effectiveEnv.nexttoolsProxyInjected
                       ? t('shell.runtimeDiagnostics.yes')
                       : t('shell.runtimeDiagnostics.no')}
                   </div>
@@ -295,7 +295,7 @@ export default function RuntimeDiagnosticsBanner({
 
               <div className="text-xs text-[var(--ink-muted)] italic">
                 {t('shell.runtimeDiagnostics.snapshot', { timestamp: diagnostics.timestamp })}
-                <code className="ml-1">myagents diagnose runtime {diagnostics.runtime}</code>
+                <code className="ml-1">nexttools diagnose runtime {diagnostics.runtime}</code>
               </div>
             </div>
           )}

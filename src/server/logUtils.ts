@@ -7,8 +7,8 @@ import { homedir } from 'os';
 import { join } from 'path';
 import { ensureDirSync } from './utils/fs-utils';
 
-export const MYAGENTS_DIR = join(homedir(), '.myagents');
-export const LOGS_DIR = join(MYAGENTS_DIR, 'logs');
+export const NEXTTOOLS_DIR = join(homedir(), '.nexttools');
+export const LOGS_DIR = join(NEXTTOOLS_DIR, 'logs');
 // Retention policy moved to `./log-retention.ts` (#121, 2026-05). Keeping a
 // re-export of LOGS_DIR + ensureLogsDir as the only API of this module.
 
@@ -16,8 +16,8 @@ export const LOGS_DIR = join(MYAGENTS_DIR, 'logs');
  * Ensure logs directory exists
  */
 export function ensureLogsDir(): void {
-  if (!existsSync(MYAGENTS_DIR)) {
-    ensureDirSync(MYAGENTS_DIR);
+  if (!existsSync(NEXTTOOLS_DIR)) {
+    ensureDirSync(NEXTTOOLS_DIR);
   }
   if (!existsSync(LOGS_DIR)) {
     ensureDirSync(LOGS_DIR);

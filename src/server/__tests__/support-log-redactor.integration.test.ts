@@ -7,7 +7,7 @@ import { spawn } from '../utils/subprocess';
 
 const realScript = fileURLToPath(
   new URL(
-    '../../../bundled-agents/myagents_helper/.claude/skills/support/scripts/redact-log-output.mjs',
+    '../../../bundled-agents/nexttools_helper/.claude/skills/support/scripts/redact-log-output.mjs',
     import.meta.url,
   ),
 );
@@ -67,7 +67,7 @@ describe('support log redactor CLI', () => {
   let linkedScript: string;
 
   beforeAll(() => {
-    scratchDir = mkdtempSync(join(tmpdir(), 'myagents-support-redactor-'));
+    scratchDir = mkdtempSync(join(tmpdir(), 'nexttools-support-redactor-'));
     const linkedSupportDir = join(scratchDir, 'support');
     symlinkSync(
       realSupportDir,

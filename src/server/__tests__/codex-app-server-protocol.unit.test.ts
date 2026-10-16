@@ -55,7 +55,7 @@ describe('Codex app-server protocol helpers', () => {
   function tempWorkspace(): string {
     const dir = join(
       tmpdir(),
-      `myagents-codex-test-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      `nexttools-codex-test-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     );
     mkdirSync(dir, { recursive: true });
     tempRoots.push(dir);
@@ -250,7 +250,7 @@ describe('Codex app-server protocol helpers', () => {
         hostToolDispatcher: {
           descriptors: [
             {
-              name: 'myagents__mcp__local__write',
+              name: 'nexttools__mcp__local__write',
               description: 'Write',
               inputSchema: { type: 'object' },
             },
@@ -291,7 +291,7 @@ describe('Codex app-server protocol helpers', () => {
         threadId: 'thread-one',
         turnId: 'turn-one',
         callId: 'call-one',
-        tool: 'myagents__mcp__local__write',
+        tool: 'nexttools__mcp__local__write',
         arguments: { path: 'README.md' },
       },
       (event) => events.push(event),
@@ -302,7 +302,7 @@ describe('Codex app-server protocol helpers', () => {
       expect.objectContaining({
         kind: 'permission_request',
         requestId: '41',
-        toolName: 'myagents__mcp__local__write',
+        toolName: 'nexttools__mcp__local__write',
       }),
     ]);
     await runtime.respondPermission(
@@ -337,7 +337,7 @@ describe('Codex app-server protocol helpers', () => {
         hostToolDispatcher: {
           descriptors: [
             {
-              name: 'myagents__mcp__local__write',
+              name: 'nexttools__mcp__local__write',
               description: 'Write',
               inputSchema: {
                 type: 'object',
@@ -370,7 +370,7 @@ describe('Codex app-server protocol helpers', () => {
         threadId: 'thread-one',
         turnId: 'turn-one',
         callId: 'call-invalid',
-        tool: 'myagents__mcp__local__write',
+        tool: 'nexttools__mcp__local__write',
         arguments: { unexpected: true },
       },
       (event) => events.push(event),
@@ -427,7 +427,7 @@ describe('Codex app-server protocol helpers', () => {
       output: '/Users/private/CODEX_OUTPUT_MARKER',
       error: 'CODEX_ERROR_MARKER from /Users/private',
     };
-    const command = `myagents anydoc convert ${markers.input} --password ${markers.password} --output ${markers.output}`;
+    const command = `nexttools anydoc convert ${markers.input} --password ${markers.password} --output ${markers.output}`;
     const commandDetail = summarizeCodexNotificationForLog('item/completed', {
       threadId: 'thread-private',
       item: {
@@ -459,7 +459,7 @@ describe('Codex app-server protocol helpers', () => {
     for (const marker of Object.values(markers)) {
       expect(combined).not.toContain(marker);
     }
-    expect(combined).not.toContain('myagents anydoc convert');
+    expect(combined).not.toContain('nexttools anydoc convert');
   });
 
   it('keeps promoted stderr and generic error events semantic without retaining provider payloads', () => {
@@ -623,15 +623,15 @@ describe('Codex app-server protocol helpers', () => {
       '-c',
       'cli_auth_credentials_store="file"',
       '-c',
-      'model_provider="myagents_managed_http"',
+      'model_provider="nexttools_managed_http"',
       '-c',
-      'model_providers.myagents_managed_http.name="OpenAI"',
+      'model_providers.nexttools_managed_http.name="OpenAI"',
       '-c',
-      'model_providers.myagents_managed_http.wire_api="responses"',
+      'model_providers.nexttools_managed_http.wire_api="responses"',
       '-c',
-      'model_providers.myagents_managed_http.requires_openai_auth=true',
+      'model_providers.nexttools_managed_http.requires_openai_auth=true',
       '-c',
-      'model_providers.myagents_managed_http.supports_websockets=false',
+      'model_providers.nexttools_managed_http.supports_websockets=false',
       'app-server',
     ]);
 
@@ -656,40 +656,40 @@ describe('Codex app-server protocol helpers', () => {
       codexEnv: {},
     });
 
-    expect(launch.modelProvider).toBe('myagents_managed_http');
-    expect(launch.args).toContain('model_provider="myagents_managed_http"');
+    expect(launch.modelProvider).toBe('nexttools_managed_http');
+    expect(launch.args).toContain('model_provider="nexttools_managed_http"');
     expect(launch.args).toContain(
-      'model_providers.myagents_managed_http.name="OpenAI"',
+      'model_providers.nexttools_managed_http.name="OpenAI"',
     );
     expect(launch.args).toContain(
-      'model_providers.myagents_managed_http.wire_api="responses"',
+      'model_providers.nexttools_managed_http.wire_api="responses"',
     );
     expect(launch.args).toContain(
-      'model_providers.myagents_managed_http.requires_openai_auth=true',
+      'model_providers.nexttools_managed_http.requires_openai_auth=true',
     );
     expect(launch.args).toContain(
-      'model_providers.myagents_managed_http.supports_websockets=false',
+      'model_providers.nexttools_managed_http.supports_websockets=false',
     );
   });
 
   it('keeps persisted provider identity for model-unknown legacy resumes', () => {
     expect(
       resolveCodexThreadModelProvider(
-        'myagents_managed_http',
+        'nexttools_managed_http',
         undefined,
         undefined,
       ),
-    ).toBe('myagents_managed_http');
+    ).toBe('nexttools_managed_http');
     expect(
       resolveCodexThreadModelProvider(
-        'myagents_managed_http',
+        'nexttools_managed_http',
         'thread-1',
         'gpt-5.6-sol',
       ),
-    ).toBe('myagents_managed_http');
+    ).toBe('nexttools_managed_http');
     expect(
       resolveCodexThreadModelProvider(
-        'myagents_managed_http',
+        'nexttools_managed_http',
         'thread-1',
         undefined,
       ),
@@ -740,13 +740,13 @@ describe('Codex app-server protocol helpers', () => {
       'mcp_servers.remote-http.url="https://example.com/mcp"',
     );
     expect(args).toContain(
-      'mcp_servers.remote-http.env_http_headers={Authorization="MYAGENTS_MCP_REMOTE_HTTP_AUTHORIZATION"}',
+      'mcp_servers.remote-http.env_http_headers={Authorization="NEXTTOOLS_MCP_REMOTE_HTTP_AUTHORIZATION"}',
     );
     expect(args).toContain('mcp_servers.remote-http.startup_timeout_sec=60');
     expect(args.join('\n')).not.toContain('secret-token');
     expect(args.join('\n')).not.toContain('remote-secret');
     expect(env.FS_TOKEN).toBe('secret-token');
-    expect(env.MYAGENTS_MCP_REMOTE_HTTP_AUTHORIZATION).toBe(
+    expect(env.NEXTTOOLS_MCP_REMOTE_HTTP_AUTHORIZATION).toBe(
       'Bearer remote-secret',
     );
     expect(env.REMOTE_TOKEN).toBeUndefined();
@@ -1184,7 +1184,7 @@ describe('Codex app-server protocol helpers', () => {
         name: 'Stdio collision',
         type: 'stdio',
         command: 'node',
-        env: { MYAGENTS_MCP_A_AUTHORIZATION: 'stdio-secret' },
+        env: { NEXTTOOLS_MCP_A_AUTHORIZATION: 'stdio-secret' },
         isBuiltin: false,
       },
     ];
@@ -1200,10 +1200,10 @@ describe('Codex app-server protocol helpers', () => {
     expect(projection.failures).toEqual([
       expect.objectContaining({
         serverId: 'b',
-        message: expect.stringMatching(/MYAGENTS_MCP_A_AUTHORIZATION.*a/i),
+        message: expect.stringMatching(/NEXTTOOLS_MCP_A_AUTHORIZATION.*a/i),
       }),
     ]);
-    expect(env.MYAGENTS_MCP_A_AUTHORIZATION).toBe('Bearer http-secret');
+    expect(env.NEXTTOOLS_MCP_A_AUTHORIZATION).toBe('Bearer http-secret');
     expect(Object.values(env)).not.toContain('stdio-secret');
   });
 
@@ -1934,7 +1934,7 @@ describe('Codex app-server protocol helpers', () => {
       ).parseNotification(codexProc, method, params, () => {});
 
     // During thread resume Codex can report its pre-turn idle snapshot after
-    // MyAgents has already accepted the query. It must not end that active turn.
+    // NextTools has already accepted the query. It must not end that active turn.
     expect(
       parseNotification('thread/status/changed', {
         threadId: 'thread-1',

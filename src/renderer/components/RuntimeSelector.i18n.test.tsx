@@ -52,14 +52,14 @@ describe('RuntimeSelector i18n', () => {
     );
 
     await user.click(variant === 'launcher'
-      ? screen.getByTitle('Runtime: MyAgents (Claude Agent SDK)')
-      : screen.getByRole('button', { name: 'MyAgents (Claude Agent SDK)' }));
+      ? screen.getByTitle('Runtime: NextTools (Claude Agent SDK)')
+      : screen.getByRole('button', { name: 'NextTools (Claude Agent SDK)' }));
     expect(screen.getByText('Built-in Agent runtimes')).toBeInTheDocument();
     expect(screen.getByText('External CLI')).toBeInTheDocument();
-    expect(screen.getAllByText('MyAgents (DeepSeek Harness)').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NextTools (DeepSeek Harness)').length).toBeGreaterThan(0);
     expect(screen.queryByText('Experimental')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /MyAgents \(DeepSeek Harness\)/ }));
+    await user.click(screen.getByRole('button', { name: /NextTools \(DeepSeek Harness\)/ }));
     expect(onChange).toHaveBeenCalledWith('dsh');
   });
 
@@ -75,13 +75,13 @@ describe('RuntimeSelector i18n', () => {
     );
 
     await user.click(variant === 'launcher'
-      ? screen.getByTitle('Runtime: MyAgents (Claude Agent SDK)')
-      : screen.getByRole('button', { name: 'MyAgents (Claude Agent SDK)' }));
+      ? screen.getByTitle('Runtime: NextTools (Claude Agent SDK)')
+      : screen.getByRole('button', { name: 'NextTools (Claude Agent SDK)' }));
 
     const integratedHelp = screen.getByRole('button', { name: /Built-in Agent runtimes: Built-in Agent runtimes/ });
     const externalHelp = screen.getByRole('button', { name: /External CLI: Other Agent runtimes/ });
     await user.hover(integratedHelp);
-    expect(screen.getByRole('tooltip')).toHaveTextContent('You can manage all their settings in MyAgents.');
+    expect(screen.getByRole('tooltip')).toHaveTextContent('You can manage all their settings in NextTools.');
     await user.unhover(integratedHelp);
     await user.hover(externalHelp);
     expect(screen.getByRole('tooltip')).toHaveTextContent('Manage their settings and updates in the corresponding app.');
@@ -104,10 +104,10 @@ describe('RuntimeSelector i18n', () => {
       />,
     );
 
-    await user.click(screen.getByTitle('Runtime: MyAgents (DeepSeek Harness)'));
-    expect(screen.getAllByRole('button', { name: /MyAgents \(DeepSeek Harness\)/ })).toHaveLength(2);
+    await user.click(screen.getByTitle('Runtime: NextTools (DeepSeek Harness)'));
+    expect(screen.getAllByRole('button', { name: /NextTools \(DeepSeek Harness\)/ })).toHaveLength(2);
     expect(screen.getByText('Built-in Agent runtimes')).toBeInTheDocument();
-    expect(screen.queryByText('MyAgents (Claude Agent SDK)')).not.toBeInTheDocument();
+    expect(screen.queryByText('NextTools (Claude Agent SDK)')).not.toBeInTheDocument();
     expect(screen.queryByText('Codex CLI')).not.toBeInTheDocument();
   });
 
@@ -115,8 +115,8 @@ describe('RuntimeSelector i18n', () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<RuntimeSelector value="builtin" detections={detections} onChange={onChange} variant="panel" />);
-    await user.click(screen.getByRole('button', { name: 'MyAgents (Claude Agent SDK)' }));
-    await user.click(screen.getAllByRole('button', { name: 'MyAgents (Claude Agent SDK)' })[1]!);
+    await user.click(screen.getByRole('button', { name: 'NextTools (Claude Agent SDK)' }));
+    await user.click(screen.getAllByRole('button', { name: 'NextTools (Claude Agent SDK)' })[1]!);
     expect(onChange).toHaveBeenCalledExactlyOnceWith('builtin');
   });
 });

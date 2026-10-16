@@ -1,5 +1,5 @@
 // ThoughtInput — compact freeform note input for Thought mode.
-// Writes through to ~/.myagents/thoughts/ via `cmd_thought_create`.
+// Writes through to ~/.nexttools/thoughts/ via `cmd_thought_create`.
 //
 // flomo-style inline tag editor: `#word ` as you type → `#word` renders
 // highlighted inline; typing `#` (or clicking the # toolbar button) opens
@@ -275,7 +275,7 @@ export const ThoughtInput = forwardRef<ThoughtInputHandle, Props>(
     const segments = useMemo(() => splitWithTagHighlights(value), [value]);
 
     // Substring (not prefix) match — flomo behaviour; typing "ag" finds
-    // "myagents", "tags", etc. Capped at 8 rows.
+    // "nexttools", "tags", etc. Capped at 8 rows.
     const filteredTags = useMemo(() => {
       if (!tagMenu) return [];
       const q = tagMenu.query.toLowerCase();

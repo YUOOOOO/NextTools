@@ -20,7 +20,7 @@ let originalHome: string | undefined;
 let originalUserProfile: string | undefined;
 let store: SessionStoreModule;
 
-const sessionsPath = () => join(scratchHome, '.myagents', 'sessions.json');
+const sessionsPath = () => join(scratchHome, '.nexttools', 'sessions.json');
 
 function readSessions(): Array<Record<string, unknown>> {
   return JSON.parse(readFileSync(sessionsPath(), 'utf-8')) as Array<Record<string, unknown>>;
@@ -31,7 +31,7 @@ function writeSessions(sessions: Array<Record<string, unknown>>): void {
 }
 
 beforeAll(async () => {
-  scratchHome = mkdtempSync(join(tmpdir(), 'myagents-session-tags-'));
+  scratchHome = mkdtempSync(join(tmpdir(), 'nexttools-session-tags-'));
   originalHome = process.env.HOME;
   originalUserProfile = process.env.USERPROFILE;
   process.env.HOME = scratchHome;
@@ -210,7 +210,7 @@ describe('SessionStore user Tag authority', () => {
     const writable = await createPublishedSession(store, '/tmp/tag-io');
     await store.mutateSessionUserTag(writable.id, { kind: 'add', name: 'Durable' });
     const before = readFileSync(sessionsPath(), 'utf-8');
-    const tmpPath = join(scratchHome, '.myagents', 'sessions.json.tmp');
+    const tmpPath = join(scratchHome, '.nexttools', 'sessions.json.tmp');
     if (existsSync(tmpPath)) rmSync(tmpPath, { recursive: true, force: true });
     mkdirSync(tmpPath);
     const failed = await store.mutateGlobalSessionUserTag({

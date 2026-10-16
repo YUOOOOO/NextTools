@@ -18,7 +18,7 @@ export interface SkillItem {
     path: string;
     folderName: string;
     author?: string;
-    /** Content is versioned and force-synced by MyAgents. */
+    /** Content is versioned and force-synced by NextTools. */
     systemOwned: boolean;
     /** Product contract requires this global skill to remain enabled. */
     required: boolean;
@@ -26,7 +26,7 @@ export interface SkillItem {
     enabled: boolean;
     /** Present in the workspace capability list; stable project override key. */
     capabilityId?: string;
-    /** Physical origin after resolving MyAgents-managed project symlinks. */
+    /** Physical origin after resolving NextTools-managed project symlinks. */
     origin?: ProjectCapabilitySource;
 }
 
@@ -55,7 +55,7 @@ export interface SkillDetail {
     folderName: string;
     path: string;
     scope: 'user' | 'project';
-    /** Content is versioned and maintained by MyAgents. */
+    /** Content is versioned and maintained by NextTools. */
     systemOwned: boolean;
     /** Product contract requires this global Skill to remain available. */
     required: boolean;

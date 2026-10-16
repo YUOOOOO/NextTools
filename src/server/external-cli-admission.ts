@@ -72,9 +72,9 @@ export async function admitAdminRequest(
       response: {
         success: false,
         code: 'EXTERNAL_CLI_CAPABILITY_NOT_OPEN',
-        error: `The command route '${route}' is available only inside MyAgents.`,
+        error: `The command route '${route}' is available only inside NextTools.`,
         suggestion:
-          'Use `myagents --help` to list the public external commands.',
+          'Use `nexttools --help` to list the public external commands.',
       },
     };
   }
@@ -86,21 +86,21 @@ export async function admitAdminRequest(
       response: {
         success: false,
         code: 'EXTERNAL_CLI_TOKEN_REQUIRED',
-        error: 'External CLI access requires MYAGENTS_API_TOKEN.',
+        error: 'External CLI access requires NEXTTOOLS_API_TOKEN.',
         suggestion:
-          'Enable External Calls in MyAgents Settings and export the token.',
+          'Enable External Calls in NextTools Settings and export the token.',
       },
     };
   }
 
-  const sidecarId = process.env.MYAGENTS_SIDECAR_ID?.trim();
+  const sidecarId = process.env.NEXTTOOLS_SIDECAR_ID?.trim();
   if (!sidecarId) {
     return {
       status: 503,
       response: {
         success: false,
         code: 'EXTERNAL_CLI_HOST_NOT_READY',
-        error: 'The MyAgents Host identity is not ready.',
+        error: 'The NextTools Host identity is not ready.',
       },
     };
   }
@@ -114,7 +114,7 @@ export async function admitAdminRequest(
       response: {
         success: false,
         code: 'EXTERNAL_CLI_POLICY_UNAVAILABLE',
-        error: 'The MyAgents external access policy is unavailable.',
+        error: 'The NextTools external access policy is unavailable.',
       },
     };
   }
@@ -127,11 +127,11 @@ export async function admitAdminRequest(
         success: false,
         code: disabled ? 'EXTERNAL_CLI_DISABLED' : 'EXTERNAL_CLI_TOKEN_INVALID',
         error: disabled
-          ? 'MyAgents CLI external access is disabled.'
-          : 'MYAGENTS_API_TOKEN is invalid or has been reset.',
+          ? 'NextTools CLI external access is disabled.'
+          : 'NEXTTOOLS_API_TOKEN is invalid or has been reset.',
         suggestion: disabled
-          ? 'Enable External Calls in MyAgents Settings.'
-          : 'Copy the current token from MyAgents Settings and retry.',
+          ? 'Enable External Calls in NextTools Settings.'
+          : 'Copy the current token from NextTools Settings and retry.',
       },
     };
   }

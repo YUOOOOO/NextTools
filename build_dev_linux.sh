@@ -27,4 +27,4 @@ fi
 # Do not kill installed apps or other development sessions. The app's existing
 # single-instance owner decides whether a second process may run.
 cd "$PROJECT_DIR"
-exec "${PROJECT_DIR}/src-tauri/target/x86_64-unknown-linux-gnu/debug/myagents"
+exec "${PROJECT_DIR}/src-tauri/target/x86_64-unknown-linux-gnu/debug/nexttools"

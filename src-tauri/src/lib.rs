@@ -1,4 +1,4 @@
-// MyAgents Tauri Application
+// NextTools Tauri Application
 // Main entry point with sidecar lifecycle management
 
 mod agent_network;
@@ -46,7 +46,7 @@ pub mod management_api;
 mod mcp_selection;
 pub mod mcp_startup_admission;
 pub mod tokendance;
-pub use myagents_media_worker_protocol as media_worker_protocol;
+pub use nexttools_media_worker_protocol as media_worker_protocol;
 #[cfg(any(windows, test))]
 mod credential_permissions;
 pub mod memory_auto_update;
@@ -142,14 +142,14 @@ enum NavDecision {
 }
 
 // Native startup surface only. The canonical values remain the Theme's
-// `--paper` tokens in myagents-default.css; the unit guard below fails if this
+// `--paper` tokens in nexttools-default.css; the unit guard below fails if this
 // platform projection drifts. Keeping the surface to one flat token avoids
 // duplicating the actual Theme palette or material system in Rust.
 const THEME_BOOTSTRAP_LIGHT_PAPER: Color = Color(250, 246, 238, 255);
 const THEME_BOOTSTRAP_DARK_PAPER: Color = Color(26, 22, 20, 255);
-const THEME_BOOTSTRAP_APPEARANCE_MARKER: &str = "__MYAGENTS_APPEARANCE_MODE__";
-const THEME_BOOTSTRAP_RUN_ID_MARKER: &str = "__MYAGENTS_BOOTSTRAP_RUN_ID__";
-const THEME_BOOTSTRAP_WINDOW_LABEL_MARKER: &str = "__MYAGENTS_WINDOW_LABEL__";
+const THEME_BOOTSTRAP_APPEARANCE_MARKER: &str = "__NEXTTOOLS_APPEARANCE_MODE__";
+const THEME_BOOTSTRAP_RUN_ID_MARKER: &str = "__NEXTTOOLS_BOOTSTRAP_RUN_ID__";
+const THEME_BOOTSTRAP_WINDOW_LABEL_MARKER: &str = "__NEXTTOOLS_WINDOW_LABEL__";
 const THEME_BOOTSTRAP_SCRIPT_TEMPLATE: &str =
     include_str!("../../src/renderer/theme/native-bootstrap-script.js");
 
@@ -191,10 +191,10 @@ fn classify_navigation(url: &Url) -> NavDecision {
     // Tauri-internal schemes: always allow.
     // - tauri / ipc: Tauri 2.x core IPC bridges
     // - asset: tauri-plugin-fs asset serving
-    // - myagents-resource / myagents-internal: app's custom protocols
+    // - nexttools-resource / nexttools-internal: app's custom protocols
     if matches!(
         scheme,
-        "tauri" | "ipc" | "asset" | "myagents-resource" | "myagents-internal"
+        "tauri" | "ipc" | "asset" | "nexttools-resource" | "nexttools-internal"
     ) {
         return NavDecision::Allow;
     }
@@ -262,13 +262,13 @@ pub fn run() {
     // ── DIAGNOSTIC PANIC HOOK (April 2026 crash investigation) ─────────────
     // Install BEFORE any other init so we capture every panic, including
     // setup-time / did_finish_launching ones that don't reach the unified
-    // logger. Writes to ~/.myagents/logs/panic-{pid}-{timestamp}.log so a
+    // logger. Writes to ~/.nexttools/logs/panic-{pid}-{timestamp}.log so a
     // post-mortem has the actual panic message even when the app aborts
     // before normal log flush.
     {
         let prev = std::panic::take_hook();
         std::panic::set_hook(Box::new(move |info| {
-            let log_dir = app_dirs::myagents_data_dir()
+            let log_dir = app_dirs::nexttools_data_dir()
                 .map(|d| d.join("logs"))
                 .unwrap_or_else(|| std::path::PathBuf::from("."));
             let _ = std::fs::create_dir_all(&log_dir);
@@ -345,7 +345,7 @@ pub fn run() {
     // RecordStore is the sole authority for both canonical Records and the
     // legacy Thought compatibility surface. Its startup adapter migrates old
     // Thought files before the in-memory snapshot becomes visible.
-    let data_dir = app_dirs::myagents_data_dir().unwrap_or_else(|| std::path::PathBuf::from("."));
+    let data_dir = app_dirs::nexttools_data_dir().unwrap_or_else(|| std::path::PathBuf::from("."));
     let record_state: record::ManagedRecordStore = Arc::new(record::RecordStore::new(
         data_dir.join("records"),
         Some(data_dir.join("thoughts")),
@@ -388,10 +388,10 @@ pub fn run() {
                 macos_edit_menu::dispatch_history(app, command);
             }
         })
-        .register_asynchronous_uri_scheme_protocol("myagents-resource", attachment_protocol::handle)
+        .register_asynchronous_uri_scheme_protocol("nexttools-resource", attachment_protocol::handle)
         // Historical WebView-only compatibility. OS deep links are parsed by
         // app_route and reject these authorities.
-        .register_asynchronous_uri_scheme_protocol("myagents", attachment_protocol::handle)
+        .register_asynchronous_uri_scheme_protocol("nexttools", attachment_protocol::handle)
         .plugin(tauri_plugin_single_instance::init(
             move |app, args, _cwd| {
                 // Another instance was launched — bring the existing window to the
@@ -843,7 +843,7 @@ pub fn run() {
             agent_network::commands::cmd_agent_network_remove,
             agent_network::commands::cmd_agent_discovery,
             agent_network::commands::cmd_agent_network_request,
-            // MyAgents Cloud Space
+            // NextTools Cloud Space
             space_cloud::cmd_space_get_capability,
             space_cloud::cmd_space_get_session,
             space_cloud::cmd_space_set_active_space,
@@ -1082,7 +1082,7 @@ pub fn run() {
             // Order: must be BEFORE macos_arrow_filter::install_arrow_key_filter
             // because the filter looks up the WryWebView ObjC class which is
             // only registered after the first webview is constructed.
-            let theme_bootstrap_selection = app_dirs::myagents_data_dir()
+            let theme_bootstrap_selection = app_dirs::nexttools_data_dir()
                 .map(|dir| config_io::read_theme_bootstrap_selection(&dir.join("config.json")))
                 .unwrap_or_default();
             let preferred_native_theme = match theme_bootstrap_selection.appearance_mode.as_str() {
@@ -1104,7 +1104,7 @@ pub fn run() {
                 WebviewUrl::default(),
             )
             .scroll_bar_style(crate::webview_policy::scroll_bar_style())
-            .title("MyAgents")
+            .title("NextTools")
             .inner_size(1200.0, 800.0)
             .min_inner_size(800.0, 600.0)
             .resizable(true)
@@ -1306,7 +1306,7 @@ pub fn run() {
                 let build_mode = if cfg!(debug_assertions) { "debug" } else { "release" };
                 let os = std::env::consts::OS;
                 let arch = std::env::consts::ARCH;
-                let data_dir = app_dirs::myagents_data_dir();
+                let data_dir = app_dirs::nexttools_data_dir();
                 let dir_str = data_dir.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "?".into());
 
                 // Read config.json for counts (best-effort)
@@ -1521,7 +1521,7 @@ pub fn run() {
                     } else {
                         app.manage(runtime_registry.clone());
                     }
-                    match app_dirs::myagents_data_dir() {
+                    match app_dirs::nexttools_data_dir() {
                         Some(data_dir) => {
                             match document_processing::DocumentProcessingManager::initialize(
                                 data_dir.clone(),
@@ -1622,7 +1622,7 @@ pub fn run() {
             session_metadata::spawn_session_metadata_watcher(app.handle().clone());
 
             // Start the internal control plane before any backend automation can
-            // create a Sidecar that needs MYAGENTS_MANAGEMENT_PORT.
+            // create a Sidecar that needs NEXTTOOLS_MANAGEMENT_PORT.
             let automation_app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let port = match management_api::start_management_api().await {
@@ -1668,7 +1668,7 @@ pub fn run() {
             }
 
             // Initialize SearchEngine (full-text search)
-            if let Some(data_dir) = app_dirs::myagents_data_dir() {
+            if let Some(data_dir) = app_dirs::nexttools_data_dir() {
                 match search::SearchEngine::new(data_dir) {
                     Ok(engine) => {
                         engine.start_background_indexing(app.handle().clone());
@@ -2029,14 +2029,14 @@ mod nav_guard_tests {
         assert_eq!(decide("asset://localhost/x"), NavDecision::Allow);
         assert_eq!(decide("ipc://localhost/"), NavDecision::Allow);
         assert_eq!(
-            decide("myagents-resource://attachment/x/y"),
+            decide("nexttools-resource://attachment/x/y"),
             NavDecision::Allow
         );
         assert_eq!(decide("http://localhost:5173/"), NavDecision::Allow);
         assert_eq!(decide("https://tauri.localhost/"), NavDecision::Allow);
         assert_eq!(decide("http://127.0.0.1:1420/"), NavDecision::Allow);
         assert_eq!(
-            decide("myagents://attachment/x/y"),
+            decide("nexttools://attachment/x/y"),
             NavDecision::BlockSilently
         );
     }
@@ -2069,7 +2069,7 @@ mod nav_guard_tests {
 
     #[test]
     fn native_bootstrap_surface_tracks_canonical_theme_paper_tokens() {
-        let css = include_str!("../../src/renderer/theme/themes/myagents-default.css");
+        let css = include_str!("../../src/renderer/theme/themes/nexttools-default.css");
 
         fn paper_color(css: &str, scheme: &str) -> Color {
             let selector = format!("html[data-color-scheme='{scheme}'],");
@@ -2110,7 +2110,7 @@ mod nav_guard_tests {
             "main",
         );
         assert!(script.contains("if (themeSelectionExplicit) themeId = storedThemeId"));
-        assert!(script.contains("let themeId = 'myagents-light'"));
+        assert!(script.contains("let themeId = 'nexttools-light'"));
         assert!(script.contains("appearanceMode: \"dark\""));
         assert!(!script.contains(THEME_BOOTSTRAP_APPEARANCE_MARKER));
         assert!(!script.contains(THEME_BOOTSTRAP_RUN_ID_MARKER));

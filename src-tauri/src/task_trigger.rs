@@ -577,7 +577,7 @@ fn resolve_executable<R: Runtime>(
     let lower = trimmed.to_ascii_lowercase();
     if lower == "node" || lower == "node.exe" {
         return crate::sidecar::find_node_executable_pub(app_handle)
-            .ok_or_else(|| "MyAgents bundled Node.js v24 was not found".to_string());
+            .ok_or_else(|| "NextTools bundled Node.js v24 was not found".to_string());
     }
     let path = PathBuf::from(trimmed);
     if path.is_absolute() {
@@ -832,7 +832,7 @@ fn run_command_blocking(
 
 /// Build the deliberately small Detector environment. Detector scripts run as
 /// the desktop user, but they are not Provider/Session subprocesses and must
-/// never inherit API keys, MyAgents control ports, or arbitrary launch-shell
+/// never inherit API keys, NextTools control ports, or arbitrary launch-shell
 /// variables. Generic proxy/certificate variables remain part of the local
 /// command baseline; the canonical proxy helper applies the configured policy
 /// after this allowlist is installed.
@@ -1669,11 +1669,11 @@ mod tests {
     #[test]
     fn packaged_task_automation_detector_examples_match_the_real_validators() {
         let skill = include_str!(
-            "../../bundled-skills/myagents-task-automation/references/command-detector.md"
+            "../../bundled-skills/nexttools-task-automation/references/command-detector.md"
         );
-        let index = include_str!("../../bundled-skills/myagents-task-automation/SKILL.md");
-        assert!(index.contains("myagents task start <taskId>"));
-        assert!(!index.contains("myagents cron start <taskId>"));
+        let index = include_str!("../../bundled-skills/nexttools-task-automation/SKILL.md");
+        assert!(index.contains("nexttools task start <taskId>"));
+        assert!(!index.contains("nexttools cron start <taskId>"));
         let blocks = skill
             .split("```json")
             .skip(1)
@@ -1968,13 +1968,13 @@ mod tests {
     #[cfg(unix)]
     #[tokio::test]
     async fn command_runner_excludes_parent_secrets_and_sets_utf8_baseline() {
-        const SENTINEL: &str = "MYAGENTS_DETECTOR_SECRET_SENTINEL";
+        const SENTINEL: &str = "NEXTTOOLS_DETECTOR_SECRET_SENTINEL";
         let previous = std::env::var_os(SENTINEL);
         std::env::set_var(SENTINEL, "must-not-leak");
         let app = tauri::test::mock_app();
         let dir = tempdir().unwrap();
         let script = concat!(
-            "if [ -z \"${MYAGENTS_DETECTOR_SECRET_SENTINEL+x}\" ] ",
+            "if [ -z \"${NEXTTOOLS_DETECTOR_SECRET_SENTINEL+x}\" ] ",
             "&& [ \"$PYTHONUTF8\" = 1 ] ",
             "&& [ \"$PYTHONIOENCODING\" = utf-8 ] ",
             "&& [ -n \"$PATH\" ]; then ",

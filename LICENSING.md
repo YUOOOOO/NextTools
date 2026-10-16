@@ -1,5 +1,7 @@
 # MyAgents Licensing / MyAgents 许可说明
 
+> **NextTools fork notice / 分叉声明:** NextTools is an independently modified MyAgents fork distributed under AGPL-3.0-only. The upstream notice below is retained; it does not grant a commercial license to modifications owned by other contributors. NextTools 是独立修改版，按 AGPL-3.0-only 分发。以下保留上游原始许可说明，不代表已获得对其他贡献者修改的商业授权。
+
 ## English
 
 ### Licensing model

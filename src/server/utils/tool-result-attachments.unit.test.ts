@@ -176,14 +176,14 @@ describe('extractToolResultRenderParts', () => {
 
   it('maps file-path image refs to externalPath sources (allow-list enforced at save layer)', () => {
     const result = extractToolResultRenderParts([
-      { type: 'image', file: { path: '/Users/x/.myagents/generated/shot.png', mimeType: 'image/png' } },
+      { type: 'image', file: { path: '/Users/x/.nexttools/generated/shot.png', mimeType: 'image/png' } },
     ]);
 
     expect(result.attachments).toEqual([
       {
         kind: 'image',
         mimeType: 'image/png',
-        source: { kind: 'externalPath', sourcePath: '/Users/x/.myagents/generated/shot.png' },
+        source: { kind: 'externalPath', sourcePath: '/Users/x/.nexttools/generated/shot.png' },
       },
     ]);
   });

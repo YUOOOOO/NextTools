@@ -19,7 +19,7 @@ import { handleAdminInbox } from "./admin-handler";
 describe("handleAdminInbox delivery acknowledgement", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.MYAGENTS_MANAGEMENT_PORT = "43123";
+    process.env.NEXTTOOLS_MANAGEMENT_PORT = "43123";
     mocks.getSessionMetadata.mockReturnValue({ agentDir: "/target/workspace" });
   });
 

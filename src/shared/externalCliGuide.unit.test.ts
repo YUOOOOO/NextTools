@@ -7,7 +7,7 @@ import { EXTERNAL_CLI_PUBLIC_CAPABILITIES } from './externalCliCapabilities';
 
 const GUIDE_PATH = resolve(
   process.cwd(),
-  'bundled-guides/external-myagents-cli/SKILL.md',
+  'bundled-guides/external-nexttools-cli/SKILL.md',
 );
 const guide = readFileSync(GUIDE_PATH, 'utf8');
 const documentedInvocations = [
@@ -17,7 +17,7 @@ const publicCommands = EXTERNAL_CLI_PUBLIC_CAPABILITIES.map(
   ({ command }) => command,
 );
 
-describe('external MyAgents CLI guide', () => {
+describe('external NextTools CLI guide', () => {
   it('never demonstrates an invocation outside the public allowlist', () => {
     for (const invocation of documentedInvocations) {
       if (invocation === '--help') continue;
@@ -47,14 +47,14 @@ describe('external MyAgents CLI guide', () => {
   });
 
   it('keeps internal caller credentials and direct control-plane details out', () => {
-    expect(guide).not.toContain('MYAGENTS_INTERNAL_CLI_TOKEN');
-    expect(guide).not.toContain('MYAGENTS_PORT');
+    expect(guide).not.toContain('NEXTTOOLS_INTERNAL_CLI_TOKEN');
+    expect(guide).not.toContain('NEXTTOOLS_PORT');
     expect(guide).not.toContain('/api/admin/');
   });
 
   it('requires the absolute launcher and external token environment variable', () => {
     expect(guide).toContain('CLI 绝对路径');
-    expect(guide).toContain('MYAGENTS_API_TOKEN');
-    expect(guide).toContain('PATH 不保证能发现 `myagents`');
+    expect(guide).toContain('NEXTTOOLS_API_TOKEN');
+    expect(guide).toContain('PATH 不保证能发现 `nexttools`');
   });
 });

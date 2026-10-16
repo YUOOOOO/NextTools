@@ -8,7 +8,7 @@ import { createServer } from "vite";
 import { chromium, webkit } from "playwright";
 
 const repo = resolve(import.meta.dirname, "..");
-const output = await mkdtemp(resolve(tmpdir(), "myagents-record-theme-"));
+const output = await mkdtemp(resolve(tmpdir(), "nexttools-record-theme-"));
 const engine = process.argv[2] ?? "webkit";
 assert.ok(["webkit", "chrome"].includes(engine));
 const entryId = resolve(repo, "src/renderer/__record_theme.tsx");
@@ -53,7 +53,7 @@ import './index.css';
 await i18n.changeLanguage('zh-CN');
 window.captureMode='recording';
 function Fixture(){
- const [selection,setSelection]=useState({themeId:'myagents-light',appearanceMode:'dark'});
+ const [selection,setSelection]=useState({themeId:'nexttools-light',appearanceMode:'dark'});
  const [generation,setGeneration]=useState(0);
  window.audit={themes:themeRegistry.getProductionIds(),set:(themeId,appearanceMode,mode)=>{
   window.captureMode=mode;setSelection({themeId,appearanceMode});setGeneration(x=>x+1);
@@ -243,7 +243,7 @@ try {
           );
         }
         results.push({ theme, scheme, mode, ...result });
-        if (theme === "myagents-light")
+        if (theme === "nexttools-light")
           await page.screenshot({
             path: resolve(output, `${scheme}-${mode}.png`),
           });
@@ -254,11 +254,11 @@ try {
   // produce zero output while repeated seeks kept the progress moving.
   await page.evaluate(() => {
     window.mediaTimelines = true;
-    window.audit.set("myagents-light", "dark", "ready");
+    window.audit.set("nexttools-light", "dark", "ready");
   });
   await page.waitForFunction(
     () =>
-      document.documentElement.dataset.themeId === "myagents-light" &&
+      document.documentElement.dataset.themeId === "nexttools-light" &&
       document.querySelectorAll("audio").length === 2,
   );
   await page
@@ -395,7 +395,7 @@ try {
     await page.evaluate((size) => {
       window.focusFixtureCount = size;
       window.mediaTimelines = false;
-      window.audit.set("myagents-light", "dark", "ready");
+      window.audit.set("nexttools-light", "dark", "ready");
     }, count);
     const text = page.getByRole("button", { name: "转写定位 0", exact: true });
     await text.waitFor();

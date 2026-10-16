@@ -16,11 +16,11 @@ afterEach(() => {
 
 describe('resolveManagedOAuthCredential', () => {
   it('authenticates a Global Sidecar by its immutable process identity', async () => {
-    vi.stubEnv('MYAGENTS_MANAGEMENT_PORT', '31415');
-    vi.stubEnv('MYAGENTS_SIDECAR_GENERATION', '7');
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', '__global__');
-    vi.stubEnv('MYAGENTS_INTERNAL_CLI_TOKEN', 'internal-capability');
-    vi.stubEnv('MYAGENTS_SESSION_ID', 'stale-product-session');
+    vi.stubEnv('NEXTTOOLS_MANAGEMENT_PORT', '31415');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_GENERATION', '7');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', '__global__');
+    vi.stubEnv('NEXTTOOLS_INTERNAL_CLI_TOKEN', 'internal-capability');
+    vi.stubEnv('NEXTTOOLS_SESSION_ID', 'stale-product-session');
     mocks.cancellableFetch.mockResolvedValue(new Response(JSON.stringify({
       ok: true,
       accessToken: 'managed-token',
@@ -44,8 +44,8 @@ describe('resolveManagedOAuthCredential', () => {
     const [url, options] = mocks.cancellableFetch.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('http://127.0.0.1:31415/api/grok/bearer');
     expect(options.headers).toMatchObject({
-      'X-MyAgents-Sidecar-Generation': '7',
-      'x-myagents-internal-cli-token': 'internal-capability',
+      'X-NextTools-Sidecar-Generation': '7',
+      'x-nexttools-internal-cli-token': 'internal-capability',
     });
     expect(JSON.parse(String(options.body))).toEqual({
       sidecarId: '__global__',
@@ -56,9 +56,9 @@ describe('resolveManagedOAuthCredential', () => {
   });
 
   it('does not substitute a Product Session id for process authority', async () => {
-    vi.stubEnv('MYAGENTS_MANAGEMENT_PORT', '31415');
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', '');
-    vi.stubEnv('MYAGENTS_SESSION_ID', 'session-1');
+    vi.stubEnv('NEXTTOOLS_MANAGEMENT_PORT', '31415');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', '');
+    vi.stubEnv('NEXTTOOLS_SESSION_ID', 'session-1');
 
     const { resolveManagedOAuthCredential } = await import('./management-api-client');
     await expect(resolveManagedOAuthCredential('xai-sub', { reason: 'request' }))

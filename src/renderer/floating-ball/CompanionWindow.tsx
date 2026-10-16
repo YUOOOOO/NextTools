@@ -397,7 +397,7 @@ export default function CompanionWindow() {
         return modelSupportsModality(providerForCapability, modelId, 'image');
     }, [providerForCapability, session.model, session.runtime]);
     const whoLabel = useMemo(() => {
-        if (!whoContext) return 'Mino';
+        if (!whoContext) return 'Nexo';
         return whoContext.windowTitle
             ? t('floatingBall.watchingAppWindow', {
                 appName: whoContext.appName,
@@ -865,12 +865,12 @@ export default function CompanionWindow() {
             );
             const result = await fileService.importBase64Files({
                 files: base64Files,
-                targetDir: 'myagents_files',
+                targetDir: 'nexttools_files',
             });
             if (!result.success || !result.files || result.files.length === 0) {
                 throw new Error('upload failed');
             }
-            await fileService.addGitignore({ pattern: 'myagents_files/' }).catch(() => undefined);
+            await fileService.addGitignore({ pattern: 'nexttools_files/' }).catch(() => undefined);
             insertReferencePaths(result.files);
             toast.success(t('floatingBall.toasts.filesAdded', { count: result.files.length }));
         } catch (err) {
@@ -890,13 +890,13 @@ export default function CompanionWindow() {
         try {
             const result = await fileService.copyPaths({
                 sourcePaths: paths,
-                targetDir: 'myagents_files',
+                targetDir: 'nexttools_files',
                 autoRename: true,
             });
             if (!result.success || !result.copiedFiles || result.copiedFiles.length === 0) {
                 throw new Error('copy failed');
             }
-            await fileService.addGitignore({ pattern: 'myagents_files/' }).catch(() => undefined);
+            await fileService.addGitignore({ pattern: 'nexttools_files/' }).catch(() => undefined);
             insertReferencePaths(result.copiedFiles.map((file) => file.targetPath));
             toast.success(t('floatingBall.toasts.filesAdded', { count: result.copiedFiles.length }));
             if (result.errors?.length) {
@@ -1183,13 +1183,13 @@ export default function CompanionWindow() {
                 const fileName = `screenshot-${new Date().toISOString().replace(/[:.]/g, '-')}.${ext}`;
                 const result = await fileService.importBase64Files({
                     files: [{ name: fileName, content: data }],
-                    targetDir: 'myagents_files',
+                    targetDir: 'nexttools_files',
                 });
                 if (!result.success || !result.files?.length) {
                     toast.error(t('floatingBall.toasts.screenshotSaveFailed'));
                     return;
                 }
-                await fileService.addGitignore({ pattern: 'myagents_files/' }).catch(() => undefined);
+                await fileService.addGitignore({ pattern: 'nexttools_files/' }).catch(() => undefined);
                 insertReferencePaths(result.files);
             }
             track('floating_ball_summon', { kind: 'screenshot' });
@@ -1229,7 +1229,7 @@ export default function CompanionWindow() {
         });
     }, [t, toast]);
 
-    const onOpenMyAgentsPreview = useCallback((path: string, options?: { displayPath?: string; initialLineNumber?: number }) => {
+    const onOpenNextToolsPreview = useCallback((path: string, options?: { displayPath?: string; initialLineNumber?: number }) => {
         if (!session.sessionId || !session.workspacePath) return;
         track('floating_ball_expand', { kind: 'file_preview' });
         void (async () => {
@@ -1376,7 +1376,7 @@ export default function CompanionWindow() {
                 <button onClick={onOpenDesktopPetSettings} title={t('floatingBall.chrome.openPetSettings')}>
                     <SettingsIcon className="size-4" />
                 </button>
-                <button onClick={onExpand} title={t('floatingBall.chrome.openInMyAgents')}>
+                <button onClick={onExpand} title={t('floatingBall.chrome.openInNextTools')}>
                     <ArrowUpRightIcon />
                 </button>
                 <button onClick={hideSelf} title={t('floatingBall.chrome.closeEsc')}>
@@ -1391,7 +1391,7 @@ export default function CompanionWindow() {
                 onInsertReference={insertReferencePaths}
                 refreshTrigger={workspaceChangeSignal}
                 menuProfile="floatingBall"
-                onOpenMyAgentsPreview={onOpenMyAgentsPreview}
+                onOpenNextToolsPreview={onOpenNextToolsPreview}
             >
             <div className={`fbw-convo${isBootState ? ' boot-state' : ''}`} ref={convoRef} onScroll={onConvoScroll}>
                 {!session.ready && !session.error && (

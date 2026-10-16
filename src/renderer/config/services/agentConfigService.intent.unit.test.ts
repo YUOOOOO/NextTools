@@ -75,7 +75,7 @@ import {
 function initialConfig(): AppConfig {
   return {
     defaultPermissionMode: 'auto',
-    themeId: 'myagents-default',
+    themeId: 'nexttools-default',
     appearanceMode: 'system',
     minimizeToTray: true,
     showDevTools: false,

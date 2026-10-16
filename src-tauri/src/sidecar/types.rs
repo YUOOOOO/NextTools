@@ -1608,7 +1608,7 @@ pub struct SessionSidecar {
     pub port: u16,
     /// Session ID this Sidecar serves
     pub session_id: String,
-    /// Immutable manager identity injected into `MYAGENTS_SIDECAR_ID` when
+    /// Immutable manager identity injected into `NEXTTOOLS_SIDECAR_ID` when
     /// this process was spawned. Unlike `session_id`, this does not change
     /// when pending/reset/handover flows rekey the logical Session.
     pub management_id: String,
@@ -1630,13 +1630,13 @@ pub struct SessionSidecar {
     /// Reserved for future use (e.g., TTL-based cleanup)
     #[allow(dead_code)]
     pub created_at: std::time::Instant,
-    /// MYAGENTS_RUNTIME env var value this Sidecar was spawned with.
+    /// NEXTTOOLS_RUNTIME env var value this Sidecar was spawned with.
     /// Used for drift detection on Agent-owner reuse: when the agent's
     /// runtime config changes (e.g. codex → claude-code), subsequent IM messages
     /// for the same peer session must not reuse a Sidecar that's still
     /// running the old runtime. None = builtin (no env var injected).
     pub runtime: Option<String>,
-    /// MYAGENTS_RUNTIME_SOURCE env var value this Sidecar was spawned with.
+    /// NEXTTOOLS_RUNTIME_SOURCE env var value this Sidecar was spawned with.
     /// Missing external runtime source is treated as system-cli.
     pub runtime_source: Option<String>,
 }

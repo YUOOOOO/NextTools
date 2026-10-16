@@ -82,7 +82,7 @@ pub async fn cmd_terminal_create(
         return Err(format!("Terminal {} already exists", id));
     }
 
-    // The embedded terminal advertises the same official `myagents` command
+    // The embedded terminal advertises the same official `nexttools` command
     // as Agent runtimes. Startup reconciliation is intentionally best-effort,
     // so terminal creation is its fail-closed admission boundary.
     tauri::async_runtime::spawn_blocking(crate::cli::ensure_launcher)
@@ -407,9 +407,9 @@ fn inject_terminal_env(cmd: &mut CommandBuilder, app: &AppHandle, sidecar_port: 
     // npm/AppData/inherited commands with the same name.
     let mut extra_paths: Vec<String> = Vec::new();
 
-    // ~/.myagents/bin (CLI launchers and registered tools)
+    // ~/.nexttools/bin (CLI launchers and registered tools)
     if let Some(home) = dirs::home_dir() {
-        let cli_bin = home.join(".myagents").join("bin");
+        let cli_bin = home.join(".nexttools").join("bin");
         extra_paths.push(cli_bin.to_string_lossy().into());
     }
 
@@ -501,9 +501,9 @@ fn inject_terminal_env(cmd: &mut CommandBuilder, app: &AppHandle, sidecar_port: 
     cmd.env("NO_PROXY", &no_proxy);
     cmd.env("no_proxy", &no_proxy);
 
-    // 3. Sidecar port — lets `myagents` CLI talk to the Tab's session sidecar
+    // 3. Sidecar port — lets `nexttools` CLI talk to the Tab's session sidecar
     if let Some(port) = sidecar_port {
-        cmd.env("MYAGENTS_PORT", port.to_string());
+        cmd.env("NEXTTOOLS_PORT", port.to_string());
     }
     crate::external_cli::inject_internal_token_builder(cmd);
 
@@ -518,13 +518,13 @@ fn inject_terminal_env(cmd: &mut CommandBuilder, app: &AppHandle, sidecar_port: 
     //    causing broken delete key, missing colors, and broken cursor movement.
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
-    cmd.env("TERM_PROGRAM", "MyAgents");
+    cmd.env("TERM_PROGRAM", "NextTools");
 
     // 6. Locale — preserve system locale or default to UTF-8
     if std::env::var("LANG").is_err() {
         cmd.env("LANG", "en_US.UTF-8");
     }
 
-    // 7. Terminal indicator (so scripts can detect they're in MyAgents terminal)
-    cmd.env("MYAGENTS_TERMINAL", "1");
+    // 7. Terminal indicator (so scripts can detect they're in NextTools terminal)
+    cmd.env("NEXTTOOLS_TERMINAL", "1");
 }

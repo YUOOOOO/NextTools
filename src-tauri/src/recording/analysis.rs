@@ -55,7 +55,7 @@ impl AnalysisSpoolSource {
         &self,
         start: u64,
         max_frames: usize,
-    ) -> Result<Option<myagents_media_worker_protocol::record_timeline::TrackTimeSpan>, &'static str>
+    ) -> Result<Option<nexttools_media_worker_protocol::record_timeline::TrackTimeSpan>, &'static str>
     {
         let Some(timeline) = self
             .timing
@@ -76,7 +76,7 @@ impl AnalysisSpoolSource {
             .map_interval(start, end)
             .ok_or("SPEECH_CAPTURE_TIME_UNAVAILABLE")?;
         Ok(Some(
-            myagents_media_worker_protocol::record_timeline::TrackTimeSpan {
+            nexttools_media_worker_protocol::record_timeline::TrackTimeSpan {
                 source_start: start,
                 source_end: end,
                 record_start: mapped.start_sample,
@@ -561,7 +561,7 @@ mod tests {
     #[test]
     fn replay_converts_record_media_time_back_to_the_original_spool_frames() {
         use super::super::timing::CaptureTimePoint;
-        use myagents_media_worker_protocol::record_timeline::CaptureTimeQuality;
+        use nexttools_media_worker_protocol::record_timeline::CaptureTimeQuality;
         let root = tempfile::tempdir().unwrap();
         let analysis = TrackAnalysisHandle::start(
             AudioTrackKind::Microphone,

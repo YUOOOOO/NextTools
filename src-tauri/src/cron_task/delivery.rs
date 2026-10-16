@@ -79,7 +79,7 @@ pub async fn deliver_task_notification_to_bot_checked(
     // None and the helper falls back to the legacy un-decorated prompt — the
     // IM Bot AI still sees the result, just without the `<inbox-message>`
     // envelope + `Source session id:` follow-up line (which would be wrong
-    // here anyway: a `myagents session send` against the Task Center task id
+    // here anyway: a `nexttools session send` against the Task Center task id
     // wouldn't deliver to any session).
     deliver_cron_result_to_bot(handle, &delivery, task_id, summary, None).await
 }
@@ -219,7 +219,7 @@ pub(crate) async fn deliver_cron_result_to_bot(
     // session id) for inbox-style envelope wrapping. Cron task fires *into* an
     // IM Bot session; the IM Bot AI sees the cron result as an `<inbox-message
     // from="Cron: <name>" reply_back="false">` prefix so it can later use
-    // `myagents session send <from_session_id>` to follow up. Look-up is
+    // `nexttools session send <from_session_id>` to follow up. Look-up is
     // best-effort — failures fall back to the legacy un-decorated cron prompt.
     // session id: caller-supplied (race-free); label: name lookup is stable
     // even if a concurrent rotate has updated session_id underneath.

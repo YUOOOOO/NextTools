@@ -460,7 +460,7 @@ fn opus_head(channels: u8, pre_skip: u16) -> Vec<u8> {
 }
 
 fn opus_tags() -> Vec<u8> {
-    const VENDOR: &[u8] = b"MyAgents bundled libopus (libopus_sys 0.3.3)";
+    const VENDOR: &[u8] = b"NextTools bundled libopus (libopus_sys 0.3.3)";
     let mut packet = Vec::with_capacity(16 + VENDOR.len());
     packet.extend_from_slice(b"OpusTags");
     packet.extend_from_slice(&(VENDOR.len() as u32).to_le_bytes());

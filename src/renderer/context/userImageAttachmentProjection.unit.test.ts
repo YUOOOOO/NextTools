@@ -31,12 +31,12 @@ function messageAttachment(id: string, previewUrl?: string): MessageAttachment {
 describe('user image attachment projection', () => {
   it('restores failed-send images without losing path refs or inline bytes', () => {
     const restored = restoreMessageImages([
-      { ...messageAttachment('path-image', 'blob:preview'), relativePath: '.myagents/attachments/test.png', size: 27 },
+      { ...messageAttachment('path-image', 'blob:preview'), relativePath: '.nexttools/attachments/test.png', size: 27 },
       messageAttachment('inline-image', 'data:image/png;base64,b25l'),
       { ...messageAttachment('document'), mimeType: 'text/plain', isImage: false },
     ]);
     expect(restored.map(imagePayloadForSend)).toEqual([
-      { kind: 'attachment_ref', id: 'path-image', name: 'image.png', mimeType: 'image/png', sizeBytes: 27, relativePath: '.myagents/attachments/test.png' },
+      { kind: 'attachment_ref', id: 'path-image', name: 'image.png', mimeType: 'image/png', sizeBytes: 27, relativePath: '.nexttools/attachments/test.png' },
       { kind: 'inline_base64', id: 'inline-image', name: 'image.png', mimeType: 'image/png', sizeBytes: 3, data: 'b25l' },
     ]);
   });

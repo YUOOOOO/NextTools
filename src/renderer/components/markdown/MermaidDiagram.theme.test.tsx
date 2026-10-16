@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ThemeRegistry, ThemeRuntimeProvider } from '@/theme';
 import { syntheticTheme } from '@/theme/__tests__/syntheticTheme';
-import { myAgentsDefaultTheme } from '@/theme/themes/myagents-default';
+import { nextToolsDefaultTheme } from '@/theme/themes/nexttools-default';
 
 const mermaidCapture = vi.hoisted(() => ({
   initialize: vi.fn(),
@@ -29,7 +29,7 @@ describe('MermaidDiagram Theme adapter', () => {
   afterEach(() => vi.useRealTimers());
 
   it('re-renders unchanged source when the Theme key changes and keeps strict security', async () => {
-    const registry = new ThemeRegistry([myAgentsDefaultTheme, syntheticTheme]);
+    const registry = new ThemeRegistry([nextToolsDefaultTheme, syntheticTheme]);
     const source = 'flowchart TD\n  A --> B';
     const view = render(
       <ThemeRuntimeProvider

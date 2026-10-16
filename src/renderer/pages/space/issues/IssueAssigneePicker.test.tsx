@@ -25,7 +25,7 @@ vi.mock('@/api/spaceCloud', async (importOriginal) => ({
 }));
 
 const session: SpaceSession = {
-  baseUrl: 'https://space.myagents.test',
+  baseUrl: 'https://space.nexttools.test',
   user: { id: 'user-1', name: 'Ethan', email: 'ethan@example.test' },
   space: { id: 'space-1', slug: 'official', name: 'Official', joinPolicy: 'open' },
   membership: { id: 'membership-1', role: 'owner' },
@@ -35,7 +35,7 @@ const session: SpaceSession = {
 const agent: SpaceRegisteredAgent = {
   id: 'rag-1',
   spaceId: 'space-1',
-  displayName: 'MyAgents Debugger',
+  displayName: 'NextTools Debugger',
   instruction: 'Debug accepted issues.',
   instructionRevision: 1,
   status: 'active',
@@ -64,7 +64,7 @@ describe('IssueAssigneePicker', () => {
     );
 
     await user.click(screen.getByRole('button', { name: '待认领' }));
-    expect(screen.getByText('MyAgents Debugger')).toBeInTheDocument();
+    expect(screen.getByText('NextTools Debugger')).toBeInTheDocument();
     await waitFor(() => expect(getMembers).toHaveBeenCalled());
     expect(screen.queryByText('Mira Chen')).not.toBeInTheDocument();
 
@@ -90,7 +90,7 @@ describe('IssueAssigneePicker', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: /MyAgents Debugger/ }));
+    await user.click(screen.getByRole('button', { name: /NextTools Debugger/ }));
     await user.click(screen.getByRole('button', { name: '取消指派' }));
     expect(screen.getByText('取消当前指派？')).toBeInTheDocument();
     await user.click(screen.getAllByRole('button', { name: '取消指派' }).at(-1)!);
@@ -101,7 +101,7 @@ describe('IssueAssigneePicker', () => {
     const user = userEvent.setup();
     render(
       <SpaceIdentityLine
-        name="MyAgents Debugger"
+        name="NextTools Debugger"
         type="registered_agent"
         showAgentTag
         agentOwnerName="Ethan L"
@@ -144,7 +144,7 @@ describe('IssueAssigneePicker', () => {
       />,
     );
     await user.click(screen.getByRole('button', { name: '待认领' }));
-    expect(screen.queryByText('MyAgents Debugger')).not.toBeInTheDocument();
+    expect(screen.queryByText('NextTools Debugger')).not.toBeInTheDocument();
 
     unmount();
     render(

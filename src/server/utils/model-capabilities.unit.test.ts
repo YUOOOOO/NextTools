@@ -229,7 +229,7 @@ describe('parseLiteLLMCatalog', () => {
 // bare-keyed registry was queried with a suffixed/whitespace-cruft model id, OR
 // an incomplete higher-priority entry shadowed the real window. These pin BOTH
 // mechanisms. HOME is redirected to an empty temp dir so only bundled
-// PRESET_PROVIDERS load (deterministic regardless of the dev's ~/.myagents),
+// PRESET_PROVIDERS load (deterministic regardless of the dev's ~/.nexttools),
 // then a config.json is written per-case to exercise the disk sources.
 describe('capability-suffix tolerance + per-field merge (#338)', () => {
   let tmpHome: string;
@@ -238,7 +238,7 @@ describe('capability-suffix tolerance + per-field merge (#338)', () => {
   beforeEach(() => {
     prevHome = process.env.HOME;
     tmpHome = mkdtempSync(join(tmpdir(), 'ma-modelcaps-'));
-    mkdirSync(join(tmpHome, '.myagents'), { recursive: true });
+    mkdirSync(join(tmpHome, '.nexttools'), { recursive: true });
     process.env.HOME = tmpHome;
     __resetModelCapabilityCacheForTests();
   });
@@ -274,7 +274,7 @@ describe('capability-suffix tolerance + per-field merge (#338)', () => {
   // undefined for a CLEAN model id → window collapsed to the SDK 200K default.
   it('an incomplete discovered entry does NOT shadow the preset contextLength', () => {
     writeFileSync(
-      join(tmpHome, '.myagents', 'config.json'),
+      join(tmpHome, '.nexttools', 'config.json'),
       JSON.stringify({ presetCustomModels: { zhipu: [{ model: 'glm-5-turbo', inputModalities: ['text'] }] } }),
     );
     __resetModelCapabilityCacheForTests();
@@ -287,7 +287,7 @@ describe('capability-suffix tolerance + per-field merge (#338)', () => {
   // must tag it.
   it('a 1M override stored under a [1m]-suffixed custom key resolves by the bare id', () => {
     writeFileSync(
-      join(tmpHome, '.myagents', 'config.json'),
+      join(tmpHome, '.nexttools', 'config.json'),
       JSON.stringify({
         presetCustomModels: { 'custom-dragon': [{ model: 'claude-sonnet-4-6[1m]', contextLength: 1_000_000 }] },
       }),
@@ -299,7 +299,7 @@ describe('capability-suffix tolerance + per-field merge (#338)', () => {
   });
 
   it('prefers the active provider contextLength when duplicate custom providers reuse a model id', () => {
-    const providersDir = join(tmpHome, '.myagents', 'providers');
+    const providersDir = join(tmpHome, '.nexttools', 'providers');
     mkdirSync(providersDir, { recursive: true });
     writeFileSync(
       join(providersDir, 'dragon-a.json'),
@@ -322,8 +322,8 @@ describe('capability-suffix tolerance + per-field merge (#338)', () => {
   });
 
   it('does not borrow contextLength when the active provider owns a context-less model row (#516)', () => {
-    const providersDir = join(tmpHome, '.myagents', 'providers');
-    const cacheDir = join(tmpHome, '.myagents', 'cache');
+    const providersDir = join(tmpHome, '.nexttools', 'providers');
+    const cacheDir = join(tmpHome, '.nexttools', 'cache');
     mkdirSync(providersDir, { recursive: true });
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(
@@ -349,7 +349,7 @@ describe('capability-suffix tolerance + per-field merge (#338)', () => {
 
   it('wraps SDK model ids with the active provider window, not a global duplicate model id', () => {
     writeFileSync(
-      join(tmpHome, '.myagents', 'config.json'),
+      join(tmpHome, '.nexttools', 'config.json'),
       JSON.stringify({
         presetCustomModels: {
           'custom-dragon': [{ model: 'claude-opus-4-6', contextLength: 1_000_000 }],
@@ -370,7 +370,7 @@ describe('capability-suffix tolerance + per-field merge (#338)', () => {
   // intended "undefined field = defer to lower source" semantics.
   it('per-field merge: explicit modalities win, missing contextLength fills from preset', () => {
     writeFileSync(
-      join(tmpHome, '.myagents', 'config.json'),
+      join(tmpHome, '.nexttools', 'config.json'),
       JSON.stringify({ presetCustomModels: { zhipu: [{ model: 'glm-5-turbo', inputModalities: ['text'] }] } }),
     );
     __resetModelCapabilityCacheForTests();
@@ -380,7 +380,7 @@ describe('capability-suffix tolerance + per-field merge (#338)', () => {
   });
 
   it('uses LiteLLM only as positive evidence and never lets its negative veto a provider offering', () => {
-    const cacheDir = join(tmpHome, '.myagents', 'cache');
+    const cacheDir = join(tmpHome, '.nexttools', 'cache');
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(
       join(cacheDir, 'litellm_model_prices.json'),
@@ -391,7 +391,7 @@ describe('capability-suffix tolerance + per-field merge (#338)', () => {
     __resetModelCapabilityCacheForTests();
     expect(modelSupportsModality('unique-modality-model', 'image')).toBe(true);
 
-    const providersDir = join(tmpHome, '.myagents', 'providers');
+    const providersDir = join(tmpHome, '.nexttools', 'providers');
     mkdirSync(providersDir, { recursive: true });
     writeFileSync(
       join(providersDir, 'explicit-text.json'),

@@ -2,7 +2,7 @@
  * tarball-fetcher.ts — Download a GitHub/raw zip and extract it into memory.
  *
  * Responsibilities:
- *   - Fetch trusted GitHub tarballs through the MyAgents general proxy overlay
+ *   - Fetch trusted GitHub tarballs through the NextTools general proxy overlay
  *   - Keep arbitrary raw ZIP URLs on the DNS-pinned direct SSRF-safe path
  *   - Default-branch fallback (try main → master on 404)
  *   - Enforce size / file-count / per-file limits (zip-bomb defense)
@@ -245,7 +245,7 @@ async function downloadZip(
       try {
         const pinnedDirectDispatcher = await assertPublicUrl(currentUrl);
         if (src.kind === 'github') {
-          // GitHub coordinates resolve to a MyAgents-constructed codeload URL;
+          // GitHub coordinates resolve to a NextTools-constructed codeload URL;
           // use the complete general baseline (app overlay or inherited env)
           // after the public-address check.
           // Arbitrary raw-zip URLs retain the DNS-pinned direct dispatcher so
@@ -260,7 +260,7 @@ async function downloadZip(
           signal: controller.signal,
           redirect: 'manual',
           headers: {
-            'User-Agent': 'MyAgents-Skill-Installer/1.0',
+            'User-Agent': 'NextTools-Skill-Installer/1.0',
             'Accept': 'application/zip, application/octet-stream',
           },
           ...(hopDispatcher ? { dispatcher: hopDispatcher } : {}),

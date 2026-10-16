@@ -72,7 +72,7 @@ function sameOwner(left: McpPrewarmOwner | null, right: McpPrewarmOwner): boolea
 }
 
 /**
- * Classify only the MCP ids installed by the current MyAgents-owned map.
+ * Classify only the MCP ids installed by the current NextTools-owned map.
  * Terminal failures are degraded, never a turn rejection. If any server is
  * still pending, it alone may consume the remaining absolute grace budget.
  */

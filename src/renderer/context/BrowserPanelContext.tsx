@@ -18,7 +18,7 @@ export function useBrowserPanel(): BrowserPanelContextValue | null {
  * The primary action for a web link inside product UI.
  *
  * Chat provides BrowserPanelContext, so ordinary HTTP(S) links stay inside
- * MyAgents. Surfaces outside Chat — and explicit Cmd/Ctrl clicks — fall back to
+ * NextTools. Surfaces outside Chat — and explicit Cmd/Ctrl clicks — fall back to
  * the system handler. Mail links are never valid BrowserPanel navigation.
  */
 export function useOpenWebLink(): (url: string, options?: { forceExternal?: boolean }) => void {

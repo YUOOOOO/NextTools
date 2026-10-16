@@ -268,10 +268,10 @@ export function createPresetTheme(manifest: PresetThemeManifest): ThemeDefinitio
   return {
     ...manifest,
     hero: {
-      productName: 'MyAgents',
+      productName: 'NextTools',
       slogans: {
-        'zh-CN': '每个人都应享受智能的推背感，欢迎来到言出法随的世界',
-        'en-US': 'Your intent, amplified',
+        'zh-CN': '让每个想法，都有下一步。',
+        'en-US': 'Every idea deserves a next step.',
       },
       backgrounds: { light: noHeroBackground, dark: noHeroBackground },
     },

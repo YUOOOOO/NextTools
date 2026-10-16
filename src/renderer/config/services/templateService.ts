@@ -24,7 +24,7 @@ function isValidTemplatesArray(data: unknown): data is WorkspaceTemplate[] {
 
 // ============= CRUD =============
 
-/** Load user-defined templates from ~/.myagents/templates.json */
+/** Load user-defined templates from ~/.nexttools/templates.json */
 export async function loadUserTemplates(): Promise<WorkspaceTemplate[]> {
     if (isBrowserDevMode()) return [];
 

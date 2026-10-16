@@ -36,7 +36,7 @@ function sanitizeTempFileName(fileName) {
 }
 
 function resolveTempRoot(tmpDir) {
-  const root = tmpDir ?? path.join(tmpdir(), 'myagents-bridge-media');
+  const root = tmpDir ?? path.join(tmpdir(), 'nexttools-bridge-media');
   mkdirSync(root, { recursive: true });
   return root;
 }

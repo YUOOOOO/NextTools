@@ -52,11 +52,11 @@ export const API_ENDPOINTS = {
  * File system paths for Skills & Commands
  */
 export const FS_PATHS = {
-    USER_SKILLS_DIR: '~/.myagents/skills/',
-    USER_COMMANDS_DIR: '~/.myagents/commands/',
+    USER_SKILLS_DIR: '~/.nexttools/skills/',
+    USER_COMMANDS_DIR: '~/.nexttools/commands/',
     PROJECT_SKILLS_DIR: '.claude/skills/',
     PROJECT_COMMANDS_DIR: '.claude/commands/',
-    USER_AGENTS_DIR: '~/.myagents/agents/',
+    USER_AGENTS_DIR: '~/.nexttools/agents/',
     PROJECT_AGENTS_DIR: '.claude/agents/',
 } as const;
 
@@ -98,7 +98,7 @@ export const CUSTOM_EVENTS = {
     OPEN_AI_DISCUSSION: 'open-ai-discussion',
     /** Fired when user tries to open a Session that's already active in another Tab */
     JUMP_TO_TAB: 'jump-to-tab',
-    /** Fired to launch AI bug report: opens new Chat tab with ~/.myagents workspace */
+    /** Fired to launch AI bug report: opens new Chat tab with ~/.nexttools workspace */
     LAUNCH_BUG_REPORT: 'launch-bug-report',
     /** Fired when a session title changes (auto-generated or user rename) — triggers refetch in history/task center */
     SESSION_TITLE_CHANGED: 'session-title-changed',

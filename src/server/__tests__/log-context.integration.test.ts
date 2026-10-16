@@ -20,7 +20,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Stub UnifiedLogger so console.warn → createAndBroadcast → appendUnifiedLog
-// doesn't actually write to the developer's real ~/.myagents/logs/. The
+// doesn't actually write to the developer's real ~/.nexttools/logs/. The
 // behaviour under test (correlation-field merging on the broadcast LogEntry)
 // is fully observable via the in-memory `captured[]` array; disk writes
 // would only pollute the unified log with `[test]` lines that have no

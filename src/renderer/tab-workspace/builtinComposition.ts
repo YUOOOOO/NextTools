@@ -12,7 +12,7 @@ import { spaceTabModule } from '@/features/space/tabModule';
 import { recordTabModule } from '@/features/record/tabModule';
 import type { RecordTabCloseReason } from '@/features/record/useRecordTabLifecycle';
 
-/** The single composition root for the builtin MyAgents edition. */
+/** The single composition root for the builtin NextTools edition. */
 export const builtinTabModules = defineTabModules<Tab>()({
   launcher: launcherTabModule,
   chat: chatTabModule,

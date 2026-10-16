@@ -50,7 +50,7 @@ const SKIP_DIRS: &[&str] = &[
     "target",
     ".venv",
     "venv",
-    ".myagents",
+    ".nexttools",
     ".claude",
 ];
 

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, Runtime};
 
-const APP_ROUTE_SCHEME: &str = "myagents";
+const APP_ROUTE_SCHEME: &str = "nexttools";
 const APP_ROUTE_AUTHORITY: &str = "open";
 const MAX_ID_BYTES: usize = 200;
 
@@ -200,19 +200,19 @@ impl AppRoute {
 
     pub fn to_deep_link(&self) -> String {
         match self {
-            Self::SpaceHome { .. } => "myagents://open/v1/spaces".to_string(),
+            Self::SpaceHome { .. } => "nexttools://open/v1/spaces".to_string(),
             Self::SpaceIssues { params, .. } => {
-                format!("myagents://open/v1/spaces/{}/issues", params.space_id)
+                format!("nexttools://open/v1/spaces/{}/issues", params.space_id)
             }
             Self::SpaceTools { params, .. } => {
-                format!("myagents://open/v1/spaces/{}/tools", params.space_id)
+                format!("nexttools://open/v1/spaces/{}/tools", params.space_id)
             }
             Self::SpaceIssue { params, .. } => format!(
-                "myagents://open/v1/spaces/{}/issues/{}",
+                "nexttools://open/v1/spaces/{}/issues/{}",
                 params.space_id, params.issue_id
             ),
             Self::TaskComment { params, .. } => format!(
-                "myagents://open/v1/tasks/{}/comments/{}",
+                "nexttools://open/v1/tasks/{}/comments/{}",
                 params.task_id, params.comment_id
             ),
         }
@@ -303,7 +303,7 @@ mod tests {
             AppRoute::space_tools("official")
                 .expect("route")
                 .to_deep_link(),
-            "myagents://open/v1/spaces/official/tools"
+            "nexttools://open/v1/spaces/official/tools"
         );
         assert_eq!(AppRoute::space_tools(""), None);
         assert_eq!(AppRoute::space_tools("x".repeat(201)), None);
@@ -311,13 +311,13 @@ mod tests {
 
     #[test]
     fn parses_and_serializes_supported_routes() {
-        let route = parse_deep_link("myagents://open/v1/spaces/space_1/issues/issue-2")
+        let route = parse_deep_link("nexttools://open/v1/spaces/space_1/issues/issue-2")
             .expect("valid route");
         assert_eq!(
             route.to_deep_link(),
-            "myagents://open/v1/spaces/space_1/issues/issue-2"
+            "nexttools://open/v1/spaces/space_1/issues/issue-2"
         );
-        let comment = parse_deep_link("myagents://open/v1/tasks/task_1/comments/comment-2")
+        let comment = parse_deep_link("nexttools://open/v1/tasks/task_1/comments/comment-2")
             .expect("valid task comment route");
         assert_eq!(
             comment,
@@ -325,7 +325,7 @@ mod tests {
         );
         assert_eq!(
             comment.to_deep_link(),
-            "myagents://open/v1/tasks/task_1/comments/comment-2"
+            "nexttools://open/v1/tasks/task_1/comments/comment-2"
         );
         assert_eq!(
             route,
@@ -336,21 +336,21 @@ mod tests {
     #[test]
     fn rejects_resource_and_ambiguous_urls() {
         for value in [
-            "myagents://attachment/session/file.png",
-            "myagents://tool-attachment/session/turn/file.png",
-            "myagents-resource://attachment/session/file.png",
-            "myagents://evil/v1/spaces/a/issues/b",
-            "myagents://open/v2/spaces/a/issues/b",
-            "myagents://open/v1/spaces/a/issues/b/extra",
-            "myagents://open/v1/tasks/a/comments/b/extra",
-            "myagents://open/v1/tasks/a/issues/b",
-            "myagents://open//v1/spaces/a/issues/b",
-            "myagents://open/v1/spaces/a/issues/b?prompt=run",
-            "myagents://open/v1/spaces/a/issues/b#fragment",
-            "myagents://open/v1/spaces/a%2Fb/issues/c",
-            "myagents://open/v1/spaces/a/issues/%ZZ",
-            "myagents://user@open/v1/spaces/a/issues/b",
-            "myagents://open:42/v1/spaces/a/issues/b",
+            "nexttools://attachment/session/file.png",
+            "nexttools://tool-attachment/session/turn/file.png",
+            "nexttools-resource://attachment/session/file.png",
+            "nexttools://evil/v1/spaces/a/issues/b",
+            "nexttools://open/v2/spaces/a/issues/b",
+            "nexttools://open/v1/spaces/a/issues/b/extra",
+            "nexttools://open/v1/tasks/a/comments/b/extra",
+            "nexttools://open/v1/tasks/a/issues/b",
+            "nexttools://open//v1/spaces/a/issues/b",
+            "nexttools://open/v1/spaces/a/issues/b?prompt=run",
+            "nexttools://open/v1/spaces/a/issues/b#fragment",
+            "nexttools://open/v1/spaces/a%2Fb/issues/c",
+            "nexttools://open/v1/spaces/a/issues/%ZZ",
+            "nexttools://user@open/v1/spaces/a/issues/b",
+            "nexttools://open:42/v1/spaces/a/issues/b",
         ] {
             assert_eq!(parse_deep_link(value), None, "{value}");
         }
@@ -387,7 +387,7 @@ mod tests {
         assert_eq!(pending.generation, 42);
         assert_eq!(
             pending.route.to_deep_link(),
-            "myagents://open/v1/spaces/space-b/issues/issue-b"
+            "nexttools://open/v1/spaces/space-b/issues/issue-b"
         );
     }
 }

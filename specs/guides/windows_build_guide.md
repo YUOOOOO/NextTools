@@ -1,26 +1,26 @@
-# MyAgents Windows 构建与测试指南
+# NextTools Windows 构建与测试指南
 
 setup / build 分工、业务构建去重与缓存失效规则见 [构建资源准备与复用](../tech_docs/build_resource_preparation.md)。
 
-本文档描述 MyAgents Windows 版本的构建流程、发布流程以及测试注意事项。
+本文档描述 NextTools Windows 版本的构建流程、发布流程以及测试注意事项。
 
 ---
 
 ## 概览
 
-MyAgents Windows 版本支持 **x86_64 (64位)** 架构，提供两种分发格式：
+NextTools Windows 版本支持 **x86_64 (64位)** 架构，提供两种分发格式：
 
 | 格式 | 文件 | 用途 |
 |------|------|------|
-| **NSIS 安装包** | `MyAgents_x.x.x_x64-setup.exe` | 标准安装，有向导界面 |
-| **便携版** | `MyAgents_x.x.x_x86_64-portable.zip` | 解压即用，无需安装 |
+| **NSIS 安装包** | `NextTools_x.x.x_x64-setup.exe` | 标准安装，有向导界面 |
+| **便携版** | `NextTools_x.x.x_x86_64-portable.zip` | 解压即用，无需安装 |
 
 ### 存储位置
 
 与 macOS 版本共用 Cloudflare R2 存储：
 
 ```
-myagents-releases/
+nexttools-releases/
 ├── update/
 │   ├── darwin-aarch64.json     # macOS ARM (Tauri Updater)
 │   ├── darwin-x86_64.json      # macOS Intel (Tauri Updater)
@@ -29,10 +29,10 @@ myagents-releases/
 │   └── latest_win.json         # Windows 网站下载 API
 └── releases/
     └── v{VERSION}/
-        ├── MyAgents_{VERSION}_x64-setup.exe       # NSIS 安装包
-        ├── MyAgents_{VERSION}_x86_64-portable.zip # 便携版
-        ├── MyAgents_{VERSION}_x86_64.nsis.zip     # 自动更新包
-        └── MyAgents_{VERSION}_x86_64.nsis.zip.sig # 更新签名
+        ├── NextTools_{VERSION}_x64-setup.exe       # NSIS 安装包
+        ├── NextTools_{VERSION}_x86_64-portable.zip # 便携版
+        ├── NextTools_{VERSION}_x86_64.nsis.zip     # 自动更新包
+        └── NextTools_{VERSION}_x86_64.nsis.zip.sig # 更新签名
 ```
 
 ---
@@ -106,7 +106,7 @@ NSIS 安装程序会内置 Git for Windows，需要手动放置安装包：
 默认产物：
 
 ```
-src-tauri/target/x86_64-pc-windows-msvc/debug/myagents.exe
+src-tauri/target/x86_64-pc-windows-msvc/debug/nexttools.exe
 ```
 
 如果需要验证安装器、NSIS hook、VC++ Runtime app-local 部署或安装后启动行为，再显式构建 Debug NSIS：
@@ -152,10 +152,10 @@ Sherpa 的附加宏通过 `CMAKE_CXX_FLAGS_INIT` 传入，不能覆盖 `CMAKE_CX
 
 ```
 src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/
-├── MyAgents_x.x.x_x64-setup.exe       # NSIS 安装包
-├── MyAgents_x.x.x_x86_64-portable.zip # 便携版
-├── MyAgents_x.x.x_x64-setup.nsis.zip  # 自动更新包
-└── MyAgents_x.x.x_x64-setup.nsis.zip.sig  # 更新签名
+├── NextTools_x.x.x_x64-setup.exe       # NSIS 安装包
+├── NextTools_x.x.x_x86_64-portable.zip # 便携版
+├── NextTools_x.x.x_x64-setup.nsis.zip  # 自动更新包
+└── NextTools_x.x.x_x64-setup.nsis.zip.sig  # 更新签名
 ```
 
 **环境变量**：
@@ -265,7 +265,7 @@ Windows 不再运行 Browser packager 或向 R2 上传 Chromium，`build_windows
 
 **便携版 ZIP**：
 
-- [ ] 解压后直接运行 `myagents.exe`（Cargo 包名是小写，主二进制即 `myagents.exe`）
+- [ ] 解压后直接运行 `nexttools.exe`（Cargo 包名是小写，主二进制即 `nexttools.exe`）
 
 ### 四、应用功能测试
 
@@ -300,11 +300,11 @@ Get-Process | Where-Object { $_.ProcessName -eq "node" }
 
 **数据存储**：
 
-- [ ] 配置保存在 `%APPDATA%\MyAgents\` 目录
+- [ ] 配置保存在 `%APPDATA%\NextTools\` 目录
 
 **验证数据目录**：
 ```powershell
-ls $env:APPDATA\MyAgents
+ls $env:APPDATA\NextTools
 ```
 
 ### 五、自动更新测试
@@ -488,8 +488,8 @@ Tauri NSIS 安装程序的默认行为会在检测到旧版本时推荐卸载。
    ```
 
 **注意事项**：
-- 覆盖安装后，用户数据（Projects、Providers）应该保留在 `%APPDATA%\MyAgents`
-- 如遇到 WebView 缓存问题，可清理 `%LOCALAPPDATA%\MyAgents\EBWebView`
+- 覆盖安装后，用户数据（Projects、Providers）应该保留在 `%APPDATA%\NextTools`
+- 如遇到 WebView 缓存问题，可清理 `%LOCALAPPDATA%\NextTools\EBWebView`
 
 ### 发布问题
 

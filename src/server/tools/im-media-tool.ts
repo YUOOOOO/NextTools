@@ -2,8 +2,8 @@
 //
 // Historical note: this module used to host an in-process MCP server
 // (`im-media`) with a single `send_media` tool. The MCP was retired in
-// v0.2.11 in favour of the universal `myagents im send-media` CLI command
-// + the system prompt's <myagents-cli-im-media> guidance (see
+// v0.2.11 in favour of the universal `nexttools im send-media` CLI command
+// + the system prompt's <nexttools-cli-im-media> guidance (see
 // system-prompt-cli-tools.ts). The CLI handler lives in
 // admin-api.ts::handleImSendMedia and reaches the same Rust Management
 // API endpoint the old MCP did.
@@ -21,7 +21,7 @@ interface ImMediaContext {
   platform: string; // "telegram" | "feishu" | "dingtalk" | OpenClaw plugin id
   /**
    * Workspace root the current session is scoped to — set by callers so
-   * file paths supplied via `myagents im send-media` can be canonicalised
+   * file paths supplied via `nexttools im send-media` can be canonicalised
    * against a safe root (workspace / tmp / scratch). Leaving this unset
    * disables the prefix check; only do that when the call site has its
    * own equivalent guard (e.g., admin-api always validates).

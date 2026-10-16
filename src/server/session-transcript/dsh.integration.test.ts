@@ -58,7 +58,7 @@ async function admit(session: Awaited<ReturnType<typeof birth>>, id: string) {
   expect(result).toMatchObject({ success: true });
 }
 async function disk(id: string): Promise<SessionMetadata> {
-  return (JSON.parse(await readFile(join(state.home, '.myagents/sessions.json'), 'utf8')) as SessionMetadata[]).find(row => row.id === id)!;
+  return (JSON.parse(await readFile(join(state.home, '.nexttools/sessions.json'), 'utf8')) as SessionMetadata[]).find(row => row.id === id)!;
 }
 async function settle(session: Awaited<ReturnType<typeof birth>>, id: string) {
   const block = session.content.block(`answer-${id}`, 'text');
@@ -220,7 +220,7 @@ describe('DSH execution journals with V2 product history', () => {
     await settle(session, 'one');
     expect(await session.active.writer.flush()).toBe(true);
     await session.active.revoke();
-    await rm(join(state.home, '.myagents/sessions-v2', `${session.metadata.id}.jsonl`));
+    await rm(join(state.home, '.nexttools/sessions-v2', `${session.metadata.id}.jsonl`));
     vi.resetModules(); store = await import('../SessionStore');
     expect((await store.activateSessionTranscript(session.metadata.id))?.writer.status.reason).toBe('invalid-history');
   });
@@ -244,7 +244,7 @@ describe('DSH execution journals with V2 product history', () => {
     expect(after[3]?.content).toBe(before[3]?.content);
     expect(after[3]?.runtimeTurnAnchor?.turnId).toBe('turn-one');
     expect(await session.active.writer.flush()).toBe(true);
-    await expect(access(join(state.home, '.myagents/sessions', `${session.metadata.id}.jsonl`))).rejects.toThrow();
+    await expect(access(join(state.home, '.nexttools/sessions', `${session.metadata.id}.jsonl`))).rejects.toThrow();
   });
   it.each(['commit', 'abort'] as const)('stages a V2 fork invisibly and settles it through %s', async outcome => {
     const session = await birth();
@@ -263,7 +263,7 @@ describe('DSH execution journals with V2 product history', () => {
     expect(await store.stageDshForkProduct({ sourceSessionId: session.metadata.id, clientMutationId: 'fork', targetMetadata: target, targetMessages: begun.value.targetMessages })).toMatchObject({ success: true });
     expect(store.getActiveSessionTranscript(target.id)).toBeUndefined();
     expect(store.isHistoryVisibleSession(store.getSessionMetadata(target.id)!)).toBe(false);
-    await expect(access(join(state.home, '.myagents/sessions-v2', `${target.id}.jsonl`))).resolves.toBeUndefined();
+    await expect(access(join(state.home, '.nexttools/sessions-v2', `${target.id}.jsonl`))).resolves.toBeUndefined();
     if (outcome === 'commit') {
       expect(await store.commitDshForkProduct({ sourceSessionId: session.metadata.id, clientMutationId: 'fork', token: 'token' })).toMatchObject({ success: true });
       expect(store.isHistoryVisibleSession(store.getSessionMetadata(target.id)!)).toBe(true);
@@ -272,7 +272,7 @@ describe('DSH execution journals with V2 product history', () => {
       expect(await store.requestDshForkAbort({ sourceSessionId: session.metadata.id, clientMutationId: 'fork', token: 'token' })).toMatchObject({ success: true });
       expect(await store.abortDshForkProduct({ sourceSessionId: session.metadata.id, clientMutationId: 'fork' })).toMatchObject({ success: true });
       expect(store.getSessionMetadata(target.id)).toBeNull();
-      await expect(access(join(state.home, '.myagents/sessions-v2', `${target.id}.jsonl`))).rejects.toThrow();
+      await expect(access(join(state.home, '.nexttools/sessions-v2', `${target.id}.jsonl`))).rejects.toThrow();
     }
   });
 
@@ -304,7 +304,7 @@ describe('DSH execution journals with V2 product history', () => {
     expect(await store.deleteCommittedDshProduct(identity)).toMatchObject({ success: true });
     expect(store.getSessionMetadata(session.metadata.id)).toBeNull();
     expect(store.getActiveSessionTranscript(session.metadata.id)).toBeUndefined();
-    await expect(access(join(state.home, '.myagents/sessions-v2', `${session.metadata.id}.jsonl`))).rejects.toThrow();
+    await expect(access(join(state.home, '.nexttools/sessions-v2', `${session.metadata.id}.jsonl`))).rejects.toThrow();
   });
 
   it('continues native execution with a damaged V2 prefix without overwriting that file', async () => {
@@ -312,7 +312,7 @@ describe('DSH execution journals with V2 product history', () => {
     await admit(session, 'one'); await settle(session, 'one');
     expect(await session.active.writer.flush()).toBe(true);
     await session.active.revoke();
-    const path = join(state.home, '.myagents/sessions-v2', `${session.metadata.id}.jsonl`);
+    const path = join(state.home, '.nexttools/sessions-v2', `${session.metadata.id}.jsonl`);
     const damaged = (await readFile(path, 'utf8')) + '{"not":"a-valid-batch"}\n';
     await writeFile(path, damaged);
     vi.resetModules(); store = await import('../SessionStore');

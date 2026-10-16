@@ -106,9 +106,9 @@ interface FileActionProviderProps {
   /** Menu surface. Default keeps the full Chat menu; floatingBall uses the
    *  companion-specific four-action menu requested for the mini window. */
   menuProfile?: 'default' | 'floatingBall';
-  /** Floating-ball only: raise MyAgents, focus the session tab, and open the
+  /** Floating-ball only: raise NextTools, focus the session tab, and open the
    *  given workspace-relative file in the main preview surface. */
-  onOpenMyAgentsPreview?: (
+  onOpenNextToolsPreview?: (
     path: string,
     options?: { displayPath?: string; initialLineNumber?: number },
   ) => void;
@@ -137,7 +137,7 @@ function targetFileName(path: string): string {
   return path.split(/[/\\]/).pop() ?? path;
 }
 
-export function FileActionProvider({ previewHandleRef, children, workspacePath, onInsertReference, refreshTrigger, onFilePreviewExternal, onQuoteFile, onQuoteSelection, onRevealInTree, menuProfile = 'default', onOpenMyAgentsPreview }: FileActionProviderProps) {
+export function FileActionProvider({ previewHandleRef, children, workspacePath, onInsertReference, refreshTrigger, onFilePreviewExternal, onQuoteFile, onQuoteSelection, onRevealInTree, menuProfile = 'default', onOpenNextToolsPreview }: FileActionProviderProps) {
   const { t } = useTranslation('app');
   const fileService = useWorkspaceFileService(workspacePath);
   const { openPreview: openImagePreview } = useImagePreview();
@@ -170,8 +170,8 @@ export function FileActionProvider({ previewHandleRef, children, workspacePath, 
   const onRevealInTreeRef = useRef(onRevealInTree);
   onRevealInTreeRef.current = onRevealInTree;
 
-  const onOpenMyAgentsPreviewRef = useRef(onOpenMyAgentsPreview);
-  onOpenMyAgentsPreviewRef.current = onOpenMyAgentsPreview;
+  const onOpenNextToolsPreviewRef = useRef(onOpenNextToolsPreview);
+  onOpenNextToolsPreviewRef.current = onOpenNextToolsPreview;
 
   // Stabilise fileService so async closures see the latest service without
   // re-binding callbacks. Mirrors the React-stability rules pattern used
@@ -823,11 +823,11 @@ export function FileActionProvider({ previewHandleRef, children, workspacePath, 
         return;
       }
 
-      if (menuProfile === 'floatingBall' && target.scope === 'workspace' && onOpenMyAgentsPreviewRef.current) {
+      if (menuProfile === 'floatingBall' && target.scope === 'workspace' && onOpenNextToolsPreviewRef.current) {
         const fileName = targetFileName(target.path);
         if (isPreviewable(fileName) || !!getRichDocKind(fileName)) {
           const displayPath = options?.displayPath ?? target.path;
-          onOpenMyAgentsPreviewRef.current(target.path, target.initialLineNumber
+          onOpenNextToolsPreviewRef.current(target.path, target.initialLineNumber
             ? { displayPath, initialLineNumber: target.initialLineNumber }
             : { displayPath });
           return;
@@ -949,8 +949,8 @@ export function FileActionProvider({ previewHandleRef, children, workspacePath, 
     onRevealInTreeRef.current?.(path);
   }, []);
 
-  const handleOpenMyAgentsPreview = useCallback((path: string, displayPath?: string, initialLineNumber?: number): void => {
-    onOpenMyAgentsPreviewRef.current?.(path, initialLineNumber
+  const handleOpenNextToolsPreview = useCallback((path: string, displayPath?: string, initialLineNumber?: number): void => {
+    onOpenNextToolsPreviewRef.current?.(path, initialLineNumber
       ? { displayPath, initialLineNumber }
       : { displayPath });
   }, []);
@@ -963,10 +963,10 @@ export function FileActionProvider({ previewHandleRef, children, workspacePath, 
     const items: ContextMenuItem[] = [];
 
     if (menuProfile === 'floatingBall') {
-      const canOpenMyAgentsPreview =
+      const canOpenNextToolsPreview =
         scope === 'workspace' &&
         pathType === 'file' &&
-        !!onOpenMyAgentsPreviewRef.current &&
+        !!onOpenNextToolsPreviewRef.current &&
         (isPreviewable(fileName) || !!getRichDocKind(fileName));
 
       return [
@@ -986,10 +986,10 @@ export function FileActionProvider({ previewHandleRef, children, workspacePath, 
           onClick: () => handleOpenInFinder(path, scope),
         },
         {
-          label: t('fileActions.openMyAgentsPreview'),
+          label: t('fileActions.openNextToolsPreview'),
           icon: <PanelRightIcon className="h-4 w-4" />,
-          disabled: !canOpenMyAgentsPreview,
-          onClick: () => handleOpenMyAgentsPreview(path, displayPath, initialLineNumber),
+          disabled: !canOpenNextToolsPreview,
+          onClick: () => handleOpenNextToolsPreview(path, displayPath, initialLineNumber),
         },
       ];
     }
@@ -1042,7 +1042,7 @@ export function FileActionProvider({ previewHandleRef, children, workspacePath, 
     }
 
     return items;
-  }, [cacheContextIdentity, menuState, menuProfile, t, openFileTarget, handleCopyPath, handleReference, handleOpenWithDefault, handleOpenInFinder, handleRevealInTree, handleOpenMyAgentsPreview]);
+  }, [cacheContextIdentity, menuState, menuProfile, t, openFileTarget, handleCopyPath, handleReference, handleOpenWithDefault, handleOpenInFinder, handleRevealInTree, handleOpenNextToolsPreview]);
 
   // ---------- Context value ----------
   const contextValue = useMemo<FileActionContextValue>(() => ({

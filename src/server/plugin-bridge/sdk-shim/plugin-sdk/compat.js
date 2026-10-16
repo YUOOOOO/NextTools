@@ -4,7 +4,7 @@
 export * from "./compat.auto.js";
 // === END AUTO-AUGMENT ===
 
-// OpenClaw plugin-sdk/compat shim for MyAgents Plugin Bridge
+// OpenClaw plugin-sdk/compat shim for NextTools Plugin Bridge
 // compat.ts re-exports from index.ts — we only need the symbols the Feishu plugin actually imports.
 
 // Re-export everything from the root SDK

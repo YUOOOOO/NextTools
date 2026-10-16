@@ -124,7 +124,7 @@ pub(crate) async fn remote(
             .iter()
             .find(|v| v.id == connection.connection_id)
             .map(|v| v.name.clone())
-            .unwrap_or_else(|| "MyAgents".into());
+            .unwrap_or_else(|| "NextTools".into());
         reads.push(async move {
             let response = remote_connection(&connection, local_only, &name).await;
             (

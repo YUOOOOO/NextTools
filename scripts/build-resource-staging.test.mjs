@@ -96,7 +96,7 @@ const recordingPrivacyKeys = [
 ];
 
 test('macOS dev checkout initialization precedes dependency work even from another directory', { skip: process.platform === 'win32' }, t => {
-  const root = mkdtempSync(join(tmpdir(), 'myagents dev checkout '));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools dev checkout '));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const checkout = join(root, 'checkout');
   const caller = join(root, 'caller');
@@ -433,9 +433,9 @@ test('CLI bundle staging owns its complete mutable resource inventory', () => {
     'stale CLI resources must be removed before esbuild emits the bundle',
   );
   assert.match(esbuildBundle, /entry !== '\.gitkeep'/);
-  assert.match(esbuildBundle, /resources\/cli\/myagents\.cjs/);
-  assert.doesNotMatch(esbuildBundle, /resources\/cli\/myagents\.js/);
-  assert.doesNotMatch(esbuildBundle, /copyFile|src\/cli\/myagents\.cmd/);
+  assert.match(esbuildBundle, /resources\/cli\/nexttools\.cjs/);
+  assert.doesNotMatch(esbuildBundle, /resources\/cli\/nexttools\.js/);
+  assert.doesNotMatch(esbuildBundle, /copyFile|src\/cli\/nexttools\.cmd/);
 });
 
 test('native prerequisite preflight runs before expensive or destructive entry-point work', () => {
@@ -499,7 +499,7 @@ test('native prerequisite preflight runs before expensive or destructive entry-p
     invocation:
       'prepare-native-inference.mjs" "$DEV_NATIVE_TARGET" --check-prerequisites',
     toolchain: '"${PROJECT_DIR}/scripts/ensure_rust_toolchain.sh"',
-    expensiveBoundary: 'LOCK_FILE="$HOME/.myagents/app.lock"',
+    expensiveBoundary: 'LOCK_FILE="$HOME/.nexttools/app.lock"',
     label: 'macOS dev build',
   });
   assertEarlyNativePreflight({
@@ -676,7 +676,7 @@ test('document processing locks all release targets and publishes only verified 
   assert.match(documentResourceCache, /mkdirSync\(lockPath\)/);
   assert.match(documentResourceCache, /lockedEntryDigest\(entry\)/);
   assert.doesNotMatch(packageJson.scripts.clean, /document-processing-cache/);
-  assert.match(documentResourceScript, /`MyAgents\/\$\{appVersion\}`/);
+  assert.match(documentResourceScript, /`NextTools\/\$\{appVersion\}`/);
   assert.match(documentResourceScript, /WINDOWS_SIGNTOOL_PATH/);
   assert.match(documentResourceScript, /WINDOWS_CERTIFICATE_SHA1/);
   assert.match(documentResourceScript, /'authenticode'/);
@@ -863,7 +863,7 @@ test('macOS restores a coherent host Node, DSH and business bundle after cross-t
     { host: 'arm64', target: 'darwin-arm64', previous: 'darwin-x64', failDsh: true },
   ]) {
     await t.test(`${scenario.host}${scenario.failDsh ? ' with failed DSH preparation' : ''}`, t => {
-      const root = mkdtempSync(join(tmpdir(), 'myagents-host-staging-'));
+      const root = mkdtempSync(join(tmpdir(), 'nexttools-host-staging-'));
       t.after(() => rmSync(root, { recursive: true, force: true }));
       const tools = join(root, 'tools');
       mkdirSync(tools);

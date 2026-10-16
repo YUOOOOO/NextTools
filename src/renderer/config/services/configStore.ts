@@ -93,7 +93,7 @@ export function isLockBusyError(error: unknown): boolean {
 
 // ============= Constants =============
 
-export const CONFIG_DIR_NAME = '.myagents';
+export const CONFIG_DIR_NAME = '.nexttools';
 export const CONFIG_FILE = 'config.json';
 export const PROJECTS_FILE = 'projects.json';
 export const PROVIDERS_DIR = 'providers';
@@ -139,7 +139,7 @@ export async function withProjectsLock<T>(fn: () => Promise<T>): Promise<T> {
 /**
  * Serialize one logical Agent-default intent across config.json and the
  * projects.json compatibility mirror. This path intentionally matches the
- * Sidecar lock (`~/.myagents/agent-config-intent.lock`).
+ * Sidecar lock (`~/.nexttools/agent-config-intent.lock`).
  */
 export async function withAgentConfigIntentLock<T>(fn: () => Promise<T>): Promise<T> {
     return withAgentConfigIntentProcessLock(async () => {

@@ -49,11 +49,11 @@ describe('DSH native collaboration boundaries', () => {
     await writeFile(join(fixture.home, 'node'), 'synthetic fixture');
     await mkdir(join(fixture.home, 'integrated-runtimes/dsh/runtime-artifact'), { recursive: true });
     const workspacePath = join(fixture.home, 'workspace'); await mkdir(workspacePath);
-    vi.stubEnv('MYAGENTS_INTERNAL_CLI_TOKEN', 'synthetic');
+    vi.stubEnv('NEXTTOOLS_INTERNAL_CLI_TOKEN', 'synthetic');
     fixture.request.mockImplementation(async (method: string, params: DshRpcObject) => {
       switch (method) {
         case 'extension/replace': {
-          const registry = new DshAttachmentRegistry(dshSessionOwnedPaths(join(fixture.home, '.myagents'), 'session-steer-reject').attachmentRoot);
+          const registry = new DshAttachmentRegistry(dshSessionOwnedPaths(join(fixture.home, '.nexttools'), 'session-steer-reject').attachmentRoot);
           await registry.initialize();
           const snapshot = await registry.readJson(params.snapshotAttachment as { attachmentId: string; mimeType: string; sizeBytes: number; sha256: string }) as { revision: string };
           fixture.extensionRevision = snapshot.revision;

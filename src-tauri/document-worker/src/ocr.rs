@@ -48,7 +48,7 @@ impl OcrEngine {
     ) -> Result<Self, String> {
         ort::init_from(runtime)
             .map_err(|_| "DOCUMENT_OCR_RUNTIME_UNAVAILABLE".to_string())?
-            .with_name("myagents-anydoc")
+            .with_name("nexttools-anydoc")
             .commit();
         let mut detector_builder = Session::builder()
             .map_err(|_| "DOCUMENT_OCR_RUNTIME_UNAVAILABLE".to_string())?

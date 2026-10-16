@@ -1,3 +1,11 @@
+# Nexo — NextTools 内置 Agent
+
+此目录是 NextTools 的 Nexo 模板。以下保留上游 OpenMino 的原始说明与作者署名；其中 Mino 指上游项目，不是 NextTools 中的产品名称。
+
+This is the Nexo template bundled with NextTools. The upstream OpenMino documentation and attribution are retained below; references to Mino describe the upstream project.
+
+---
+
 # OpenMino
 
 [English](#english) | [中文](#中文)
@@ -49,7 +57,7 @@ Works with any tool that supports workspace-level instructions:
 
 | Tool | How |
 |------|-----|
-| **[MyAgents](https://myagents.ai)** | Open folder as workspace |
+| **[NextTools](https://nexttools.ai)** | Open folder as workspace |
 | **Claude Code** | `cd my-agent && claude` |
 | **Cursor** | Open folder → Agent mode |
 | **Windsurf** | Open folder → Cascade |
@@ -219,7 +227,7 @@ cd my-agent
 
 | 工具 | 方式 |
 |------|------|
-| **[MyAgents](https://myagents.ai)** | 打开文件夹作为工作区 |
+| **[NextTools](https://nexttools.ai)** | 打开文件夹作为工作区 |
 | **Claude Code** | `cd my-agent && claude` |
 | **Cursor** | 打开文件夹 → Agent 模式 |
 | **Windsurf** | 打开文件夹 → Cascade |

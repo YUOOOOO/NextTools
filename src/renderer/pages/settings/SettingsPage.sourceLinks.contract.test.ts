@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { MYAGENTS_SOURCE_CODE_URL } from './settingsSections';
+import { NEXTTOOLS_SOURCE_CODE_URL } from './settingsSections';
 
 const settingsPageSource = readFileSync(
   resolve(import.meta.dirname, 'SettingsPage.tsx'),
@@ -10,8 +10,8 @@ const settingsPageSource = readFileSync(
 );
 
 describe('About source links contract', () => {
-  it('keeps the source-code action on the repository default page', () => {
-    expect(MYAGENTS_SOURCE_CODE_URL).toBe('https://github.com/hAcKlyc/MyAgents');
+  it('links to the branch containing the fork source', () => {
+    expect(NEXTTOOLS_SOURCE_CODE_URL).toBe('https://github.com/YU0000/NextTools/tree/feature');
 
     const labelIndex = settingsPageSource.indexOf("tSettings('about.sourceCode')");
     expect(labelIndex).toBeGreaterThan(-1);
@@ -20,7 +20,7 @@ describe('About source links contract', () => {
     expect(actionStart).toBeGreaterThan(-1);
 
     const sourceCodeAction = settingsPageSource.slice(actionStart, labelIndex);
-    expect(sourceCodeAction).toContain('href={MYAGENTS_SOURCE_CODE_URL}');
+    expect(sourceCodeAction).toContain('href={NEXTTOOLS_SOURCE_CODE_URL}');
     expect(sourceCodeAction).not.toContain('sourceRevision');
   });
 });

@@ -92,7 +92,7 @@ export const _exhaustiveRuntimeCheck: _AssertRuntimeExhaustive = true;
 /** Human-readable display names keyed by runtime type. */
 export const RUNTIME_DISPLAY_NAMES: Record<RuntimeType, string> = {
   builtin: 'Built-in (Claude Agent SDK)',
-  dsh: 'MyAgents (DeepSeek Harness)',
+  dsh: 'NextTools (DeepSeek Harness)',
   'claude-code': 'Claude Code CLI',
   codex: 'OpenAI Codex CLI',
 };
@@ -119,7 +119,7 @@ export function normalizeRuntime(value: string | null | undefined): RuntimeType 
  * Returns `true` for ambiguous / unknown values. Callers use this only to drop
  * values that are obviously from another runtime family, e.g. `claude-*` on
  * Codex or `gemini-*` on Claude Code. Unknown future model ids are allowed
- * through so a new runtime release does not require a MyAgents release first.
+ * through so a new runtime release does not require a NextTools release first.
  */
 function modelHasFamily(model: string, families: readonly string[]): boolean {
   return families.some((family) => {
@@ -303,18 +303,18 @@ export interface RuntimePermissionMode {
 /**
  * Proxy policy for external-runtime subprocess env (issue #194).
  *
- * - `myagents` (default, legacy) — MyAgents unconditionally injects its own
+ * - `nexttools` (default, legacy) — NextTools unconditionally injects its own
  *    `proxySettings` into the runtime's env, overriding whatever the parent
- *    shell or system has configured. Best for "MyAgents proxy is THE proxy"
+ *    shell or system has configured. Best for "NextTools proxy is THE proxy"
  *    setups.
- * - `terminal` — Drop MyAgents-injected proxy vars; restore whatever proxy
+ * - `terminal` — Drop NextTools-injected proxy vars; restore whatever proxy
  *    the user's interactive shell would export (HTTP_PROXY / HTTPS_PROXY /
  *    ALL_PROXY / NO_PROXY, lowercase + UPPERCASE). Best for "I run codex /
- *    claude from terminal and want MyAgents to behave the same."
+ *    claude from terminal and want NextTools to behave the same."
  * - `direct` — Strip all proxy vars. Best when system-level proxy (Clash
  *    TUN, transparent proxy) handles routing.
  */
-export type RuntimeProxyPolicy = 'myagents' | 'terminal';
+export type RuntimeProxyPolicy = 'nexttools' | 'terminal';
 
 /**
  * Per-agent env policy for external-runtime subprocesses (issue #194).
@@ -329,8 +329,8 @@ export type RuntimeProxyPolicy = 'myagents' | 'terminal';
  * case (a user on TUN typically has no proxy var set in their shell, so
  * `terminal` mode = no proxy injected = same result). Disk values of
  * `'direct'` on existing installs fall through `resolveAgentEnvPolicy`'s
- * validator and default to `'myagents'`; users who relied on stripping
- * MyAgents proxy can pick `terminal` from the UI.
+ * validator and default to `'nexttools'`; users who relied on stripping
+ * NextTools proxy can pick `terminal` from the UI.
  */
 export interface RuntimeEnvPolicy {
   proxy?: RuntimeProxyPolicy;
@@ -350,7 +350,7 @@ export interface RuntimeConfig {
   additionalArgs?: string[]; // Extra CLI arguments
   /**
    * Issue #194 — per-agent env policy. When omitted, runtime treats it as
-   * `{ proxy: 'myagents' }` (the legacy behaviour) for backwards compat.
+   * `{ proxy: 'nexttools' }` (the legacy behaviour) for backwards compat.
    */
   envPolicy?: RuntimeEnvPolicy;
 }
@@ -384,7 +384,7 @@ export const RUNTIME_CONFIG_PER_RUNTIME_FIELDS = [
  * Build the `{ runtime, runtimeConfig }` patch to apply when an agent's
  * runtime is being changed. Centralizes the "drop non-portable fields"
  * policy so every callsite (in-chat switch, Settings panel, Launcher
- * selector, `myagents agent set runtime <v>` CLI) behaves identically.
+ * selector, `nexttools agent set runtime <v>` CLI) behaves identically.
  *
  * Returns `runtimeConfig: undefined` instead of `{}` when scrubbing empties
  * the object so the caller's atomic-merge logic doesn't persist a noise
@@ -475,7 +475,7 @@ export const CC_PERMISSION_MODES: RuntimePermissionMode[] = [
 //
 // These mirror the `PermissionMode` string union in `src/server/agent-session.ts`
 // (`'auto' | 'plan' | 'fullAgency' | 'custom'`). Exposing them here lets
-// `myagents runtime describe builtin` show the same allowlist other runtimes
+// `nexttools runtime describe builtin` show the same allowlist other runtimes
 // expose — otherwise the discovery flow returns an empty permissionModes list
 // for builtin and the AI caller has no way to know what values `--permissionMode`
 // accepts without reading source code.
@@ -836,7 +836,7 @@ export interface RuntimePermissionDiagnostics {
  *  - sensitive vars surface only as `has<NAME>: boolean` presence checks.
  *
  * `proxyPolicy` is filled in Phase 2 when RuntimeEnvPolicy lands; today it's
- * always `'myagents'` (the legacy behaviour).
+ * always `'nexttools'` (the legacy behaviour).
  */
 export interface RuntimeEffectiveEnv {
   cwd: string;
@@ -849,8 +849,8 @@ export interface RuntimeEffectiveEnv {
   proxyPolicy?: RuntimeProxyPolicy;
   /** First few PATH entries for visibility (full PATH would be too noisy). */
   pathHead?: string[];
-  /** True when MYAGENTS_PROXY_INJECTED=1 reached the runtime. */
-  myagentsProxyInjected?: boolean;
+  /** True when NEXTTOOLS_PROXY_INJECTED=1 reached the runtime. */
+  nexttoolsProxyInjected?: boolean;
   /** Codex-only sandbox probe used to diagnose loopback proxy/network blocks. */
   codexSandbox?: {
     detected?: boolean;
@@ -883,7 +883,7 @@ export interface RuntimeDiagnostics {
   apps?: RuntimeAppInfo[];
   status: RuntimeDiagnosticsStatus;
   issues?: RuntimeDiagnosticIssue[];
-  /** MyAgents product-extension projection consumed by this Runtime process. */
+  /** NextTools product-extension projection consumed by this Runtime process. */
   extensions?: RuntimeExtensionDiagnostics;
   /** Runtime-owned permission state, excluding rule targets and identities. */
   permissions?: RuntimePermissionDiagnostics;

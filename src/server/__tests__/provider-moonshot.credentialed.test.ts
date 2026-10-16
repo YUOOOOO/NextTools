@@ -2,7 +2,7 @@
  * Moonshot Provider Tests
  *
  * Tests specific to Moonshot API mode.
- * Requires valid API key in ~/.myagents/config.json.
+ * Requires valid API key in ~/.nexttools/config.json.
  *
  * Run: npm run test:credentialed
  */
@@ -29,7 +29,7 @@ describe('Moonshot Provider Tests', () => {
     console.log(`[moonshot] Model: ${provider.config.model}`);
     console.log(`[moonshot] Base URL: ${provider.config.baseUrl}`);
     if (!isAvailable) {
-      console.warn('[moonshot] API key not found in ~/.myagents/config.json');
+      console.warn('[moonshot] API key not found in ~/.nexttools/config.json');
     }
   });
 

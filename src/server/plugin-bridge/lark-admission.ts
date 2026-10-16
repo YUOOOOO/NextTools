@@ -12,8 +12,8 @@ export type LarkAdmissionExecution<T = unknown> = {
 };
 
 type LarkAdmissionGlobals = typeof globalThis & {
-  __myagentsRunLarkAdmissionScopedTask?: <T>(task: () => Promise<T>) => LarkAdmissionExecution<T>;
-  __myagentsCurrentLarkAdmissionToken?: () => symbol | undefined;
+  __nexttoolsRunLarkAdmissionScopedTask?: <T>(task: () => Promise<T>) => LarkAdmissionExecution<T>;
+  __nexttoolsCurrentLarkAdmissionToken?: () => symbol | undefined;
 };
 
 const admissionStorage = new AsyncLocalStorage<LarkAdmissionScope>();
@@ -44,8 +44,8 @@ function runLarkAdmissionScopedTask<T>(task: () => Promise<T>): LarkAdmissionExe
 /** Install the two structural hooks used by the load-time Lark queue patch. */
 export function installLarkAdmissionRuntimeGlobals(): void {
   const globals = globalThis as LarkAdmissionGlobals;
-  globals.__myagentsRunLarkAdmissionScopedTask = runLarkAdmissionScopedTask;
-  globals.__myagentsCurrentLarkAdmissionToken = () => admissionStorage.getStore()?.token;
+  globals.__nexttoolsRunLarkAdmissionScopedTask = runLarkAdmissionScopedTask;
+  globals.__nexttoolsCurrentLarkAdmissionToken = () => admissionStorage.getStore()?.token;
 }
 
 /** Release only the inbound-ordering lease; the plugin task stays alive until delivery completes. */

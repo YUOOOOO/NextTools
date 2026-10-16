@@ -1103,10 +1103,10 @@ fn failed_verification(
 #[cfg(not(test))]
 async fn persist_provider_projection() -> Result<(), GrokAuthError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let data_dir = crate::app_dirs::myagents_data_dir().ok_or_else(|| {
+        let data_dir = crate::app_dirs::nexttools_data_dir().ok_or_else(|| {
             GrokAuthError::new(
                 GrokAuthErrorCode::Internal,
-                "Cannot determine MyAgents data directory",
+                "Cannot determine NextTools data directory",
             )
         })?;
         let config_path = data_dir.join("config.json");

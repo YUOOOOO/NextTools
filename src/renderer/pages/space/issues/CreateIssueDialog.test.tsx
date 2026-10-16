@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 const session: SpaceSession = {
-  baseUrl: 'https://space.myagents.test',
+  baseUrl: 'https://space.nexttools.test',
   user: { id: 'u-1', email: 'user@example.com', name: 'Ethan' },
   space: { id: 'space-1', slug: 'official', name: 'Official Space', joinPolicy: 'open' },
   membership: { id: 'membership-1', role: 'owner' },

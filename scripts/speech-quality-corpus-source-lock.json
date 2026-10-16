@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "corpusVersion": "myagents-speech-quality-v1",
+  "corpusVersion": "nexttools-speech-quality-v1",
   "preparedManifestSha256": "b0817942aad1c8cb847bf1b259fbd782e1fd8e553ef49a8e851b2080c208cc42",
   "tools": {
     "python": "3.12",

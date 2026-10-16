@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-    MyAgents Windows 开发环境初始化脚本
+    NextTools Windows 开发环境初始化脚本
 .DESCRIPTION
     首次 clone 仓库后运行此脚本
 #>
@@ -15,7 +15,7 @@ try {
     . (Join-Path $ProjectDir 'scripts\windows-build-environment.ps1')
 
     Write-Host "`n=========================================" -ForegroundColor Blue
-    Write-Host "  MyAgents Windows 开发环境初始化" -ForegroundColor Green
+    Write-Host "  NextTools Windows 开发环境初始化" -ForegroundColor Green
     Write-Host "=========================================`n" -ForegroundColor Blue
 
     function Get-CargoBinPath {

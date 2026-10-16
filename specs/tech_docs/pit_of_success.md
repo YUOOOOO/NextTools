@@ -118,7 +118,7 @@
 <a id="process_cmd"></a>
 ## `process_cmd` (`src-tauri/src/process_cmd.rs`)
 
-**Problem.** Windows 上 GUI 应用（Tauri）直接启动子进程（node.exe Sidecar / Plugin Bridge / npm install）会弹出黑色控制台窗口。长生命周期 Node 进程还会创建 SDK / MCP 后代；如果所有者只保存直接 `Child`，正常退出时只能按 argv 猜测哪些后代属于 MyAgents，既可能漏掉后代，也可能误杀同机的外部进程。在 Windows 上先启动再调用 `taskkill /T`，还会留下 wrapper 提前退出、Job Object 尚未绑定的竞态窗口。
+**Problem.** Windows 上 GUI 应用（Tauri）直接启动子进程（node.exe Sidecar / Plugin Bridge / npm install）会弹出黑色控制台窗口。长生命周期 Node 进程还会创建 SDK / MCP 后代；如果所有者只保存直接 `Child`，正常退出时只能按 argv 猜测哪些后代属于 NextTools，既可能漏掉后代，也可能误杀同机的外部进程。在 Windows 上先启动再调用 `taskkill /T`，还会留下 wrapper 提前退出、Job Object 尚未绑定的竞态窗口。
 
 **Surface.** `crate::process_cmd::new(program)` 返回已注入 Windows `CREATE_NO_WINDOW` 的 `Command`；`crate::process_cmd::spawn_tree(&mut command)` 为会创建后代的长生命周期进程返回 `ChildTree`；`ChildTree::kill_and_wait()` force-stop exact tree 并最多等待 10 秒确认退出；`crate::process_cmd::settle_tree(child, natural_grace)` 先允许调用方定义的 cooperative / natural grace，再统一落到同一个 bounded force-stop。
 
@@ -126,7 +126,7 @@
 
 **Don't.** 不要直接使用 `std::process::Command::new()`；Sidecar / Plugin Bridge 也不能直接 `.spawn()`。正常 shutdown 不能通过进程名、安装路径或 argv 子串扫描整机来弥补 owner 缺失。`process_cleanup::kill_stale_processes()` 只用于确认前一实例已经退出后的启动恢复，以及更新器的残留进程检查（Windows 更新器另有受保护目录和文件锁验证）；它不是正常生命周期 API。
 
-`myagents-document-worker` 同样走 `process_cmd::new()` + `spawn_tree()`，但它是一 job 一进程的 App-owned 隔离边界，不属于 Sidecar。Manager 必须同时保留 `ChildTree`、stdin 和 active `(jobId, generation)`；4-byte big-endian length + JSON frame 上限 1 MiB，clean EOF 与截断 prefix/payload 必须分开处理，terminal identity 不匹配一律按协议失败。密码不进入 argv/env：只在 start frame 中出现，序列化/接收 buffer 写完即 zeroize。取消先发 exact generation frame，给 Worker 15 秒 cooperative settlement；App shutdown 使用 10 秒 cooperative settlement；超时后 force-stop retained tree，并最多再等 10 秒确认 exact tree 已退出。完整协议见 `document_processing.md`。
+`nexttools-document-worker` 同样走 `process_cmd::new()` + `spawn_tree()`，但它是一 job 一进程的 App-owned 隔离边界，不属于 Sidecar。Manager 必须同时保留 `ChildTree`、stdin 和 active `(jobId, generation)`；4-byte big-endian length + JSON frame 上限 1 MiB，clean EOF 与截断 prefix/payload 必须分开处理，terminal identity 不匹配一律按协议失败。密码不进入 argv/env：只在 start frame 中出现，序列化/接收 buffer 写完即 zeroize。取消先发 exact generation frame，给 Worker 15 秒 cooperative settlement；App shutdown 使用 10 秒 cooperative settlement；超时后 force-stop retained tree，并最多再等 10 秒确认 exact tree 已退出。完整协议见 `document_processing.md`。
 
 **例外（已内联处理或不适用）：**
 - `#[cfg(windows)]` 守卫内的系统工具命令（taskkill / powershell）
@@ -250,7 +250,7 @@
 <a id="withconfiglock"></a>
 ## `withConfigLock` / `with_config_lock`
 
-**Problem.** `~/.myagents/config.json` 被三方独立写者（renderer plugin-fs / Node admin API / Rust IM commands）read-modify-write，无任何协调；并发写 rename 上"最后一名 wins"，用户密钥/设置静默丢失。
+**Problem.** `~/.nexttools/config.json` 被三方独立写者（renderer plugin-fs / Node admin API / Rust IM commands）read-modify-write，无任何协调；并发写 rename 上"最后一名 wins"，用户密钥/设置静默丢失。
 
 **Surface.**
 - Node `withConfigLock(fn)` / `atomicModifyConfig(fn)` (`src/server/utils/admin-config.ts`)：async
@@ -339,7 +339,7 @@ ConfigProvider 的 `config/projects/providers/apiKeys/verifyStatus` 属于一个
 
 **Surface.** 用户从界面执行不可恢复删除时，复用 `src/renderer/components/ConfirmDialog.tsx`：先记录待确认对象，确认后调用既有 mutation；请求中禁用重复确认，成功后关闭，失败保留确认与错误反馈。Task 列表、卡片与详情遵循同一行为。普通通知走现有 toast。ESLint 禁止通过 `window` / `globalThis` 使用这些浏览器 dialog。
 
-**CLI boundary.** AI 调用 `myagents task delete` 等不可恢复操作前，先在对话中获得用户对明确对象的授权；已有明确授权无需再次询问。CLI 执行不依赖用户点击 UI 弹窗。
+**CLI boundary.** AI 调用 `nexttools task delete` 等不可恢复操作前，先在对话中获得用户对明确对象的授权；已有明确授权无需再次询问。CLI 执行不依赖用户点击 UI 弹窗。
 
 <a id="killwithescalation"></a>
 ## `killWithEscalation`
@@ -390,7 +390,7 @@ ConfigProvider 的 `config/projects/providers/apiKeys/verifyStatus` 属于一个
 **Problem.** 大 payload（图片、长 tool result、巨型 HTTP 响应）直接走 SSE/IPC JSON channel，OOM、UI 线程被 base64 阻塞、慢 client 无界排队拖死 sidecar。
 
 **Surface.**
-- Node `maybeSpill(value, { mimetype, sessionId })` (`src/server/utils/large-value-store.ts`) —— ≤256KiB 返 inline，超阈值写到 `~/.myagents/refs/<id>` 返 `LargeValueRef { id, preview, mimetype, sizeBytes, expiresAt }`（1h TTL，8KiB head preview）
+- Node `maybeSpill(value, { mimetype, sessionId })` (`src/server/utils/large-value-store.ts`) —— ≤256KiB 返 inline，超阈值写到 `~/.nexttools/refs/<id>` 返 `LargeValueRef { id, preview, mimetype, sizeBytes, expiresAt }`（1h TTL，8KiB head preview）
 - `fetchRef(id)` / `getRefStreamPath(id)` —— 消费方拉回
 - `/refs/:id` HTTP 路由 —— 使用 `createReadStream` 流式返回，绕过 deferred-init gate；新 writer 生成 32 个小写十六进制字符，reader 保留 `^[a-f0-9]{8,32}$` 的历史读取范围
 - Node / Rust writer 共用不可覆盖的提交协议：独占创建 `<id>.part` → flush/sync body → 用 hard link 发布 body → 独占创建 `<id>.meta.json.part` → flush/sync meta → 用 hard link 发布 meta；reader 只读取完整的 body + meta 组合
@@ -407,7 +407,7 @@ ConfigProvider 的 `config/projects/providers/apiKeys/verifyStatus` 属于一个
 - Node tool/result 超过 256KiB、loopback proxy response 超过 1MiB 时不进入 SSE / IPC base64，改走 ref 数据面
 - ref writer 不能截断或覆盖已有 body、meta 或临时文件；发生碰撞时更换 128-bit id，并按固定次数重试
 - `Content-Length` 只做提前拒绝，实际 chunk 累计仍必须执行同一响应上限；external origin 永远不能收到本地 `/refs/<id>` URL
-- 用户从文件系统拖入 / 桌面文件选择的图片不走 `/chat/send` inline base64：≤10MB 由 `cmd_prepare_user_image_attachments` staged 到 `~/.myagents/attachments/<session>/` 后发送 `attachment_ref`，>10MB 走 `cmd_workspace_copy_paths` 进入 `myagents_files/` 并插入 `@path`。无绝对路径的剪贴板 / 浏览器 `File` 超过 10MB 必须拒绝并提示用户用文件路径入口，禁止为了“自动转文件”把它 base64 塞进 IPC。
+- 用户从文件系统拖入 / 桌面文件选择的图片不走 `/chat/send` inline base64：≤10MB 由 `cmd_prepare_user_image_attachments` staged 到 `~/.nexttools/attachments/<session>/` 后发送 `attachment_ref`，>10MB 走 `cmd_workspace_copy_paths` 进入 `nexttools_files/` 并插入 `@path`。无绝对路径的剪贴板 / 浏览器 `File` 超过 10MB 必须拒绝并提示用户用文件路径入口，禁止为了“自动转文件”把它 base64 塞进 IPC。
 - Bridge tool result 经 `maybeSpill` 再交给 SDK，超阈值替换为 `@ref:<id>` marker
 - OpenAI bridge / `/chat/stream` 用 pull-driven `ReadableStream`，consumer pace 决定 pull 节奏（避免 controller 内部 queue 无界增长）
 - Renderer 检到 `ref_url` 直接 fetch ref 跳过 `atob`
@@ -428,7 +428,7 @@ ConfigProvider 的 `config/projects/providers/apiKeys/verifyStatus` 属于一个
 
 **Surface.**
 - `withLogContext({ sessionId, tabId, turnId, runtime, requestId, ownerId }, fn)` (`src/server/logger-context.ts`) —— 进入 ALS frame
-- HTTP 中间件从 `X-MyAgents-Tab-Id` / `x-myagents-log-session-id` 头自动起 frame；Renderer 通用请求入口只补日志关联，不写 CLI 执行身份。CLI 日志沿用 `x-myagents-session-id` 回退，其 scope 准入独立校验
+- HTTP 中间件从 `X-NextTools-Tab-Id` / `x-nexttools-log-session-id` 头自动起 frame；Renderer 通用请求入口只补日志关联，不写 CLI 执行身份。CLI 日志沿用 `x-nexttools-session-id` 回退，其 scope 准入独立校验
 - SDK turn 用 module-level 的 ambient TLS（`Map<sessionId|ownerId, LogContext>`，**不是** singleton）—— 因为 persistent `messageGenerator` 会 yield 出 ALS frame
 - Runtime adapter 在事件处理路径外层包 `withLogContext({ runtime })`
 - `LogEntry` schema 增 6 个可选 correlation 字段；`console.*` capture 自动注入
@@ -452,7 +452,7 @@ ConfigProvider 的 `config/projects/providers/apiKeys/verifyStatus` 属于一个
 <a id="deferredinitstate"></a>
 ## `DeferredInitState` + readiness endpoints
 
-**Problem.** 单一 `healthy` 信号让 renderer 在 sidecar deferred init 还在跑时就以为可用——首次发消息卡住、route 用 `await __myagentsDeferredInit` 无限等。
+**Problem.** 单一 `healthy` 信号让 renderer 在 sidecar deferred init 还在跑时就以为可用——首次发消息卡住、route 用 `await __nexttoolsDeferredInit` 无限等。
 
 **Surface.**
 - `DeferredInitState` 状态机（`src/server/readiness-state.ts`）：`pending → phase(<name>) → ready` 或 `→ failed { phase, error, retryable }`
@@ -473,7 +473,7 @@ ConfigProvider 的 `config/projects/providers/apiKeys/verifyStatus` 属于一个
 
 **Don't.**
 - 把 readiness 等同于 liveness
-- 新加 route 用 `await __myagentsDeferredInit`（已下线）
+- 新加 route 用 `await __nexttoolsDeferredInit`（已下线）
 - Renderer loading 挂 `/health`
 
 ---
@@ -528,7 +528,7 @@ ConfigProvider 的 `config/projects/providers/apiKeys/verifyStatus` 属于一个
 
 **Problem.** SDK 对不认识的 model id 按默认上下文窗口 fallback。更大窗口的模型若不经过 provider-scoped capability lookup，会错误显示、提前 auto-compact，并按错误窗口截断附件。`CLAUDE_CODE_AUTO_COMPACT_WINDOW` 只能下调阈值，不能修正这类上限。
 
-**Surface.** wrap 策略统一为 contextLength **>200K 即加 `[1m]` 后缀**（不是只 ≥1M）。SDK 窗口先解锁到 1M，再由 env cap 钳回真实值；builtin 的自动压缩阈值统一为 `90% × min(1M, registry)`。SDK `normalizeModelStringForAPI` 在 wire 上剥 `[1m]`，上游 API 看不到后缀。已知装饰性偏差：SDK `/context` 头条会显 1M，MyAgents 自己的占用圆环显 registry 真值。
+**Surface.** wrap 策略统一为 contextLength **>200K 即加 `[1m]` 后缀**（不是只 ≥1M）。SDK 窗口先解锁到 1M，再由 env cap 钳回真实值；builtin 的自动压缩阈值统一为 `90% × min(1M, registry)`。SDK `normalizeModelStringForAPI` 在 wire 上剥 `[1m]`，上游 API 看不到后缀。已知装饰性偏差：SDK `/context` 头条会显 1M，NextTools 自己的占用圆环显 registry 真值。
 
 - `applyProviderContextWindowSuffix(model, providerId)`：调用点已知 active provider 时的首选入口。裸 model id 先查该 provider 自己的 model row；没有对应 row 时再 fallback flat registry，已有 row 但 capability 字段缺失时保持 unknown，不能跨 Provider 补字段；调用方显式传入的 `[1m]` 原样保留。
 - `applyContextWindowSuffix(model)`：只有调用点确实不知道 provider 时才用的 flat fallback。
@@ -562,7 +562,7 @@ ConfigProvider 的 `config/projects/providers/apiKeys/verifyStatus` 属于一个
 <a id="builtin-mcp"></a>
 ## Builtin MCP 懒加载架构
 
-**Problem.** in-process MCP 若在 tool module 顶层 import `@anthropic-ai/claude-agent-sdk`（~900KB）+ `zod/v4`（~470KB）并构造 per-tool schema，Sidecar 冷启动会无条件支付约 500-1000ms 税，即使当前 Session 根本不用该 MCP。当前 META registry 只有 user-toggleable `gemini-image` / `edge-tts`；历史 `cron-tools` / `im-cron` / `im-media` 已迁移到 `myagents` CLI，runtime-dynamic `im-bridge-tools` 由独立 context-injected surface owner 懒初始化。
+**Problem.** in-process MCP 若在 tool module 顶层 import `@anthropic-ai/claude-agent-sdk`（~900KB）+ `zod/v4`（~470KB）并构造 per-tool schema，Sidecar 冷启动会无条件支付约 500-1000ms 税，即使当前 Session 根本不用该 MCP。当前 META registry 只有 user-toggleable `gemini-image` / `edge-tts`；历史 `cron-tools` / `im-cron` / `im-media` 已迁移到 `nexttools` CLI，runtime-dynamic `im-bridge-tools` 由独立 context-injected surface owner 懒初始化。
 
 **Architecture: 两层 META / INSTANCE**
 
@@ -645,7 +645,7 @@ Session snapshot 的完整 authority 与写入方向见 [`session_architecture.m
 | `resolve_inside_workspace(root, rel)` | **写侧** 路径解析：lexical resolve `..`/`.` + `starts_with(root)` 校验。允许目标不存在（write/create cmd 必须） | `crud`、`gitignore`、`transfer`、`save_file` 等创建/重命名场景 |
 | `resolve_existing_inside_workspace(root, rel)` | **读侧** 路径解析：先调 lexical 版本，再 `fs::canonicalize` 把整条 symlink 链解开，最终路径必须 `starts_with(canonicalize(root))`。不存在 → 返回 `File not found` | `read_preview`、`download`、`save_file`（require existing）、`check_paths`、`claude_md` |
 | `read_preview::resolve_local_preview_path(abs)` | 原生浏览器本地目标：复用 local open policy，验证存在、普通文件和 OS 可读性，不读取正文、不应用源码容量上限 | local browser 路径解析、`browser::parse_url_or_path` |
-| `reject_managed_global_skill_mutation(root, target)` | **mutation-only**：逐组件检查 canonical target、junction/symlink payload 与最近存在祖先，拒绝写入 `.claude/skills/*` 中指向 `~/.myagents/skills` 的链接叶子或后代（含目标尚不存在、断链） | `save_file`、`crud`、`delete`、`transfer` destination、`files_b64` destination |
+| `reject_managed_global_skill_mutation(root, target)` | **mutation-only**：逐组件检查 canonical target、junction/symlink payload 与最近存在祖先，拒绝写入 `.claude/skills/*` 中指向 `~/.nexttools/skills` 的链接叶子或后代（含目标尚不存在、断链） | `save_file`、`crud`、`delete`、`transfer` destination、`files_b64` destination |
 | `read_workspace_file_no_follow(root, rel, max)` | workspace 附件的强 no-follow 有界读：Unix 用目录 fd + `openat(O_NOFOLLOW)`；Windows 用 `NtCreateFile(ObjectAttributes.RootDirectory=parentHandle, FILE_OPEN_REPARSE_POINT)` 逐级相对打开目录与 leaf | Space CLI workspace attachments |
 | `open_regular_file_no_follow(path, label)` | 显式用户选择本地文件的统一 leaf opener，拒绝 symlink / Windows reparse leaf | Space GUI attachments、avatar、Skill package |
 | `system_open::validate_external_open_path(abs, workspace)` | 用户明确预览/打开普通本地文件：canonical 存在路径，支持任意卷和 `~/`，保留 credential/system exclusions；不授予 workspace 写权限 | local preview/download/open；`check_paths` 外部 symlink 返回 `resolvedPath` 后改走此 local lane |
@@ -669,7 +669,7 @@ Session snapshot 的完整 authority 与写入方向见 [`session_architecture.m
 - 写侧 cmd 用 `Path::exists()` 探"占位"——断链 symlink 会让你以为路径空。MUST 用 `slot_occupied` helper（`fs::symlink_metadata(p).is_ok()`）。
 - 读侧 cmd 用 `resolve_inside_workspace`（lexical 版）——symlink 逃逸不被拦。MUST 用 `resolve_existing_inside_workspace`。
 - 读取大文件用 `fs::read_to_string` 不带 cap——TOCTOU 增长直接 OOM。MUST 用 `take(MAX+1).read_to_end`。
-- 把 workspace 路径 hardcode 在 cmd 内部——renderer 端 `useWorkspaceFileService(workspacePath)` 传入，不要在 Rust 侧再 hardcode `dirs::home_dir().join(".myagents/workspaces")`。
+- 把 workspace 路径 hardcode 在 cmd 内部——renderer 端 `useWorkspaceFileService(workspacePath)` 传入，不要在 Rust 侧再 hardcode `dirs::home_dir().join(".nexttools/workspaces")`。
 - 在单个 mutation command 里自行判断 `.claude/skills` 字符串前缀——Windows junction、大小写与断链会绕过。MUST 调用共享 mutation guard；普通项目 Skill 物理目录不应被误伤。
 - watcher 用 path-derived key 做 stop 索引——重命名/删除/symlink swap 后 stop 失效。MUST 用 `watch_start` 返回的 opaque token；`watch_stop({token})` 索引；进程 nonce 防跨重启 token 碰撞。
 
@@ -744,7 +744,7 @@ Sidecar HTTP workspace IO endpoint 已全部下线，Renderer 唯一入口是 `u
 <a id="system-skill-sync"></a>
 ## System-skill 同步完整性门控 (`cmd_sync_system_skills` + `seedBundledSkills`)
 
-**Problem.** 把内置 system skill同步到`~/.myagents/skills/`时，若**先清/替换目标再校验源**，打包不完整的bundle会把可用副本换成空目录；如果随后写入版本戳，坏状态会被永久视为已完成。
+**Problem.** 把内置 system skill同步到`~/.nexttools/skills/`时，若**先清/替换目标再校验源**，打包不完整的bundle会把可用副本换成空目录；如果随后写入版本戳，坏状态会被永久视为已完成。
 
 **Surface / Invariants enforced.**
 - 普通 "完整 skill" = 含顶层 `SKILL.md`；Cuse 携带 native CLI，还必须通过 metadata/完整文件清单与执行权限校验，并在版本 fast path 比较 App 源实际 payload（签名后的字节为准，见 [Cuse bundle](cuse_bundle.md)）。源不完整 → **保留现有副本** + `ulog_warn`，**不**清目标。

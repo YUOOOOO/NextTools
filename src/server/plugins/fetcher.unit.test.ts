@@ -9,7 +9,7 @@ describe('fetchPluginTree local compatibility', () => {
   let root: string;
 
   beforeEach(() => {
-    root = mkdtempSync(join(tmpdir(), 'myagents-plugin-source-'));
+    root = mkdtempSync(join(tmpdir(), 'nexttools-plugin-source-'));
   });
 
   afterEach(() => {

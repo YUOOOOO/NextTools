@@ -9,7 +9,7 @@ ENV_FILE="${PROJECT_DIR}/.env"
 SOURCE_LOCK="${PROJECT_DIR}/src-tauri/media-worker/model-pack-source-lock.json"
 ORIGIN_LOCK="${PROJECT_DIR}/src-tauri/media-worker/model-pack-mirror-origin-lock.json"
 TAURI_CONFIG="${PROJECT_DIR}/src-tauri/tauri.conf.json"
-R2_BUCKET="myagents-releases"
+R2_BUCKET="nexttools-releases"
 DOWNLOAD_BASE_URL="https://download.myagents.io"
 
 YES=0

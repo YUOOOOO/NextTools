@@ -1,11 +1,11 @@
 ---
 name: tool-creator
-description: 把用户的可复用需求封装成标准化的 Agent-CLI 工具，并用 `myagents tool add` 注册进 MyAgents 工具注册表——注册后所有未来会话（builtin / DSH / Claude Code / Codex 全 runtime）的 AI 都会在 system prompt 里自动发现它。触发场景：(1) 用户说「把 XX 封装成工具」「做成一个工具」「注册个工具」「写个 CLI」「以后能直接用」；(2) 用户描述一个会反复出现的自动化需求——文档/文件批量处理、调用某个云 API、用某个多模态大模型做图像/视频理解等，即使没说"工具"两个字；(3) 你发现自己第二次为同类需求写几乎一样的脚本——这时要主动提议把它升格为注册工具，不要等用户开口。反向边界：一次性任务就地解决、不铸工具；接入现成的 MCP server 用 `myagents mcp`，不归这里。
+description: 把用户的可复用需求封装成标准化的 Agent-CLI 工具，并用 `nexttools tool add` 注册进 NextTools 工具注册表——注册后所有未来会话（builtin / DSH / Claude Code / Codex 全 runtime）的 AI 都会在 system prompt 里自动发现它。触发场景：(1) 用户说「把 XX 封装成工具」「做成一个工具」「注册个工具」「写个 CLI」「以后能直接用」；(2) 用户描述一个会反复出现的自动化需求——文档/文件批量处理、调用某个云 API、用某个多模态大模型做图像/视频理解等，即使没说"工具"两个字；(3) 你发现自己第二次为同类需求写几乎一样的脚本——这时要主动提议把它升格为注册工具，不要等用户开口。反向边界：一次性任务就地解决、不铸工具；接入现成的 MCP server 用 `nexttools mcp`，不归这里。
 ---
 
 # Tool Creator — 创建并注册 Agent-CLI 工具
 
-你正在 MyAgents 里运行。MyAgents 有一个**工具注册表**（`~/.myagents/tools/`）：注册进去的 CLI 工具会被投放到 PATH（`~/.myagents/bin/`），它的 description 会自动注入所有未来会话的 system prompt——**未来的 AI（包括别的 runtime 上的）会自己想起它、查它的用法、调用它**。用户也能在设置页「工具箱」里看到并管理它。
+你正在 NextTools 里运行。NextTools 有一个**工具注册表**（`~/.nexttools/tools/`）：注册进去的 CLI 工具会被投放到 PATH（`~/.nexttools/bin/`），它的 description 会自动注入所有未来会话的 system prompt——**未来的 AI（包括别的 runtime 上的）会自己想起它、查它的用法、调用它**。用户也能在设置页「工具箱」里看到并管理它。
 
 这个 skill 教你两件事：**写出一个对 Agent 友好的合格 CLI 工具**，以及**把它注册进去**。
 
@@ -14,8 +14,8 @@ description: 把用户的可复用需求封装成标准化的 Agent-CLI 工具�
 铸一个工具是在为未来的几百次调用做投资，但注册表里的每个工具都占一行 system prompt。判断标准：
 
 - **铸**：需求会重复出现（用户明说"以后还要用"，或你已经第二次写同类脚本）；有清晰的输入→输出边界；参数可枚举。
-- **不铸**：一次性任务（就地写脚本跑完即弃）；纯交互探索类需求；已有注册工具能覆盖（先 `myagents tool list` 查一遍）。
-- 模型管理器里已配置的模型、单发单收的调用——未来由 `myagents model call` 覆盖（若该命令存在，优先用它，不铸工具）。
+- **不铸**：一次性任务（就地写脚本跑完即弃）；纯交互探索类需求；已有注册工具能覆盖（先 `nexttools tool list` 查一遍）。
+- 模型管理器里已配置的模型、单发单收的调用——未来由 `nexttools model call` 覆盖（若该命令存在，优先用它，不铸工具）。
 
 灰色地带主动问用户："这个要不要我注册成工具，以后直接用？"
 
@@ -33,7 +33,7 @@ description: 把用户的可复用需求封装成标准化的 Agent-CLI 工具�
 ### 目录布局
 
 ```
-~/.myagents/tools/<tool-name>/
+~/.nexttools/tools/<tool-name>/
 ├── tool.json      # manifest（注册时被读取校验）
 └── run.mjs        # 入口，Node 单文件
 ```
@@ -52,13 +52,13 @@ description: 把用户的可复用需求封装成标准化的 Agent-CLI 工具�
 }
 ```
 
-- `name`：kebab-case，3–30 字符。**起名避开常见系统命令**（`curl`、`jq`、`git`、`node`…）——`~/.myagents/bin` 在 PATH 里排在系统路径之前，重名会遮蔽系统命令，注册时会被直接打回。加领域前缀最稳妥（`md-merge` 而不是 `merge`）。
+- `name`：kebab-case，3–30 字符。**起名避开常见系统命令**（`curl`、`jq`、`git`、`node`…）——`~/.nexttools/bin` 在 PATH 里排在系统路径之前，重名会遮蔽系统命令，注册时会被直接打回。加领域前缀最稳妥（`md-merge` 而不是 `merge`）。
 - `envKeys`：工具需要的环境变量名列表（API key 等）。
 - `deps`：依赖的外部二进制（`ffmpeg` 等），没有就空数组。
 
 ### 技术栈
 
-内置 Node v24 单文件 + `node:util` 的 `parseArgs`，**零第三方依赖**。这不是偏好是约束：MyAgents 已内置 Node 并打通全部 PATH，单文件意味着没有 node_modules、拷目录即分发、跨平台问题已被产品解决过一遍。确实绕不开外部二进制时声明进 `deps` 并做启动自检（见生死线 8）。
+内置 Node v24 单文件 + `node:util` 的 `parseArgs`，**零第三方依赖**。这不是偏好是约束：NextTools 已内置 Node 并打通全部 PATH，单文件意味着没有 node_modules、拷目录即分发、跨平台问题已被产品解决过一遍。确实绕不开外部二进制时声明进 `deps` 并做启动自检（见生死线 8）。
 
 ### 八条生死线
 
@@ -66,8 +66,8 @@ description: 把用户的可复用需求封装成标准化的 Agent-CLI 工具�
 
 1. **绝对禁止交互式输入。** 任何 stdin prompt（确认、选择、密码）都会让 Agent 的 shell 调用永久挂死——Agent 没有键盘。危险操作（删除、覆盖、花钱）用确认协议替代：缺 `--yes` 时打印将要做的变更 + 完整的带 `--yes` 重跑命令，以退出码 `4` 退出。Agent 会把变更展示给用户、获准后重跑。
 2. **stdout 只放结果，stderr 放诊断，退出码语义化。** Agent 判断成败只靠这三样。退出码约定：`0` 成功 / `1` 一般错误 / `2` 用法或参数错误 / `3` 环境缺失（缺 env key、缺依赖）/ `4` 需要确认。进度提示、调试信息一律 stderr；spinner / 彩色转义码对 Agent 是纯噪音，不要。
-3. **必须有 `--json` 模式，错误也要结构化。** 默认输出给人读的简洁文本；`--json` 输出机器可解析结果。出错时 stderr 给一行 JSON：`{"error": "...", "code": "...", "remediation": "怎么修"}`——`remediation` 是给下一个 Agent 的可行动建议（"run `myagents tool env <name> set KEY=...`"），不是模糊的 "something went wrong"。
-4. **密钥走 env，绝不走 argv。** argv 会泄进进程列表和日志。从 `process.env[KEY]` 读，缺失时按退出码 `3` + remediation 处理。key 在 `tool.json::envKeys` 声明，由 `myagents tool env <name> set KEY=value` 设置。
+3. **必须有 `--json` 模式，错误也要结构化。** 默认输出给人读的简洁文本；`--json` 输出机器可解析结果。出错时 stderr 给一行 JSON：`{"error": "...", "code": "...", "remediation": "怎么修"}`——`remediation` 是给下一个 Agent 的可行动建议（"run `nexttools tool env <name> set KEY=...`"），不是模糊的 "something went wrong"。
+4. **密钥走 env，绝不走 argv。** argv 会泄进进程列表和日志。从 `process.env[KEY]` 读，缺失时按退出码 `3` + remediation 处理。key 在 `tool.json::envKeys` 声明，由 `nexttools tool env <name> set KEY=value` 设置。
 5. **有界运行时间。** 不准变 daemon。所有网络请求带 `AbortSignal.timeout(...)`；轮询循环必须有次数/时间上限。预期超过 30 秒的操作在 readme 里声明耗时量级。
 6. **产物文件输出绝对路径到 stdout。** 生成的文件落到当前工作区（或用户指定路径），把绝对路径作为结果打印——这是下游（预览、IM 发送）能接住产物的前提。
 7. **readme 子命令返回标准化使用文档。** 固定章节（见第 3 步），未来的 AI 第一次用这个工具前会先跑 `<tool> readme`。
@@ -119,7 +119,7 @@ description: 把用户的可复用需求封装成标准化的 Agent-CLI 工具�
 ## 产物回流       # 产物落在哪、怎么展示给用户（见下）
 ```
 
-**产物回流章节是强制的**：写明"调用方（Agent）拿到产物路径后，必须在回复中引用它（Markdown 链接/图片）；IM 会话里用 `myagents im send-media --file <path>` 发送"。工具跑成功但用户看不到结果 = 这次调用白跑。
+**产物回流章节是强制的**：写明"调用方（Agent）拿到产物路径后，必须在回复中引用它（Markdown 链接/图片）；IM 会话里用 `nexttools im send-media --file <path>` 发送"。工具跑成功但用户看不到结果 = 这次调用白跑。
 
 ## 第 4 步：自测三连
 
@@ -136,9 +136,9 @@ node run.mjs <真实参数>     # 一次真实调用：stdout 干净？exit code
 ## 第 5 步：注册 + 告知
 
 ```bash
-myagents tool add ~/.myagents/tools/<tool-name>     # 校验 manifest、投 shim、进注册表
-myagents tool env <tool-name> set API_KEY=<value>    # 原型 B：设密钥（让用户提供，绝不编造）
-myagents tool list                                   # 确认出现在清单里
+nexttools tool add ~/.nexttools/tools/<tool-name>     # 校验 manifest、投 shim、进注册表
+nexttools tool env <tool-name> set API_KEY=<value>    # 原型 B：设密钥（让用户提供，绝不编造）
+nexttools tool list                                   # 确认出现在清单里
 ```
 
 `tool add` 的常见打回：description 超 800 字符（精简后重试）、工具名撞系统命令（换名加前缀）。报错里带 recoveryHint，照做即可。
@@ -149,7 +149,7 @@ myagents tool list                                   # 确认出现在清单里
 
 注册的工具对**当前 session 之外**的会话在它们下次启动时生效；你自己刚写完它，本 session 直接用就行。
 
-如果 `myagents tool --help` 报 unknown command：当前 app 版本还没有注册机。把工具完整写好放在 `~/.myagents/tools/<name>/`，告知用户"工具已就绪，等应用更新后运行 `myagents tool add` 注册"。
+如果 `nexttools tool --help` 报 unknown command：当前 app 版本还没有注册机。把工具完整写好放在 `~/.nexttools/tools/<name>/`，告知用户"工具已就绪，等应用更新后运行 `nexttools tool add` 注册"。
 
 ## 速查：完整流程
 

@@ -342,7 +342,7 @@ export function useAttachmentHandling({
 
         const result = await fileService.importBase64Files({
           files: base64Files,
-          targetDir: 'myagents_files',
+          targetDir: 'nexttools_files',
         });
         if (!isImportScopeCurrent(importScope)) return;
 
@@ -351,7 +351,7 @@ export function useAttachmentHandling({
         }
 
         try {
-          await fileService.addGitignore({ pattern: 'myagents_files/' });
+          await fileService.addGitignore({ pattern: 'nexttools_files/' });
         } catch {
           // Non-fatal, continue silently.
         }
@@ -472,7 +472,7 @@ export function useAttachmentHandling({
       try {
         const result = await fileService.copyPaths({
           sourcePaths: otherPaths,
-          targetDir: 'myagents_files',
+          targetDir: 'nexttools_files',
           autoRename: true,
         });
         if (!isImportScopeCurrent(importScope)) return;
@@ -487,7 +487,7 @@ export function useAttachmentHandling({
         }
 
         try {
-          await fileService.addGitignore({ pattern: 'myagents_files/' });
+          await fileService.addGitignore({ pattern: 'nexttools_files/' });
         } catch {
           // Non-fatal, continue silently.
         }

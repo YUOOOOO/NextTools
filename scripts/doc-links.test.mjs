@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { checkLocalDocLinks } from './doc-links.mjs';
 
 function fixture(t) {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-doc-links-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-doc-links-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, 'docs'));
   writeFileSync(join(root, 'docs', '中文 guide.md'), '# Guide');

@@ -1,4 +1,4 @@
-﻿# MyAgents Windows 发布脚本
+﻿# NextTools Windows 发布脚本
 # 将构建产物上传到 Cloudflare R2，并生成更新清单
 #
 # 前置条件：
@@ -75,12 +75,12 @@ $BundleDir = Join-Path $ProjectDir "src-tauri\target"
 $EnvFile = Join-Path $ProjectDir ".env"
 
 # 配置
-$R2Bucket = "myagents-releases"
+$R2Bucket = "nexttools-releases"
 $DownloadBaseUrl = "https://download.myagents.io"
 
 Write-Host ""
 Write-Host "=========================================" -ForegroundColor Cyan
-Write-Host "  MyAgents Windows 发布到 R2" -ForegroundColor Green
+Write-Host "  NextTools Windows 发布到 R2" -ForegroundColor Green
 Write-Host "  Version: $Version" -ForegroundColor Blue
 Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host ""
@@ -212,12 +212,12 @@ if ($PortableZip) {
     if ($PortableZip.Name -notlike "*$Version*") {
         throw "便携包文件名不包含待发布版本 $Version：$($PortableZip.Name)"
     }
-    $portableInspectionRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("myagents-portable-inspect-" + [Guid]::NewGuid().ToString("N"))
+    $portableInspectionRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("nexttools-portable-inspect-" + [Guid]::NewGuid().ToString("N"))
     try {
         Expand-Archive -Path $PortableZip.FullName -DestinationPath $portableInspectionRoot -Force
-        $portableExe = Get-ChildItem -Path $portableInspectionRoot -Filter "myagents.exe" -File -Recurse | Select-Object -First 1
+        $portableExe = Get-ChildItem -Path $portableInspectionRoot -Filter "nexttools.exe" -File -Recurse | Select-Object -First 1
         if (-not $portableExe) {
-            throw "便携包内缺少 myagents.exe"
+            throw "便携包内缺少 nexttools.exe"
         }
         Assert-ExactFileVersion -File $portableExe -ExpectedVersion $Version -Label "便携包"
     }
@@ -229,7 +229,7 @@ if ($UpdateZip) {
     if ($UpdateZip.Name -notlike "*$Version*") {
         throw "updater 文件名不包含待发布版本 $Version：$($UpdateZip.Name)"
     }
-    $updateInspectionRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("myagents-updater-inspect-" + [Guid]::NewGuid().ToString("N"))
+    $updateInspectionRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("nexttools-updater-inspect-" + [Guid]::NewGuid().ToString("N"))
     try {
         Expand-Archive -Path $UpdateZip.FullName -DestinationPath $updateInspectionRoot -Force
         $updateInstaller = Get-ChildItem -Path $updateInspectionRoot -Filter "*.exe" -File -Recurse | Select-Object -First 1
@@ -299,7 +299,7 @@ Write-Host ""
 # ========================================
 Write-Host "[4/7] 生成更新清单..." -ForegroundColor Blue
 
-$ManifestDir = [System.IO.Path]::GetTempPath() + "myagents-manifest-" + [System.Guid]::NewGuid().ToString("N")
+$ManifestDir = [System.IO.Path]::GetTempPath() + "nexttools-manifest-" + [System.Guid]::NewGuid().ToString("N")
 $script:ManifestDir = $ManifestDir
 New-Item -ItemType Directory -Path $ManifestDir -Force | Out-Null
 
@@ -316,11 +316,11 @@ if ($SigFile) {
 if ($UpdateZip) {
     $UpdateFileName = $UpdateZip.Name
     # 重命名上传文件名，添加版本和架构标识
-    $UpdateUploadName = "MyAgents_${Version}_x86_64.nsis.zip"
+    $UpdateUploadName = "NextTools_${Version}_x86_64.nsis.zip"
 
     $manifest = @{
         version   = $Version
-        notes     = "MyAgents v$Version"
+        notes     = "NextTools v$Version"
         pub_date  = $PubDate
         signature = $Signature
         url       = "$DownloadBaseUrl/releases/v$Version/$UpdateUploadName"
@@ -365,7 +365,7 @@ if ($NsisExe) {
     $latestWinManifest = @{
         version       = $Version
         pub_date      = $PubDate
-        release_notes = "MyAgents v$Version"
+        release_notes = "NextTools v$Version"
         downloads     = $latestWinDownloads
     }
 
@@ -402,7 +402,7 @@ if ($UpdateZip) {
     $uploadFiles += $UpdateZip
 }
 if ($SigFile) {
-    Write-Host "    - MyAgents_${Version}_x86_64.nsis.zip.sig"
+    Write-Host "    - NextTools_${Version}_x86_64.nsis.zip.sig"
     $uploadFiles += $SigFile
 }
 
@@ -483,7 +483,7 @@ if ($UpdateZip) {
 # 上传签名文件
 if ($SigFile) {
     Write-Host "  上传签名文件..." -ForegroundColor Cyan
-    $sigUploadName = "MyAgents_${Version}_x86_64.nsis.zip.sig"
+    $sigUploadName = "NextTools_${Version}_x86_64.nsis.zip.sig"
     & $rclonePath --config=$rcloneConfig copyto $SigFile.FullName "r2:$R2Bucket/releases/v$Version/$sigUploadName" --s3-no-check-bucket --progress
     if ($LASTEXITCODE -eq 0) {
         Write-Host "    [OK] $sigUploadName" -ForegroundColor Green

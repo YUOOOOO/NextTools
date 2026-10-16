@@ -10,7 +10,7 @@
     "thoughtSaved": "Record saved. You can find it in Task Center.",
     "runtimeNeedsAgent": "This workspace has no Agent configured, so Runtime cannot be changed.",
     "runtimeSwitchFailed": "Failed to switch Runtime. Please try again.",
-    "runtimeUnavailable": "This Runtime artifact is unavailable or failed integrity checks. Repair or reinstall MyAgents first.",
+    "runtimeUnavailable": "This Runtime artifact is unavailable or failed integrity checks. Repair or reinstall NextTools first.",
     "selectCompatibleProviderModel": "Select a Provider and model supported by this Runtime first.",
     "setDefaultFailed": "Failed to set the default workspace. Please try again.",
     "selectWorkspaceFirst": "Select a workspace first.",
@@ -126,7 +126,7 @@
       "capInstructionsMissingDescription": "Add an AGENTS.md to the folder later to tell the Agent your project conventions"
     },
     "mino": {
-      "title": "Personal assistant Mino",
+      "title": "Personal assistant Nexo",
       "description": "An AI Agent that remembers and evolves. Starts minimal and grows into what you want.",
       "intro": "A long-term companion with a name, a personality and memory. In your first chat you'll spend about 5 minutes shaping its name and personality together; after that it keeps getting to know you better.",
       "capEvolveTitle": "Keeps evolving",

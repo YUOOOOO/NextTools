@@ -52,7 +52,7 @@ describe('injected-turn invisible admission reservation', () => {
     resetLifecycleForTest();
     resetQueueForTest();
     resetConfigForTest();
-    await initializeAgent('/tmp/myagents-mcp-invisible-admission', null, undefined, {
+    await initializeAgent('/tmp/nexttools-mcp-invisible-admission', null, undefined, {
       preWarmDisabled: true,
     });
     vi.clearAllMocks();

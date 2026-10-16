@@ -80,7 +80,7 @@ describe('SkillDetailPanel source and ownership controls', () => {
   });
 
   it('labels an ordinary global Skill and keeps explicit editing available', async () => {
-    const path = '/home/user/.myagents/skills/global-review/SKILL.md';
+    const path = '/home/user/.nexttools/skills/global-review/SKILL.md';
     apiMocks.get.mockResolvedValue({
       success: true,
       skill: detail({
@@ -117,7 +117,7 @@ describe('SkillDetailPanel source and ownership controls', () => {
       skill: detail({
         name: 'prompt-writer',
         folderName: 'prompt-writer',
-        path: '/home/user/.myagents/skills/prompt-writer/SKILL.md',
+        path: '/home/user/.nexttools/skills/prompt-writer/SKILL.md',
         scope: 'user',
         systemOwned: true,
         required: false,
@@ -144,7 +144,7 @@ describe('SkillDetailPanel source and ownership controls', () => {
         skill: detail({
           name: 'prompt-writer',
           folderName: 'prompt-writer',
-          path: '/home/user/.myagents/skills/prompt-writer/SKILL.md',
+          path: '/home/user/.nexttools/skills/prompt-writer/SKILL.md',
           scope: 'user',
           systemOwned: true,
           frontmatter: { name: 'prompt-writer', description: 'Write prompts' },
@@ -173,7 +173,7 @@ describe('SkillDetailPanel source and ownership controls', () => {
         skill: detail({
           name: 'global-review',
           folderName: 'global-review',
-          path: '/home/user/.myagents/skills/global-review/SKILL.md',
+          path: '/home/user/.nexttools/skills/global-review/SKILL.md',
           scope: 'user',
           frontmatter: { name: 'global-review', description: 'Review changes' },
         }),

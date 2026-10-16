@@ -23,7 +23,7 @@ const session: SpaceSession = {
     joinPolicy: "open_join",
   },
   membership: { id: "membership-1", role: "member" },
-  baseUrl: "https://space.myagents.test",
+  baseUrl: "https://space.nexttools.test",
   updatedAt: "2026-06-28T00:00:00.000Z",
 };
 
@@ -43,12 +43,12 @@ describe("SpaceChrome i18n", () => {
     render(<SpaceLogin authBusy={false} authFlow={null} onLogin={vi.fn()} />);
 
     expect(
-      screen.getByRole("heading", { name: "MyAgents Community" }),
+      screen.getByRole("heading", { name: "NextTools Community" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Continue with Google" }),
     ).toBeInTheDocument();
-    expect(screen.queryByText("MyAgents 社区")).not.toBeInTheDocument();
+    expect(screen.queryByText("NextTools 社区")).not.toBeInTheDocument();
     expect(screen.queryByText("继续使用 Google")).not.toBeInTheDocument();
   });
 

@@ -42,8 +42,8 @@ function Test-BundledNode {
 function Write-BundledNodeMetadata {
     param([string]$Directory)
     $Utf8 = New-Object System.Text.UTF8Encoding($false)
-    [System.IO.File]::WriteAllText((Join-Path $Directory ".myagents-nodejs-version"), "$NodeVersion`n", $Utf8)
-    [System.IO.File]::WriteAllText((Join-Path $Directory ".myagents-nodejs-platform"), "win`n", $Utf8)
+    [System.IO.File]::WriteAllText((Join-Path $Directory ".nexttools-nodejs-version"), "$NodeVersion`n", $Utf8)
+    [System.IO.File]::WriteAllText((Join-Path $Directory ".nexttools-nodejs-platform"), "win`n", $Utf8)
 }
 
 if (Test-BundledNode $NodeDir) {
@@ -55,7 +55,7 @@ if (Test-BundledNode $NodeDir) {
 
 # Replace the whole pair, including stale/missing npm. Never independently
 # upgrade npm: the official Node artifact already contains the pinned version.
-$TempDir = Join-Path ([IO.Path]::GetTempPath()) ("myagents-node-" + [guid]::NewGuid().ToString("N"))
+$TempDir = Join-Path ([IO.Path]::GetTempPath()) ("nexttools-node-" + [guid]::NewGuid().ToString("N"))
 $ZipName = "node-v$NodeVersion-win-x64.zip"
 try {
     New-Item -ItemType Directory -Path $TempDir -Force | Out-Null

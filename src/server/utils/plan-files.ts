@@ -2,7 +2,7 @@ import { constants as fsConstants } from 'fs';
 import { lstat, open, readdir, realpath, unlink, type FileHandle } from 'fs/promises';
 import { join, relative } from 'path';
 
-const SESSION_PLANS_SEGMENTS = ['.claude', 'plans', 'myagents'] as const;
+const SESSION_PLANS_SEGMENTS = ['.claude', 'plans', 'nexttools'] as const;
 export const SESSION_PLANS_GITIGNORE_PATTERN = `${SESSION_PLANS_SEGMENTS.join('/')}/`;
 const MAX_PLAN_BYTES = 128 * 1024;
 const OPEN_READ_NOFOLLOW = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0);

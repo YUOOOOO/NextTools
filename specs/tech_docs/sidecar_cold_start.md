@@ -61,9 +61,9 @@ SDK `schedulePreWarm` 只接受 `builtin` Runtime，不能用“不是 external 
 
 Codex / DSH 的 persistent runtime 预热和 Sidecar HTTP readiness 是两层不同契约。Sidecar `/health/ready` 只说明 Node owner 可接请求；external `startSession()` 返回才说明该 runtime 能接首轮 turn。
 
-Managed Codex 又多一层：`initialize` 完成后 app-server 已存活，但 MyAgents 通过进程参数注入的 MCP 仍异步启动。`CodexRuntime.startSession()` 在发起 `thread/start|resume` 的 native startup boundary 消费从应用级 demand 接受时开始的 10 秒 absolute dispatch grace；Codex 原生 `startup_timeout_sec=60` 是单次启动尝试的上界，不重置也不延长前者。grace 到期只放行基础 turn，Runtime 状态与 tool catalog 仍持续观察；late-ready 会直接更新当前 Product Session，若启动准入时尚未把本地 MCP 放入进程，则 external-session owner 在 idle boundary replacement 并自动 pre-warm。这个 owner 不包含 Codex 用户目录自有配置；只有 process exit、thread/RPC failure 仍是 Runtime startup failure。
+Managed Codex 又多一层：`initialize` 完成后 app-server 已存活，但 NextTools 通过进程参数注入的 MCP 仍异步启动。`CodexRuntime.startSession()` 在发起 `thread/start|resume` 的 native startup boundary 消费从应用级 demand 接受时开始的 10 秒 absolute dispatch grace；Codex 原生 `startup_timeout_sec=60` 是单次启动尝试的上界，不重置也不延长前者。grace 到期只放行基础 turn，Runtime 状态与 tool catalog 仍持续观察；late-ready 会直接更新当前 Product Session，若启动准入时尚未把本地 MCP 放入进程，则 external-session owner 在 idle boundary replacement 并自动 pre-warm。这个 owner 不包含 Codex 用户目录自有配置；只有 process exit、thread/RPC failure 仍是 Runtime startup failure。
 
-MCP definition 在到达 runtime 前也必须保持可执行：`mcpServerArgs[id]` 是 preset 的附加参数，不得替换 package/base argv。标准 `playwright` 继续产生普通 stdio MCP；只有固定 ID `myagents-browser` 的保留 sentinel 会投影成带短期 capability 的应用 Browser Host HTTP endpoint。启动失败、资源未 ready、鉴权与 late-ready 都必须进入 effective snapshot；dispatch grace 不能充当 capability terminal。
+MCP definition 在到达 runtime 前也必须保持可执行：`mcpServerArgs[id]` 是 preset 的附加参数，不得替换 package/base argv。标准 `playwright` 继续产生普通 stdio MCP；只有固定 ID `nexttools-browser` 的保留 sentinel 会投影成带短期 capability 的应用 Browser Host HTTP endpoint。启动失败、资源未 ready、鉴权与 late-ready 都必须进入 effective snapshot；dispatch grace 不能充当 capability terminal。
 
 ## Builtin 控制面、turn metadata 与 MCP readiness
 
@@ -101,7 +101,7 @@ pre-warm 创建后续直接复用的真实 Query，builtin 的 Query-scoped 配�
 
 ### Builtin MCP 懒加载架构
 
-当前两个 user-toggleable in-process MCP（`gemini-image` / `edge-tts`）通过 `src/server/tools/builtin-mcp-meta.ts` 集中登记 META，运行时按需 `getBuiltinMcpInstance(id)` 加载。Task/IM 命令归 `myagents` CLI，runtime-dynamic `im-bridge-tools` 走独立的 context-injected surface owner；它们都不进入该 registry。
+当前两个 user-toggleable in-process MCP（`gemini-image` / `edge-tts`）通过 `src/server/tools/builtin-mcp-meta.ts` 集中登记 META，运行时按需 `getBuiltinMcpInstance(id)` 加载。Task/IM 命令归 `nexttools` CLI，runtime-dynamic `im-bridge-tools` 走独立的 context-injected surface owner；它们都不进入该 registry。
 
 - 首次调用才初始化 SDK/Zod schema；
 - 同一进程复用已加载 instance promise
@@ -131,7 +131,7 @@ Custom MCP credential 的持久化 authority 是 `src/server/mcp-oauth/state-sto
 5. **是否新加了 `console.log` 在 hot path 而 logger 未 buffered？** —— `UnifiedLogger` 是 in-memory bounded queue，但极高频日志仍可能拖慢。
 6. **是否第一条用户消息整段都被标成「AI 启动中」？** —— 先确认 `sdkControlReady` 是否在 pre-warm spawn 后被 `initializationResult()` 设为 true（搜索 `[agent] SDK control plane ready in`）。再核对所有 session 重置点同时清 `systemInitInfo` 和 `sdkControlReady`。详见上方「Builtin 控制面、turn metadata 与 MCP readiness」节。
 7. **External 日志是否把 dispatch 与 capability 分开？** —— Managed Codex 记录 `MCP dispatch outcome=ready|released` 及 `releaseReason`，10 秒只决定当前 turn 是否继续等待；后续 native status/tool catalog 仍可在同一 Product Session 发布 late-ready，或触发一次 idle replacement。RPC 失败属于 Runtime failure，不能伪造 capability terminal。
-8. **同一 Codex pid/thread 的每轮首响仍固定慢约 30 秒？** —— 检查 MyAgents injected server 的最终 launch config 是否带 `startup_timeout_sec=60`，并确认 preset package/base argv 没被 `mcpServerArgs` 覆盖；不要先假设进程发生了重启。
+8. **同一 Codex pid/thread 的每轮首响仍固定慢约 30 秒？** —— 检查 NextTools injected server 的最终 launch config 是否带 `startup_timeout_sec=60`，并确认 preset package/base argv 没被 `mcpServerArgs` 覆盖；不要先假设进程发生了重启。
 
 ## 与其他文档的关系
 

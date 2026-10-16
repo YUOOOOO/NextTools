@@ -4,8 +4,8 @@ import test from 'node:test';
 import { normalizeTextLineEndings } from './verify-license-contract-utils.mjs';
 
 test('normalizes Windows Cargo.lock line endings before contract matching', () => {
-  const cargoLock = '[[package]]\r\nname = "myagents"\r\nversion = "0.4.0"\r\n';
-  const expectedPackage = 'name = "myagents"\nversion = "0.4.0"';
+  const cargoLock = '[[package]]\r\nname = "nexttools"\r\nversion = "0.4.0"\r\n';
+  const expectedPackage = 'name = "nexttools"\nversion = "0.4.0"';
 
   assert.ok(normalizeTextLineEndings(cargoLock).includes(expectedPackage));
 });

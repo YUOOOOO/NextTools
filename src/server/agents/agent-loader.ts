@@ -14,11 +14,11 @@
  * Our scanner (pre-v0.1.70) required a strict `<folder>/<folder>.md`
  * layout, which silently dropped any agent a user placed elsewhere — while
  * the SDK still loaded them (it walks `settingSources: ['project']` itself).
- * Result: agents visible to the AI at runtime but invisible to MyAgents UI.
+ * Result: agents visible to the AI at runtime but invisible to NextTools UI.
  *
  * This module now recognises three layouts (see `AgentLayout` in shared):
  *
- *   folder: <base>/<folderName>/<folderName>.md    ← MyAgents canonical
+ *   folder: <base>/<folderName>/<folderName>.md    ← NextTools canonical
  *   flat:   <base>/<folderName>.md                  ← Claude Code convention
  *   nested: <base>/<dir>/.../<stem>.md              ← Claude Code plugin layout
  *
@@ -56,7 +56,7 @@ const MAX_SCAN_DEPTH = 8;
 
 /**
  * Files we explicitly skip during scanning. SKILL.md is a skill marker, not
- * an agent; `_meta.json` / `_workspace.json` / `README.md` are MyAgents
+ * an agent; `_meta.json` / `_workspace.json` / `README.md` are NextTools
  * metadata or conventional docs.
  */
 const SKIP_FILENAMES = new Set(['SKILL.md', 'README.md', '_meta.json', '_workspace.json']);
@@ -179,7 +179,7 @@ function classifyLayout(
         return { folderName: parts[0]!, layout: 'flat' };
     }
     if (parts.length === 2 && parts[0] === parts[1]) {
-        // folder: <base>/<name>/<name>.md  (MyAgents canonical)
+        // folder: <base>/<name>/<name>.md  (NextTools canonical)
         return { folderName: parts[0]!, layout: 'folder' };
     }
     return { folderName: stemPath, layout: 'nested' };

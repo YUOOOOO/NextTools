@@ -94,7 +94,7 @@ export async function prepareProviderBinding(args: {
     throw new ManagedProxyError('binding_contract', '托管订阅配置无效');
   }
   controller.signal.throwIfAborted();
-  const sidecarId = process.env.MYAGENTS_SIDECAR_ID?.trim();
+  const sidecarId = process.env.NEXTTOOLS_SIDECAR_ID?.trim();
   if (!sidecarId) throw new ManagedProxyError('binding_identity', '执行进程缺少身份');
   const operationId = randomUUID();
   const owner: Owner = { controller, onDrain: args.onDrain, draining: false };

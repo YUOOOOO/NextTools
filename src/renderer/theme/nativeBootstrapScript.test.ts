@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import scriptTemplate from './native-bootstrap-script.js?raw';
 
-const BOOTSTRAP_KEY = 'myagents:theme-bootstrap';
-const APPEARANCE_MARKER = '__MYAGENTS_APPEARANCE_MODE__';
-const RUN_ID_MARKER = '__MYAGENTS_BOOTSTRAP_RUN_ID__';
-const WINDOW_LABEL_MARKER = '__MYAGENTS_WINDOW_LABEL__';
+const BOOTSTRAP_KEY = 'nexttools:theme-bootstrap';
+const APPEARANCE_MARKER = '__NEXTTOOLS_APPEARANCE_MODE__';
+const RUN_ID_MARKER = '__NEXTTOOLS_BOOTSTRAP_RUN_ID__';
+const WINDOW_LABEL_MARKER = '__NEXTTOOLS_WINDOW_LABEL__';
 
 class MemoryStorage implements Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> {
   private readonly values = new Map<string, string>();
@@ -49,7 +49,7 @@ describe('native Theme bootstrap script', () => {
 
     expect(readSnapshot(storage)).toEqual({
       version: 2,
-      themeId: 'myagents-light',
+      themeId: 'nexttools-light',
       appearanceMode: 'dark',
       themeSelectionExplicit: false,
     });
@@ -82,7 +82,7 @@ describe('native Theme bootstrap script', () => {
 
     expect(readSnapshot(storage)).toEqual({
       version: 2,
-      themeId: 'myagents-light',
+      themeId: 'nexttools-light',
       appearanceMode: 'dark',
       themeSelectionExplicit: false,
     });
@@ -93,7 +93,7 @@ describe('native Theme bootstrap script', () => {
     const storage = new MemoryStorage();
     storage.setItem(BOOTSTRAP_KEY, JSON.stringify({
       version: 2,
-      themeId: 'myagents-default',
+      themeId: 'nexttools-default',
       appearanceMode: 'light',
       themeSelectionExplicit: false,
     }));
@@ -102,7 +102,7 @@ describe('native Theme bootstrap script', () => {
 
     expect(readSnapshot(storage)).toEqual({
       version: 2,
-      themeId: 'myagents-light',
+      themeId: 'nexttools-light',
       appearanceMode: 'system',
       themeSelectionExplicit: false,
     });
@@ -141,7 +141,7 @@ describe('native Theme bootstrap script', () => {
   it('reports pre-module stages and captures early errors without owning startup', async () => {
     const runtime = globalThis as unknown as {
       __TAURI_INTERNALS__?: { invoke: ReturnType<typeof vi.fn> };
-      __MYAGENTS_BOOT_OBSERVABILITY_INSTALLED__?: boolean;
+      __NEXTTOOLS_BOOT_OBSERVABILITY_INSTALLED__?: boolean;
       addEventListener?: (event: string, handler: (payload: Record<string, unknown>) => void) => void;
     };
     const previousInternals = runtime.__TAURI_INTERNALS__;
@@ -156,7 +156,7 @@ describe('native Theme bootstrap script', () => {
         event: string,
         handler: (payload: Record<string, unknown>) => void,
       ) => { listeners.set(event, handler); };
-      delete runtime.__MYAGENTS_BOOT_OBSERVABILITY_INSTALLED__;
+      delete runtime.__NEXTTOOLS_BOOT_OBSERVABILITY_INSTALLED__;
 
       executeScript(new MemoryStorage(), 'dark');
       listeners.get('error')?.({
@@ -187,7 +187,7 @@ describe('native Theme bootstrap script', () => {
     } finally {
       runtime.__TAURI_INTERNALS__ = previousInternals;
       runtime.addEventListener = previousAddEventListener;
-      delete runtime.__MYAGENTS_BOOT_OBSERVABILITY_INSTALLED__;
+      delete runtime.__NEXTTOOLS_BOOT_OBSERVABILITY_INSTALLED__;
     }
   });
 });

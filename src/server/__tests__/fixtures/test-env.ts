@@ -3,7 +3,7 @@
  *
  * Provider configurations for testing:
  * - Anthropic: Uses subscription credentials from ~/.claude.json
- * - Moonshot: Uses API key from ~/.myagents/config.json
+ * - Moonshot: Uses API key from ~/.nexttools/config.json
  */
 
 import { existsSync, readFileSync } from 'fs';
@@ -27,13 +27,13 @@ export interface ProviderConfig {
 // ===== Configuration Loaders =====
 
 /**
- * Load Moonshot API key from ~/.myagents/config.json
+ * Load Moonshot API key from ~/.nexttools/config.json
  */
 function loadMoonshotApiKey(): string | undefined {
-  const configPath = join(homedir(), '.myagents', 'config.json');
+  const configPath = join(homedir(), '.nexttools', 'config.json');
 
   if (!existsSync(configPath)) {
-    console.warn('[test-env] ~/.myagents/config.json not found');
+    console.warn('[test-env] ~/.nexttools/config.json not found');
     return undefined;
   }
 
@@ -89,7 +89,7 @@ export const ANTHROPIC_CONFIG: ProviderConfig = {
 
 /**
  * Moonshot provider config
- * Uses API key from ~/.myagents/config.json
+ * Uses API key from ~/.nexttools/config.json
  * authType: 'auth_token' matches src/renderer/config/types.ts
  */
 export const MOONSHOT_CONFIG: ProviderConfig = {

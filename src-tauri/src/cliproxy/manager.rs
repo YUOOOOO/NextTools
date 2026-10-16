@@ -92,7 +92,7 @@ impl<R: tauri::Runtime> Drop for UnclaimedBinding<R> {
 
 impl<R: tauri::Runtime> CliProxyManager<R> {
     pub fn new(app: tauri::AppHandle<R>) -> Result<Arc<Self>> {
-        let data = crate::app_dirs::myagents_data_dir().ok_or_else(Error::storage)?;
+        let data = crate::app_dirs::nexttools_data_dir().ok_or_else(Error::storage)?;
         let store = Store {
             root: data.join("providers/cliproxy"),
         };
@@ -109,7 +109,7 @@ impl<R: tauri::Runtime> CliProxyManager<R> {
             &data,
             bundled,
             env!("CARGO_PKG_VERSION").to_owned(),
-            env!("MYAGENTS_CLAUDE_SDK_VERSION").to_owned(),
+            env!("NEXTTOOLS_CLAUDE_SDK_VERSION").to_owned(),
         )?;
         let sidecars = app
             .state::<crate::sidecar::ManagedSidecarManager>()

@@ -19,14 +19,14 @@ let migration: MigrationModule;
 let configPath: string;
 
 beforeAll(async () => {
-  testHome = mkdtempSync(join(tmpdir(), "myagents-agent-runtime-migration-"));
+  testHome = mkdtempSync(join(tmpdir(), "nexttools-agent-runtime-migration-"));
   previousHome = process.env.HOME;
   previousUserProfile = process.env.USERPROFILE;
   process.env.HOME = testHome;
   process.env.USERPROFILE = testHome;
-  const myAgentsDir = join(testHome, ".myagents");
-  mkdirSync(myAgentsDir, { recursive: true });
-  configPath = join(myAgentsDir, "config.json");
+  const nextToolsDir = join(testHome, ".nexttools");
+  mkdirSync(nextToolsDir, { recursive: true });
+  configPath = join(nextToolsDir, "config.json");
   writeFileSync(
     configPath,
     JSON.stringify({

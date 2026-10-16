@@ -7,13 +7,13 @@ import {
 import { providerEnvEqual } from '../builtin-session/config';
 
 const scratch = vi.hoisted(() => ({
-  home: `/tmp/myagents-td-route-${process.pid}-${Date.now()}`,
+  home: `/tmp/nexttools-td-route-${process.pid}-${Date.now()}`,
 }));
 vi.mock('../utils/platform', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../utils/platform')>()),
   getHomeDirOrNull: () => scratch.home,
 }));
-beforeAll(() => mkdirSync(`${scratch.home}/.myagents`, { recursive: true }));
+beforeAll(() => mkdirSync(`${scratch.home}/.nexttools`, { recursive: true }));
 afterAll(() => rmSync(scratch.home, { recursive: true, force: true }));
 
 const config: AdminAppConfig = {

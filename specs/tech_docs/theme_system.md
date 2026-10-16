@@ -13,8 +13,8 @@
 | 已解析明暗 | `ResolvedColorScheme` | 每个 Webview 的 Theme runtime | 当前实际使用的 `light / dark` |
 
 Production registry 的展示顺序与 canonical 注册顺序解耦，当前九套完整 Theme 的产品顺序为：
-`myagents-light`（用户可见名 `MyAgents Light`）、`myagents-default`（`MyAgents Classic`）、
-`default-black`（`MyAgents Classic2`）、`sage`、`absolutely`（`Claude`）、`linear`、`proof`、
+`nexttools-light`（用户可见名 `NextTools Light`）、`nexttools-default`（`NextTools Classic`）、
+`default-black`（`NextTools Classic2`）、`sage`、`absolutely`（`Claude`）、`linear`、`proof`、
 `codex`、`raycast`。canonical package 仍先注册并独立承担 fail-fast fallback。
 不得把 light/dark 拆成两个 Theme，也不得重新用 `theme` 字段表达 appearance。
 
@@ -29,7 +29,7 @@ src/renderer/theme/stylesheet-contract.ts   CSS block / selector / declaration �
 src/renderer/theme/registry.ts              校验、注册、整套 resolve/fallback
 src/renderer/theme/bootstrap.ts             非敏感、带版本的首帧快照
 src/renderer/theme/ThemeRuntime.tsx          root/context/system/跨窗口 owner
-src/renderer/theme/themes/myagents-default.* canonical manifest + CSS
+src/renderer/theme/themes/nexttools-default.* canonical manifest + CSS
 src/renderer/theme/themes/<preset>.*          optional manifest + complete CSS
 src/renderer/theme/themes/preset-theme.ts     derives complete adapters from each preset CSS
 ```
@@ -51,8 +51,8 @@ interface AppConfig {
 `src/shared/theme.ts::normalizeThemeConfigRecord()` 是 TypeScript 读取边界的共同语义：
 
 1. 有效 `appearanceMode` 优先；否则读取 legacy `theme`；无效值归一为 `system`。
-2. `themeSelectionExplicit:false` 表示用户从未明确选择，`themeId` 每次读取都投影为产品默认 `DEFAULT_THEME_ID`（当前 `myagents-light`）；以后只改该常量及跨进程 bootstrap 镜像即可迁移所有仍跟随默认的用户。
-3. `themeSelectionExplicit:true` 永久尊重有效的非空 `themeId`。兼容旧配置时，非 canonical ID 推断为显式选择；历史自动物化的 `myagents-default` 推断为未选择。用户在新选择器中明确选择 `myagents-default` 后会连同显式标记一起保存，不再被迁移。
+2. `themeSelectionExplicit:false` 表示用户从未明确选择，`themeId` 每次读取都投影为产品默认 `DEFAULT_THEME_ID`（当前 `nexttools-light`）；以后只改该常量及跨进程 bootstrap 镜像即可迁移所有仍跟随默认的用户。
+3. `themeSelectionExplicit:true` 永久尊重有效的非空 `themeId`。兼容旧配置时，非 canonical ID 推断为显式选择；历史自动物化的 `nexttools-default` 推断为未选择。用户在新选择器中明确选择 `nexttools-default` 后会连同显式标记一起保存，不再被迁移。
 4. 未知但非空的显式 ID 保留给 renderer registry 做整套 canonical fallback；内存结果删除 legacy `theme`。
 5. load 不主动写盘；下一次真实写入由 renderer/Node/Rust 各自的 config lock 路径发布归一结果。
 
@@ -89,30 +89,30 @@ surface 共享同一套视觉事实，构造或校验失败都只拒绝当前可
 
 两个受控比较 Theme 都交付完整、独立、精确 scope 的 light/dark CSS，而不是运行时继承：
 
-- `myagents-light` 是当前产品默认，除 light `--button-primary-bg/hover` 改为中性黑外，host Token
+- `nexttools-light` 是当前产品默认，除 light `--button-primary-bg/hover` 改为中性黑外，host Token
   逐项等于 `absolutely` / Claude；dark 与从 CSS 语义色板派生的五类 embedded adapter 也保持一致；
-- `default-black` 的 host Token 除同一组 light 主按钮差异外逐项等于 canonical `myagents-default`；
+- `default-black` 的 host Token 除同一组 light 主按钮差异外逐项等于 canonical `nexttools-default`；
   因为差异不涉及 embedded surface，其 Factory 直接复用 canonical 的 immutable Hero/adapters。
 
 架构测试分别锁定两组完整 Token 差异白名单，Registry 仍在同一个 optional failure boundary 内验证并
 原子注册整套 Definition，避免代码块、终端、编辑器或图表在“只比较按钮”时产生伪差异。
 
-`ThemeRegistry` 直接校验同一份实际打包的 stylesheet source：可选 Theme 的 required Token 只能来自顶层、精确的 `html[data-theme-id='<id>']` root 与两个顶层精确 scheme root；canonical default 则必须全部来自 `:root, <exact-theme-root>`、`<generic-scheme>, <exact-scheme-root>` 成对 fallback block，禁止再追加 standalone exact block，从结构上保证未知 ID 首帧与注册后的 canonical package 完整同源。这些 root 与 Hero block 只能包含平坦 declaration，CSS Nesting、descendant、不可达 at-rule 与空/CSS-wide 值不能冒充或扩张 root 声明；轻量扫描器遵循 CSS input preprocessing 与 bad-string 换行恢复，不能用跨行坏字符串藏住结构括号。只有 canonical default 可在与精确 Theme selector 成对的 selector list 中使用 `:root`、通用 scheme 和无 scope Hero fallback；可选 Theme 即使把这些 selector 包在条件规则中也会被拒绝，避免未激活包泄漏全局值或污染 Space。Theme stylesheet 禁止 `@theme`、`@property`、`@font-face` 等全局副作用 at-rule；唯一允许的 at-rule 是只包含合法 scoped Hero selector 的顶层 `@media`，用于响应式 Launcher 排版，并且不能替代顶层 Hero 完整性声明。Token 在解析同 Theme `var(...)` 依赖后还必须满足实际消费属性的 CSS 语法。注册时还拒绝重复/非法 ID、缺 Hero selector、缺 scheme/Hero/adapter、空或属性值无效的 Prism、残缺/非 iframe literal/属性语法无效的 Widget variable、无效字体/数值，以及 stylesheet/Hero 中的远程资源；不得用另一份 token 名称元数据代替 CSS 事实。无效的可选包被拒绝但不阻断 canonical registry；未知配置 ID 只记录一次不含秘密的 warning，并把 Definition、CSS root ID、Hero 和全部 adapters **整套**切到 `myagents-default`。pre-React 阶段由 canonical `:root` package globals + 通用 scheme selector 提供完整视觉兜底，禁止出现无 Token root 或逐字段继承形成混合 Theme。
+`ThemeRegistry` 直接校验同一份实际打包的 stylesheet source：可选 Theme 的 required Token 只能来自顶层、精确的 `html[data-theme-id='<id>']` root 与两个顶层精确 scheme root；canonical default 则必须全部来自 `:root, <exact-theme-root>`、`<generic-scheme>, <exact-scheme-root>` 成对 fallback block，禁止再追加 standalone exact block，从结构上保证未知 ID 首帧与注册后的 canonical package 完整同源。这些 root 与 Hero block 只能包含平坦 declaration，CSS Nesting、descendant、不可达 at-rule 与空/CSS-wide 值不能冒充或扩张 root 声明；轻量扫描器遵循 CSS input preprocessing 与 bad-string 换行恢复，不能用跨行坏字符串藏住结构括号。只有 canonical default 可在与精确 Theme selector 成对的 selector list 中使用 `:root`、通用 scheme 和无 scope Hero fallback；可选 Theme 即使把这些 selector 包在条件规则中也会被拒绝，避免未激活包泄漏全局值或污染 Space。Theme stylesheet 禁止 `@theme`、`@property`、`@font-face` 等全局副作用 at-rule；唯一允许的 at-rule 是只包含合法 scoped Hero selector 的顶层 `@media`，用于响应式 Launcher 排版，并且不能替代顶层 Hero 完整性声明。Token 在解析同 Theme `var(...)` 依赖后还必须满足实际消费属性的 CSS 语法。注册时还拒绝重复/非法 ID、缺 Hero selector、缺 scheme/Hero/adapter、空或属性值无效的 Prism、残缺/非 iframe literal/属性语法无效的 Widget variable、无效字体/数值，以及 stylesheet/Hero 中的远程资源；不得用另一份 token 名称元数据代替 CSS 事实。无效的可选包被拒绝但不阻断 canonical registry；未知配置 ID 只记录一次不含秘密的 warning，并把 Definition、CSS root ID、Hero 和全部 adapters **整套**切到 `nexttools-default`。pre-React 阶段由 canonical `:root` package globals + 通用 scheme selector 提供完整视觉兜底，禁止出现无 Token root 或逐字段继承形成混合 Theme。
 
 背景 asset 只能是构建打包的 `self` 资源。不得加载远程字体/背景、用户 CSS/JS 或扩大 CSP/asset protocol scope。
 
 ## 4. CSS Token owner
 
-`myagents-default.css` 拥有当前视觉运行时数值：包 globals 同时声明在低特异性
+`nexttools-default.css` 拥有当前视觉运行时数值：包 globals 同时声明在低特异性
 `:root` fallback 与精确 Theme root，明暗值在通用首帧 scheme fallback 与精确 scheme root：
 
 ```css
 :root,
-html[data-theme-id='myagents-default'] { ... }
+html[data-theme-id='nexttools-default'] { ... }
 html[data-color-scheme='light'],
-html[data-theme-id='myagents-default'][data-color-scheme='light'] { ... }
+html[data-theme-id='nexttools-default'][data-color-scheme='light'] { ... }
 html[data-color-scheme='dark'],
-html[data-theme-id='myagents-default'][data-color-scheme='dark'] { ... }
+html[data-theme-id='nexttools-default'][data-color-scheme='dark'] { ... }
 ```
 
 Token 组：
@@ -126,7 +126,7 @@ Token 组：
 - Code、Animation；
 - body background/texture/blend；
 - Floating Ball 全部 `--fb-*`；
-- 产品字标基类与 Launcher Hero title/slogan selector；Launcher、About、全局侧栏复用 `MyAgentsLogotype` 的固定 SVG 轮廓，字母使用 Theme 的 `currentColor`，点睛使用 `--brand-spark`。Hero selector 拥有展示字号、字重与响应式布局，`launcher-hero-logotype` 在 Launcher 和 About 共用展示尺寸；字体、字距和文本渐变不改写 SVG 轮廓。
+- 产品字标基类与 Launcher Hero title/slogan selector；Launcher、About、全局侧栏复用 `NextToolsLogotype` 的固定 SVG 轮廓，字母使用 Theme 的 `currentColor`，点睛使用 `--brand-spark`。Hero selector 拥有展示字号、字重与响应式布局，`launcher-hero-logotype` 在 Launcher 和 About 共用展示尺寸；字体、字距和文本渐变不改写 SVG 轮廓。
 
 `index.css` 只保留 Type Scale、布局/交互结构、使用语义 Token 的通用 selector，以及一个不携带视觉值的 Tailwind v4 `@theme inline` 编译桥。该桥把 `font-sans/mono`、`rounded*`、`shadow*`和 `duration-*` utility 映射到当前 Theme 的 runtime Token；Theme package **禁止**声明 raw `@theme`，因为 runtime 注入的 CSS 不再经 Tailwind 编译，会让 utility 静默退回 framework default。新增会随完整 Theme 改变的颜色、字体、材质、阴影或圆角，必须先进入 Theme contract/default package，再按需要扩展无值桥接，不能落回组件常量。
 
@@ -173,10 +173,10 @@ runtime 一次 resolve 后同步投影：
 
 ### 5.2 pre-React bootstrap
 
-`index.html` 只读取 `myagents:theme-bootstrap`：
+`index.html` 只读取 `nexttools:theme-bootstrap`：
 
 ```json
-{ "version": 2, "themeId": "myagents-light", "appearanceMode": "system", "themeSelectionExplicit": false }
+{ "version": 2, "themeId": "nexttools-light", "appearanceMode": "system", "themeSelectionExplicit": false }
 ```
 
 快照不得包含 AppConfig、API key 或 MCP env。新快照不存在时可一次读取 legacy localStorage `theme`；durable runtime 第一次发布后删除 legacy key。快照损坏/版本不支持时首帧回退 default + system，应用不能因此阻断。
@@ -223,7 +223,7 @@ Markdown 阅读字号默认标准字号，设置菜单左侧为标准、右侧�
 
 | Surface | 正确消费方式 | 切换约束 |
 |---|---|---|
-| Launcher / About / GlobalSidebar 品牌 | `MyAgentsLogotype` + Theme 产品字标/Hero CSS selector；Launcher 文案来自 `ResolvedTheme.hero` | Launcher/About 共用 display 轮廓与展示尺寸，侧栏使用 compact 光学尺寸；字母继承 Theme 前景，点睛共用 `--brand-spark`，不复制 SVG 或品牌配色；背景不改变布局 |
+| Launcher / About / GlobalSidebar 品牌 | `NextToolsLogotype` + Theme 产品字标/Hero CSS selector；Launcher 文案来自 `ResolvedTheme.hero` | Launcher/About 共用 display 轮廓与展示尺寸，侧栏使用 compact 光学尺寸；字母继承 Theme 前景，点睛共用 `--brand-spark`，不复制 SVG 或品牌配色；背景不改变布局 |
 | CSS host / Space / Floating Ball | root semantic Token | `.dark` 不是状态源；Space 不建立局部 Theme scope |
 | xterm | `adapters.xterm` | 原位改 options；字体 family/size/lineHeight 变化后复用唯一 fit-and-resize owner 重算 cols/rows 并同步现有 PTY；split 首次展示/变宽以 ResizeObserver 的 geometry quiet window 判稳后再创建或 resize PTY，不复制 Theme-owned transition duration；不重建 Terminal/PTY/buffer |
 | Markdown CM6 | `adapters.prism` 派生语法高亮 + host semantic Token | Compartment 原位重配；不换文档、选区、history 或活跃输入 view |
@@ -266,7 +266,7 @@ Space 是全局 Theme 的标准 CSS host surface：组件直接消费 root seman
 - floating DOM：snapshot → durable config → Tauri live event；
 - architecture unit + dependency-cruiser：禁止 consumer 直引 internals、禁止本地 palette/MutationObserver 回流；
 - preset contract：accepted IDs/名称/顺序精确等于九套，设置下拉直接映射 Registry 的显式产品顺序；七套 preset-built
-  Theme 的正文和实色主动作对比度不低于 4.5:1，`myagents-light` / `default-black` 分别验证新增黑色主按钮对比度并
+  Theme 的正文和实色主动作对比度不低于 4.5:1，`nexttools-light` / `default-black` 分别验证新增黑色主按钮对比度并
   逐 Token 锁定其余值等于 Claude / canonical；`verify:theme-presets` 先按 Vite production 使用的
   esbuild CSS minifier 序列化八套实际 optional stylesheet，再经 optional factory 完成精确九套 Registry
   注册并逐套 resolve light/dark；

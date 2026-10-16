@@ -151,7 +151,7 @@ export interface SessionMetadata {
   mcpEnabledServers?: string[];
   /** Snapshot Claude cc-plugin enabled list. For owned sessions, undefined means no session-local list. */
   enabledPluginIds?: string[];
-  /** Snapshot MyAgents official CLI tool enabled list. Separate from MCP/plugin ids. */
+  /** Snapshot NextTools official CLI tool enabled list. Separate from MCP/plugin ids. */
   enabledOfficialToolIds?: import('../../shared/official-tools').OfficialToolId[];
   /** Snapshot providerId. For owned sessions, undefined means "not pinned". */
   providerId?: string;

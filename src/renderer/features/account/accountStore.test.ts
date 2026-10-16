@@ -19,7 +19,7 @@ vi.mock('@/utils/tauriListen', () => ({
 import { __resetAccountStoreForTest, accountActions, getAccountSnapshot, startAccountProjection } from './accountStore';
 
 const session: SpaceSession = {
-  sessionBindingId: 'binding-a', baseUrl: 'https://space.myagents.test',
+  sessionBindingId: 'binding-a', baseUrl: 'https://space.nexttools.test',
   user: { id: 'user-a', name: 'Alice', email: 'alice@example.test' },
   space: { id: 'official', slug: 'official', name: 'Official', joinPolicy: 'open' },
   membership: { id: 'm-a', role: 'member' }, updatedAt: '2026-10-04T00:00:00Z',
@@ -82,7 +82,7 @@ describe('Shell account projection', () => {
     const old = deferred<SpaceSessionView>();
     mocks.getSession.mockReturnValueOnce(old.promise);
     await start(); stop?.();
-    const dev = { ...session, baseUrl: 'https://dev.myagents.test', sessionBindingId: 'binding-dev' };
+    const dev = { ...session, baseUrl: 'https://dev.nexttools.test', sessionBindingId: 'binding-dev' };
     mocks.getSession.mockResolvedValue(authenticated(dev));
     stop = startAccountProjection('dev', true); await settle();
     old.resolve(authenticated()); await settle();

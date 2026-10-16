@@ -4,7 +4,7 @@ import type { ChatQueueResponseMode } from '../../shared/config-types';
  * Pure policy for the external-runtime mid-turn message queue.
  *
  * Most external runtimes are turn-level: each `sendMessage` starts a NEW turn,
- * so a message typed while a turn is running must wait in MyAgents' queue.
+ * so a message typed while a turn is running must wait in NextTools' queue.
  * Codex app-server is the exception: `turn/steer` can append user input to the
  * active turn. The policy keeps that as an explicit capability instead of
  * letting external-session infer protocol details from runtime names.

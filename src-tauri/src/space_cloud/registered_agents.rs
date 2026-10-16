@@ -614,7 +614,7 @@ pub(super) async fn register_agent(
     let client_id = capability
         .public_client_id
         .clone()
-        .unwrap_or_else(|| "myagents-desktop".to_string());
+        .unwrap_or_else(|| "nexttools-desktop".to_string());
     let local_agent_id = stable_local_agent_id(&input.workspace_id);
     let body = serde_json::json!({
         "clientId": client_id,

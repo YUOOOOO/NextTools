@@ -1,7 +1,7 @@
 /**
  * UnifiedLogger — Pattern 6 (Buffered async writer + bounded logs).
  *
- * Persists merged React/Node/Rust logs to ~/.myagents/logs/unified-{date}.log.
+ * Persists merged React/Node/Rust logs to ~/.nexttools/logs/unified-{date}.log.
  *
  * Pattern 6 changes vs v0.1.x:
  *   - Replaced per-call sync writes (Audit F P2 finding — every entry used

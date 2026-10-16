@@ -177,7 +177,7 @@ describe('NewAgentPanel local project', () => {
   });
 });
 
-describe('NewAgentPanel Mino', () => {
+describe('NewAgentPanel Nexo', () => {
   async function openMino() {
     renderPanel();
     fireEvent.click(screen.getByRole('button', { name: new RegExp(tl('newAgentPanel.mino.title')) }));
@@ -185,17 +185,17 @@ describe('NewAgentPanel Mino', () => {
   }
 
   it('shows three capabilities without toggles and the final suffixed path', async () => {
-    mocks.existingPaths = new Set(['/Users/me/.myagents/projects/mino']);
+    mocks.existingPaths = new Set(['/Users/me/.nexttools/projects/nexo']);
     const nameInput = await openMino();
 
-    expect(nameInput).toHaveValue('mino');
+    expect(nameInput).toHaveValue('nexo');
     const capabilities = document.querySelector('[data-new-agent-panel-capabilities]') as HTMLElement;
     expect(within(capabilities).getAllByRole('listitem')).toHaveLength(3);
     expect(within(capabilities).getByText(tl('newAgentPanel.mino.capEvolveTitle'))).toBeInTheDocument();
     expect(within(capabilities).getByText(tl('newAgentPanel.mino.capSkillsTitle'))).toBeInTheDocument();
     expect(within(capabilities).getByText(tl('newAgentPanel.capChannelsTitle'))).toBeInTheDocument();
     expect(screen.queryByRole('switch')).not.toBeInTheDocument();
-    await waitFor(() => expect(document.querySelector('[data-new-agent-panel-path]')?.textContent).toContain('mino-2'));
+    await waitFor(() => expect(document.querySelector('[data-new-agent-panel-path]')?.textContent).toContain('nexo-2'));
   });
 
   it('creates from the bundled template with Agent defaults', async () => {
@@ -205,12 +205,12 @@ describe('NewAgentPanel Mino', () => {
     await waitFor(() => expect(mocks.addProject).toHaveBeenCalled());
     expect(mocks.invoke).toHaveBeenCalledWith('cmd_create_workspace_from_bundled_template', {
       templateId: 'mino',
-      destPath: '/Users/me/.myagents/projects/mino',
+      destPath: '/Users/me/.nexttools/projects/nexo',
     });
     const [path, options] = mocks.addProject.mock.calls[0];
-    expect(path).toBe('/Users/me/.myagents/projects/mino');
+    expect(path).toBe('/Users/me/.nexttools/projects/nexo');
     expect(options).toMatchObject({
-      displayName: 'mino',
+      displayName: 'nexo',
       icon: 'lightning',
       templateId: 'mino',
       templateSource: 'builtin',
@@ -322,7 +322,7 @@ describe('NewAgentPanel user template', () => {
     await waitFor(() => expect(mocks.addProject).toHaveBeenCalled());
     expect(mocks.invoke).toHaveBeenCalledWith('cmd_create_workspace_from_template', {
       sourcePath: '/t/research',
-      destPath: '/Users/me/.myagents/projects/研究助手',
+      destPath: '/Users/me/.nexttools/projects/研究助手',
     });
     expect(mocks.addProject.mock.calls[0][1]).toMatchObject({
       displayName: '研究助手',

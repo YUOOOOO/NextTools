@@ -931,7 +931,7 @@ pub struct PendingCronEvent {
     /// Sidecar uses this + `from_label` to wrap the prompt with an
     /// `<inbox-message from="Cron: <name>" reply_back="false">` prefix so the
     /// IM Bot AI sees the same envelope context as messages from
-    /// `myagents session send`. Without this, the AI doesn't know which
+    /// `nexttools session send`. Without this, the AI doesn't know which
     /// session to reply back to if the user wants to follow up.
     /// `#[serde(default)]` keeps backward compatibility with old payloads.
     #[serde(default)]

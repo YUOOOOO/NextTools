@@ -21,7 +21,7 @@ const registry: NetworkRegistry = {
   connections: ["official", "self-a", "self-b"].map((id) => ({
     id,
     name:
-      id === "official" ? "MyAgents" : id === "self-a" ? "Team A" : "Team B",
+      id === "official" ? "NextTools" : id === "self-a" ? "Team A" : "Team B",
     official: id === "official",
     url: null,
     removing: false,

@@ -42,7 +42,7 @@ install_pip() {
 
 install_npm() {
     for pkg in "$@"; do
-        local npm_prefix="${MYAGENTS_NPM_GLOBAL_PREFIX:-$HOME/.myagents/npm-global}"
+        local npm_prefix="${NEXTTOOLS_NPM_GLOBAL_PREFIX:-$HOME/.nexttools/npm-global}"
         if npm_config_prefix="$npm_prefix" npm list -g "$pkg" &>/dev/null 2>&1; then
             echo "✓ $pkg (already installed)"
         else

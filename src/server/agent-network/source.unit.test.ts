@@ -20,7 +20,7 @@ const session = sessionReference({ ...ref, localSessionId: "legacy-session" });
 describe("unified source routing", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubEnv("MYAGENTS_SIDECAR_ID", "source-process");
+    vi.stubEnv("NEXTTOOLS_SIDECAR_ID", "source-process");
   });
   it("leaves all local operations independent of the network", async () => {
     expect(

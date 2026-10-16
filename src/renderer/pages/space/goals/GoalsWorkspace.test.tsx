@@ -7,12 +7,12 @@ import type { SpaceActions } from '@/pages/space/spaceStore';
 import { GoalsWorkspace } from './GoalsWorkspace';
 
 const session: SpaceSession = {
-  baseUrl: 'https://space.myagents.test',
+  baseUrl: 'https://space.nexttools.test',
   user: { id: 'user-1', email: 'user@example.com' },
   space: {
     id: 'space-1',
     slug: 'official',
-    name: 'MyAgents社区',
+    name: 'NextTools社区',
     joinPolicy: 'open',
     rootGoalId: 'goal-root',
   },
@@ -26,11 +26,11 @@ const rootGoal: SpaceGoal = {
   parentGoalId: null,
   path: '/goal-root/',
   depth: 0,
-  title: 'MyAgents社区',
+  title: 'NextTools社区',
   context: 'Root context',
   createdAt: '2026-06-24T00:00:00.000Z',
   updatedAt: '2026-06-24T00:00:00.000Z',
-  goalPathLabel: 'MyAgents社区',
+  goalPathLabel: 'NextTools社区',
 };
 
 const childGoal: SpaceGoal = {
@@ -43,7 +43,7 @@ const childGoal: SpaceGoal = {
   context: 'Runtime context',
   createdAt: '2026-06-24T01:00:00.000Z',
   updatedAt: '2026-06-24T01:00:00.000Z',
-  goalPathLabel: 'MyAgents社区 / Runtime Delivery',
+  goalPathLabel: 'NextTools社区 / Runtime Delivery',
 };
 
 function buildActions(overrides: Partial<SpaceActions> = {}): SpaceActions {
@@ -150,7 +150,7 @@ describe('GoalsWorkspace', () => {
     const actions = buildActions({ createGoal });
     renderGoals(actions);
 
-    fireEvent.click(screen.getByRole('button', { name: 'MyAgents社区' }));
+    fireEvent.click(screen.getByRole('button', { name: 'NextTools社区' }));
     fireEvent.click(screen.getByRole('button', { name: '新建子目标' }));
 
     expect(screen.getByText('父级目标：')).toBeInTheDocument();
@@ -175,13 +175,13 @@ describe('GoalsWorkspace', () => {
     const actions = buildActions();
     renderGoals(actions);
 
-    fireEvent.click(screen.getByRole('button', { name: 'MyAgents社区' }));
+    fireEvent.click(screen.getByRole('button', { name: 'NextTools社区' }));
     fireEvent.click(screen.getByRole('button', { name: '新建子目标' }));
 
-    const parentButtons = screen.getAllByRole('button', { name: 'MyAgents社区' });
+    const parentButtons = screen.getAllByRole('button', { name: 'NextTools社区' });
     fireEvent.click(parentButtons[parentButtons.length - 1]);
 
-    expect(screen.getByRole('heading', { name: 'MyAgents社区' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'NextTools社区' })).toBeInTheDocument();
     expect(screen.getByText('Root context')).toBeInTheDocument();
   });
 
@@ -189,7 +189,7 @@ describe('GoalsWorkspace', () => {
     const actions = buildActions();
     renderGoals(actions);
 
-    fireEvent.click(screen.getByRole('button', { name: 'MyAgents社区' }));
+    fireEvent.click(screen.getByRole('button', { name: 'NextTools社区' }));
     fireEvent.click(screen.getByText('Runtime context'));
 
     expect(screen.getByRole('heading', { name: 'Runtime Delivery' })).toBeInTheDocument();

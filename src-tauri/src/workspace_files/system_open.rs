@@ -55,7 +55,7 @@ pub async fn cmd_workspace_open_with_default(
 }
 
 /// Reveal an **absolute** path in the OS file manager. Used by the
-/// Skill/Command detail panels to open `~/.myagents/skills/<name>/SKILL.md`
+/// Skill/Command detail panels to open `~/.nexttools/skills/<name>/SKILL.md`
 /// (which lives outside any chat workspace).
 ///
 /// Existing ordinary local files are allowed on any volume. The canonical
@@ -405,7 +405,7 @@ mod tests {
         if !ssh_dir.is_dir() {
             return; // Skip on systems without ~/.ssh.
         }
-        let stub = ssh_dir.join(format!("myagents_ws_bypass_test_{}", std::process::id()));
+        let stub = ssh_dir.join(format!("nexttools_ws_bypass_test_{}", std::process::id()));
         if std::fs::write(&stub, b"x").is_err() {
             return;
         }
@@ -549,7 +549,7 @@ mod tests {
         let home = std::env::var_os("HOME").map(PathBuf::from);
         let Some(home) = home else { return };
         let ssh_dir = home.join(".ssh");
-        let stub = ssh_dir.join(format!("myagents_test_stub_{}", std::process::id()));
+        let stub = ssh_dir.join(format!("nexttools_test_stub_{}", std::process::id()));
         // Skip if we can't create (no .ssh dir, permission, etc.) — rather
         // than trying to mkdir which would touch real config.
         if !ssh_dir.is_dir() {
@@ -620,7 +620,7 @@ mod tests {
         // /var/folders/... which trips the `/var` system blacklist before
         // we even get to canonicalize-and-prefix-check).
         let Some(home) = home_dir() else { return };
-        let ws_root = home.join(format!(".myagents-test-ws-sym-out-{}", std::process::id()));
+        let ws_root = home.join(format!(".nexttools-test-ws-sym-out-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&ws_root);
         std::fs::create_dir_all(&ws_root).unwrap();
         let lure = ws_root.join("leak");
@@ -656,7 +656,7 @@ mod tests {
         use std::os::unix::fs::symlink;
 
         let Some(home) = home_dir() else { return };
-        let ws_root = home.join(format!(".myagents-test-ws-sym-in-{}", std::process::id()));
+        let ws_root = home.join(format!(".nexttools-test-ws-sym-in-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&ws_root);
         std::fs::create_dir_all(ws_root.join("versions/v1")).unwrap();
         std::fs::write(ws_root.join("versions/v1/file.txt"), "hi").unwrap();

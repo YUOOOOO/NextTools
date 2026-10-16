@@ -56,14 +56,14 @@ const BROWSER_USER_AGENT: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/53
 /// 2. **Cmd/Ctrl/middle-click escape hatch** — power users expect modifier+
 ///    click to open in the system browser. Since wry's on_new_window doesn't
 ///    surface modifier state, we intercept the click in JS and signal Rust
-///    via a navigation to a custom `myagents-internal://open-external/?url=`
+///    via a navigation to a custom `nexttools-internal://open-external/?url=`
 ///    scheme. on_navigation parses the request, opens the target in the OS
 ///    default browser, and cancels the navigation so the current page stays.
 ///    An iframe is used so the trigger doesn't replace the visible page.
 const BROWSER_INIT_SCRIPT: &str = r#"
 (function() {
-  if (window.__myagentsBrowserShimInstalled) return;
-  window.__myagentsBrowserShimInstalled = true;
+  if (window.__nexttoolsBrowserShimInstalled) return;
+  window.__nexttoolsBrowserShimInstalled = true;
 
   // 1. Route window.open() to current page (no multi-tab support).
   var origOpen = window.open;
@@ -85,7 +85,7 @@ const BROWSER_INIT_SCRIPT: &str = r#"
       e.preventDefault();
       e.stopPropagation();
       var ifr = document.createElement('iframe');
-      ifr.src = 'myagents-internal://open-external/?url=' + encodeURIComponent(href);
+      ifr.src = 'nexttools-internal://open-external/?url=' + encodeURIComponent(href);
       ifr.style.display = 'none';
       (document.documentElement || document.body).appendChild(ifr);
       setTimeout(function() {
@@ -672,10 +672,10 @@ pub async fn cmd_browser_create(
                 return false;
             }
             // Internal signaling channel: BROWSER_INIT_SCRIPT triggers an
-            // iframe nav to myagents-internal://open-external/?url=… on
+            // iframe nav to nexttools-internal://open-external/?url=… on
             // Cmd/Ctrl/middle-click. Hand the URL to the OS default browser
             // and cancel the navigation so the current page is undisturbed.
-            if scheme == "myagents-internal" && nav_url.host_str() == Some("open-external") {
+            if scheme == "nexttools-internal" && nav_url.host_str() == Some("open-external") {
                 let target_str = nav_url
                     .query_pairs()
                     .find(|(k, _)| k == "url")

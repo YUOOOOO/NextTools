@@ -3,7 +3,7 @@
  *
  * WHY THIS EXISTS
  * ---------------
- * MyAgents launches the Claude Agent SDK subprocess with
+ * NextTools launches the Claude Agent SDK subprocess with
  * `allowDangerouslySkipPermissions: true` (so a mid-session switch to
  * fullAgency / `bypassPermissions` is honored without a restart — see the
  * comment at the `query()` options in agent-session.ts). At spawn time the SDK
@@ -22,7 +22,7 @@
  *
  * So whenever bypass mode is "available", **plan mode resolves every ordinary
  * tool to "allow"** — the CLI never emits a `can_use_tool` control request, our
- * `canUseTool` callback (where MyAgents enforces the plan-mode read-only rules)
+ * `canUseTool` callback (where NextTools enforces the plan-mode read-only rules)
  * is NEVER invoked, and `result.permission_denials` stays empty. A well-behaved
  * Claude model honors the plan-mode system reminder ("you MUST NOT run any
  * non-readonly tools") and only calls ExitPlanMode, so the missing enforcement
@@ -114,7 +114,7 @@ export function isPlanModeInEffect(localMode: string, hookMode: string | undefin
  * Returns `true` (block) for any tool that is neither a plan-mode read-only tool
  * nor a control-transfer tool — i.e. every write / side-effecting tool (Bash,
  * Edit, Write, MultiEdit, NotebookEdit, Task, WebFetch, WebSearch, Skill, all
- * `mcp__*` tools, the `myagents` CLI, …). Returns `false` (allow normal flow)
+ * `mcp__*` tools, the `nexttools` CLI, …). Returns `false` (allow normal flow)
  * when not in plan mode, for the read-only allowlist, and for control-transfer
  * tools.
  *

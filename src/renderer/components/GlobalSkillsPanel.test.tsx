@@ -41,12 +41,12 @@ vi.mock('./CommandDetailPanel', async () => {
 });
 
 const requiredSkill: SkillItem = {
-  name: 'myagents-cli',
-  description: 'MyAgents product operations',
+  name: 'nexttools-cli',
+  description: 'NextTools product operations',
   scope: 'user',
-  path: '/tmp/myagents-cli/SKILL.md',
-  folderName: 'myagents-cli',
-  author: 'MyAgents',
+  path: '/tmp/nexttools-cli/SKILL.md',
+  folderName: 'nexttools-cli',
+  author: 'NextTools',
   systemOwned: true,
   required: true,
   enabled: true,
@@ -86,7 +86,7 @@ describe('GlobalSkillsPanel required skill controls', () => {
     const onDetailChange = vi.fn();
     render(<GlobalSkillsPanel onDetailChange={onDetailChange} />);
 
-    const requiredTitle = await screen.findByText('myagents-cli');
+    const requiredTitle = await screen.findByText('nexttools-cli');
     const optionalTitle = screen.getByText('prompt-writer');
     const requiredCard = requiredTitle.closest('.group');
     const optionalCard = optionalTitle.closest('.group');
@@ -98,7 +98,7 @@ describe('GlobalSkillsPanel required skill controls', () => {
     expect(screen.getAllByRole('switch')).toHaveLength(1);
 
     const typeIcon = requiredCard?.querySelector('[data-capability-type-icon="skill"]');
-    const author = screen.getByText('MyAgents');
+    const author = screen.getByText('NextTools');
     const systemStatus = screen.getByText('系统');
     expect(typeIcon?.nextElementSibling).toContainElement(requiredTitle);
     expect(requiredTitle.nextElementSibling).toBe(author);

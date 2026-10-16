@@ -14,9 +14,9 @@ const PROJECTION_DEBOUNCE_WINDOW: Duration = Duration::from_millis(300);
 const WATCHER_RESTART_DELAY: Duration = Duration::from_secs(2);
 
 fn sessions_path() -> Result<std::path::PathBuf, String> {
-    crate::app_dirs::myagents_data_dir()
+    crate::app_dirs::nexttools_data_dir()
         .map(|dir| dir.join("sessions.json"))
-        .ok_or_else(|| "无法定位 MyAgents 数据目录".to_string())
+        .ok_or_else(|| "无法定位 NextTools 数据目录".to_string())
 }
 
 pub(crate) fn redact_session_metadata(mut session: Value) -> Option<Value> {
@@ -445,13 +445,13 @@ mod tests {
     #[test]
     fn projection_path_matching_is_structural_across_apfs_aliases() {
         assert!(is_session_projection_path(Path::new(
-            "/System/Volumes/Data/Users/alice/.myagents/sessions.json"
+            "/System/Volumes/Data/Users/alice/.nexttools/sessions.json"
         )));
         assert!(is_session_projection_path(Path::new(
-            "/System/Volumes/Data/Users/alice/.myagents/sessions/session-1.jsonl"
+            "/System/Volumes/Data/Users/alice/.nexttools/sessions/session-1.jsonl"
         )));
         assert!(!is_session_projection_path(Path::new(
-            "/Users/alice/.myagents/sessions.json.tmp"
+            "/Users/alice/.nexttools/sessions.json.tmp"
         )));
         assert!(!is_session_projection_path(Path::new(
             "/Users/alice/other/session-1.jsonl"

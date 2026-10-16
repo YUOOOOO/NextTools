@@ -27,7 +27,7 @@ import {
 const roots: string[] = [];
 
 function tempRoot(): string {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-managed-codex-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-managed-codex-'));
   roots.push(root);
   return root;
 }

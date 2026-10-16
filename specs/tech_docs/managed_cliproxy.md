@@ -1,6 +1,6 @@
 # 托管 CLIProxy 组件
 
-`antigravity-sub` 使用 Rust 管理的原版 CLIProxy Anthropic 接口，可由 Claude Agent SDK 或 Integrated DSH 执行，不经过 OpenAI Bridge。随包基线由 `src/shared/managed-cliproxy-source.json` 锁定；线上资源按最低 MyAgents 版本选择，独立于客户端发版。组件完整性、资源策略与模型目录分开裁决。MyAgents 不维护模型白名单，不以模型请求验证登录。
+`antigravity-sub` 使用 Rust 管理的原版 CLIProxy Anthropic 接口，可由 Claude Agent SDK 或 Integrated DSH 执行，不经过 OpenAI Bridge。随包基线由 `src/shared/managed-cliproxy-source.json` 锁定；线上资源按最低 NextTools 版本选择，独立于客户端发版。组件完整性、资源策略与模型目录分开裁决。NextTools 不维护模型白名单，不以模型请求验证登录。
 
 ## Owner 与数据流
 
@@ -17,7 +17,7 @@ Session / Task / Goal / Channel 的 SDK Query 或 DSH 模型请求；SDK title /
   → Claude SDK / DSH → CLIProxy /v1/messages → Antigravity
 ```
 
-Rust 是账号目录注册、正式/候选指针、组件选择、进程、准入和 lease 的 owner。CLIProxy 独占 OAuth state、token 文件与 refresh；MyAgents 不读取完整 token 文档、不调用强制 refresh、不自行交换 Google code。浏览器 URL 由原版生成，Rust 只校验并转交回调。
+Rust 是账号目录注册、正式/候选指针、组件选择、进程、准入和 lease 的 owner。CLIProxy 独占 OAuth state、token 文件与 refresh；NextTools 不读取完整 token 文档、不调用强制 refresh、不自行交换 Google code。浏览器 URL 由原版生成，Rust 只校验并转交回调。
 
 `config.json` 保存用户模型首选、启用列表、别名和 Rust 投影的账号可用性。Session snapshot 固化 Provider route；本次 Query 的端口、模型 key、instance generation 与原生模型元数据只在执行进程内存在。`providerHistory` 使用稳定 managed Provider identity，临时端口变化不构成 Provider 切换。
 
@@ -80,9 +80,9 @@ OAuth HTTP 与业务结果分开保留。callback 明确拒绝及时结束；响
 
 统一日志以现有非秘密 attempt ID 关联 `starting`、`auth_url`、`browser_callback`、`callback_submit`、`auth_status`、`authorization`、`account_summary`、`account_commit`，各阶段记录固定 outcome。授权阶段另记 HTTP 状态（未收到响应或无 HTTP 请求为 none）与自登录开始的耗时；账号摘要确认和提交完成记录对应事件。轮询只记录 HTTP/outcome 变化，完成或失败另记终态；不记录邮箱、OAuth state、授权码、token、URL、原版响应或进程原始输出。最终 candidate 为空可能是失败清理结果，不能据此判断从未创建账号。
 
-目录探测不带 Anthropic-Version、claude-cli UA 或 client_version，读取普通 OpenAI 形状 data[].id。账号注册与路由模型合并去重，原版定义只补充元数据，不取审批交集。两个目录均读取失败时保留上次列表并标记过期；执行准入不依赖目录缓存，也不发路由预检。权限/额度失败不触发 MyAgents 刷新 token 或换模型。
+目录探测不带 Anthropic-Version、claude-cli UA 或 client_version，读取普通 OpenAI 形状 data[].id。账号注册与路由模型合并去重，原版定义只补充元数据，不取审批交集。两个目录均读取失败时保留上次列表并标记过期；执行准入不依赖目录缓存，也不发路由预检。权限/额度失败不触发 NextTools 刷新 token 或换模型。
 
-MyAgents 不传 `-local-model`，保留原版启动及每三小时更新线上 models.json 的能力。Antigravity 注册来自 CLIProxy 上游维护目录，并非每次向 Google 查询订阅权益；目录不保证每次调用成功。统一日志只记录阶段、目录计数和有限错误码，不记录邮箱、回调 URL、响应内容或 key。
+NextTools 不传 `-local-model`，保留原版启动及每三小时更新线上 models.json 的能力。Antigravity 注册来自 CLIProxy 上游维护目录，并非每次向 Google 查询订阅权益；目录不保证每次调用成功。统一日志只记录阶段、目录计数和有限错误码，不记录邮箱、回调 URL、响应内容或 key。
 
 ## 资源策略：最低客户端版本
 
@@ -100,7 +100,7 @@ MyAgents 不传 `-local-model`，保留原版启动及每三小时更新线上 m
 
 - `minAppVersion` 是开放的最低客户端门槛。选择所有门槛不大于当前 App 的条目中，门槛最高的那条；不依赖数组顺序，不按 CLIProxy 版本大小挑选条目。同一门槛只允许一条记录。
 - `revision` 是该条目的兼容记录修订号。同一组件版本只可复用原始 immutable bytes；修改凭据兼容记录时提高修订号。换到更高组件版本可从 1 开始。
-- `credentialCompatibleVersions` 记录已经验证可双向共用账号文件的旧组件版本。它只在发布新 CLIProxy 时维护，不随 MyAgents 或 SDK 升版改变。已登录账号的升级/回退仍受这一条件约束，不能凭版本号猜测 token 文件兼容。
+- `credentialCompatibleVersions` 记录已经验证可双向共用账号文件的旧组件版本。它只在发布新 CLIProxy 时维护，不随 NextTools 或 SDK 升版改变。已登录账号的升级/回退仍受这一条件约束，不能凭版本号猜测 token 文件兼容。
 - App、CLIProxy、门槛均按数值 `x.y.z` 比较，不接受预发布后缀。SDK 版本锁定与回归测试仍由客户端开发负责，SDK 版本不参与组件准入。
 
 例：`.17 → 7.2.158` 与 `.20 → 7.3.0` 共存时（这里 `.17` 表示 `0.4.17`），0.4.17–0.4.19 使用前者，0.4.20 及未来客户端使用后者。修改 `.17` 不影响已存在的 `.20`。没有匹配条目表示没有适用更新，保持本地可用组件；不会把其它门槛的资源当成候选。
@@ -122,13 +122,13 @@ Rust 构建与运行时共用 `src-tauri/src/cliproxy_policy.rs` 的门槛选择
 
 签名信任根复用 `resource_signature_core.rs` 和 Tauri updater 公钥。网络失败保留本机可信组件；404 记为 `update_unpublished`，传输失败记为 `update_network`。已失败 artifact/App/SDK/revision 的自动安装或启动不会无限重复；这些字段标识失败尝试的环境，不是精确版本准入。正常进程崩溃恢复另有次数上限，不重放任务。
 
-## 普通 MyAgents 发版
+## 普通 NextTools 发版
 
 只按正常流程更新 App 版本与代码。**不修改 minAppVersion，不重签 CLIProxy 清单，不重打 CLIProxy ZIP，也不修改组件 source lock。**
 
 setup、开发构建、macOS/Windows 正式构建、直接 `npm run tauri:dev` 与 CI 统一调用 `scripts/prepare-cliproxy.mjs [platform]`。默认读取仓库 `.github/cliproxy/` 的签名快照，按 source lock 下载 immutable ZIP，校验大小/SHA-256 后写入 `src-tauri/resources/cliproxy-cache/artifacts/<digest>.zip`，再投影到 `resources/cliproxy`。完整缓存可离线复用，损坏缓存重新获取；无需本机发布目录、私钥或 minisign。Rust build.rs 仍检查同一签名信任根、锁定的 source、平台、最低 App 版本、大小和摘要。
 
-只有明确设置 `MYAGENTS_CLIPROXY_DISTRIBUTION_DIR` 时才使用指定的本地签名清单及平台 ZIP；这是离线/组件发布验收入口，缺失或损坏直接报错，不自动改用网络资源。普通客户端构建不读取线上 latest 清单，不受组件线上策略后续变动影响。Linux 没有 CLIProxy 平台产物，遵从 Rust 的平台门槛，不下载该组件。
+只有明确设置 `NEXTTOOLS_CLIPROXY_DISTRIBUTION_DIR` 时才使用指定的本地签名清单及平台 ZIP；这是离线/组件发布验收入口，缺失或损坏直接报错，不自动改用网络资源。普通客户端构建不读取线上 latest 清单，不受组件线上策略后续变动影响。Linux 没有 CLIProxy 平台产物，遵从 Rust 的平台门槛，不下载该组件。
 
 支持目标缺少资源时构建失败。Windows 的 compile CI 和 macOS 组件测试从 `.github/cliproxy/` 的已签名快照获取 immutable 资源，不需要私钥。快照仅在随包组件或资源策略需要更新时调整，不跟随每次 App 升版。
 
@@ -138,7 +138,7 @@ setup、开发构建、macOS/Windows 正式构建、直接 `npm run tauri:dev` �
 
 ### 1. 决定发布范围并取得当前清单
 
-CLIProxy 升版默认沿用已核验线上清单中的最低 `minAppVersion`。只有新组件的正常运行确实依赖新版 MyAgents 才具备的必要兼容支持时，才提升门槛，且应设为首个包含该支持的 MyAgents 版本。提高门槛须说明具体客户端依赖及验证依据；CLIProxy 的版本跨度、当前 MyAgents 开发/发布版本或 SDK 升版本身，都不是提高门槛的理由。
+CLIProxy 升版默认沿用已核验线上清单中的最低 `minAppVersion`。只有新组件的正常运行确实依赖新版 NextTools 才具备的必要兼容支持时，才提升门槛，且应设为首个包含该支持的 NextTools 版本。提高门槛须说明具体客户端依赖及验证依据；CLIProxy 的版本跨度、当前 NextTools 开发/发布版本或 SDK 升版本身，都不是提高门槛的理由。
 
 - 无新增客户端兼容依赖：保持当前线上最低门槛不变，替换该门槛的目标组件；例如从 `7.2.158` 升至 `8.0.13` 时仍使用 `0.4.17`。
 - 必须依赖新版客户端支持：新增对应的更高 `minAppVersion`，保留全部既有门槛及其适用组件，旧客户端继续使用原有目标。
@@ -209,12 +209,12 @@ node scripts/publish-cliproxy-component.mjs /tmp/cliproxy-update/distribution --
 如需更新随包基线，先确保 immutable ZIP 已在线发布，再更新 source lock，并把完整签名清单及签名复制到 `.github/cliproxy/`；普通 prepare/build 会自行下载对应产物。尚未发布的本地组件验收可以显式指定 distribution。只发布线上更新时不用改这些客户端构建输入。
 
 ```sh
-MYAGENTS_CLIPROXY_DISTRIBUTION_DIR=/path/to/distribution ./build_dev.sh --build-only
+NEXTTOOLS_CLIPROXY_DISTRIBUTION_DIR=/path/to/distribution ./build_dev.sh --build-only
 ```
 
 ## 验证与维护
 
-开发版与正式版共用 `~/.myagents`。组件状态只接受当前签名资源契约；存储损坏不是可自动重置的缓存，不能通过删除账号目录或凭据修复组件状态。
+开发版与正式版共用 `~/.nexttools`。组件状态只接受当前签名资源契约；存储损坏不是可自动重置的缓存，不能通过删除账号目录或凭据修复组件状态。
 
 - `node --test scripts/package-cliproxy-component.test.mjs scripts/prepare-cliproxy.test.mjs`：门槛选择、同门槛替换、保留旧门槛、未来 App/SDK 升版复用资源、发布完整性与 CI 下载。
 - Rust `cliproxy::oauth_tests` 用离线本地 HTTP 覆盖原生失败分类、回调响应丢失后成功、单次 code 提交、轮询恢复、确定性拒绝、取消/截止时间及敏感响应隔离；不需要真实 Google 登录。

@@ -77,7 +77,7 @@ export function verifyManifestSignature(content, wrapped) {
   const config = JSON.parse(readFileSync(join(repo, 'src-tauri/tauri.conf.json'), 'utf8'));
   const publicKey = Buffer.from(config.plugins.updater.pubkey, 'base64').toString('utf8').split(/\r?\n/).find(line => line.startsWith('RW'));
   if (!publicKey) throw new Error('The existing updater trust root is missing');
-  const scratch = mkdtempSync(join(tmpdir(), 'myagents-cliproxy-verify-'));
+  const scratch = mkdtempSync(join(tmpdir(), 'nexttools-cliproxy-verify-'));
   try {
     writeFileSync(join(scratch, 'manifest'), content);
     writeFileSync(join(scratch, 'signature'), Buffer.from(wrapped.trim(), 'base64'));
@@ -106,7 +106,7 @@ async function main() {
   const bytes = readFileSync(manifestPath);
   const signature = readFileSync(`${manifestPath}.sig`, 'utf8').trim();
   if (bytes.length > 256 * 1024 || signature.length > 16 * 1024) throw new Error('Oversized manifest/signature');
-  const scratch = mkdtempSync(join(tmpdir(), 'myagents-cliproxy-publish-'));
+  const scratch = mkdtempSync(join(tmpdir(), 'nexttools-cliproxy-publish-'));
   try {
     const verify = verifyManifestSignature;
     verify(bytes, signature);
@@ -131,7 +131,7 @@ async function main() {
       RCLONE_CONFIG_CLIPROXY_ENDPOINT: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com` };
     delete env.TAURI_SIGNING_PRIVATE_KEY; delete env.TAURI_PRIVATE_KEY;
     const upload = (name, immutable) => run('rclone', ['copyto', join(distribution, name),
-      `cliproxy:myagents-releases/runtimes/cliproxy/${name}`, '--s3-no-check-bucket', ...(immutable ? ['--immutable'] : [])], env);
+      `cliproxy:nexttools-releases/runtimes/cliproxy/${name}`, '--s3-no-check-bucket', ...(immutable ? ['--immutable'] : [])], env);
     for (const file of plan.files) {
       if (file.local) upload(file.filename, true);
       const published = await fetchBytes(base + file.filename, file.size);

@@ -68,7 +68,7 @@ describe('Theme architecture guardrails', () => {
 
   it('keeps every optional package scoped, side-effect free, and independent from Space', () => {
     const optionalThemeIds = [
-      'myagents-light', 'default-black', 'sage', 'absolutely', 'linear', 'proof', 'codex', 'raycast',
+      'nexttools-light', 'default-black', 'sage', 'absolutely', 'linear', 'proof', 'codex', 'raycast',
     ];
     for (const themeId of optionalThemeIds) {
       const manifest = source(`src/renderer/theme/themes/${themeId}.ts`);
@@ -84,7 +84,7 @@ describe('Theme architecture guardrails', () => {
       expect(css).not.toContain('@font-face');
       expect(css).not.toMatch(/https?:\/\//);
     }
-    expect(source('src/renderer/theme/themes/preset-theme.ts')).not.toContain('myagents-default');
+    expect(source('src/renderer/theme/themes/preset-theme.ts')).not.toContain('nexttools-default');
   });
 
   it('keeps the global sidebar structural surface scoped to App Shell chrome', () => {
@@ -103,12 +103,12 @@ describe('Theme architecture guardrails', () => {
 
   it('keeps Default Black equal to canonical host tokens except its light primary button pair', () => {
     const canonicalStylesheet = parseThemeStylesheet(
-      source('src/renderer/theme/themes/myagents-default.css'),
+      source('src/renderer/theme/themes/nexttools-default.css'),
     );
     const variantStylesheet = parseThemeStylesheet(
       source('src/renderer/theme/themes/default-black.css'),
     );
-    const canonicalRoot = "html[data-theme-id='myagents-default']";
+    const canonicalRoot = "html[data-theme-id='nexttools-default']";
     const variantRoot = "html[data-theme-id='default-black']";
     const collect = (
       stylesheet: ReturnType<typeof parseThemeStylesheet>,
@@ -143,15 +143,15 @@ describe('Theme architecture guardrails', () => {
     }
   });
 
-  it('keeps MyAgents Light equal to Claude except its light primary button pair', () => {
+  it('keeps NextTools Light equal to Claude except its light primary button pair', () => {
     const claudeStylesheet = parseThemeStylesheet(
       source('src/renderer/theme/themes/absolutely.css'),
     );
     const lightStylesheet = parseThemeStylesheet(
-      source('src/renderer/theme/themes/myagents-light.css'),
+      source('src/renderer/theme/themes/nexttools-light.css'),
     );
     const claudeRoot = "html[data-theme-id='absolutely']";
-    const lightRoot = "html[data-theme-id='myagents-light']";
+    const lightRoot = "html[data-theme-id='nexttools-light']";
     const collect = (
       stylesheet: ReturnType<typeof parseThemeStylesheet>,
       selector: string,
@@ -159,7 +159,7 @@ describe('Theme architecture guardrails', () => {
       stylesheet.topLevelBlocks,
       selector,
       [[selector]],
-      `MyAgents Light equality selector ${selector}`,
+      `NextTools Light equality selector ${selector}`,
     ));
 
     expect(collect(lightStylesheet, lightRoot)).toEqual(collect(claudeStylesheet, claudeRoot));
@@ -206,8 +206,8 @@ describe('Theme architecture guardrails', () => {
   });
 
   it('keeps a complete default visual fallback for unknown pre-React Theme IDs', () => {
-    const css = source('src/renderer/theme/themes/myagents-default.css');
-    expect(css).toContain(":root,\nhtml[data-theme-id='myagents-default']");
+    const css = source('src/renderer/theme/themes/nexttools-default.css');
+    expect(css).toContain(":root,\nhtml[data-theme-id='nexttools-default']");
     expect(css).toContain('--font-body:');
     expect(css).toContain('--theme-radius-full:');
     expect(css).toContain("html[data-color-scheme='light']");
@@ -217,7 +217,7 @@ describe('Theme architecture guardrails', () => {
 
   it('keeps Tailwind utility generation bridged to runtime Theme tokens', () => {
     const entry = source('src/renderer/index.css');
-    const theme = source('src/renderer/theme/themes/myagents-default.css');
+    const theme = source('src/renderer/theme/themes/nexttools-default.css');
     expect(entry).toContain('@theme inline');
     expect(entry).toContain('--font-mono: var(--font-code)');
     expect(entry).toContain('--radius-full: var(--theme-radius-full)');
@@ -227,7 +227,7 @@ describe('Theme architecture guardrails', () => {
   });
 
   it('keeps the restored warm default action palette aligned with embedded adapters', () => {
-    const theme = source('src/renderer/theme/themes/myagents-default.css');
+    const theme = source('src/renderer/theme/themes/nexttools-default.css');
     const themeLight = ruleBodyAfter(theme, "html[data-color-scheme='light'],");
     const themeDark = ruleBodyAfter(theme, "html[data-color-scheme='dark'],");
     const expectedThemeByScheme = {
@@ -258,7 +258,7 @@ describe('Theme architecture guardrails', () => {
     }
     expect(themeDark).not.toContain('--accent: #c26d3a');
     expect(themeLight).not.toContain('--accent: #d4803f');
-    const adapters = source('src/renderer/theme/themes/myagents-default.ts');
+    const adapters = source('src/renderer/theme/themes/nexttools-default.ts');
     const lightWidget = sourceSection(adapters, 'const lightWidgetVariables', 'const darkWidgetVariables');
     const darkWidget = sourceSection(adapters, 'const darkWidgetVariables', 'const light: ThemeSchemeDefinition');
     const lightAdapter = sourceSection(adapters, 'const light: ThemeSchemeDefinition', 'const dark: ThemeSchemeDefinition');
@@ -348,8 +348,8 @@ describe('Theme architecture guardrails', () => {
   it('keeps product default selection separate from canonical fallback', () => {
     const sharedTheme = source('src/shared/theme.ts');
     const registry = source('src/renderer/theme/registry.ts');
-    expect(sharedTheme).toContain("CANONICAL_THEME_ID = 'myagents-default'");
-    expect(sharedTheme).toContain("DEFAULT_THEME_ID = 'myagents-light'");
+    expect(sharedTheme).toContain("CANONICAL_THEME_ID = 'nexttools-default'");
+    expect(sharedTheme).toContain("DEFAULT_THEME_ID = 'nexttools-light'");
     expect(sharedTheme).toContain('themeSelectionExplicit');
     expect(registry).toContain('this.definitions.get(CANONICAL_THEME_ID)');
     expect(source('src/renderer/theme/bootstrap.ts')).toContain('THEME_BOOTSTRAP_VERSION = 2');

@@ -1,4 +1,4 @@
-  // MyAgents source extension. Unlike Process(), every duration follows the
+  // NextTools source extension. Unlike Process(), every duration follows the
   // same raw activity/embedding path. No final-turn clustering, top-k identity
   // reconstruction, short-input shortcut or fatal not-ready path is used.
   RawDiarizationEvidence ProcessRaw(

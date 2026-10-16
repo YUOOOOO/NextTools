@@ -24,7 +24,7 @@ describe('buildCronEventRelayMessage', () => {
       '</instruction>',
       '<task-meta>',
       'Task id: cron_abc123',
-      'Source session id: 87e6c2ee-2f45-4cc1-a653-b46f27ebba5e (use `myagents session send 87e6c2ee-2f45-4cc1-a653-b46f27ebba5e -p "..."` to follow up)',
+      'Source session id: 87e6c2ee-2f45-4cc1-a653-b46f27ebba5e (use `nexttools session send 87e6c2ee-2f45-4cc1-a653-b46f27ebba5e -p "..."` to follow up)',
       'Current time: 07/06/2026, 05:44 PM GMT+8',
       '</task-meta>',
       '<task-result>',

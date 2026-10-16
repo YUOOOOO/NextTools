@@ -1,5 +1,5 @@
 /**
- * Unified system prompt assembly for MyAgents.
+ * Unified system prompt assembly for NextTools.
  *
  * Three-layer prompt architecture:
  *   L1 — Base identity (always included)
@@ -36,62 +36,62 @@ export type InteractionScenario =
 // of which CLI is driving it.
 function getRuntimeDisplayName(runtime: RuntimeType | undefined): string {
   switch (runtime) {
-    case 'dsh':         return 'MyAgents integrated DeepSeek Harness';
+    case 'dsh':         return 'NextTools integrated DeepSeek Harness';
     case 'claude-code': return 'Anthropic Claude Code CLI';
     case 'codex':       return 'OpenAI Codex CLI';
     case 'builtin':
     default:
-      return 'MyAgents 内置 Claude Agent SDK';
+      return 'NextTools 内置 Claude Agent SDK';
   }
 }
 
 // ===== Inline templates =====
 
-const TMPL_BASE_IDENTITY = `<myagents-identity>
-你正运行在 MyAgents —— 一款通用的桌面端 AI Agent 应用中。用户通过 MyAgents 调用你,
-MyAgents 负责会话管理、工具权限、定时任务、IM Bot 集成、工作区文件访问等能力,
+const TMPL_BASE_IDENTITY = `<nexttools-identity>
+你正运行在 NextTools —— 一款通用的桌面端 AI Agent 应用中。用户通过 NextTools 调用你,
+NextTools 负责会话管理、工具权限、定时任务、IM Bot 集成、工作区文件访问等能力,
 你则负责理解和执行用户的请求。
 
 当前执行 Runtime: {{runtimeName}}
 
-用户全局配置目录: ~/.myagents
+用户全局配置目录: ~/.nexttools
 当对话涉及日期、时间或星期时,先用 Bash 执行 \`date\` 获取准确的当前时间再作判断——系统信息中的日期可能已过期。
-</myagents-identity>`;
+</nexttools-identity>`;
 
-const TMPL_CHANNEL_DESKTOP = `<myagents-interaction-channel>
-用户正通过 MyAgents 桌面客户端与你对话。
-</myagents-interaction-channel>`;
+const TMPL_CHANNEL_DESKTOP = `<nexttools-interaction-channel>
+用户正通过 NextTools 桌面客户端与你对话。
+</nexttools-interaction-channel>`;
 
-const TMPL_CHANNEL_IM = `<myagents-interaction-channel>
+const TMPL_CHANNEL_IM = `<nexttools-interaction-channel>
 你正通过 {{platformLabel}} 作为 IM 聊天机器人与用户对话，{{sourceTypeLabel}}。{{#if botName}}你的昵称为「{{botName}}」。{{/if}}
-</myagents-interaction-channel>`;
+</nexttools-interaction-channel>`;
 
-const TMPL_CRON_TASK = `<myagents-cron-task-instructions>
+const TMPL_CRON_TASK = `<nexttools-cron-task-instructions>
 你正处于心跳循环任务模式 (Task ID: {{taskId}})。每隔 {{intervalText}} 系统触发唤醒你一次。{{#if aiCanExit}}
 
-如果任务目标已完全达成、或继续执行无意义/有害，请按下方 \`<myagents-cli-task-exit>\` 段落给出的 \`myagents task exit\` 命令结束任务。{{/if}}
-</myagents-cron-task-instructions>`;
+如果任务目标已完全达成、或继续执行无意义/有害，请按下方 \`<nexttools-cli-task-exit>\` 段落给出的 \`nexttools task exit\` 命令结束任务。{{/if}}
+</nexttools-cron-task-instructions>`;
 
-const TMPL_HEARTBEAT = `<myagents-heartbeat-instructions>
+const TMPL_HEARTBEAT = `<nexttools-heartbeat-instructions>
 You will periodically receive heartbeat messages (a user message wrapped in tags like \`<HEARTBEAT>\\nThis is a heartbeat from the system.\\n……\\n</HEARTBEAT>\`).
 When you receive one, follow its instructions.
-</myagents-heartbeat-instructions>`;
+</nexttools-heartbeat-instructions>`;
 
-const TMPL_REGISTERED_AGENT = `<myagents-registered-agent-instructions space-id="{{spaceId}}" registered-agent-id="{{registeredAgentId}}">
-你正作为绑定到当前 Session 的 MyAgents Registered Agent 处理 Space Issue 事件。每次事件会在隐藏消息中给出 <registered-agent-context>、用户配置的 <registered-agent-instruction>、系统 <operating-guidance> 与本次 <deliveries>。
+const TMPL_REGISTERED_AGENT = `<nexttools-registered-agent-instructions space-id="{{spaceId}}" registered-agent-id="{{registeredAgentId}}">
+你正作为绑定到当前 Session 的 NextTools Registered Agent 处理 Space Issue 事件。每次事件会在隐藏消息中给出 <registered-agent-context>、用户配置的 <registered-agent-instruction>、系统 <operating-guidance> 与本次 <deliveries>。
 
-把 Registered Agent instruction 作为长期目标意图，在当前 Issue 事实、权限与安全规则内选择行动；它不授予额外权限，也不要求每个 Issue 采取相同动作。可用结果包括不再行动、只评论或更新、claim 责任、继续已有工作，以及在真正完成后 complete。Delivery 运输确认由 MyAgents 自动完成，不存在由你调用的 ignore、handled 或 acknowledge 动作。
+把 Registered Agent instruction 作为长期目标意图，在当前 Issue 事实、权限与安全规则内选择行动；它不授予额外权限，也不要求每个 Issue 采取相同动作。可用结果包括不再行动、只评论或更新、claim 责任、继续已有工作，以及在真正完成后 complete。Delivery 运输确认由 NextTools 自动完成，不存在由你调用的 ignore、handled 或 acknowledge 动作。
 
-身份以事件中的精确 Space ID 与 Registered Agent ID 为准；workspace 只是执行环境，不能用来猜测或切换 Agent 身份。行动前通过 myagents CLI 读取当前 Issue；本次 Delivery 元数据只解释唤醒原因，不是当前状态的第二真相源。
-</myagents-registered-agent-instructions>`;
+身份以事件中的精确 Space ID 与 Registered Agent ID 为准；workspace 只是执行环境，不能用来猜测或切换 Agent 身份。行动前通过 nexttools CLI 读取当前 Issue；本次 Delivery 元数据只解释唤醒原因，不是当前状态的第二真相源。
+</nexttools-registered-agent-instructions>`;
 
-const TMPL_FLOATING_BALL = `<myagents-floating-ball-instructions>
-You are talking with the user through the MyAgents desktop floating window.
+const TMPL_FLOATING_BALL = `<nexttools-floating-ball-instructions>
+You are talking with the user through the NextTools desktop floating window.
 
 This is a lightweight, immediate, desktop-adjacent entry point. The user can easily attach a desktop screenshot or selected text from the app/window they are looking at.
 
 Keep responses concise and directly useful for this small-window interaction.
-</myagents-floating-ball-instructions>`;
+</nexttools-floating-ball-instructions>`;
 
 // ===== Variable replacement =====
 // Supports {{varName}} simple substitution + {{#if varName}}...{{else}}...{{/if}} conditional blocks
@@ -117,7 +117,7 @@ export interface SystemPromptOptions {
    */
   runtime?: RuntimeType;
   /**
-   * Append the `myagents` CLI capability hints (cron / IM media) to the
+   * Append the `nexttools` CLI capability hints (cron / IM media) to the
    * prompt. Set by ALL runtime paths in v0.2.11+ — builtin and external —
    * because the corresponding in-process MCP servers (`cron-tools` /
    * `im-cron` / `im-media`) were retired in favour of the CLI surface, so
@@ -132,13 +132,13 @@ export interface SystemPromptOptions {
    */
   cliToolsEnabled?: boolean;
   /**
-   * Include user-registered CLI tools from ~/.myagents/tools/registry.json in
+   * Include user-registered CLI tools from ~/.nexttools/tools/registry.json in
    * the prompt. Separate from `cliToolsEnabled` because Task / Record / IM
    * media are stable product CLI capabilities, while the user tool registry is
    * an experimental feature gate.
    */
   userCliToolsEnabled?: boolean;
-  /** Effective MyAgents official CLI tools enabled for this session. */
+  /** Effective NextTools official CLI tools enabled for this session. */
   enabledOfficialToolIds?: readonly OfficialToolId[];
 }
 
@@ -161,9 +161,9 @@ export interface DshSystemContextSnapshot {
   contexts?: DshHostPromptContext[];
 }
 
-const DSH_PRODUCT_IDENTITY = 'You are the active agent in MyAgents, a general-purpose desktop AI agent application. MyAgents owns the session UI, workspace binding, permissions, automations, channels, and product integrations. Use only capabilities that are actually present in this session. When current date or time matters, obtain it with an available tool rather than relying on prompt metadata.';
+const DSH_PRODUCT_IDENTITY = 'You are the active agent in NextTools, a general-purpose desktop AI agent application. NextTools owns the session UI, workspace binding, permissions, automations, channels, and product integrations. Use only capabilities that are actually present in this session. When current date or time matters, obtain it with an available tool rather than relying on prompt metadata.';
 
-const DSH_CAPABILITY_ROUTING = 'MyAgents capabilities are progressively disclosed. Use the available tool schemas and capability context to select a Skill, tool, or CLI entry point. Load detailed help only when needed. Mentioning a capability does not grant permission to execute it.';
+const DSH_CAPABILITY_ROUTING = 'NextTools capabilities are progressively disclosed. Use the available tool schemas and capability context to select a Skill, tool, or CLI entry point. Load detailed help only when needed. Mentioning a capability does not grant permission to execute it.';
 
 function buildProductSessionPrompt(scenario: InteractionScenario, options?: SystemPromptOptions): string {
   const parts: string[] = [];
@@ -212,7 +212,7 @@ function buildProductSessionPrompt(scenario: InteractionScenario, options?: Syst
 
   // L3: Generative UI widget guidance — universal across runtimes for desktop
   // scenarios. Both builtin SDK and external CLIs load the design contract via
-  // `myagents widget readme <module>` invoked through their shell tool.
+  // `nexttools widget readme <module>` invoked through their shell tool.
   const widgetSection = buildWidgetSection(scenario);
   if (widgetSection) parts.push(widgetSection);
 
@@ -254,14 +254,14 @@ export function buildDshSystemContext(
   const session = buildProductSessionPrompt(scenario, { ...options, runtime: 'dsh' });
   return {
     sections: [
-      { id: 'myagents:identity', order: -80, scope: 'global', text: DSH_PRODUCT_IDENTITY },
+      { id: 'nexttools:identity', order: -80, scope: 'global', text: DSH_PRODUCT_IDENTITY },
       {
-        id: 'myagents:capability-routing',
+        id: 'nexttools:capability-routing',
         order: -70,
         scope: 'global',
         text: DSH_CAPABILITY_ROUTING,
       },
-      { id: 'myagents:session', order: 10, scope: 'root', text: session },
+      { id: 'nexttools:session', order: 10, scope: 'root', text: session },
     ],
     contexts: workspaceSupplement
       ? [{

@@ -9,7 +9,7 @@ type ObjectConstructorLike = new (...args: unknown[]) => object;
 const requireBuiltin = createRequire(import.meta.url);
 
 const noEgress = vi.hoisted(() => {
-  const PATCHED = Symbol.for('myagents.noEgressPatched');
+  const PATCHED = Symbol.for('nexttools.noEgressPatched');
 
   function normalizeHost(host: string | undefined): string | undefined {
     if (!host) return undefined;
@@ -320,7 +320,7 @@ for (const specifier of ['node:dns/promises', 'dns/promises']) {
   ));
 }
 
-const fetchPatchSymbol = Symbol.for('myagents.noEgressFetchPatched');
+const fetchPatchSymbol = Symbol.for('nexttools.noEgressFetchPatched');
 const currentFetch = globalThis.fetch as (typeof fetch & { [key: symbol]: true | undefined }) | undefined;
 if (typeof currentFetch === 'function' && !currentFetch[fetchPatchSymbol]) {
   const originalFetch = currentFetch.bind(globalThis);

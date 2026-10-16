@@ -132,7 +132,7 @@ function parseArguments(argv) {
 function main() {
   const args = parseArguments(process.argv.slice(2));
   const explicitSourceRoot = args["--source-root"];
-  const sourceRoot = explicitSourceRoot ?? process.env.MYAGENTS_DSH_SOURCE_ROOT;
+  const sourceRoot = explicitSourceRoot ?? process.env.NEXTTOOLS_DSH_SOURCE_ROOT;
   const selection = readDshBuildSelection(repoRoot);
   if (sourceRoot && selection?.source !== "local") {
     throw new Error("[dsh-dev-freshness] source checkout comparison requires a local DSH build selection");
@@ -142,7 +142,7 @@ function main() {
     sourceRoot,
     sourceRequired:
       explicitSourceRoot !== undefined ||
-      process.env.MYAGENTS_DSH_SOURCE_ROOT !== undefined,
+      process.env.NEXTTOOLS_DSH_SOURCE_ROOT !== undefined,
   });
   process.stdout.write(`${JSON.stringify(result)}\n`);
 }

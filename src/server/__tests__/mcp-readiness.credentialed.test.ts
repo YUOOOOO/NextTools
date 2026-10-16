@@ -62,7 +62,7 @@ describe('SDK MCP soft pre-warm', () => {
                 ...Object.fromEntries(
                   Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined),
                 ),
-                MYAGENTS_TEST_MCP_DELAY_MS: String(startupDelayMs),
+                NEXTTOOLS_TEST_MCP_DELAY_MS: String(startupDelayMs),
               },
             },
           },
@@ -118,7 +118,7 @@ describe('SDK MCP soft pre-warm', () => {
             name: 'mcp__delayed_fixture__delayed_echo',
           }),
         ]));
-        expect(JSON.stringify(messages)).toContain('MYAGENTS_DELAYED_MCP_READY');
+        expect(JSON.stringify(messages)).toContain('NEXTTOOLS_DELAYED_MCP_READY');
       } finally {
         releasePrompt();
         sdkQuery.close();

@@ -18,8 +18,8 @@ function request(headers: Record<string, string> = {}): Request {
 
 describe('external CLI admission', () => {
   beforeEach(() => {
-    vi.stubEnv('MYAGENTS_INTERNAL_CLI_TOKEN', 'internal-capability');
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', 'sidecar-1');
+    vi.stubEnv('NEXTTOOLS_INTERNAL_CLI_TOKEN', 'internal-capability');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', 'sidecar-1');
     managementApi.mockReset();
   });
 
@@ -30,7 +30,7 @@ describe('external CLI admission', () => {
   it('recognizes the App-injected internal capability before the public allowlist', async () => {
     const result = await admitAdminRequest(
       request({
-        'X-MyAgents-Internal-Cli-Token': 'internal-capability',
+        'X-NextTools-Internal-Cli-Token': 'internal-capability',
       }),
       'config/set',
     );

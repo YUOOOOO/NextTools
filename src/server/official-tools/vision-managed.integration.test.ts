@@ -24,8 +24,8 @@ import { analyzeImages } from './vision';
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
 
 it.each([false, true])('binds managed vision and trusts its actual terminal (failed=%s)', async failed => {
-  const scratch = mkdtempSync(join(tmpdir(), 'myagents-cliproxy-vision-'));
-  vi.stubEnv('MYAGENTS_SIDECAR_ID', 'vision-owner');
+  const scratch = mkdtempSync(join(tmpdir(), 'nexttools-cliproxy-vision-'));
+  vi.stubEnv('NEXTTOOLS_SIDECAR_ID', 'vision-owner');
   const grant = { providerId: 'antigravity-sub', baseUrl: 'http://127.0.0.1:13491', apiKey: 'a'.repeat(64),
     instanceGeneration: randomUUID(), accountGeneration: randomUUID(), leaseId: randomUUID(), modelPolicy: { id: 'approved-image', thinking: false } };
   mocks.api.mockImplementation(async path => path.endsWith('/acquire') ? { ok: true, binding: grant } : { ok: true });

@@ -11,7 +11,7 @@ const LARK_GET_DISPATCHER = `function getActiveDispatcher(key) {
 }`;
 
 const LARK_REGISTER_DISPATCHER_PATCH = `function registerActiveDispatcher(key, entry) {
-    const token = globalThis.__myagentsCurrentLarkAdmissionToken?.();
+    const token = globalThis.__nexttoolsCurrentLarkAdmissionToken?.();
     const existing = activeDispatchers.get(key);
     const entries = existing instanceof Map ? existing : new Map();
     entries.set(token ?? entry, entry);
@@ -24,7 +24,7 @@ const LARK_UNREGISTER_DISPATCHER_PATCH = `function unregisterActiveDispatcher(ke
         activeDispatchers.delete(key);
         return;
     }
-    const token = globalThis.__myagentsCurrentLarkAdmissionToken?.();
+    const token = globalThis.__nexttoolsCurrentLarkAdmissionToken?.();
     if (token === undefined) {
         activeDispatchers.delete(key);
         return;
@@ -71,7 +71,7 @@ const LARK_ENQUEUE_PATCH = `function enqueueFeishuChatTask(params) {
     const activeTasks = previous?.activeTasks ?? new Set();
     const status = chatQueues.has(key) ? 'queued' : 'immediate';
     const launch = () => {
-        const runner = globalThis.__myagentsRunLarkAdmissionScopedTask;
+        const runner = globalThis.__nexttoolsRunLarkAdmissionScopedTask;
         if (typeof runner === 'function') {
             return runner(task);
         }

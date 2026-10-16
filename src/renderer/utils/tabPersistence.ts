@@ -29,7 +29,7 @@ import {
 export type { PersistedChatTab } from '@/features/chat/tabPersistence';
 export type { PersistedRecordTab } from '@/features/record/tabPersistence';
 
-const PERSIST_KEY = 'myagents.openTabs.v1';
+const PERSIST_KEY = 'nexttools.openTabs.v1';
 const PERSIST_VERSION = 1 as const;
 
 /** Whitelisted persisted shapes. Runtime-only fields (recording snapshots,
@@ -199,7 +199,7 @@ export function pickDurableOverride(
   return durable;
 }
 
-/** Parse the Rust-written clean-exit marker (`~/.myagents/last-exit.json`).
+/** Parse the Rust-written clean-exit marker (`~/.nexttools/last-exit.json`).
  *  Returns true ONLY for a well-formed `{ "clean": true }`; anything else
  *  (absent → null, malformed, `clean:false`) is treated as NOT a clean quit so
  *  the boot offers to restore. See `lastExitMarker.ts`. */

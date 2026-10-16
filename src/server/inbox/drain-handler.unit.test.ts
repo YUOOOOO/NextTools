@@ -30,18 +30,18 @@ describe('handleInboxDrain scenario routing', () => {
     };
     const message: PendingInboxMessage = {
       messageId: 'msg-space',
-      fromSessionId: 'myagents-space',
-      fromLabel: 'MyAgents Space',
+      fromSessionId: 'nexttools-space',
+      fromLabel: 'NextTools Space',
       toSessionId: 'session-space',
-      text: '<system-reminder>\n<myagents-space-issue>\nSpace issue delivery\n</myagents-space-issue>\n</system-reminder>\nVisible Space issue',
+      text: '<system-reminder>\n<nexttools-space-issue>\nSpace issue delivery\n</nexttools-space-issue>\n</system-reminder>\nVisible Space issue',
       replyBack: false,
       kind: 'event',
       sessionEvent: {
         version: 2,
         type: 'space.issue_delivery',
         eventId: 'msg-space',
-        sourceSessionId: 'myagents-space',
-        sourceLabel: 'MyAgents Space',
+        sourceSessionId: 'nexttools-space',
+        sourceLabel: 'NextTools Space',
         targetSessionId: 'session-space',
         createdAt: '2026-06-30T00:00:00.000Z',
         deliveryId: 'delivery-1',
@@ -67,7 +67,7 @@ describe('handleInboxDrain scenario routing', () => {
     expect(seen).toHaveLength(1);
     expect(seen[0][0]).toBe(message.text);
     expect(seen[0][0]).toContain('<system-reminder>');
-    expect(seen[0][0]).not.toContain('<myagents-session-event');
+    expect(seen[0][0]).not.toContain('<nexttools-session-event');
     expect(seen[0][2]).toMatchObject({
       allowLazySessionMaterialization: true,
       scenario: {
@@ -105,8 +105,8 @@ describe('handleInboxDrain scenario routing', () => {
     const injector = vi.fn<InboxInjector>(async () => ({ queued: false }));
     const malformed = {
       messageId: 'msg-malformed-space',
-      fromSessionId: 'myagents-space',
-      fromLabel: 'MyAgents Space',
+      fromSessionId: 'nexttools-space',
+      fromLabel: 'NextTools Space',
       toSessionId: 'session-space',
       text: '<system-reminder>delivery</system-reminder>',
       replyBack: false,

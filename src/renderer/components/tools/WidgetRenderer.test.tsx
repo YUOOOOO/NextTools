@@ -12,7 +12,7 @@ import { cleanup, fireEvent, render } from '@testing-library/react';
 
 import { ThemeRegistry, ThemeRuntimeProvider } from '@/theme';
 import { syntheticTheme } from '@/theme/__tests__/syntheticTheme';
-import { myAgentsDefaultTheme } from '@/theme/themes/myagents-default';
+import { nextToolsDefaultTheme } from '@/theme/themes/nexttools-default';
 
 import WidgetRenderer from './WidgetRenderer';
 
@@ -23,7 +23,7 @@ const CODE = '<style>.x{color:red}</style><div class="x">hi</div>';
 describe('WidgetRenderer iframe transport', () => {
   it('serves the sandbox via srcDoc (about:srcdoc), not a blocked blob:/data: src', () => {
     const { container } = render(
-      <ThemeRuntimeProvider selection={{ themeId: 'myagents-default', appearanceMode: 'light' }}>
+      <ThemeRuntimeProvider selection={{ themeId: 'nexttools-default', appearanceMode: 'light' }}>
         <WidgetRenderer widgetCode={CODE} isStreaming={false} title="t" />
       </ThemeRuntimeProvider>,
     );
@@ -40,7 +40,7 @@ describe('WidgetRenderer iframe transport', () => {
   });
 
   it('pushes Theme CSS to the loaded iframe without replacing its document or content', () => {
-    const registry = new ThemeRegistry([myAgentsDefaultTheme, syntheticTheme]);
+    const registry = new ThemeRegistry([nextToolsDefaultTheme, syntheticTheme]);
     const view = render(
       <ThemeRuntimeProvider
         registry={registry}
@@ -76,7 +76,7 @@ describe('WidgetRenderer iframe transport', () => {
     view.rerender(
       <ThemeRuntimeProvider
         registry={registry}
-        selection={{ themeId: 'myagents-default', appearanceMode: 'light' }}
+        selection={{ themeId: 'nexttools-default', appearanceMode: 'light' }}
       >
         <WidgetRenderer widgetCode={CODE} isStreaming title="t" />
       </ThemeRuntimeProvider>,

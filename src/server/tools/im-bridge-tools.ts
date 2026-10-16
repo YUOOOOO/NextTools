@@ -8,7 +8,7 @@ import type {
   ImBridgeTurnContext,
 } from '../session-core/im-bridge-types';
 import { MCP_PREWARM_GRACE_MS } from '../session-core/mcp-prewarm-policy';
-import { MYAGENTS_TOOL_CALL_TIMEOUT_MS } from '../session-core/tool-call-policy';
+import { NEXTTOOLS_TOOL_CALL_TIMEOUT_MS } from '../session-core/tool-call-policy';
 import { isBridgeAskUserQuestionTool } from '../host-interaction';
 import { cancellableFetch } from '../utils/cancellation';
 import { maybeSpill } from '../utils/large-value-store';
@@ -146,7 +146,7 @@ async function callBridgeTool(params: {
         }),
       },
       {
-        timeoutMs: MYAGENTS_TOOL_CALL_TIMEOUT_MS,
+        timeoutMs: NEXTTOOLS_TOOL_CALL_TIMEOUT_MS,
         parentSignal: params.signal ?? getCurrentTurnSignal(),
       },
     );

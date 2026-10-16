@@ -52,7 +52,7 @@ async function startHost(
 ) {
   const home = join(scratch, role);
   const workspace = join(home, "workspace");
-  const configDir = join(home, ".myagents");
+  const configDir = join(home, ".nexttools");
   await mkdir(workspace, { recursive: true });
   await mkdir(configDir, { recursive: true });
   await writeFile(
@@ -94,9 +94,9 @@ async function startHost(
       cwd: scratch,
       env: {
         ...fixtureEnv(home),
-        MYAGENTS_SIDECAR_ID:
+        NEXTTOOLS_SIDECAR_ID:
           role === "global" ? "__global__" : "source-session",
-        MYAGENTS_MANAGEMENT_PORT: String(managementPort),
+        NEXTTOOLS_MANAGEMENT_PORT: String(managementPort),
         [INTERNAL_CLI_TOKEN_ENV]: internalToken,
       },
       stdio: ["ignore", "pipe", "pipe"],
@@ -128,7 +128,7 @@ async function startHost(
 }
 
 beforeAll(async () => {
-  scratch = await mkdtemp(join(tmpdir(), "myagents-external-inbox-"));
+  scratch = await mkdtemp(join(tmpdir(), "nexttools-external-inbox-"));
   // Exercise the shipped composition/router, not a mocked routing adapter.
   for (const target of ["server", "cli"]) {
     await run(process.execPath, ["scripts/esbuild-bundle.mjs", target], {
@@ -138,9 +138,9 @@ beforeAll(async () => {
     });
   }
   const serverBundle = join(scratch, "server.mjs");
-  cliBundle = join(scratch, "myagents.cjs");
+  cliBundle = join(scratch, "nexttools.cjs");
   await cp(resolve("src-tauri/resources/server-dist.js"), serverBundle);
-  await cp(resolve("src-tauri/resources/cli/myagents.cjs"), cliBundle);
+  await cp(resolve("src-tauri/resources/cli/nexttools.cjs"), cliBundle);
   management = createServer(async (request, response) => {
     let text = "";
     for await (const chunk of request) text += String(chunk);
@@ -306,8 +306,8 @@ describe("production external CLI Session collaboration routing", () => {
         {
           env: {
             ...fixtureEnv(hosts.global.home),
-            MYAGENTS_PORT: String(hosts.global.port),
-            MYAGENTS_API_TOKEN: externalToken,
+            NEXTTOOLS_PORT: String(hosts.global.port),
+            NEXTTOOLS_API_TOKEN: externalToken,
           },
         },
       );

@@ -83,7 +83,7 @@ fn release_build_discards_dev_origin() {
 pub(super) fn test_space_session(user_id: &str) -> SpaceSession {
     SpaceSession::authenticated(
         SpaceAccountPublic {
-            base_url: "https://space.myagents.test".to_string(),
+            base_url: "https://space.nexttools.test".to_string(),
             user: serde_json::json!({ "id": user_id }),
             account_plan: Value::Null,
             space: serde_json::json!({ "id": "space_test" }),
@@ -100,7 +100,7 @@ pub(super) fn test_space_session(user_id: &str) -> SpaceSession {
 #[test]
 fn legacy_session_is_read_but_next_write_is_canonical() {
     let legacy = serde_json::json!({
-        "baseUrl": "https://space.myagents.test",
+        "baseUrl": "https://space.nexttools.test",
         "sessionToken": "legacy-token",
         "expiresAt": "2026-09-01T00:00:00Z",
         "user": { "id": "usr_legacy" },
@@ -241,7 +241,7 @@ fn in_flight_refresh_cannot_restore_an_invalidated_token() {
 #[test]
 fn legacy_space_session_json_defaults_multi_space_fields() {
     let session: SpaceSession = serde_json::from_value(serde_json::json!({
-        "baseUrl": "https://space.myagents.test",
+        "baseUrl": "https://space.nexttools.test",
         "sessionToken": "session-token",
         "expiresAt": null,
         "user": { "id": "usr_legacy" },
@@ -413,7 +413,7 @@ pub(super) fn test_registered_agent(
 ) -> LocalRegisteredAgent {
     LocalRegisteredAgent {
         id: "rag_legacy".to_string(),
-        base_url: "https://space.myagents.test".to_string(),
+        base_url: "https://space.nexttools.test".to_string(),
         space_id: "space_test".to_string(),
         owner_user_id: owner_user_id.map(ToString::to_string),
         device_id: device_id.map(ToString::to_string),
@@ -440,7 +440,7 @@ pub(super) fn test_registered_agent(
             state_filter: vec!["todo".to_string()],
             created_at: "2026-07-03T00:00:00.000Z".to_string(),
         }],
-        workspace_path: "/tmp/myagents-legacy".to_string(),
+        workspace_path: "/tmp/nexttools-legacy".to_string(),
         workspace_label: Some("Legacy".to_string()),
         avatar_url: None,
         avatar_source: None,
@@ -875,7 +875,7 @@ async fn cli_goal_list_and_issue_update_use_user_and_registered_agent_contexts()
         set_goal
             .pointer("/issue/goalPathLabel")
             .and_then(Value::as_str),
-        Some("MyAgents社区 / UI Quality")
+        Some("NextTools社区 / UI Quality")
     );
     assert_eq!(
         set_goal
@@ -1142,7 +1142,7 @@ async fn mock_space_assigned_update_falls_back_after_claim_completion() {
         space_slug: "official".to_string(),
         session_id: None,
         session_origin: None,
-        workspace_id: Some("project_myagents".to_string()),
+        workspace_id: Some("project_nexttools".to_string()),
         delivery_id: Some(delivery_id),
         agent_id: Some("rag_mock_frontend".to_string()),
         workspace_path: None,
@@ -1166,7 +1166,7 @@ async fn mock_space_assigned_update_falls_back_after_claim_completion() {
         space_slug: "official".to_string(),
         session_id: None,
         session_origin: None,
-        workspace_id: Some("project_myagents".to_string()),
+        workspace_id: Some("project_nexttools".to_string()),
         agent_id: Some("rag_mock_frontend".to_string()),
         workspace_path: None,
     })
@@ -1188,7 +1188,7 @@ async fn mock_space_assigned_update_falls_back_after_claim_completion() {
         file_paths: Vec::new(),
         session_id: None,
         session_origin: None,
-        workspace_id: Some("project_myagents".to_string()),
+        workspace_id: Some("project_nexttools".to_string()),
         agent_id: Some("rag_mock_frontend".to_string()),
         workspace_path: None,
     })
@@ -1199,7 +1199,7 @@ async fn mock_space_assigned_update_falls_back_after_claim_completion() {
         space_slug: "official".to_string(),
         session_id: None,
         session_origin: None,
-        workspace_id: Some("project_myagents".to_string()),
+        workspace_id: Some("project_nexttools".to_string()),
         agent_id: Some("rag_mock_frontend".to_string()),
         workspace_path: None,
         comments_cursor: None,
@@ -1238,7 +1238,7 @@ async fn mock_space_assigned_update_falls_back_after_claim_completion() {
         file_paths: Vec::new(),
         session_id: None,
         session_origin: None,
-        workspace_id: Some("project_myagents".to_string()),
+        workspace_id: Some("project_nexttools".to_string()),
         agent_id: Some("rag_mock_frontend".to_string()),
         workspace_path: None,
     })
@@ -1253,7 +1253,7 @@ async fn mock_space_assigned_update_falls_back_after_claim_completion() {
         space_slug: "official".to_string(),
         session_id: None,
         session_origin: None,
-        workspace_id: Some("project_myagents".to_string()),
+        workspace_id: Some("project_nexttools".to_string()),
         agent_id: Some("rag_mock_frontend".to_string()),
         workspace_path: None,
         comments_cursor: None,
@@ -1330,7 +1330,7 @@ async fn mock_space_assigned_update_falls_back_after_claim_completion() {
         file_paths: Vec::new(),
         session_id: None,
         session_origin: None,
-        workspace_id: Some("project_myagents".to_string()),
+        workspace_id: Some("project_nexttools".to_string()),
         agent_id: Some("rag_mock_frontend".to_string()),
         workspace_path: None,
     })
@@ -1371,7 +1371,7 @@ async fn mock_space_issue_comment_routes_are_mutable_and_method_guarded() {
     .expect("official metadata should load");
     assert_eq!(
         official.pointer("/data/space/name").and_then(Value::as_str),
-        Some("MyAgents社区")
+        Some("NextTools社区")
     );
     assert!(official
         .pointer("/data/tags")
@@ -1915,7 +1915,7 @@ async fn mock_space_issue_comment_routes_are_mutable_and_method_guarded() {
 fn session_space_segment_prefers_slug_for_official_route_compatibility() {
     let session = SpaceSession::authenticated(
         SpaceAccountPublic {
-            base_url: "https://space.myagents.test".to_string(),
+            base_url: "https://space.nexttools.test".to_string(),
             user: Value::Null,
             account_plan: Value::Null,
             space: serde_json::json!({
@@ -1938,7 +1938,7 @@ fn session_space_segment_prefers_slug_for_official_route_compatibility() {
 fn shared_client_context_headers_are_applied_to_space_requests() {
     let capability = SpaceBuildCapability {
         available: true,
-        base_url: Some("https://space.myagents.test".to_string()),
+        base_url: Some("https://space.nexttools.test".to_string()),
         public_client_id: Some("client_test_123".to_string()),
         reason: None,
         environments: vec![SpaceEnvironment::Production],
@@ -1949,7 +1949,7 @@ fn shared_client_context_headers_are_applied_to_space_requests() {
     #[allow(clippy::disallowed_methods)]
     let client = reqwest::Client::builder().build().expect("client");
     let request = with_space_client_context_headers(
-        client.get("https://space.myagents.test/api/issues/iss_1"),
+        client.get("https://space.nexttools.test/api/issues/iss_1"),
         &capability,
     )
     .build()

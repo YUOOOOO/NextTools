@@ -2,7 +2,7 @@
 
 These files are deterministic, synthetic 440 Hz/880 Hz tones generated with
 FFmpeg 8.0.1. They contain no user or third-party media. FFmpeg is a
-development-only fixture generator; MyAgents does not invoke or bundle it at
+development-only fixture generator; NextTools does not invoke or bundle it at
 runtime.
 
 The corpus pins the product admission table against real container/codec

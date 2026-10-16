@@ -469,7 +469,7 @@ curl -X POST "https://YOUR-INSTANCE/" \
 | **streamlink** | `pip install streamlink` | Live stream recording |
 | **mediainfo** | `brew install media-info` | Inspect media file metadata |
 | **transmission-cli** | `brew install transmission-cli` | Torrent daemon + remote control |
-| **webtorrent-cli** | `npm_config_prefix="${MYAGENTS_NPM_GLOBAL_PREFIX:-$HOME/.myagents/npm-global}" npm install -g webtorrent-cli` | Quick torrent download, stream to VLC |
+| **webtorrent-cli** | `npm_config_prefix="${NEXTTOOLS_NPM_GLOBAL_PREFIX:-$HOME/.nexttools/npm-global}" npm install -g webtorrent-cli` | Quick torrent download, stream to VLC |
 | **spotdl** | `pip install spotdl` | Spotify playlist download |
 
 ## Tool Selection Guide
@@ -496,7 +496,7 @@ curl -X POST "https://YOUR-INSTANCE/" \
 brew install yt-dlp ffmpeg gallery-dl aria2 wget jq
 
 # Optional
-npm_config_prefix="${MYAGENTS_NPM_GLOBAL_PREFIX:-$HOME/.myagents/npm-global}" npm install -g webtorrent-cli
+npm_config_prefix="${NEXTTOOLS_NPM_GLOBAL_PREFIX:-$HOME/.nexttools/npm-global}" npm install -g webtorrent-cli
 pip install spotdl aria2p you-get streamlink
 
 # Verify

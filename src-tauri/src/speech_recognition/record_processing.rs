@@ -76,7 +76,7 @@ pub(super) fn write_candidate<T: Serialize>(
     } else if filename == ASR_FILE {
         MAX_ASR_BYTES
     } else if filename == ANCHORS_FILE {
-        myagents_media_worker_protocol::record_identity::MAX_IDENTITY_DOCUMENT_BYTES
+        nexttools_media_worker_protocol::record_identity::MAX_IDENTITY_DOCUMENT_BYTES
     } else {
         return Err("SPEECH_RECORD_CANDIDATE_INVALID");
     };
@@ -101,8 +101,8 @@ pub(super) fn write_candidate<T: Serialize>(
 pub(super) fn worker_anchors(
     root: &Path,
     job: &SpeechJob,
-) -> Result<myagents_media_worker_protocol::record_identity::IdentityAnchorInput, &'static str> {
-    use myagents_media_worker_protocol::record_identity::{
+) -> Result<nexttools_media_worker_protocol::record_identity::IdentityAnchorInput, &'static str> {
+    use nexttools_media_worker_protocol::record_identity::{
         IdentityAnchorDocument, IdentityAnchorInput, OriginalSpeechInterval, PersonAnchor,
     };
     let frozen = read_input(root, job)?;

@@ -95,12 +95,12 @@ function byFolder(skills: SkillItem[], folderName: string): SkillItem {
 
 describe('required system skill API contract', () => {
   it('projects ownership/required state, rejects required disables, and normalizes legacy config', async () => {
-    const scratch = mkdtempSync(join(tmpdir(), 'myagents-required-skills-'));
+    const scratch = mkdtempSync(join(tmpdir(), 'nexttools-required-skills-'));
     const home = join(scratch, 'home');
     const workspace = join(realpathSync(scratch), 'workspace');
-    const userSkills = join(home, '.myagents', 'skills');
+    const userSkills = join(home, '.nexttools', 'skills');
     const projectSkills = join(workspace, '.claude', 'skills');
-    const configPath = join(home, '.myagents', 'skills-config.json');
+    const configPath = join(home, '.nexttools', 'skills-config.json');
     mkdirSync(userSkills, { recursive: true });
     mkdirSync(projectSkills, { recursive: true });
     mkdirSync(join(scratch, 'tmp'), { recursive: true });
@@ -109,8 +109,8 @@ describe('required system skill API contract', () => {
       writeSkill(userSkills, name);
     }
     writeSkill(projectSkills, 'local-skill');
-    writeFileSync(join(home, '.myagents', 'config.json'), JSON.stringify({ agents: [{ id: 'agent-1', path: workspace }] }));
-    writeFileSync(join(home, '.myagents', 'projects.json'), JSON.stringify([{ id: 'project-1', path: workspace, agentId: 'agent-1' }]));
+    writeFileSync(join(home, '.nexttools', 'config.json'), JSON.stringify({ agents: [{ id: 'agent-1', path: workspace }] }));
+    writeFileSync(join(home, '.nexttools', 'projects.json'), JSON.stringify([{ id: 'project-1', path: workspace, agentId: 'agent-1' }]));
     writeSkill(userSkills, OPTIONAL_SYSTEM_SKILL, 'author: Legacy Author');
     writeSkill(userSkills, 'user-skill', 'metadata:\n  author: Standard Author\n  version: "1.0"');
     mkdirSync(join(userSkills, 'damaged-skill'), { recursive: true });
@@ -128,7 +128,7 @@ describe('required system skill API contract', () => {
     writeFileSync(join(userSkills, 'warning-skill', 'SKILL (2).md'), 'preserved sibling');
     // Same folder name at project scope is user-owned and must not inherit the
     // global system lifecycle flags.
-    writeSkill(projectSkills, 'myagents-cli');
+    writeSkill(projectSkills, 'nexttools-cli');
     writeFileSync(configPath, JSON.stringify({
       seeded: [],
       disabled: [...REQUIRED_SYSTEM_SKILLS, OPTIONAL_SYSTEM_SKILL, 'user-skill'],
@@ -300,20 +300,20 @@ describe('required system skill API contract', () => {
       expect(savedSkill).not.toMatch(/^author:/m);
       expect(savedSkill).toContain('metadata:\n  author: "Standard Author"\n  version: "1.0"');
 
-      const systemDetailResponse = await fetch(`${baseUrl}/api/skill/myagents-task-alignment?scope=user`);
+      const systemDetailResponse = await fetch(`${baseUrl}/api/skill/nexttools-task-alignment?scope=user`);
       expect(systemDetailResponse.ok).toBe(true);
       const systemDetailBody = await systemDetailResponse.json() as {
         skill: { systemOwned: boolean; required: boolean };
       };
       expect(systemDetailBody.skill).toMatchObject({ systemOwned: true, required: true });
 
-      const systemSkillBefore = readFileSync(join(userSkills, 'myagents-task-alignment', 'SKILL.md'), 'utf8');
-      const systemSaveResponse = await fetch(`${baseUrl}/api/skill/myagents-task-alignment`, {
+      const systemSkillBefore = readFileSync(join(userSkills, 'nexttools-task-alignment', 'SKILL.md'), 'utf8');
+      const systemSaveResponse = await fetch(`${baseUrl}/api/skill/nexttools-task-alignment`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           scope: 'user',
-          frontmatter: { name: 'myagents-task-alignment', description: 'changed' },
+          frontmatter: { name: 'nexttools-task-alignment', description: 'changed' },
           body: 'changed',
         }),
       });
@@ -322,9 +322,9 @@ describe('required system skill API contract', () => {
         success: false,
         code: 'SYSTEM_SKILL_READ_ONLY',
       });
-      expect(readFileSync(join(userSkills, 'myagents-task-alignment', 'SKILL.md'), 'utf8')).toBe(systemSkillBefore);
+      expect(readFileSync(join(userSkills, 'nexttools-task-alignment', 'SKILL.md'), 'utf8')).toBe(systemSkillBefore);
 
-      const systemDeleteResponse = await fetch(`${baseUrl}/api/skill/myagents-task-alignment?scope=user`, {
+      const systemDeleteResponse = await fetch(`${baseUrl}/api/skill/nexttools-task-alignment?scope=user`, {
         method: 'DELETE',
       });
       expect(systemDeleteResponse.status).toBe(409);
@@ -332,14 +332,14 @@ describe('required system skill API contract', () => {
         success: false,
         code: 'SYSTEM_SKILL_READ_ONLY',
       });
-      expect(readFileSync(join(userSkills, 'myagents-task-alignment', 'SKILL.md'), 'utf8')).toBe(systemSkillBefore);
+      expect(readFileSync(join(userSkills, 'nexttools-task-alignment', 'SKILL.md'), 'utf8')).toBe(systemSkillBefore);
 
-      const caseVariantSystemSaveResponse = await fetch(`${baseUrl}/api/skill/MYAGENTS-TASK-ALIGNMENT`, {
+      const caseVariantSystemSaveResponse = await fetch(`${baseUrl}/api/skill/NEXTTOOLS-TASK-ALIGNMENT`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           scope: 'user',
-          frontmatter: { name: 'MYAGENTS-TASK-ALIGNMENT', description: 'changed' },
+          frontmatter: { name: 'NEXTTOOLS-TASK-ALIGNMENT', description: 'changed' },
           body: 'changed',
         }),
       });
@@ -348,7 +348,7 @@ describe('required system skill API contract', () => {
         success: false,
         code: 'SYSTEM_SKILL_READ_ONLY',
       });
-      const caseVariantSystemDeleteResponse = await fetch(`${baseUrl}/api/skill/MYAGENTS-TASK-ALIGNMENT?scope=user`, {
+      const caseVariantSystemDeleteResponse = await fetch(`${baseUrl}/api/skill/NEXTTOOLS-TASK-ALIGNMENT?scope=user`, {
         method: 'DELETE',
       });
       expect(caseVariantSystemDeleteResponse.status).toBe(409);
@@ -356,7 +356,7 @@ describe('required system skill API contract', () => {
         success: false,
         code: 'SYSTEM_SKILL_READ_ONLY',
       });
-      expect(readFileSync(join(userSkills, 'myagents-task-alignment', 'SKILL.md'), 'utf8')).toBe(systemSkillBefore);
+      expect(readFileSync(join(userSkills, 'nexttools-task-alignment', 'SKILL.md'), 'utf8')).toBe(systemSkillBefore);
 
       const optionalSystemDetailResponse = await fetch(`${baseUrl}/api/skill/${OPTIONAL_SYSTEM_SKILL}?scope=user`);
       expect(optionalSystemDetailResponse.ok).toBe(true);
@@ -380,7 +380,7 @@ describe('required system skill API contract', () => {
 
       const projectResponse = await fetch(`${baseUrl}/api/skills?scope=project`);
       const projectBody = await projectResponse.json() as SkillsListResponse;
-      expect(byFolder(projectBody.skills, 'myagents-cli')).toMatchObject({
+      expect(byFolder(projectBody.skills, 'nexttools-cli')).toMatchObject({
         scope: 'project',
         systemOwned: false,
         required: false,
@@ -388,13 +388,13 @@ describe('required system skill API contract', () => {
       });
       expect(projectBody.skills.some(skill => skill.folderName === 'damaged-skill')).toBe(false);
 
-      const projectSystemNameDetailResponse = await fetch(`${baseUrl}/api/skill/myagents-cli?scope=project`);
+      const projectSystemNameDetailResponse = await fetch(`${baseUrl}/api/skill/nexttools-cli?scope=project`);
       expect(projectSystemNameDetailResponse.ok).toBe(true);
       const projectSystemNameDetail = await projectSystemNameDetailResponse.json() as {
         skill: { systemOwned: boolean; required: boolean; frontmatter: Record<string, unknown>; body: string };
       };
       expect(projectSystemNameDetail.skill).toMatchObject({ systemOwned: false, required: false });
-      const projectSystemNameSave = await fetch(`${baseUrl}/api/skill/myagents-cli`, {
+      const projectSystemNameSave = await fetch(`${baseUrl}/api/skill/nexttools-cli`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -404,7 +404,7 @@ describe('required system skill API contract', () => {
         }),
       });
       expect(projectSystemNameSave.ok).toBe(true);
-      expect(readFileSync(join(projectSkills, 'myagents-cli', 'SKILL.md'), 'utf8')).toContain('Project-local edit.');
+      expect(readFileSync(join(projectSkills, 'nexttools-cli', 'SKILL.md'), 'utf8')).toContain('Project-local edit.');
 
       // Cuse is maintained by the app but its discovery remains user-controlled.
       expect(byFolder(userBody.skills, 'cuse')).toMatchObject({

@@ -1938,7 +1938,7 @@ impl SidecarManager {
 
         // 1. Upgrade the mutable logical Session binding in sidecars HashMap.
         // `management_id` remains the immutable process-birth identity sent in
-        // MYAGENTS_SIDECAR_ID, so management requests from this live process
+        // NEXTTOOLS_SIDECAR_ID, so management requests from this live process
         // remain valid across the rekey.
         // NOTE: Direct HashMap access (not insert_sidecar/remove_sidecar) because this is
         // a key rename, not a creation. Generation is migrated separately in step 2.

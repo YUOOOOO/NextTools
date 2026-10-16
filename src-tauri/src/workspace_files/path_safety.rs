@@ -153,10 +153,10 @@ pub fn validate_external_read_path(absolute_path: &str) -> WfResult<PathBuf> {
 /// Stricter variant of `resolve_inside_workspace` for **read-side** commands:
 /// resolves any symlinks via `fs::canonicalize` and verifies the canonical
 /// path is still inside the canonical workspace root — OR inside a trusted
-/// MyAgents-managed directory (see `is_trusted_managed_target`). Blocks the
+/// NextTools-managed directory (see `is_trusted_managed_target`). Blocks the
 /// "malicious `evil_link → /etc/passwd` checked into a repo" attack from
 /// leaking content out of the workspace, while still allowing the
-/// junctions / symlinks MyAgents projects from `~/.myagents/skills` etc.
+/// junctions / symlinks NextTools projects from `~/.nexttools/skills` etc.
 /// into `<workspace>/.claude/skills/` (see Node `syncProjectUserConfigFiles`).
 ///
 /// Behavior:
@@ -165,7 +165,7 @@ pub fn validate_external_read_path(absolute_path: &str) -> WfResult<PathBuf> {
 ///   makes the failure mode uniform regardless of whether the path is missing
 ///   or rejected for being a symlink escape).
 /// - If the path exists but resolves outside the workspace via symlink AND
-///   isn't under a trusted MyAgents-managed root, returns
+///   isn't under a trusted NextTools-managed root, returns
 ///   `Err("Path escapes workspace root via symlink")`.
 /// - If the workspace root itself isn't canonicalizable (rare — race with
 ///   directory deletion), returns `Err("Workspace root canonicalize failed")`
@@ -200,9 +200,9 @@ pub fn resolve_existing_inside_workspace(
     Ok(canonical)
 }
 
-/// Canonicalized roots of MyAgents-managed directories that we sync into
+/// Canonicalized roots of NextTools-managed directories that we sync into
 /// workspaces via junctions/symlinks. Targets under any of these roots are
-/// safe to follow from in-workspace links because MyAgents owns the source —
+/// safe to follow from in-workspace links because NextTools owns the source —
 /// users can edit them through the Settings UI but they're not attacker-
 /// controlled like an arbitrary file in a cloned repo.
 ///
@@ -214,10 +214,10 @@ fn trusted_managed_roots() -> Vec<PathBuf> {
     let Some(home) = dirs::home_dir() else {
         return Vec::new();
     };
-    let myagents = home.join(".myagents");
+    let nexttools = home.join(".nexttools");
     ["skills", "commands", "agents"]
         .iter()
-        .filter_map(|sub| fs::canonicalize(myagents.join(sub)).ok())
+        .filter_map(|sub| fs::canonicalize(nexttools.join(sub)).ok())
         .collect()
 }
 
@@ -231,8 +231,8 @@ fn is_trusted_managed_target(canonical: &Path, roots: &[PathBuf]) -> bool {
 const MANAGED_GLOBAL_SKILL_READ_ONLY: &str =
     "MANAGED_GLOBAL_SKILL_READ_ONLY: workspace Skill projections are read-only; edit the global Skill from Settings";
 
-/// Reject mutations whose target is a MyAgents-managed projection of
-/// `~/.myagents/skills`. Reads deliberately keep using the broader trusted
+/// Reject mutations whose target is a NextTools-managed projection of
+/// `~/.nexttools/skills`. Reads deliberately keep using the broader trusted
 /// resolver above; this guard is mutation-only so copy-out and previews remain
 /// available while workspace writes cannot flow through a junction into the
 /// single global source of truth.
@@ -251,7 +251,7 @@ pub fn reject_managed_global_skill_mutation(
     reject_managed_global_skill_mutation_with_root(
         workspace_root,
         lexical_target,
-        &home.join(".myagents").join("skills"),
+        &home.join(".nexttools").join("skills"),
     )
 }
 
@@ -463,7 +463,7 @@ fn atomic_write_file_inner(
 
     static TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
     let n = TMP_COUNTER.fetch_add(1, Ordering::Relaxed);
-    let tmp_name = format!(".{}.myagents-{}-{}.tmp", file_name, std::process::id(), n);
+    let tmp_name = format!(".{}.nexttools-{}-{}.tmp", file_name, std::process::id(), n);
     let tmp_path = parent.join(&tmp_name);
 
     {
@@ -958,7 +958,7 @@ fn write_relative_file_no_follow_unix(
 
     for nonce in 0..100u32 {
         let temp_name = CString::new(format!(
-            ".{}.myagents-{}-{}.tmp",
+            ".{}.nexttools-{}-{}.tmp",
             relative
                 .file_name()
                 .expect("leaf validated")
@@ -1685,7 +1685,7 @@ fn write_relative_file_no_follow_windows_mode<F: FnOnce()>(
 
     for nonce in 0..100u32 {
         let temp_name = format!(
-            ".{}.myagents-{}-{}.tmp",
+            ".{}.nexttools-{}-{}.tmp",
             leaf.to_string_lossy(),
             std::process::id(),
             nonce
@@ -1767,7 +1767,7 @@ fn write_relative_file_no_follow_portable(
     for nonce in 0..100u32 {
         verify_portable_destination_parent(root, lexical_parent, &canonical_parent)?;
         let temp = canonical_parent.join(format!(
-            ".{}.myagents-{}-{}.tmp",
+            ".{}.nexttools-{}-{}.tmp",
             target
                 .file_name()
                 .expect("leaf validated")
@@ -2063,7 +2063,7 @@ mod tests {
             .unwrap()
             .filter_map(|entry| entry.ok())
             .map(|entry| entry.file_name().to_string_lossy().to_string())
-            .filter(|name| name.contains(".myagents-"))
+            .filter(|name| name.contains(".nexttools-"))
             .collect();
         assert!(leftovers.is_empty(), "tmp leftovers: {:?}", leftovers);
         let _ = fs::remove_dir_all(&ws);
@@ -2200,10 +2200,10 @@ mod tests {
         assert_eq!(bytes, b"audio");
 
         let (output_path, output) =
-            ensure_workspace_directory_no_follow(&ws, "myagents_files/speech").unwrap();
+            ensure_workspace_directory_no_follow(&ws, "nexttools_files/speech").unwrap();
         assert_eq!(
             output_path,
-            fs::canonicalize(ws.join("myagents_files/speech")).unwrap()
+            fs::canonicalize(ws.join("nexttools_files/speech")).unwrap()
         );
         assert!(output.metadata().unwrap().is_dir());
 
@@ -2234,7 +2234,7 @@ mod tests {
         fs::create_dir_all(&outside).unwrap();
         let victim = outside.join("victim.txt");
         fs::write(&victim, "untouched").unwrap();
-        let predictable = ws.join(format!(".result.txt.myagents-{}-0.tmp", std::process::id()));
+        let predictable = ws.join(format!(".result.txt.nexttools-{}-0.tmp", std::process::id()));
         symlink(&victim, predictable).unwrap();
 
         write_workspace_file_no_follow(&ws, "result.txt", b"safe").unwrap();
@@ -2460,7 +2460,7 @@ mod tests {
 
     #[test]
     fn trusted_target_empty_roots_rejects_everything() {
-        // Defence: if `trusted_managed_roots()` returns empty (no `.myagents`
+        // Defence: if `trusted_managed_roots()` returns empty (no `.nexttools`
         // dir yet), the whitelist degrades closed — `is_trusted_managed_target`
         // returns false for any path so the original symlink-escape rejection
         // still fires.
@@ -2546,7 +2546,7 @@ mod tests {
     fn resolve_existing_allows_symlink_into_trusted_root() {
         use std::os::unix::fs::symlink;
         let ws = make_tmp_workspace();
-        // Stand in for `~/.myagents/skills/`.
+        // Stand in for `~/.nexttools/skills/`.
         let managed = make_test_workspace("path_safety_managed");
         let managed_skill = managed.join("baoyu-imagine");
         fs::create_dir_all(&managed_skill).unwrap();
@@ -2562,7 +2562,7 @@ mod tests {
         let canonical_managed = fs::canonicalize(&managed).unwrap();
 
         // Direct: bypass `trusted_managed_roots()` (which reads real
-        // `~/.myagents/`) and inject our tmp root via the pure helper.
+        // `~/.nexttools/`) and inject our tmp root via the pure helper.
         let lexical =
             resolve_inside_workspace(&ws, ".claude/skills/baoyu-imagine/SKILL.md").unwrap();
         let canonical = fs::canonicalize(&lexical).unwrap();

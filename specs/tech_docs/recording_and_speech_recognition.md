@@ -7,12 +7,12 @@
 
 ## Owner 与进程边界
 
-- `RecordStore` 是 `~/.myagents/records/` 下 text/audio Record、artifact、timeline、transcript revision、diarization projection、speaker override 与 export source 的持久权威。旧 `thoughts/` 只作为幂等迁移输入；迁移完成后产品不再双写。
+- `RecordStore` 是 `~/.nexttools/records/` 下 text/audio Record、artifact、timeline、transcript revision、diarization projection、speaker override 与 export source 的持久权威。旧 `thoughts/` 只作为幂等迁移输入；迁移完成后产品不再双写。
 - `RecordingManager` 拥有 App-global 唯一采集槽、设备流、Ogg Opus 归档、pause/stop/recovery 和录音期 wake lock。Renderer 与托盘只消费其 snapshot。录音控制命令的 revision fence 以 Manager 最近一次控制变更为下界、RecordStore 当前持久 revision 为上界；录音期笔记、Mark 或元数据写入可以推进全局 Record revision，但不能使同一 generation 的 pause/stop 失效。
 - `SpeechRecognitionManager` 拥有 durable speech job、优先级队列、Worker generation、重试/取消/退出收敛，以及向 `RecordStore` 发布 transcript / diarization projection 的授权。
 - `SpeechModelPackManager` 是 `SpeechRecognitionManager` 内的模型权重子 owner：只管理首次显式安装、已安装资源自动维护、校验、active revision 和移除，不拥有 job terminal 或 Record 内容。
 - `LocalInferenceRuntimeRegistry` 只解析 App bundle 中经过 manifest 校验的共享 `onnx-cpu` identity；`LocalComputeCoordinator` 只授予重型推理 lease。
-- `myagents-media-worker` 是单 workload、单 generation 的受管子进程。它不监听端口、不下载资源、不读配置，也不直接写 Record 或公开 artifact。
+- `nexttools-media-worker` 是单 workload、单 generation 的受管子进程。它不监听端口、不下载资源、不读配置，也不直接写 Record 或公开 artifact。
 
 Renderer → Tauri 的普通命令属于控制面。Worker 使用私有 stdin/stdout framed protocol；live PCM 是有界 binary frame，控制与结果是有界 JSON frame。Worker 路径、模型路径和 transcript 不进入 Debug / unified log。
 
@@ -36,7 +36,7 @@ Renderer → Tauri 的普通命令属于控制面。Worker 使用私有 stdin/st
 
 ## 依赖复用边界
 
-算法、codec 和通用格式能力优先复用成熟依赖；版本以 `Cargo.lock` 和 native manifest 为准。模块只保留 MyAgents-specific owner、授权、生命周期、固定内部 profile 和依赖无法表达的 hard limit：
+算法、codec 和通用格式能力优先复用成熟依赖；版本以 `Cargo.lock` 和 native manifest 为准。模块只保留 NextTools-specific owner、授权、生命周期、固定内部 profile 和依赖无法表达的 hard limit：
 
 - 重采样统一经过 `rubato` adapter；适配层只负责 interleaved/planar 转换、尾部 duration 对齐与 buffer hard limit，capture callback 不执行 DSP；
 - attachment container/codec probe 与解码统一使用 `symphonia` 的产品白名单 features，不引入 FFmpeg 或第二个 runtime decoder；
@@ -96,9 +96,9 @@ Worker 复用同一 native diarizer 从原轨提取有界锚点，以瞬态向�
 
 ### Agent attachment job scope
 
-`myagents speech transcribe/status/wait/cancel/list` 是给 AI 使用的 Session-scoped 工具面。CLI 不接受 Session、Workspace 或 Sidecar scope 参数；Node 从当前 `SessionEngine` 和进程环境取得 Sidecar identity，Rust Management API 用 request header 中的 generation 回查同一 live process 的 authoritative `product_session_id + workspace_path`。job admission 自动冻结这两个字段。
+`nexttools speech transcribe/status/wait/cancel/list` 是给 AI 使用的 Session-scoped 工具面。CLI 不接受 Session、Workspace 或 Sidecar scope 参数；Node 从当前 `SessionEngine` 和进程环境取得 Sidecar identity，Rust Management API 用 request header 中的 generation 回查同一 live process 的 authoritative `product_session_id + workspace_path`。job admission 自动冻结这两个字段。
 
-输入必须是该 Workspace 内已存在的普通文件，拒绝 URL、symlink、逃逸路径与不受支持格式。默认输出根为 `<workspace>/myagents_files/speech-transcriptions`，发布仍使用 private staging + authenticated owner marker + no-replace rename；partial 结果不可见。status/cancel/list 都按 exact caller Session 过滤，所以其它 Session 即使知道 job ID 也得到 `SPEECH_JOB_NOT_FOUND`。Agent job 的可见历史保留 30 天；App 重启时非终态 Agent job 收敛为 `interrupted`，不会静默继续使用旧 caller generation。
+输入必须是该 Workspace 内已存在的普通文件，拒绝 URL、symlink、逃逸路径与不受支持格式。默认输出根为 `<workspace>/nexttools_files/speech-transcriptions`，发布仍使用 private staging + authenticated owner marker + no-replace rename；partial 结果不可见。status/cancel/list 都按 exact caller Session 过滤，所以其它 Session 即使知道 job ID 也得到 `SPEECH_JOB_NOT_FOUND`。Agent job 的可见历史保留 30 天；App 重启时非终态 Agent job 收敛为 `interrupted`，不会静默继续使用旧 caller generation。
 
 ## 录制中转写
 
@@ -214,12 +214,12 @@ Tauri 提供 `cmd_speech_model_pack_status/install/remove`。状态为 `not_inst
 1. 按 [统一日志的证据选择顺序](unified_logging.md#故障排查) 定位报告机器与时间，搜索 `[record]`、`[recording]`、`[speech]` 与结构化错误码；不要要求用户上传音频或 transcript。
 2. 录音无法开始时先区分 `RECORDING_MICROPHONE_PERMISSION_REQUIRED`、`RECORDING_MICROPHONE_UNAVAILABLE`、`RECORDING_SCREEN_PERMISSION_REQUIRED`、`RECORDING_SYSTEM_AUDIO_UNAVAILABLE`、`RECORDING_PIPEWIRE_UNAVAILABLE` 与 `RECORDING_DEVICE_CHANGED`。macOS 麦克风授权依赖 `Info.plist` 用途说明与签名产物中的 `com.apple.security.device.audio-input` entitlement；缺任一项时 TCC 都可能在弹窗前拒绝。entitlement 变更后必须重新构建并启动新的 `.app`，前端热重载不会改变旧进程的签名能力。权限或设备问题由平台 capture backend 处理，不通过重装模型修复。
 3. 音频已保存但没有转录时查看 Record 的 transcription status 与模型 pack status。资源未 ready 时安装/修复资源；历史 Record 仍需用户手动点击“开始转录”。
-4. Agent 看不到 job 时必须在原发起 Session 运行 `myagents speech list`；不要通过增加 `--sessionId` 或全局 list 绕过隔离。
+4. Agent 看不到 job 时必须在原发起 Session 运行 `nexttools speech list`；不要通过增加 `--sessionId` 或全局 list 绕过隔离。
 5. 资源准备或安装失败时依次核对 target native manifest、共享 ORT identity、第一方 manifest/signature、pack 文件 hash 与最小真实加载。不得回退系统 ORT、在线 ASR、用户 cache 或临时下载。
 
 
 ## Record CLI 读取与删除
 
-`myagents record get <id>` 经 Management API 与 RecordStore 读取完整 Record；`myagents record delete <id>` 先取消对应 speech job，再由 RecordStore 删除，发布既有变更事件并记录 CliAgent 埋点。list/create/get/delete 与桌面共用 Store，CLI 不直接读写 Record 目录。
+`nexttools record get <id>` 经 Management API 与 RecordStore 读取完整 Record；`nexttools record delete <id>` 先取消对应 speech job，再由 RecordStore 删除，发布既有变更事件并记录 CliAgent 埋点。list/create/get/delete 与桌面共用 Store，CLI 不直接读写 Record 目录。
 
 Speech 取消结算所有匹配 job，但只更新 Audio Record 的转录/人物投影。Text Record 没有音频处理状态，桌面与 CLI 的共享删除 preflight 不修改它。

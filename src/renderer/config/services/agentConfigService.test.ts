@@ -128,7 +128,7 @@ describe('agentConfigService template Agent defaults', () => {
   it('creates proactive Mino Agents from the preset when a project has builtin template provenance', () => {
     const cfg: AppConfig = {
       defaultPermissionMode: 'auto',
-      themeId: 'myagents-default',
+      themeId: 'nexttools-default',
       appearanceMode: 'system',
       minimizeToTray: true,
       showDevTools: false,
@@ -166,7 +166,7 @@ describe('agentConfigService template Agent defaults', () => {
   it('preserves an existing linked Agent while normalizing the required identity mirror', () => {
     const cfg: AppConfig = {
       defaultPermissionMode: 'auto',
-      themeId: 'myagents-default',
+      themeId: 'nexttools-default',
       appearanceMode: 'system',
       minimizeToTray: true,
       showDevTools: false,
@@ -225,10 +225,10 @@ describe('projectMemoryEvolutionTaskRuntimeForAgent', () => {
       model: 'claude-sonnet-4-6',
       permissionMode: 'auto',
       runtime: 'builtin',
-      runtimeConfig: { envPolicy: { proxy: 'myagents' } },
+      runtimeConfig: { envPolicy: { proxy: 'nexttools' } },
     })).toEqual({
       runtime: 'builtin',
-      runtimeConfig: { envPolicy: { proxy: 'myagents' } },
+      runtimeConfig: { envPolicy: { proxy: 'nexttools' } },
     });
   });
 
@@ -326,7 +326,7 @@ describe('migrateImBotConfigsToAgents', () => {
     const winPath = 'C:\\Users\\Me\\Project';
     const cfg = {
       defaultPermissionMode: 'auto',
-      themeId: 'myagents-default',
+      themeId: 'nexttools-default',
       appearanceMode: 'system',
       minimizeToTray: true,
       showDevTools: false,
@@ -409,7 +409,7 @@ describe('resolveAgentMcpSelectionForConfig', () => {
     };
     const cfg: AppConfig = {
       defaultPermissionMode: 'plan',
-      themeId: 'myagents-default',
+      themeId: 'nexttools-default',
       appearanceMode: 'system',
       minimizeToTray: true,
       showDevTools: false,
@@ -446,7 +446,7 @@ describe('resolveAgentMcpSelectionForConfig', () => {
     };
     const cfg: AppConfig = {
       defaultPermissionMode: 'plan',
-      themeId: 'myagents-default',
+      themeId: 'nexttools-default',
       appearanceMode: 'system',
       minimizeToTray: true,
       showDevTools: false,
@@ -483,7 +483,7 @@ describe('resolveAgentMcpSelectionForConfig', () => {
     };
     const cfg: AppConfig = {
       defaultPermissionMode: 'plan',
-      themeId: 'myagents-default',
+      themeId: 'nexttools-default',
       appearanceMode: 'system',
       minimizeToTray: true,
       showDevTools: false,
@@ -513,7 +513,7 @@ describe('resolveAgentMcpSelectionForConfig', () => {
     };
     const cfg: AppConfig = {
       defaultPermissionMode: 'plan',
-      themeId: 'myagents-default',
+      themeId: 'nexttools-default',
       appearanceMode: 'system',
       minimizeToTray: true,
       showDevTools: false,
@@ -558,7 +558,7 @@ describe('resolveAgentMcpSelectionForConfig', () => {
     };
     const cfg: AppConfig = {
       defaultPermissionMode: 'plan',
-      themeId: 'myagents-default',
+      themeId: 'nexttools-default',
       appearanceMode: 'system',
       minimizeToTray: true,
       showDevTools: false,

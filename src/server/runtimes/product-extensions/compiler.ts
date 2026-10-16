@@ -64,7 +64,7 @@ export interface CompileProductExtensionSnapshotInput {
   scenario: InteractionScenario;
   enabledPluginIds?: readonly string[] | null;
   mcpServers: readonly McpServerDefinition[];
-  /** Test-only/home-independent override. Production uses ~/.myagents. */
+  /** Test-only/home-independent override. Production uses ~/.nexttools. */
   userConfigRoot?: string | null;
   /** Exact project/global winner selection resolved by the shared owner. */
   capabilitySnapshot?: EffectiveProjectCapabilitySnapshot;
@@ -1028,7 +1028,7 @@ export function compileProductExtensionSnapshot(
     component('scenario', 'applied', 'scenario_compiled'),
   ];
   const userConfigRoot = input.userConfigRoot === undefined
-    ? (getHomeDirOrNull() ? join(getHomeDirOrNull()!, '.myagents') : null)
+    ? (getHomeDirOrNull() ? join(getHomeDirOrNull()!, '.nexttools') : null)
     : input.userConfigRoot;
   const enabledPluginIds = [...new Set(
     input.enabledPluginIds == null

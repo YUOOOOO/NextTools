@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { derivePetAnimation } from './petStateMapper';
 
 describe('derivePetAnimation', () => {
-    it('maps the four MyAgents business states without treating Codex rows as business states', () => {
+    it('maps the four NextTools business states without treating Codex rows as business states', () => {
         expect(derivePetAnimation({ ballState: 'idle' })).toBe('idle');
         expect(derivePetAnimation({ ballState: 'running' })).toBe('running');
         expect(derivePetAnimation({ ballState: 'blocked', pendingKind: 'ask' })).toBe('waiting');

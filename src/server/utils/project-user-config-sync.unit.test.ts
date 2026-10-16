@@ -7,7 +7,7 @@ import { REQUIRED_SYSTEM_SKILLS } from '../../shared/systemSkills';
 import type { EffectiveProjectCapabilitySnapshot } from '../../shared/projectCapabilities';
 import { resolveEffectiveProjectCapabilities } from '../project-capabilities';
 
-import { getMyAgentsUserDir, syncProjectUserConfigFiles, trySyncProjectUserConfigFiles } from './project-user-config-sync';
+import { getNextToolsUserDir, syncProjectUserConfigFiles, trySyncProjectUserConfigFiles } from './project-user-config-sync';
 
 describe('project-user-config-sync', () => {
   const tempRoots: string[] = [];
@@ -23,7 +23,7 @@ describe('project-user-config-sync', () => {
   });
 
   function makeEnv(): { root: string; home: string; workspace: string } {
-    const root = join(tmpdir(), `myagents-project-sync-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+    const root = join(tmpdir(), `nexttools-project-sync-${Date.now()}-${Math.random().toString(16).slice(2)}`);
     const home = join(root, 'home');
     const temp = join(root, 'tmp');
     const workspace = join(root, 'workspace');
@@ -41,18 +41,18 @@ describe('project-user-config-sync', () => {
   }
 
   function writeUserSkill(home: string, name: string): void {
-    const dir = join(home, '.myagents', 'skills', name);
+    const dir = join(home, '.nexttools', 'skills', name);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'SKILL.md'), `---\nname: ${name}\ndescription: ${name}\n---\n`);
   }
 
   function writeUserCommand(home: string, name: string): void {
-    const dir = join(home, '.myagents', 'commands');
+    const dir = join(home, '.nexttools', 'commands');
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, `${name}.md`), `# ${name}\n`);
   }
 
-  it('links enabled MyAgents user skills into the project .claude/skills directory', () => {
+  it('links enabled NextTools user skills into the project .claude/skills directory', () => {
     const { home, workspace } = makeEnv();
     writeUserSkill(home, 'review-helper');
 
@@ -61,13 +61,13 @@ describe('project-user-config-sync', () => {
     const linkPath = join(workspace, '.claude', 'skills', 'review-helper');
     expect(lstatSync(linkPath).isSymbolicLink()).toBe(true);
     expect(existsSync(join(linkPath, 'SKILL.md'))).toBe(true);
-    expect(getMyAgentsUserDir()).toBe(join(home, '.myagents'));
+    expect(getNextToolsUserDir()).toBe(join(home, '.nexttools'));
   });
 
   it('keeps the Cuse CLI and references together and preserves disable across content updates', () => {
     const { home, workspace } = makeEnv();
     writeUserSkill(home, 'cuse');
-    const source = join(home, '.myagents', 'skills', 'cuse');
+    const source = join(home, '.nexttools', 'skills', 'cuse');
     mkdirSync(join(source, 'scripts'));
     mkdirSync(join(source, 'references'));
     const binary = process.platform === 'win32' ? 'cuse.exe' : 'cuse';
@@ -77,7 +77,7 @@ describe('project-user-config-sync', () => {
     const projected = join(workspace, '.claude', 'skills', 'cuse');
     expect(readFileSync(join(projected, 'scripts', binary), 'utf8')).toBe('native CLI');
     expect(readFileSync(join(projected, 'references', 'setup.md'), 'utf8')).toBe('setup');
-    const config = join(home, '.myagents', 'skills-config.json');
+    const config = join(home, '.nexttools', 'skills-config.json');
     writeFileSync(config, JSON.stringify({ disabled: ['cuse'] }));
     syncProjectUserConfigFiles(workspace, { cliToolRegistryEnabled: true });
     expect(existsSync(projected)).toBe(false);
@@ -98,7 +98,7 @@ describe('project-user-config-sync', () => {
     const linkPath = join(workspace, '.claude', 'skills', 'review-helper');
     expect(lstatSync(linkPath).isSymbolicLink()).toBe(true);
 
-    const configPath = join(home, '.myagents', 'skills-config.json');
+    const configPath = join(home, '.nexttools', 'skills-config.json');
     writeFileSync(configPath, JSON.stringify({ disabled: ['review-helper'] }));
 
     syncProjectUserConfigFiles(workspace, { cliToolRegistryEnabled: true });
@@ -109,15 +109,15 @@ describe('project-user-config-sync', () => {
   it('keeps all required system skills exposed while honoring an optional system skill disable', () => {
     const { home, workspace } = makeEnv();
     const required = [
-      'myagents-memory-update',
-      'myagents-memory-gardener',
-      'myagents-memory-molt',
-      'myagents-cli',
-      'myagents-docs',
+      'nexttools-memory-update',
+      'nexttools-memory-gardener',
+      'nexttools-memory-molt',
+      'nexttools-cli',
+      'nexttools-docs',
     ];
     for (const name of [...required, 'prompt-writer']) writeUserSkill(home, name);
     writeFileSync(
-      join(home, '.myagents', 'skills-config.json'),
+      join(home, '.nexttools', 'skills-config.json'),
       JSON.stringify({ disabled: [...required, 'prompt-writer'] }),
     );
 
@@ -195,7 +195,7 @@ describe('project-user-config-sync', () => {
     const { home, workspace } = makeEnv();
     const globalFolder = 'global-review';
     const canonicalName = 'review';
-    const globalSkill = join(home, '.myagents', 'skills', globalFolder);
+    const globalSkill = join(home, '.nexttools', 'skills', globalFolder);
     mkdirSync(globalSkill, { recursive: true });
     writeFileSync(
       join(globalSkill, 'SKILL.md'),
@@ -237,7 +237,7 @@ describe('project-user-config-sync', () => {
     const projectSkillsDir = join(workspace, '.claude', 'skills');
     mkdirSync(projectSkillsDir, { recursive: true });
     const linkPath = join(projectSkillsDir, 'review-helper');
-    symlinkSync(join(home, '.myagents', 'skills', 'missing-old-skill'), linkPath, 'dir');
+    symlinkSync(join(home, '.nexttools', 'skills', 'missing-old-skill'), linkPath, 'dir');
     expect(existsSync(linkPath)).toBe(false);
 
     syncProjectUserConfigFiles(workspace, { cliToolRegistryEnabled: true });
@@ -246,7 +246,7 @@ describe('project-user-config-sync', () => {
     expect(readFileSync(join(linkPath, 'SKILL.md'), 'utf-8')).toContain('review-helper');
   });
 
-  itNonWindows('links MyAgents user commands into the project .claude/commands directory', () => {
+  itNonWindows('links NextTools user commands into the project .claude/commands directory', () => {
     const { home, workspace } = makeEnv();
     writeUserCommand(home, 'ship-it');
 
@@ -260,7 +260,7 @@ describe('project-user-config-sync', () => {
   it('does not make healthy Skills unavailable when the Command source cannot be scanned', () => {
     const { home, workspace } = makeEnv();
     writeUserSkill(home, 'review-helper');
-    const userCommandsPath = join(home, '.myagents', 'commands');
+    const userCommandsPath = join(home, '.nexttools', 'commands');
     writeFileSync(userCommandsPath, 'not a directory');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const capabilitySnapshot = resolveEffectiveProjectCapabilities(workspace);
@@ -296,7 +296,7 @@ describe('project-user-config-sync', () => {
 
   itNonWindows('does not project symlinked global Skill sources', () => {
     const { home, root, workspace } = makeEnv();
-    const globalSkills = join(home, '.myagents', 'skills');
+    const globalSkills = join(home, '.nexttools', 'skills');
     const outsideSkill = join(root, 'outside-skill');
     writeUserSkill(home, 'real-skill');
     mkdirSync(outsideSkill, { recursive: true });
@@ -315,7 +315,7 @@ describe('project-user-config-sync', () => {
     const { home, workspace } = makeEnv();
     writeUserSkill(home, 'review-helper');
     const invalidFolder = 'bad\nname';
-    const invalidDir = join(home, '.myagents', 'skills', invalidFolder);
+    const invalidDir = join(home, '.nexttools', 'skills', invalidFolder);
     mkdirSync(invalidDir, { recursive: true });
     writeFileSync(
       join(invalidDir, 'SKILL.md'),
@@ -334,7 +334,7 @@ describe('project-user-config-sync', () => {
 
   itNonWindows('removes only the stale managed link for a blocked optional Skill', () => {
     const { home, workspace } = makeEnv();
-    const damaged = join(home, '.myagents', 'skills', 'pdf');
+    const damaged = join(home, '.nexttools', 'skills', 'pdf');
     mkdirSync(damaged, { recursive: true });
     writeFileSync(join(damaged, 'SKILL(1).md'), 'preserved backup');
     const projectSkills = join(workspace, '.claude', 'skills');
@@ -357,7 +357,7 @@ describe('project-user-config-sync', () => {
     const projectCommandsDir = join(workspace, '.claude', 'commands');
     mkdirSync(projectCommandsDir, { recursive: true });
     const linkPath = join(projectCommandsDir, 'ship-it.md');
-    symlinkSync(join(home, '.myagents', 'commands', 'missing-old-command.md'), linkPath);
+    symlinkSync(join(home, '.nexttools', 'commands', 'missing-old-command.md'), linkPath);
     expect(existsSync(linkPath)).toBe(false);
 
     syncProjectUserConfigFiles(workspace, { cliToolRegistryEnabled: true });

@@ -1,6 +1,6 @@
 // Clean-exit marker reader (Issue #309).
 //
-// Rust records a `~/.myagents/last-exit.json` marker at the single
+// Rust records a `~/.nexttools/last-exit.json` marker at the single
 // `RunEvent::ExitRequested` chokepoint whenever the user DELIBERATELY quits
 // (Cmd+Q / Dock / tray "Exit") — but NOT on an update-restart (suppressed by
 // `RESTARTING_FOR_UPDATE`) and obviously not on a crash. See

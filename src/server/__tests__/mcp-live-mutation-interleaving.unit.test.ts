@@ -56,7 +56,7 @@ describe('live Query MCP mutation/promotion ordering', () => {
     resetLifecycleForTest();
     resetQueueForTest();
     resetConfigForTest();
-    await initializeAgent('/tmp/myagents-mcp-live-mutation-interleaving', null, undefined, {
+    await initializeAgent('/tmp/nexttools-mcp-live-mutation-interleaving', null, undefined, {
       preWarmDisabled: true,
     });
   });

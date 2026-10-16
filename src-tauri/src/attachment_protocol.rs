@@ -1,18 +1,18 @@
-// Custom `myagents-resource://` URI scheme for binary attachment delivery.
+// Custom `nexttools-resource://` URI scheme for binary attachment delivery.
 //
 // Regular user attachments are served directly from the app data directory.
 // Tool attachments are proxied to the session sidecar because the sidecar owns
 // the external-attachment registry and path validation logic.
 //
 // URL forms:
-//   macOS / Linux: myagents-resource://attachment/<sessionId>/<filename.ext>
-//   Windows:       http://myagents-resource.localhost/attachment/<sessionId>/<filename.ext>
-//   macOS / Linux: myagents-resource://tool-attachment/<sessionId>/<turnId>/<filename.ext>
-//   Windows:       http://myagents-resource.localhost/tool-attachment/<sessionId>/<turnId>/<filename.ext>
-//   macOS / Linux: myagents-resource://record-media/<recordId>/<track>.opus
-//   Windows:       http://myagents-resource.localhost/record-media/<recordId>/<track>.opus
+//   macOS / Linux: nexttools-resource://attachment/<sessionId>/<filename.ext>
+//   Windows:       http://nexttools-resource.localhost/attachment/<sessionId>/<filename.ext>
+//   macOS / Linux: nexttools-resource://tool-attachment/<sessionId>/<turnId>/<filename.ext>
+//   Windows:       http://nexttools-resource.localhost/tool-attachment/<sessionId>/<turnId>/<filename.ext>
+//   macOS / Linux: nexttools-resource://record-media/<recordId>/<track>.opus
+//   Windows:       http://nexttools-resource.localhost/record-media/<recordId>/<track>.opus
 //
-// The old `myagents://attachment` and `myagents://tool-attachment` forms are
+// The old `nexttools://attachment` and `nexttools://tool-attachment` forms are
 // accepted only by the separately registered WebView compatibility handler.
 
 use std::io::{Read, Seek, SeekFrom};
@@ -22,14 +22,14 @@ use std::time::Duration;
 use tauri::http::{Request, Response, StatusCode};
 use tauri::{Manager, Runtime, UriSchemeContext, UriSchemeResponder};
 
-use crate::app_dirs::myagents_data_dir;
+use crate::app_dirs::nexttools_data_dir;
 use crate::record::{AudioTrackKind, ManagedRecordStore, ResolvedRecordMedia};
 use crate::sidecar::ManagedSidecarManager;
 
 const RECORD_MEDIA_CHUNK_BYTES: u64 = 2 * 1024 * 1024;
 
 fn attachments_root() -> Option<PathBuf> {
-    myagents_data_dir().map(|d| d.join("attachments"))
+    nexttools_data_dir().map(|d| d.join("attachments"))
 }
 
 fn mime_from_ext(path: &Path) -> &'static str {
@@ -453,20 +453,20 @@ mod tests {
 
     #[test]
     fn extract_macos_form() {
-        let r = extract_relative_path("myagents-resource://attachment/abc/file.png").unwrap();
+        let r = extract_relative_path("nexttools-resource://attachment/abc/file.png").unwrap();
         assert_eq!(r, "abc/file.png");
     }
 
     #[test]
     fn extract_windows_form() {
-        let r = extract_relative_path("http://myagents-resource.localhost/attachment/abc/file.png")
+        let r = extract_relative_path("http://nexttools-resource.localhost/attachment/abc/file.png")
             .unwrap();
         assert_eq!(r, "abc/file.png");
     }
 
     #[test]
     fn strips_query_string() {
-        let r = extract_relative_path("myagents-resource://attachment/abc/file.png?v=1").unwrap();
+        let r = extract_relative_path("nexttools-resource://attachment/abc/file.png?v=1").unwrap();
         assert_eq!(r, "abc/file.png");
     }
 
@@ -477,20 +477,20 @@ mod tests {
 
     #[test]
     fn rejects_non_attachment_uri() {
-        assert!(extract_relative_path("myagents-resource://other/foo").is_none());
+        assert!(extract_relative_path("nexttools-resource://other/foo").is_none());
     }
 
     #[test]
     fn regular_attachment_rejects_tool_attachment_uri() {
         assert!(
-            extract_relative_path("myagents-resource://tool-attachment/s/t/file.png").is_none()
+            extract_relative_path("nexttools-resource://tool-attachment/s/t/file.png").is_none()
         );
     }
 
     #[test]
     fn extracts_tool_macos_form() {
         let r =
-            extract_tool_attachment_segments("myagents-resource://tool-attachment/s/t/file.png")
+            extract_tool_attachment_segments("nexttools-resource://tool-attachment/s/t/file.png")
                 .unwrap();
         assert_eq!(
             r,
@@ -502,18 +502,18 @@ mod tests {
     fn extracts_record_media_on_macos_and_windows() {
         assert_eq!(
             extract_record_media_segments(
-                "myagents-resource://record-media/record-1/microphone.opus"
+                "nexttools-resource://record-media/record-1/microphone.opus"
             ),
             Some(("record-1".to_string(), AudioTrackKind::Microphone))
         );
         assert_eq!(
             extract_record_media_segments(
-                "http://myagents-resource.localhost/record-media/record-1/system.opus?v=2"
+                "http://nexttools-resource.localhost/record-media/record-1/system.opus?v=2"
             ),
             Some(("record-1".to_string(), AudioTrackKind::System))
         );
         assert!(extract_record_media_segments(
-            "myagents-resource://record-media/record-1/../system.opus"
+            "nexttools-resource://record-media/record-1/../system.opus"
         )
         .is_none());
     }
@@ -557,7 +557,7 @@ mod tests {
         file.sync_all().unwrap();
 
         let request = Request::builder()
-            .uri("myagents-resource://record-media/record-1/microphone.opus")
+            .uri("nexttools-resource://record-media/record-1/microphone.opus")
             .header("Range", "bytes=0-9")
             .body(Vec::new())
             .unwrap();
@@ -567,7 +567,7 @@ mod tests {
         assert_eq!(response.headers()["Content-Range"], "bytes 0-9/100");
 
         let request = Request::builder()
-            .uri("myagents-resource://record-media/record-1/microphone.opus")
+            .uri("nexttools-resource://record-media/record-1/microphone.opus")
             .header("Range", "bytes=-4")
             .body(Vec::new())
             .unwrap();
@@ -576,7 +576,7 @@ mod tests {
 
         let request = Request::builder()
             .method("HEAD")
-            .uri("myagents-resource://record-media/record-1/microphone.opus")
+            .uri("nexttools-resource://record-media/record-1/microphone.opus")
             .body(Vec::new())
             .unwrap();
         let response = build_record_media_response(&request, test_media(path.clone(), 100));
@@ -586,7 +586,7 @@ mod tests {
 
         for range in ["bytes=100-", "bytes=0-1,4-5"] {
             let request = Request::builder()
-                .uri("myagents-resource://record-media/record-1/microphone.opus")
+                .uri("nexttools-resource://record-media/record-1/microphone.opus")
                 .header("Range", range)
                 .body(Vec::new())
                 .unwrap();
@@ -597,7 +597,7 @@ mod tests {
 
         std::fs::remove_file(&path).unwrap();
         let request = Request::builder()
-            .uri("myagents-resource://record-media/record-1/microphone.opus")
+            .uri("nexttools-resource://record-media/record-1/microphone.opus")
             .body(Vec::new())
             .unwrap();
         let response = build_record_media_response(&request, test_media(path, 100));
@@ -607,7 +607,7 @@ mod tests {
     #[test]
     fn extracts_tool_windows_form() {
         let r = extract_tool_attachment_segments(
-            "http://myagents-resource.localhost/tool-attachment/s/t/file.png",
+            "http://nexttools-resource.localhost/tool-attachment/s/t/file.png",
         )
         .unwrap();
         assert_eq!(
@@ -619,11 +619,11 @@ mod tests {
     #[test]
     fn tool_attachment_rejects_unsafe_segment() {
         assert!(extract_tool_attachment_segments(
-            "myagents-resource://tool-attachment/s/%2e%2e/file.png",
+            "nexttools-resource://tool-attachment/s/%2e%2e/file.png",
         )
         .is_none());
         assert!(extract_tool_attachment_segments(
-            "myagents-resource://tool-attachment/s/t/bad%5Cname.png",
+            "nexttools-resource://tool-attachment/s/t/bad%5Cname.png",
         )
         .is_none());
     }
@@ -631,15 +631,15 @@ mod tests {
     #[test]
     fn legacy_resource_forms_remain_webview_compatible() {
         assert_eq!(
-            extract_relative_path("myagents://attachment/abc/file.png").as_deref(),
+            extract_relative_path("nexttools://attachment/abc/file.png").as_deref(),
             Some("abc/file.png")
         );
         assert_eq!(
-            extract_tool_attachment_segments("myagents://tool-attachment/s/t/file.png"),
+            extract_tool_attachment_segments("nexttools://tool-attachment/s/t/file.png"),
             Some(("s".into(), "t".into(), "file.png".into()))
         );
         assert_eq!(
-            extract_relative_path("http://myagents.localhost/attachment/abc/file.png").as_deref(),
+            extract_relative_path("http://nexttools.localhost/attachment/abc/file.png").as_deref(),
             Some("abc/file.png")
         );
     }

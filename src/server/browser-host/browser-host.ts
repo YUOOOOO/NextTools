@@ -35,7 +35,7 @@ export interface PlaywrightBrowserHostDependencies {
 
 export function bindAuthorizedWorkspaceRoot(server: Server, workspacePath: string): void {
   server.listRoots = async () => ({
-    roots: [{ uri: pathToFileURL(workspacePath).href, name: 'MyAgents workspace' }],
+    roots: [{ uri: pathToFileURL(workspacePath).href, name: 'NextTools workspace' }],
   });
 }
 
@@ -485,7 +485,7 @@ export class PlaywrightBrowserHost {
             jsonrpc: '2.0', id: message.id,
             result: {
               isError: true,
-              content: [{ type: 'text', text: 'MyAgents manages Chromium installation. Open Settings → Tools → Browser to install or repair it.' }],
+              content: [{ type: 'text', text: 'NextTools manages Chromium installation. Open Settings → Tools → Browser to install or repair it.' }],
             },
           }).catch(error => transport.onerror?.(error));
           return;

@@ -2,9 +2,9 @@
 
 ## 概述
 
-Plugin Bridge 是 MyAgents 加载社区 OpenClaw Channel Plugin 的核心基础设施。它以**独立 Node.js 进程**的形式运行，将 OpenClaw 生态的 Channel 插件（飞书、微信、QQ 等）适配到 MyAgents 的 Agent 架构中。
+Plugin Bridge 是 NextTools 加载社区 OpenClaw Channel Plugin 的核心基础设施。它以**独立 Node.js 进程**的形式运行，将 OpenClaw 生态的 Channel 插件（飞书、微信、QQ 等）适配到 NextTools 的 Agent 架构中。
 
-**设计哲学**：MyAgents 是 OpenClaw 的**通用 Plugin 适配层**，不是各家 IM 的硬编码集成。所有功能基于 OpenClaw SDK 协议（`ChannelPlugin` 接口），禁止为单个插件硬编码逻辑。
+**设计哲学**：NextTools 是 OpenClaw 的**通用 Plugin 适配层**，不是各家 IM 的硬编码集成。所有功能基于 OpenClaw SDK 协议（`ChannelPlugin` 接口），禁止为单个插件硬编码逻辑。
 
 ## 架构图
 
@@ -90,7 +90,7 @@ Bridge HTTP Server 就绪
 
 Plugin Bridge 的正常停止只使用创建时保留的 `ChildTree`，不能按进程名或 argv 扫描整机。全机扫描只属于前一应用实例已经退出后的启动恢复和更新器残留检查；完整规则见 `pit_of_success.md` 的 `process_cmd` 小节。
 
-OpenClaw 插件安装目录保持共享（`~/.myagents/openclaw-plugins/<plugin_id>`），但运行时状态必须按 MyAgents Channel 隔离：Agent Channel 使用 `~/.myagents/agents/<agentId>/channels/<channelId>/openclaw-state`，legacy IM Bot 使用 `~/.myagents/im_bots/<botId>/openclaw-state`。不要让 Bridge 回落到上游默认的 `~/.openclaw`；二维码登录类插件（例如 Weixin）会把本地 token list 带给平台，如果多个工作区共享这份状态，平台会把它们识别为同一个 OpenClaw 实例。
+OpenClaw 插件安装目录保持共享（`~/.nexttools/openclaw-plugins/<plugin_id>`），但运行时状态必须按 NextTools Channel 隔离：Agent Channel 使用 `~/.nexttools/agents/<agentId>/channels/<channelId>/openclaw-state`，legacy IM Bot 使用 `~/.nexttools/im_bots/<botId>/openclaw-state`。不要让 Bridge 回落到上游默认的 `~/.openclaw`；二维码登录类插件（例如 Weixin）会把本地 token list 带给平台，如果多个工作区共享这份状态，平台会把它们识别为同一个 OpenClaw 实例。
 
 ### 阶段 3：插件加载与注册
 
@@ -120,7 +120,7 @@ OpenClaw 插件有三种容易混淆的身份：
 
 | 身份 | 示例 | Owner | 用途 |
 |------|------|-------|------|
-| 安装 ID / pluginId | `wecom-openclaw-plugin`、`openclaw-lark` | MyAgents Rust/Renderer | 定位 `~/.myagents/openclaw-plugins/<pluginId>`、卸载、重启相关 channel |
+| 安装 ID / pluginId | `wecom-openclaw-plugin`、`openclaw-lark` | NextTools Rust/Renderer | 定位 `~/.nexttools/openclaw-plugins/<pluginId>`、卸载、重启相关 channel |
 | npm 包名 | `@wecom/wecom-openclaw-plugin` | npm/OpenClaw 包 | 安装与入口解析 |
 | 协议 Channel ID | `wecom`、`feishu` | OpenClaw manifest / `registerChannel()` | `cfg.channels.<channelId>`、插件运行时配置读取 |
 
@@ -145,7 +145,7 @@ Bridge 按 OpenClaw **上游规范**解析入口（`openclaw/src/plugins/manifes
 Node 不允许在 CJS scope 直接使用 `import.meta`。Bridge 通过 `module.registerHooks()` 的同步 loader hook **运行时改写**命中的 `.js` 源：
 
 ```ts
-// 触发条件：URL 在 ~/.myagents/openclaw-plugins/*/node_modules/** 且 .js 且同时含
+// 触发条件：URL 在 ~/.nexttools/openclaw-plugins/*/node_modules/** 且 .js 且同时含
 //   - "use strict"; 开头 + Object.defineProperty(exports|exports.X=|module.exports=)
 //   - import.meta 字样
 // 改写：
@@ -159,7 +159,7 @@ Node 不允许在 CJS scope 直接使用 `import.meta`。Bridge 通过 `module.r
 
 `--import tsx/esm` **在 dev 和 prod 都要注入**（不是只 dev）：qqbot / weixin 这类插件入口是 `.ts`，Node 拒绝对 `node_modules/*.ts` strip types；tsx 对已编译的 `.js` 是 no-op，无副作用。
 
-**tsx 的安装位置**：tsx 预先打包到 `src-tauri/resources/tsx-runtime/`，per-platform `@esbuild/<triple>` 由构建脚本选择。Spawn 时 Rust 通过 `find_tsx_runtime_loader()` 解析绝对路径并以 file URL 注入。不得在每个 plugin directory 运行 `npm install tsx --no-save`：npm prune 可能删除由 MyAgents 安装、但不在插件 package manifest 中的 SDK shim。
+**tsx 的安装位置**：tsx 预先打包到 `src-tauri/resources/tsx-runtime/`，per-platform `@esbuild/<triple>` 由构建脚本选择。Spawn 时 Rust 通过 `find_tsx_runtime_loader()` 解析绝对路径并以 file URL 注入。不得在每个 plugin directory 运行 `npm install tsx --no-save`：npm prune 可能删除由 NextTools 安装、但不在插件 package manifest 中的 SDK shim。
 
 **cwd 不变量**：spawn Plugin Bridge 进程时 cwd 不能依赖任何相对路径（节点 ESM 的 bare specifier 解析与 Node 启动 cwd 强相关）。Rust 端用 `set_current_dir(plugin_dir)` 把工作目录锚定到插件目录，所有运行时文件引用都通过 `import.meta.url` 或绝对 file URL，不允许出现 `./node_modules/x` 这类相对路径。
 
@@ -193,7 +193,7 @@ ReplyRouter 按同一 requestId 有序回传：
 
 官方 Lark 插件自身还有一层私有的 `accountId + chatId + threadId` 串行队列。上游默认把
 整段 `dispatchReplyFromConfig → AI terminal → CardKit delivery settled` 当成队列租约，导致
-第一条回复尚未完成时，第二、第三条消息连 MyAgents 的 Rust 入站队列都进不来。Bridge 对
+第一条回复尚未完成时，第二、第三条消息连 NextTools 的 Rust 入站队列都进不来。Bridge 对
 当前已知的官方 `chat-queue.js` 结构做窄兼容变换：每个 task 的 dispatcher / completion
 promise 仍存活到平台投递结束，但同 chat 的下一条只等待当前 task 的 Bridge→Rust POST
 收到 2xx（bounded mpsc 已接管）。作用域由 `AsyncLocalStorage` token 绑定，重叠 dispatcher
@@ -205,7 +205,7 @@ promise 仍存活到平台投递结束，但同 chat 的下一条只等待当前
 
 #### Reply protocol ownership
 
-OpenClaw Channel Plugin 是回复渲染 owner：由插件决定是否启用 streaming、CardKit 的创建/更新节奏、静态消息 fallback 与最终收尾。MyAgents 不复制任何平台 SDK 会话，也不根据凭据或插件 ID 推导流式能力；Bridge 只提供 OpenClaw dispatcher 所需的**请求级、有序、可等待传输**。
+OpenClaw Channel Plugin 是回复渲染 owner：由插件决定是否启用 streaming、CardKit 的创建/更新节奏、静态消息 fallback 与最终收尾。NextTools 不复制任何平台 SDK 会话，也不根据凭据或插件 ID 推导流式能力；Bridge 只提供 OpenClaw dispatcher 所需的**请求级、有序、可等待传输**。
 
 插件通过 `dispatchReplyWithBufferedBlockDispatcher` 提供 `dispatcherOptions.deliver` 时，同样拥有这次回复的渲染生命周期：Bridge 用现有 request-scoped OpenClaw reply 协议承接，并在 AI terminal 与 renderer delivery 后才结算调用。只有没有 renderer callback 的旧式 buffered 调用走 admission-only 兼容路径；Rust 接管入站消息的 HTTP 200 不等于插件回复完成。
 
@@ -318,7 +318,7 @@ Shim 用 ESM 格式（`"type": "module"`），生成器输出 `export function`�
 **OpenClaw 更新时**：
 ```bash
 cd ../openclaw && git pull
-cd ../MyAgents && npm run generate:sdk-shims
+cd ../NextTools && npm run generate:sdk-shims
 git diff src/server/plugin-bridge/sdk-shim/  # 审查变更
 ```
 
@@ -333,17 +333,17 @@ git diff src/server/plugin-bridge/sdk-shim/  # 审查变更
 
 ### SDK 契约迁移与旧插件兼容
 
-OpenClaw [#162333](https://github.com/openclaw/openclaw/pull/162333) 移除了五个 deprecated facade；微信 [#338](https://github.com/Tencent/openclaw-weixin/pull/338) 在 2.4.10 迁移到聚焦子路径。MyAgents 同时保留旧入口和新入口，不跟随上游删除已发布插件依赖的 facade。
+OpenClaw [#162333](https://github.com/openclaw/openclaw/pull/162333) 移除了五个 deprecated facade；微信 [#338](https://github.com/Tencent/openclaw-weixin/pull/338) 在 2.4.10 迁移到聚焦子路径。NextTools 同时保留旧入口和新入口，不跟随上游删除已发布插件依赖的 facade。
 
 | 能力 | 新入口 | Bridge owner / 历史行为 |
 |---|---|---|
-| 临时目录 | `temp-path.resolvePreferredOpenClawTmpDir` | 复用 `infra-runtime` 的 `~/.myagents/tmp`；媒体、消息和日志消费者一致。其他同名 stub 子路径也复用它；根 SDK 与 `zalouser` 的既有目录不迁移 |
+| 临时目录 | `temp-path.resolvePreferredOpenClawTmpDir` | 复用 `infra-runtime` 的 `~/.nexttools/tmp`；媒体、消息和日志消费者一致。其他同名 stub 子路径也复用它；根 SDK 与 `zalouser` 的既有目录不迁移 |
 | 下载临时文件 | `temp-path.createTempDownloadTarget` | 独立临时目录、限制文件名、显式 cleanup / asyncDispose；`withTempDownloadPath` 复用相同清理生命周期 |
 | 输入状态 | `channel-outbound.createTypingCallbacks` | 与 `channel-message` / `channel-runtime` 使用同一 Bridge 实现，不改变此前无操作 typing 行为 |
 | 配置 mutation | `config-mutation.mutateConfigFile` | 与旧 `config-runtime` 共用 normalized 内存 snapshot；支持 `mutate(draft, context)`，`afterWrite` 仅兼容接收，不执行其写后处理语义；callback 返回业务 result，draft 才是配置；串行执行，异常不提交，外部/旧式写入使待提交 mutation 冲突失败 |
 | 消息准入投影 | `channel-ingress-runtime.resolveChannelMessageIngress` | 复用旧 `command-auth` 的 Bridge 行为；提供插件消费的 senderAccess / commandAccess，Rust 的 BIND、allowedUsers、群规则仍是最终准入 owner |
 
-配置 helper 的 `File` 名字不授予 Bridge 写 MyAgents `config.json` 或创建 `openclaw.json` 的权限。当前支持运行时 mutation，返回 `nextConfig/result/attempts`；不实现 OpenClaw 的文件 hash、磁盘事务、host restart 和完整 access graph / ingress monitor。旧 `config-runtime.loadConfig/writeConfigFile` 与同步函数式 mutation 保持兼容。不得将 OpenClaw pairing store 变成 Rust 白名单之前的第二套准入 authority。
+配置 helper 的 `File` 名字不授予 Bridge 写 NextTools `config.json` 或创建 `openclaw.json` 的权限。当前支持运行时 mutation，返回 `nextConfig/result/attempts`；不实现 OpenClaw 的文件 hash、磁盘事务、host restart 和完整 access graph / ingress monitor。旧 `config-runtime.loadConfig/writeConfigFile` 与同步函数式 mutation 保持兼容。不得将 OpenClaw pairing store 变成 Rust 白名单之前的第二套准入 authority。
 
 迁移回归需验证 **Node package exports → 实际函数调用 → 返回值 / 副作用**，并覆盖旧入口；仅测试 `typeof fn === 'function'` 会漏掉占位实现。契约回归在 `plugin-bridge-sdk-contracts.integration.test.ts`；真实插件 smoke 需隔离 HOME / state / credentials，并禁止真实网络，不能把用户账号当默认测试数据。
 
@@ -396,8 +396,8 @@ IM request registry entry 和 SDK output FIFO owner 在工具执行时解析，�
 真正的工具调用使用另一条独立预算：
 
 Sidecar 通过 `/mcp/call-tool` 调用插件工具时，使用
-`src/server/session-core/tool-call-policy.ts::MYAGENTS_TOOL_CALL_TIMEOUT_MS`
-作为 MyAgents 管理的整个工具调用外层预算，当前为 300 秒。主动停止
+`src/server/session-core/tool-call-policy.ts::NEXTTOOLS_TOOL_CALL_TIMEOUT_MS`
+作为 NextTools 管理的整个工具调用外层预算，当前为 300 秒。主动停止
 Turn 仍通过 `getCurrentTurnSignal()` 立即取消 Sidecar 的请求等待。插件内部单次
 网络请求、分片或重试的超时继续由插件自己负责，不与这个外层预算混用。
 

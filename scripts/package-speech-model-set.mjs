@@ -87,7 +87,7 @@ function signManifest(manifestPath) {
       "TAURI_SIGNING_PRIVATE_KEY is required to sign the speech model manifest",
     );
   }
-  const keyPath = join(tmpdir(), `myagents-speech-model-key-${randomUUID()}`);
+  const keyPath = join(tmpdir(), `nexttools-speech-model-key-${randomUUID()}`);
   writeFileSync(keyPath, key, { mode: 0o600 });
   try {
     const env = { ...process.env };

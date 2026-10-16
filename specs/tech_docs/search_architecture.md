@@ -2,7 +2,7 @@
 
 ## 概述
 
-MyAgents 的全文搜索由一个 Rust 层单例 `SearchEngine` 提供，构建在 [Tantivy](https://github.com/quickwit-oss/tantivy)（Rust 原生全文搜索引擎，BM25 评分）+ [tantivy-jieba](https://github.com/jiegec/tantivy-jieba)（中文分词，~37 万词词典）之上。对外暴露三类能力：
+NextTools 的全文搜索由一个 Rust 层单例 `SearchEngine` 提供，构建在 [Tantivy](https://github.com/quickwit-oss/tantivy)（Rust 原生全文搜索引擎，BM25 评分）+ [tantivy-jieba](https://github.com/jiegec/tantivy-jieba)（中文分词，~37 万词词典）之上。对外暴露三类能力：
 
 1. **Session 搜索** — 跨所有工作区检索会话标题与消息内容
 2. **Record 搜索** — 检索 text/audio Record 的 title、tags、content、transcript 与 speaker projection
@@ -48,7 +48,7 @@ MyAgents 的全文搜索由一个 Rust 层单例 `SearchEngine` 提供，构建�
 │            schema / tokenizer(jieba) / util                    │
 └─────────────┬───────────────────────────────────────────────────┘
               ▼
-    ~/.myagents/search_index/
+    ~/.nexttools/search_index/
         ├── sessions/        (单一全局索引)
         ├── records/         (单一全局派生索引)
         └── workspaces/
@@ -176,7 +176,7 @@ Session 文件由 Node.js Sidecar 写入，索引在 Rust。两个显而易见�
 1. **Bun → Rust 反向调用**：Rust 只做 Bun 的 HTTP 代理，没有反向通道；为一个 cross-cutting concern 新增进程耦合得不偿失
 2. **每个写入方都记得调通知**：今天只有 Sidecar，明天是 CLI、迁移脚本、崩溃恢复 — 任何一个忘记通知就静默孤立索引
 
-**Watcher 让正确行为成为默认路径**：任何进程接触 `~/.myagents/sessions/` 或 `sessions-v2/` 都会自动流入索引，与 `local_http` / `process_cmd` 同属 pit-of-success 模式。
+**Watcher 让正确行为成为默认路径**：任何进程接触 `~/.nexttools/sessions/` 或 `sessions-v2/` 都会自动流入索引，与 `local_http` / `process_cmd` 同属 pit-of-success 模式。
 
 ### 去抖策略
 
@@ -210,7 +210,7 @@ Session 文件由 Node.js Sidecar 写入，索引在 Rust。两个显而易见�
 
 工作区文件索引有两层磁盘状态：
 
-- Tantivy index 本体：`~/.myagents/search_index/workspaces/<fnv-hash>/`
+- Tantivy index 本体：`~/.nexttools/search_index/workspaces/<fnv-hash>/`
 - `.file_index_manifest.json`：保存独立的 `manifestVersion`、`schemaVersion`、`workspace`、可搜索的 workspace-relative folder path 集合，以及 `rel_path → (mtimeMs, size)` 文件快照
 
 `FileIndexManager::search` 在进程内 slot 为空时优先打开磁盘已有 index + manifest；如果 index/manifest 缺失、版本不匹配、损坏，或该 workspace slot 正在被后台 refresh / cold build 占用，前台搜索 **不等待冷建**，而是走 bounded direct scan fallback。Direct scan 在同一次有界目录遍历中发现 folder metadata，并只读取至多 `DIRECT_SCAN_MAX_FILES` 个候选文件；`DIRECT_SCAN_MAX_ENTRIES` 同时约束纯目录树和文件 hit 已满后的遍历，防止目录搜索绕开前台预算。
@@ -259,7 +259,7 @@ fn simple_hash(s: &str) -> String {
 
 ### 扫描过滤
 
-- **跳过目录**：`node_modules`, `.git`, `__pycache__`, `.next`, `dist`, `build`, `.turbo`, `.cache`, `target`, `.venv`, `venv`, `.myagents`, `.claude`
+- **跳过目录**：`node_modules`, `.git`, `__pycache__`, `.next`, `dist`, `build`, `.turbo`, `.cache`, `target`, `.venv`, `venv`, `.nexttools`, `.claude`
 - **跳过二进制扩展名**：图片/视频/音频/压缩包/字体/可执行/office 文档等
 - **最大文件大小**：1 MB
 - **跳过 symlink**：扫描使用 `symlink_metadata`，不跟随工作区内 symlink；读取文件内容前会再次 `symlink_metadata` 校验 `(mtimeMs, size)` 与 discovery 快照一致，Unix/macOS 打开文件时使用 no-follow，并用 bounded read 防止扫描后文件被换成 symlink 或长大越过 1 MB cap
@@ -326,7 +326,7 @@ snippet 构建常见 "取匹配位置前后各 N 字符" 的近似切片。裸 `
 - 不启动子进程（Tantivy + jieba 都是 in-process Rust crate）
 - 不与代理相关（无任何 outbound 网络调用）
 
-**但搜索的 watcher 自身是第四个 pit-of-success 典范**：把"任何写入者都必须记得通知索引"这条必然会被违反的隐性契约，替换成"watcher 观察结果目录"的可靠模式。这一设计本身就是 MyAgents 长期架构延续性原则的案例（见 CLAUDE.md 核心架构约束第一原则）。
+**但搜索的 watcher 自身是第四个 pit-of-success 典范**：把"任何写入者都必须记得通知索引"这条必然会被违反的隐性契约，替换成"watcher 观察结果目录"的可靠模式。这一设计本身就是 NextTools 长期架构延续性原则的案例（见 CLAUDE.md 核心架构约束第一原则）。
 
 ## 已知陷阱速查
 

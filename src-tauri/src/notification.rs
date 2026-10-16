@@ -107,7 +107,7 @@ mod macos_notifications {
         // UserNotifications delegate callbacks on the main queue.
         #[unsafe(super(NSObject))]
         #[thread_kind = MainThreadOnly]
-        #[name = "MyAgentsUserNotificationCenterDelegate"]
+        #[name = "NextToolsUserNotificationCenterDelegate"]
         #[ivars = MacNotificationDelegateIvars]
         struct MacNotificationDelegate;
 
@@ -197,7 +197,7 @@ mod macos_notifications {
         navigation: Option<NotificationNavigation>,
         silent: bool,
     ) -> Result<(), String> {
-        let identifier = format!("myagents:{}", uuid::Uuid::new_v4());
+        let identifier = format!("nexttools:{}", uuid::Uuid::new_v4());
         if let Some(navigation) = navigation {
             register_route(identifier.clone(), navigation);
         }
@@ -516,7 +516,7 @@ pub(crate) fn submit_session_completion<R: Runtime>(
 /// when the target may need to open a session that has no live Tab yet.
 ///
 /// Sound is gated by the `notificationSound` user preference, read disk-first
-/// from `~/.myagents/config.json` (defaults to enabled if missing). The
+/// from `~/.nexttools/config.json` (defaults to enabled if missing). The
 /// preference flows through to the platform-specific sound API:
 ///   - Windows: `Toast::sound(None)` for silent, `Sound::Default` for default.
 ///   - macOS: `NSUserNotificationDefaultSoundName` (default mac chime).
@@ -663,7 +663,7 @@ fn show_linux_toast<R: Runtime>(
 
     let mut notification = Notification::new();
     notification
-        .appname("MyAgents")
+        .appname("NextTools")
         .summary(title)
         .body(body)
         .timeout(Timeout::Milliseconds(10_000))
@@ -683,7 +683,7 @@ fn show_linux_toast<R: Runtime>(
     Ok(())
 }
 
-/// User notification preferences read from `~/.myagents/config.json`.
+/// User notification preferences read from `~/.nexttools/config.json`.
 ///
 /// Both fields default to `true` (fail-open) when the config file is missing
 /// or unparseable — silently disabling notifications because we couldn't read
@@ -719,7 +719,7 @@ fn read_notification_prefs() -> NotificationPrefs {
 
     // Use the project-canonical data-dir helper rather than `dirs::home_dir()`
     // so future dev/prod isolation in `app_dirs.rs` reaches us automatically.
-    let parsed: Option<PartialAppConfig> = crate::app_dirs::myagents_data_dir()
+    let parsed: Option<PartialAppConfig> = crate::app_dirs::nexttools_data_dir()
         .and_then(|dir| std::fs::read_to_string(dir.join("config.json")).ok())
         .and_then(|content| serde_json::from_str(strip_bom(&content)).ok());
 
@@ -743,7 +743,7 @@ fn read_notification_prefs() -> NotificationPrefs {
 /// shortcut AUMID); on failure (portable EXE, custom install, missing
 /// shortcut) retry with PowerShell's well-known AUMID. The retry preserves
 /// `on_activated`, so click activation still works — the only visible
-/// difference is the toast attribution ("PowerShell" instead of "MyAgents").
+/// difference is the toast attribution ("PowerShell" instead of "NextTools").
 /// This beats falling back to plugin-notification, which would render a toast
 /// with *no* click handler at all.
 #[cfg(target_os = "windows")]
@@ -823,7 +823,7 @@ fn build_and_show_toast<R: Runtime>(
 ///
 /// In production: `app.config().identifier` matches the AUMID NSIS sets on
 /// the Start Menu shortcut via `SetLnkAppUserModelId` — required for WinRT
-/// to render a toast attributed to MyAgents.
+/// to render a toast attributed to NextTools.
 ///
 /// In dev (`cargo run`, `tauri dev`): `tauri::is_dev()` is true and we use
 /// PowerShell's AUMID — toast still shows but attributed to PowerShell.

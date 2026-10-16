@@ -1177,7 +1177,7 @@ fn index_single_session(
 
 /// Extract text content from a session message JSON.
 ///
-/// MyAgents persists messages in one of three shapes:
+/// NextTools persists messages in one of three shapes:
 /// - user messages: `content` is a plain string
 /// - assistant messages: `content` is a string that is itself a JSON-encoded
 ///   `ContentBlock[]` array (e.g., `"[{\"type\":\"text\",\"text\":\"...\"}]"`)
@@ -1417,7 +1417,7 @@ mod tests {
             {
                 "id": session_id,
                 "title": title,
-                "agentDir": "/tmp/myagents-test-agent",
+                "agentDir": "/tmp/nexttools-test-agent",
                 "lastActiveAt": "2026-06-06T00:00:00.000Z",
                 "source": "desktop",
                 "stats": { "messageCount": 2 }
@@ -1481,10 +1481,10 @@ mod tests {
     fn extract_text_indexes_only_visible_system_reminder_tail() {
         let content = [
             "<system-reminder>",
-            "<myagents-space-issue>",
+            "<nexttools-space-issue>",
             "<issue-instruction>hidden issue action</issue-instruction>",
             "<issue>secret facts</issue>",
-            "</myagents-space-issue>",
+            "</nexttools-space-issue>",
             "</system-reminder>",
             "Space issue delivered",
         ]
@@ -1698,7 +1698,7 @@ mod tests {
             json!({
                 "id": session_id,
                 "title": "preparedunique",
-                "agentDir": "/tmp/myagents-test-agent",
+                "agentDir": "/tmp/nexttools-test-agent",
                 "lastActiveAt": "2026-06-06T00:00:00.000Z",
                 "source": "desktop",
                 "materializationState": "prepared",
@@ -1730,7 +1730,7 @@ mod tests {
             json!({
                 "id": session_id,
                 "title": "committedunique",
-                "agentDir": "/tmp/myagents-test-agent",
+                "agentDir": "/tmp/nexttools-test-agent",
                 "lastActiveAt": "2026-06-06T00:00:00.000Z",
                 "source": "desktop",
                 "stats": { "messageCount": 1 }
@@ -1773,7 +1773,7 @@ mod tests {
             json!({
                 "id": session_id,
                 "title": "stalequeryunique",
-                "agentDir": "/tmp/myagents-test-agent",
+                "agentDir": "/tmp/nexttools-test-agent",
                 "lastActiveAt": "2026-06-06T00:00:00.000Z",
                 "source": "desktop",
                 "materializationState": "prepared",
@@ -1809,7 +1809,7 @@ mod tests {
                 json!({
                     "id": session_id,
                     "title": "sharedquery",
-                    "agentDir": format!("/tmp/myagents-workspace-{index}"),
+                    "agentDir": format!("/tmp/nexttools-workspace-{index}"),
                     "lastActiveAt": "2026-06-06T00:00:00.000Z",
                     "source": "desktop",
                     "userTags": if index == 7 { json!(["跨工作区"]) } else { json!([]) },
@@ -1864,7 +1864,7 @@ mod tests {
             json!({
                 "id": session_id,
                 "title": "legacytagquery",
-                "agentDir": "/tmp/myagents-test-agent",
+                "agentDir": "/tmp/nexttools-test-agent",
                 "lastActiveAt": "2026-06-06T00:00:00.000Z",
                 "source": "desktop",
                 "userTags": [42, " Cafe\u{301} ", "café", "", "Beta"],
@@ -1932,7 +1932,7 @@ mod tests {
             json!({
                 "id": session_id,
                 "title": "New Chat",
-                "agentDir": "/tmp/myagents-test-agent",
+                "agentDir": "/tmp/nexttools-test-agent",
                 "lastActiveAt": "2026-06-06T00:00:00.000Z",
                 "source": "desktop",
                 "runtime": "codex",
@@ -1967,7 +1967,7 @@ mod tests {
                 {
                     "id": session_id,
                     "title": "recoverableunique",
-                    "agentDir": "/tmp/myagents-test-agent",
+                    "agentDir": "/tmp/nexttools-test-agent",
                     "lastActiveAt": "2026-06-06T00:00:00.000Z",
                     "source": "desktop",
                     "stats": { "messageCount": 1 }
@@ -1975,7 +1975,7 @@ mod tests {
                 {
                     "id": keeper_id,
                     "title": "keeperunique",
-                    "agentDir": "/tmp/myagents-test-agent",
+                    "agentDir": "/tmp/nexttools-test-agent",
                     "lastActiveAt": "2026-06-06T00:00:00.000Z",
                     "source": "desktop",
                     "stats": { "messageCount": 1 }

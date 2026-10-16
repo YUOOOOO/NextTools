@@ -73,7 +73,7 @@ export async function handleAdminSessionStart(
         accepted: false,
         error: {
           code: 'caller_session_required',
-          message: 'session start must run from an initialized MyAgents Session',
+          message: 'session start must run from an initialized NextTools Session',
         },
       },
     };
@@ -147,14 +147,14 @@ export async function handleAdminSessionStart(
     };
   }
 
-  const managementPort = process.env.MYAGENTS_MANAGEMENT_PORT;
+  const managementPort = process.env.NEXTTOOLS_MANAGEMENT_PORT;
   if (!managementPort) {
     return {
       status: 502,
       response: {
         accepted: false,
         agentId,
-        error: { code: 'delivery_failed', message: 'MYAGENTS_MANAGEMENT_PORT not set' },
+        error: { code: 'delivery_failed', message: 'NEXTTOOLS_MANAGEMENT_PORT not set' },
       },
     };
   }
@@ -255,7 +255,7 @@ export async function handleAdminSessionStart(
           message: outcome.reason ?? 'admission acknowledgement was not confirmed',
         },
         recoveryHint: {
-          recoveryCommand: `myagents session list --agent ${agentId}`,
+          recoveryCommand: `nexttools session list --agent ${agentId}`,
           message: 'Check whether the new Session materialized; do not automatically resend.',
         },
       },

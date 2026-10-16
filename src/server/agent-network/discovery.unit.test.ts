@@ -20,7 +20,7 @@ const remote = (deviceId: string, localAgentId: string, mount = 3) => ({
 });
 beforeEach(() => {
   vi.resetAllMocks();
-  vi.stubEnv("MYAGENTS_SIDECAR_ID", "global");
+  vi.stubEnv("NEXTTOOLS_SIDECAR_ID", "global");
 });
 describe("Agent discovery merge", () => {
   it("preserves local callability when the network is unavailable and reports incomplete explicitly", async () => {
@@ -164,7 +164,7 @@ it("keeps equal remote Agent names distinct across networks and retains healthy 
         },
         {
           connectionId: "official",
-          networkName: "MyAgents",
+          networkName: "NextTools",
           complete: false,
           networkStatus: "error",
           context: null,

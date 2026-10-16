@@ -9,7 +9,7 @@ import {
   type ThemeSelection,
 } from '../../shared/theme';
 
-export const THEME_BOOTSTRAP_KEY = 'myagents:theme-bootstrap';
+export const THEME_BOOTSTRAP_KEY = 'nexttools:theme-bootstrap';
 export const LEGACY_THEME_BOOTSTRAP_KEY = 'theme';
 export const THEME_BOOTSTRAP_VERSION = 2;
 

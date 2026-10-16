@@ -660,7 +660,7 @@ mod tests {
             .expect("wall clock after unix epoch")
             .as_nanos();
         let scratch = std::env::temp_dir().join(format!(
-            "myagents-file-lock-dead-owner-{}-{nonce}",
+            "nexttools-file-lock-dead-owner-{}-{nonce}",
             std::process::id()
         ));
         for (label, owner) in [
@@ -688,7 +688,7 @@ mod tests {
             .expect("wall clock after unix epoch")
             .as_nanos();
         let scratch = std::env::temp_dir().join(format!(
-            "myagents-file-lock-malformed-owner-{}-{nonce}",
+            "nexttools-file-lock-malformed-owner-{}-{nonce}",
             std::process::id()
         ));
         for (label, owner) in [
@@ -731,7 +731,7 @@ mod tests {
             .expect("wall clock after unix epoch")
             .as_nanos();
         let scratch = std::env::temp_dir().join(format!(
-            "myagents-file-lock-mismatched-start-owner-{}-{nonce}",
+            "nexttools-file-lock-mismatched-start-owner-{}-{nonce}",
             std::process::id()
         ));
         let lock_path = scratch.join("fresh.lock");

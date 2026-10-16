@@ -30,7 +30,7 @@ function parseState(value: unknown): BrowserIdentityState {
 }
 
 function assertGlobalSidecar(): string {
-  const sidecarId = process.env.MYAGENTS_SIDECAR_ID?.trim();
+  const sidecarId = process.env.NEXTTOOLS_SIDECAR_ID?.trim();
   if (sidecarId !== '__global__') {
     throw new Error('Browser Identity Store is available only to the Global Sidecar');
   }

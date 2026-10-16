@@ -7,13 +7,13 @@ import { createBridgeHandler } from '../openai-bridge/handler';
 import { probeAnthropicProviderDirect } from '../provider-probe';
 
 const scratch = vi.hoisted(() => ({
-  directory: `/tmp/myagents-td-attribution-${process.pid}-${Date.now()}`,
+  directory: `/tmp/nexttools-td-attribution-${process.pid}-${Date.now()}`,
 }));
 vi.mock('../utils/platform', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../utils/platform')>()),
   getHomeDirOrNull: () => scratch.directory,
 }));
-beforeAll(() => mkdirSync(`${scratch.directory}/.myagents`, { recursive: true }));
+beforeAll(() => mkdirSync(`${scratch.directory}/.nexttools`, { recursive: true }));
 afterAll(() => rmSync(scratch.directory, { recursive: true, force: true }));
 
 describe('Token Dance fixed request attribution', () => {

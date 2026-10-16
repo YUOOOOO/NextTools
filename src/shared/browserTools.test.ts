@@ -60,7 +60,7 @@ describe('built-in browser tool policy', () => {
     expect(isReservedBuiltinBrowserMcpId(STANDARD_PLAYWRIGHT_MCP_ID)).toBe(true);
     expect(isReservedBuiltinBrowserMcpId(MANAGED_BROWSER_MCP_ID)).toBe(true);
     expect(isReservedBuiltinBrowserMcpId('playwright-custom')).toBe(false);
-    expect(isReservedBuiltinBrowserMcpId('MyAgents-Browser')).toBe(false);
+    expect(isReservedBuiltinBrowserMcpId('NextTools-Browser')).toBe(false);
   });
 
   it('does not treat the fixed managed Browser contract as generic MCP settings', () => {

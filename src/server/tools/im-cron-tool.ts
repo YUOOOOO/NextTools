@@ -2,8 +2,8 @@
 //
 // Historical note: this module used to host an in-process MCP server
 // (`im-cron`) that the AI used to manage scheduled tasks. The MCP was
-// retired in v0.2.11 in favour of the universal `myagents cron …` CLI
-// compatibility commands + the system prompt's <myagents-cli-task-automation> guidance (see
+// retired in v0.2.11 in favour of the universal `nexttools cron …` CLI
+// compatibility commands + the system prompt's <nexttools-cli-task-automation> guidance (see
 // system-prompt-cli-tools.ts). Cron CRUD now flows through admin-api.ts
 // handlers (handleCronList / handleCronCreate / handleCronExit / etc.)
 // which reach the same Rust Management API the old MCP did.
@@ -25,7 +25,7 @@ interface ImCronContext {
   model?: string;
   permissionMode?: string;
   /** PRD 0.2.9 — DEPRECATED. New code SHOULD pass `providerId` so cron
-   *  ticks live-resolve credentials from `~/.myagents/config.json` and
+   *  ticks live-resolve credentials from `~/.nexttools/config.json` and
    *  rotation propagates. Kept for legacy callers. */
   providerEnv?: { providerId?: string; providerName?: string; baseUrl?: string; apiKey?: string; authType?: 'auth_token' | 'api_key' | 'both' | 'auth_token_clear_api_key'; apiProtocol?: 'anthropic' | 'openai'; maxOutputTokens?: number; maxOutputTokensParamName?: 'max_tokens' | 'max_completion_tokens' | 'max_output_tokens'; upstreamFormat?: 'chat_completions' | 'responses'; modelAliases?: { fable?: string; sonnet?: string; opus?: string; haiku?: string } };
   /** PRD 0.2.9 — Per-session provider id. When set, cron tasks created

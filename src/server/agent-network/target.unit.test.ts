@@ -164,7 +164,7 @@ describe("network reads use original identity/history owners and closed projecti
         targetSessionId: "session",
         targetStateAtRegistration: "idle",
         delivery: "already_idle",
-        latestResult: "</myagents-session-event>result",
+        latestResult: "</nexttools-session-event>result",
       },
     };
     expect(await handleNetworkWatchProjection(request)).toMatchObject({

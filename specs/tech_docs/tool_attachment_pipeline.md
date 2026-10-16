@@ -2,7 +2,7 @@
 
 ## 文档职责
 
-本文描述 Runtime 工具产物进入 MyAgents 消息、持久化和 WebView 数据面的当前契约。历史接入过程和未来能力不属于本文。
+本文描述 Runtime 工具产物进入 NextTools 消息、持久化和 WebView 数据面的当前契约。历史接入过程和未来能力不属于本文。
 
 `ToolAttachment` wire 与 Renderer 都是 Runtime-neutral；当前生产者包括 builtin Claude Agent SDK、Codex 和 Integrated DSH。没有产物映射的 Runtime 不伪造附件。
 
@@ -33,7 +33,7 @@ Owner 分工：
 | builtin 媒体提取和双写 | `builtin-media-attachments.ts` + `agent-session.ts` |
 | external streaming content 与 nested sub-agent attachment | `external-session/content-blocks.ts` |
 | Product Session 持久引用 | SessionStore transcript |
-| WebView URL 投影 | `myagentsProtocol.ts` + Rust `attachment_protocol.rs` |
+| WebView URL 投影 | `nexttoolsProtocol.ts` + Rust `attachment_protocol.rs` |
 | 展示 | `ToolAttachmentGallery` 及 kind-specific component |
 
 Sidecar 只拥有本 Session 的 attachment registry。跨 Session 或跨 Sidecar 读取必须拒绝；Renderer 不能从 `savedPath` 直接读取文件。
@@ -46,7 +46,7 @@ Sidecar 只拥有本 Session 的 attachment registry。跨 Session 或跨 Sideca
 - `externalPath`：通过路径策略校验后登记原文件，不复制字节。
 - `url`：通过受控 HTTPS 下载写入 trusted root。
 
-Builtin tool result 还会从结构化 image block、data URL、file ref 和受支持的工具结果文本中提取媒体。可交付原件写入工作区 `myagents_files/<tool>/`；trusted-root 副本用于稳定渲染和 Sidecar restart 后恢复。没有工作区的执行使用 App-owned generated root。
+Builtin tool result 还会从结构化 image block、data URL、file ref 和受支持的工具结果文本中提取媒体。可交付原件写入工作区 `nexttools_files/<tool>/`；trusted-root 副本用于稳定渲染和 Sidecar restart 后恢复。没有工作区的执行使用 App-owned generated root。
 
 Builtin SDK 同时提供模型侧 `tool_result.content` 和辅助 `tool_use_result`。后者也可能含 Read 的 image/PDF 字节，不能在提取前者后再原样序列化辅助结果。`extractSdkToolResultRenderParts()` 在分发到主 Agent / sub-agent 前统一转换两种表示：保留可解析的结构化结果、移除明确媒体字段中的内联字节，并延续 `_meta` envelope 的显示隔离。辅助结果中的普通 Read/Bash/search 文本不得套用未知块的 base64 猜测规则，否则 `data:` 开头的 YAML 或长字母序列会被误删。SDK 0.3.243+ PDF 分页图片从 `tool_result.content` 提取；完整 PDF 文档块只保留脱敏文本，不额外创建卡片。已持久化的历史结果不在此入口重写。
 
@@ -112,11 +112,11 @@ Attachment endpoint 先解析并验证 Session/Turn/filename，再查询 registr
 
 Renderer 通过 `resolveTauriToolAttachmentUrl()` 把相对 `refPath` 映射为：
 
-- macOS/Linux：`myagents-resource://tool-attachment/<session>/<turn>/<file>`
-- Windows/WebView2：`http://myagents-resource.localhost/tool-attachment/<session>/<turn>/<file>`
+- macOS/Linux：`nexttools-resource://tool-attachment/<session>/<turn>/<file>`
+- Windows/WebView2：`http://nexttools-resource.localhost/tool-attachment/<session>/<turn>/<file>`
 - Browser development：保持 `/api/attachment/tool/...`，由开发代理处理
 
-`myagents://attachment` 与 `myagents://tool-attachment` 只在历史内容规范化边界兼容；新内容不得生成旧 scheme。资源 URL 解析不是 AppRoute 解析，二者不能共用入口。
+`nexttools://attachment` 与 `nexttools://tool-attachment` 只在历史内容规范化边界兼容；新内容不得生成旧 scheme。资源 URL 解析不是 AppRoute 解析，二者不能共用入口。
 
 ## 展示契约
 
@@ -172,7 +172,7 @@ Settings TTS 试听由设置弹窗自身持有，`useTtsPreview` 只是其局部
 | `src-tauri/src/attachment_protocol.rs` | app-owned resource protocol 与 current Sidecar resolution |
 | `src-tauri/src/workspace_files/attachment_export.rs` | 受控读取与导出 |
 | `src/renderer/utils/toolAttachment.ts` | refPath 验证与 WebView URL 投影 |
-| `src/renderer/utils/myagentsProtocol.ts` | 当前与历史 resource scheme 规范化 |
+| `src/renderer/utils/nexttoolsProtocol.ts` | 当前与历史 resource scheme 规范化 |
 | `src/renderer/components/tools/ToolAttachmentGallery.tsx` | 统一展示入口 |
 | `src/renderer/context/TabProvider.tsx` | 顶层 SSE attachment merge |
 | `src/renderer/components/tools/TaskTool.tsx` | nested sub-agent attachment 展示 |

@@ -2,7 +2,6 @@ import { selectUsableAgentWorkspaceRecords } from '../../../shared/agentWorkspac
 import { isImeComposingEvent } from '@/utils/imeKeyboard';
 import {
   AlertIcon,
-  RadioIcon,
   CheckIcon,
   ChevronDownIcon,
   EyeIcon,
@@ -36,11 +35,10 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 import { track } from '@/analytics';
-import myAgentsLogo from '@/assets/runtime-icons/myagents.png';
+import nextToolsLogo from '@/assets/runtime-icons/nexttools.png';
 import { updateSession, type SessionMetadata } from '@/api/sessionClient';
-import { MyAgentsLogotype } from '@/components/brand/MyAgentsLogotype';
+import { NextToolsLogotype } from '@/components/brand/NextToolsLogotype';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import FeedbackPopover from '@/components/FeedbackPopover';
 import AccountEntry from '@/features/account/AccountEntry';
 import { APP_SHELL_POPOVER_CHROME } from '@/components/global-sidebar/appShellPopoverChrome';
 import OverlayBackdrop from '@/components/OverlayBackdrop';
@@ -55,15 +53,12 @@ import {
   CapabilitiesIcon,
   ChevronRightIcon,
   ComposeIcon,
-  HelperIcon,
-  MessageIcon,
   MoreIcon,
   PlusIcon,
   SearchIcon,
   SettingsIcon,
   SidebarIcon,
   TasksIcon,
-  TeamIcon,
   FolderIcon,
 } from '@/components/icons';
 import UnreadNotificationIndicator from '@/components/UnreadNotificationIndicator';
@@ -112,7 +107,6 @@ import { isTauriEnvironment } from '@/utils/browserMock';
 import { formatTime, getSessionDisplayText } from '@/utils/taskCenterUtils';
 import { getFullSessionDisplayText } from '@/utils/sessionDisplay';
 import { copyPlainText } from '@/utils/clipboard';
-import { openExternal } from '@/utils/openExternal';
 import { OverflowNameTooltip } from '@/components/workspace-tree/OverflowNameTooltip';
 import NotificationCenterFlyout from '@/notifications/NotificationCenterFlyout';
 import { useNotificationCenter } from '@/notifications/useNotificationCenter';
@@ -127,7 +121,6 @@ const AUTO_RAIL_QUERY = '(max-width: 1080px)';
 const EMPTY_TAGS: SessionTag[] = [];
 const SIDEBAR_TRANSITION_MS = 200;
 const WORKSPACE_BRANCH_TRANSITION_MS = 200;
-const MYAGENTS_WEBSITE_URL = 'https://myagents.io';
 const FLYOUT_FOCUS_ENTRY_SELECTOR = [
   'button:not([disabled])',
   'a[href]',
@@ -181,11 +174,9 @@ interface GlobalSidebarProps {
   onOpenTaskCenter: () => void;
   onCreateTask: () => void;
   onOpenSpace: () => void;
-  onOpenAgentNetwork?: () => void;
   onOpenAppRoute?: (route: AppRoute) => Promise<boolean> | boolean;
   onOpenCapabilities: (section?: CapabilitySection) => void;
   onOpenSettings: (section: 'general' | 'agent') => void;
-  onOpenBugReport: () => void;
   onOpenWorkspace: (
     project: Project,
     initialMessage?: InitialMessage,
@@ -323,57 +314,6 @@ function SidebarNavButton({
   );
 }
 
-function SidebarMore({ expanded, activeView, teamSpaceAvailable, onTeam, onBot }: {
-  expanded: boolean; activeView: string | undefined; teamSpaceAvailable: boolean; onTeam: () => void; onBot: () => void;
-}) {
-  const { t } = useTranslation(['app', 'settings']);
-  const [open, setOpen] = useState(false);
-  const anchor = useRef<HTMLDivElement>(null), menu = useRef<HTMLDivElement>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const keyboard = useRef(false);
-  const cancel = () => { if (timer.current) clearTimeout(timer.current); timer.current = null; };
-  const show = () => { cancel(); setOpen(true); };
-  const hide = () => { cancel(); timer.current = setTimeout(() => setOpen(false), 150); };
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
-  const setMenuRef = useCallback((node: HTMLDivElement | null) => {
-    menu.current = node;
-    if (node && keyboard.current) { node.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus(); keyboard.current = false; }
-  }, []);
-  const enter = () => {
-    keyboard.current = true; show();
-    if (menu.current) { menu.current.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus(); keyboard.current = false; }
-  };
-  const close = () => { cancel(); setOpen(false); };
-  return <div ref={anchor} className="relative" onPointerEnter={show} onPointerLeave={hide}
-    onKeyDown={event => { if (event.key === 'ArrowRight') { event.preventDefault(); enter(); } }}>
-    <SidebarNavButton expanded={expanded} active={activeView === 'space'}
-      icon={<MoreIcon className="h-4 w-4" />} label={t('globalSidebar.more')} tooltipDisabled={open} hasPopup="menu" ariaExpanded={open}
-      onClick={enter} />
-    <Popover open={open} onClose={close} anchorRef={anchor} placement="right-start" className="min-w-40 p-1">
-      <div ref={setMenuRef} role="menu" aria-label={t('globalSidebar.more')} onPointerEnter={cancel} onPointerLeave={hide}
-        onKeyDown={event => {
-          if (isImeComposingEvent(event)) return;
-          const buttons = [...(menu.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? [])];
-          const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
-          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-            event.preventDefault(); buttons[(index + (event.key === 'ArrowDown' ? 1 : buttons.length - 1)) % buttons.length]?.focus();
-          }
-          if (event.key === 'ArrowLeft' || event.key === 'Escape') {
-            event.preventDefault(); event.stopPropagation(); close(); anchor.current?.querySelector<HTMLButtonElement>('button')?.focus();
-          }
-        }}>
-        {teamSpaceAvailable && <button type="button" role="menuitem" onClick={() => { close(); onTeam(); }}
-          className="flex h-9 w-full items-center gap-2 rounded-md px-3 text-sm text-[var(--ink)] hover:bg-[var(--hover-bg)] focus:bg-[var(--hover-bg)]">
-          <TeamIcon className="h-4 w-4 text-[var(--ink-muted)]" /><span className="global-sidebar-label">{t('globalSidebar.team')}</span>
-        </button>}
-        <button type="button" role="menuitem" onClick={() => { close(); onBot(); }}
-          className="flex h-9 w-full items-center gap-2 rounded-md px-3 text-sm text-[var(--ink)] hover:bg-[var(--hover-bg)] focus:bg-[var(--hover-bg)]">
-          <MessageIcon className="h-4 w-4 text-[var(--ink-muted)]" /><span className="global-sidebar-label">{t('sidebar.nav.bots', { ns: 'settings' })}</span>
-        </button>
-      </div>
-    </Popover>
-  </div>;
-}
 
 /**
  * Own one visual shell from the opening click through lazy-content readiness.
@@ -470,11 +410,9 @@ export default memo(function GlobalSidebar({
   onOpenTaskCenter,
   onCreateTask,
   onOpenSpace,
-  onOpenAgentNetwork,
   onOpenAppRoute,
   onOpenCapabilities,
   onOpenSettings,
-  onOpenBugReport,
   onOpenWorkspace,
   onOpenSession,
   onRenameSession,
@@ -526,8 +464,6 @@ export default memo(function GlobalSidebar({
   const childLayerReturnFocusRef = useRef<HTMLElement | null>(null);
   const openTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const feedbackTriggerRef = useRef<HTMLDivElement | null>(null);
   const notificationTriggerRef = useRef<HTMLButtonElement | null>(null);
   const notificationPanelRef = useRef<HTMLDivElement | null>(null);
 
@@ -622,7 +558,6 @@ export default memo(function GlobalSidebar({
   const openFlyoutNow = useCallback(() => {
     clearFlyoutTimers();
     setNotificationOpen(false);
-    setShowFeedback(false);
     setSearchOpen(false);
     resourceSurfaceInteractionGenerationRef.current += 1;
     setFlyoutOpen(true);
@@ -633,7 +568,6 @@ export default memo(function GlobalSidebar({
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     openTimerRef.current = setTimeout(() => {
       setNotificationOpen(false);
-      setShowFeedback(false);
       setSearchOpen(false);
       resourceSurfaceInteractionGenerationRef.current += 1;
       setFlyoutOpen(true);
@@ -722,7 +656,6 @@ export default memo(function GlobalSidebar({
 
   const toggleNotificationCenter = useCallback(() => {
     closeFlyout();
-    setShowFeedback(false);
     setSearchOpen(false);
     setNotificationOpen((open) => {
       const next = !open;
@@ -731,12 +664,6 @@ export default memo(function GlobalSidebar({
     });
   }, [closeFlyout, refreshNotificationCenter]);
 
-  const toggleFeedback = useCallback(() => {
-    closeFlyout();
-    closeNotificationCenter();
-    setSearchOpen(false);
-    setShowFeedback((value) => !value);
-  }, [closeFlyout, closeNotificationCenter]);
 
   useEffect(() => {
     const activeTabId = activeTab?.id ?? null;
@@ -1022,7 +949,6 @@ export default memo(function GlobalSidebar({
     if (!isTauriEnvironment()) return;
     closeFlyout();
     closeNotificationCenter();
-    setShowFeedback(false);
     resourceSurfaceInteractionGenerationRef.current += 1;
     setSearchOpen(true);
   }, [closeFlyout, closeNotificationCenter]);
@@ -1038,7 +964,6 @@ export default memo(function GlobalSidebar({
     void loadHistorySearchOverlayContent();
     closeFlyout();
     closeNotificationCenter();
-    setShowFeedback(false);
     resourceSurfaceInteractionGenerationRef.current += 1;
     setSearchOpen(true);
   }, [closeFlyout, closeNotificationCenter, historyTagIntent]);
@@ -1145,19 +1070,16 @@ export default memo(function GlobalSidebar({
           className="global-sidebar-brand-row relative flex h-10 shrink-0 items-center"
           data-global-sidebar-brand-row
         >
-          <button
-            type="button"
-            onClick={() => { void openExternal(MYAGENTS_WEBSITE_URL); }}
-            aria-label={t('globalSidebar.openWebsite')}
+          <div
             aria-hidden={!expanded && searchAvailable}
             inert={!expanded && searchAvailable}
-            className={`global-sidebar-brand-link flex h-8 items-center pr-1 text-left cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+            className={`global-sidebar-brand-link flex h-8 items-center pr-1 text-left ${
               expanded ? 'min-w-0' : 'w-10 overflow-hidden'
             }`}
             data-global-sidebar-brand-link
           >
             <img
-              src={myAgentsLogo}
+              src={nextToolsLogo}
               alt=""
               aria-hidden="true"
               className="global-sidebar-brand-icon shrink-0"
@@ -1168,9 +1090,9 @@ export default memo(function GlobalSidebar({
               aria-hidden={!expanded}
               data-global-sidebar-brand-name
             >
-              <MyAgentsLogotype variant="compact" className="global-sidebar-brand-logotype" title="MyAgents" />
+              <NextToolsLogotype variant="compact" className="global-sidebar-brand-logotype" title="NextTools" />
             </span>
-          </button>
+          </div>
           {searchAvailable && (
             <Tip label={t('globalSidebar.search')} position="right" disabled={searchOpen} className="global-sidebar-search-slot">
               <button
@@ -1241,16 +1163,6 @@ export default memo(function GlobalSidebar({
             label={t('globalSidebar.capabilities')}
             onClick={() => onOpenCapabilities()}
           />
-          <SidebarNavButton
-            expanded={expanded}
-            active={activeView === 'agentnetwork'}
-            disabled={!onOpenAgentNetwork}
-            icon={<RadioIcon className="h-4 w-4" />}
-            label={t('globalSidebar.agentNetwork')}
-            onClick={() => onOpenAgentNetwork?.()}
-          />
-          <SidebarMore key={activeView ?? 'launcher'} expanded={expanded} activeView={activeView}
-            teamSpaceAvailable={teamSpaceAvailable} onTeam={onOpenSpace} onBot={() => onOpenSettings('agent')} />
         </nav>
 
         <div className="relative min-h-0 flex-1" data-global-sidebar-workspace-shell>
@@ -1323,25 +1235,6 @@ export default memo(function GlobalSidebar({
           className={`shrink-0 pb-2 ${expanded ? 'pl-3 pr-[var(--global-sidebar-action-inset)] pt-0' : 'global-sidebar-rail-stack pt-3'}`}
           data-global-sidebar-footer-actions
         >
-          <div
-            ref={feedbackTriggerRef}
-            className={`-mr-3 pr-3 ${expanded ? '' : 'flex justify-center'}`}
-            data-feedback-popover-anchor
-          >
-            <SidebarNavButton
-              expanded={expanded}
-              icon={<HelperIcon className="h-4 w-4" />}
-              label={t('globalSidebar.helper')}
-              tooltipDisabled={showFeedback}
-              onClick={toggleFeedback}
-            />
-            <FeedbackPopover
-              open={showFeedback}
-              onClose={() => setShowFeedback(false)}
-              onOpenBugReport={() => { setShowFeedback(false); onOpenBugReport(); }}
-              triggerRef={feedbackTriggerRef}
-            />
-          </div>
           <SidebarNavButton
             expanded={expanded}
             active={activeView === 'settings'}

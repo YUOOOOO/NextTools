@@ -12,7 +12,7 @@ vi.mock('os', async original => ({ ...await original<typeof import('os')>(), hom
 vi.mock('../utils/fs-utils', async original => {
   const actual = await original<typeof import('../utils/fs-utils')>();
   return { ...actual, ensureDirSync: (...args: Parameters<typeof actual.ensureDirSync>) => {
-    if (state.failProductIo && String(args[0]).endsWith(join('.myagents', 'sessions'))) {
+    if (state.failProductIo && String(args[0]).endsWith(join('.nexttools', 'sessions'))) {
       throw Object.assign(new Error('product directory denied'), { code: 'EACCES' });
     }
     return actual.ensureDirSync(...args);
@@ -21,11 +21,11 @@ vi.mock('../utils/fs-utils', async original => {
 vi.mock('node:fs/promises', async original => {
   const actual = await original<typeof import('node:fs/promises')>();
   return { ...actual, mkdir: async (...args: Parameters<typeof actual.mkdir>) => {
-    if (state.publicationGate && String(args[0]).endsWith(join('.myagents', 'sessions-v2'))) {
+    if (state.publicationGate && String(args[0]).endsWith(join('.nexttools', 'sessions-v2'))) {
       state.publicationBlocked = true;
       await state.publicationGate;
     }
-    if (state.failProductIo && String(args[0]).endsWith(join('.myagents', 'sessions-v2'))) {
+    if (state.failProductIo && String(args[0]).endsWith(join('.nexttools', 'sessions-v2'))) {
       return Promise.reject(Object.assign(new Error('product directory denied'), { code: 'EACCES' }));
     }
     return actual.mkdir(...args);
@@ -248,7 +248,7 @@ function fakeQuery(args: { prompt: AsyncIterable<unknown>; options: { sessionId?
 
 beforeEach(async () => {
   notificationReceipts = false;
-  state.home = await mkdtemp(join(tmpdir(), 'myagents-builtin-v2-'));
+  state.home = await mkdtemp(join(tmpdir(), 'nexttools-builtin-v2-'));
   state.events.length = 0;
   state.failProductIo = false;
   state.publicationGate = null;
@@ -309,7 +309,7 @@ describe('builtin V2 execution independent of product storage', () => {
   it.each(['dsh', 'claude-code', 'codex'] as const)('does not start SDK prewarm or publish a %s transcript after a stray builtin reload', async runtime => {
     const workspace = join(state.home, 'workspace');
     await mkdir(workspace, { recursive: true });
-    vi.stubEnv('MYAGENTS_RUNTIME', runtime);
+    vi.stubEnv('NEXTTOOLS_RUNTIME', runtime);
     try {
       await agent.initializeAgent(workspace);
       const metadata = await store.createSession(workspace, { id: agent.getSessionId(), runtime });
@@ -360,7 +360,7 @@ describe('builtin V2 execution independent of product storage', () => {
     }
     const result = await reset;
     expect(result.success).toBe(true);
-    const disk = JSON.parse(await readFile(join(state.home, '.myagents', 'sessions.json'), 'utf8'));
+    const disk = JSON.parse(await readFile(join(state.home, '.nexttools', 'sessions.json'), 'utf8'));
     expect(disk).toContainEqual(expect.objectContaining({ id: result.sessionId, agentDir: workspace, model: 'configured-model', providerId: 'configured-provider', configSnapshotAt: expect.any(String) }));
     expect(agent.getMessages()).toHaveLength(0);
   });
@@ -884,7 +884,7 @@ describe('builtin V2 execution independent of product storage', () => {
     await mkdir(workspace);
     const source = await store.createSession(workspace, { runtime: 'builtin' });
     const { createSessionMetadata } = await import('../types/session');
-    await mkdir(join(state.home, '.myagents'), { recursive: true });
+    await mkdir(join(state.home, '.nexttools'), { recursive: true });
     const branch = createSessionMetadata(workspace, { runtime: 'builtin', forkFrom: { sourceSessionId: source.id, messageUuid: 'native-a' } });
     await store.publishForkSession(branch, [
       { id: 'u', role: 'user', content: 'question', timestamp: 't', sdkUuid: 'native-u' },
@@ -910,7 +910,7 @@ describe('builtin V2 execution independent of product storage', () => {
     await mkdir(workspace);
     const source = await store.createSession(workspace, { runtime: 'builtin' });
     const { createSessionMetadata } = await import('../types/session');
-    await mkdir(join(state.home, '.myagents'), { recursive: true });
+    await mkdir(join(state.home, '.nexttools'), { recursive: true });
     const branch = createSessionMetadata(workspace, {
       runtime: 'builtin',
       forkFrom: { sourceSessionId: source.id, messageUuid: 'native-a2' },
@@ -1844,7 +1844,7 @@ it('checks context MCP provenance in foreground, bypass hooks and background gra
 it.each(['defaultToNo', 'suppressAlwaysAllowRule'] as const)('honors %s on product CLI calls without removing ordinary auto-approval', async hint => {
   const options = await startSdkContractSession();
   (await import('../builtin-session/config')).configState.currentPermissionMode = 'custom';
-  const input = { command: "myagents record create 'note'" };
+  const input = { command: "nexttools record create 'note'" };
   const base = { signal: new AbortController().signal, toolUseID: 'record', requestId: 'record' };
   await expect(options.canUseTool!('Bash', input, base)).resolves.toMatchObject({ behavior: 'allow' });
   const restricted = options.canUseTool!('Bash', input, { ...base, [hint]: true });

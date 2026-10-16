@@ -1,5 +1,5 @@
 ﻿#!/usr/bin/env pwsh
-# MyAgents Windows 正式发布构建脚本
+# NextTools Windows 正式发布构建脚本
 # 构建 NSIS 安装包和便携版 ZIP
 # 支持 Windows x64
 
@@ -25,7 +25,7 @@ try {
 
     Write-Host ""
     Write-Host "=========================================" -ForegroundColor Cyan
-    Write-Host "  MyAgents Windows 发布构建" -ForegroundColor Green
+    Write-Host "  NextTools Windows 发布构建" -ForegroundColor Green
     Write-Host "  Version: $Version" -ForegroundColor Blue
     Write-Host "=========================================" -ForegroundColor Cyan
     Write-Host ""
@@ -352,18 +352,18 @@ try {
     Write-Host "[准备] 清理旧构建..." -ForegroundColor Blue
 
     # 杀死残留进程（避免文件锁定）
-    $appProcesses = Get-Process | Where-Object { $_.ProcessName -eq "MyAgents" }
+    $appProcesses = Get-Process | Where-Object { $_.ProcessName -eq "NextTools" }
 
     if ($appProcesses) {
         $appProcesses | Stop-Process -Force -ErrorAction SilentlyContinue
-        Write-Host "  清理了 $($appProcesses.Count) 个 MyAgents 进程" -ForegroundColor Gray
+        Write-Host "  清理了 $($appProcesses.Count) 个 NextTools 进程" -ForegroundColor Gray
     }
 
     # 验证进程清理完成（最多等待 2 秒）
     $maxWait = 20  # 20 * 100ms = 2s
     $waited = 0
     while ($waited -lt $maxWait) {
-        $remainingApp = Get-Process -Name "MyAgents" -ErrorAction SilentlyContinue
+        $remainingApp = Get-Process -Name "NextTools" -ErrorAction SilentlyContinue
         if (-not $remainingApp) {
             break
         }
@@ -424,7 +424,7 @@ try {
     $env:NODE_OPTIONS = "--max-old-space-size=4096"
     & npm run build:assets
     if ($LASTEXITCODE -ne 0) { throw "前端和运行时资源构建失败" }
-    $buildAssetsConfig = Join-Path ([System.IO.Path]::GetTempPath()) "myagents-assets-$PID.json"
+    $buildAssetsConfig = Join-Path ([System.IO.Path]::GetTempPath()) "nexttools-assets-$PID.json"
     Set-Content -Path $buildAssetsConfig -Value '{"build":{"beforeBuildCommand":null}}' -Encoding utf8
 
     # 填充 tsx-runtime（Plugin Bridge 走绝对路径 --import）—— Windows 当前
@@ -477,15 +477,15 @@ try {
 
         $targetDir = "src-tauri\target\x86_64-pc-windows-msvc\release"
         $nsisDir = "$targetDir\bundle\nsis"
-        # Cargo package name is `myagents` (lowercase), so Tauri's main binary is
-        # myagents.exe — NOT MyAgents.exe (that's only the productName / shortcut).
-        # The old MyAgents.exe path worked by luck on case-insensitive NTFS; use the
+        # Cargo package name is `nexttools` (lowercase), so Tauri's main binary is
+        # nexttools.exe — NOT NextTools.exe (that's only the productName / shortcut).
+        # The old NextTools.exe path worked by luck on case-insensitive NTFS; use the
         # real name so this stays correct on case-sensitive filesystems too.
-        $exePath = "$targetDir\myagents.exe"
+        $exePath = "$targetDir\nexttools.exe"
 
         if (Test-Path $exePath) {
             $portableDir = Join-Path $targetDir "portable"
-            $zipName = "MyAgents_${Version}_x86_64-portable.zip"
+            $zipName = "NextTools_${Version}_x86_64-portable.zip"
             $zipPath = Join-Path $nsisDir $zipName
 
             if (Test-Path $portableDir) {
@@ -518,7 +518,7 @@ try {
             Write-Host "  OK - 便携版 ZIP: $zipName" -ForegroundColor Green
         }
         else {
-            Write-Host "  警告: 未找到 myagents.exe，跳过便携版创建" -ForegroundColor Yellow
+            Write-Host "  警告: 未找到 nexttools.exe，跳过便携版创建" -ForegroundColor Yellow
         }
         Write-Host ""
     }

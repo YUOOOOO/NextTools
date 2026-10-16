@@ -7,8 +7,8 @@ export function setSidecarPort(port: number): void {
     throw new Error('Invalid Sidecar listening port');
   }
   sidecarPort = port;
-  if (port > 0) process.env.MYAGENTS_PORT = String(port);
-  else delete process.env.MYAGENTS_PORT;
+  if (port > 0) process.env.NEXTTOOLS_PORT = String(port);
+  else delete process.env.NEXTTOOLS_PORT;
 }
 
 export function getSidecarPort(): number {

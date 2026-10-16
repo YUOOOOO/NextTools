@@ -84,7 +84,7 @@ async fn require_internal_cli_request(request: Request, next: Next) -> Response 
         Json(serde_json::json!({
             "ok": false,
             "code": "internal_caller_required",
-            "error": "Internal MyAgents caller identity is required",
+            "error": "Internal NextTools caller identity is required",
         })),
     )
         .into_response()
@@ -92,7 +92,7 @@ async fn require_internal_cli_request(request: Request, next: Next) -> Response 
 
 fn request_sidecar_generation(headers: &HeaderMap) -> Result<u64, Json<serde_json::Value>> {
     let generation = headers
-        .get("x-myagents-sidecar-generation")
+        .get("x-nexttools-sidecar-generation")
         .and_then(|value| value.to_str().ok())
         .and_then(|value| value.parse::<u64>().ok())
         .filter(|value| *value > 0);
@@ -241,7 +241,7 @@ pub async fn start_management_api() -> Result<u16, String> {
             "/api/agent/stop-channels",
             post(agent_stop_channels_handler),
         )
-        // Task Center (v0.1.69) — HTTP surface for the `myagents task` CLI.
+        // Task Center (v0.1.69) — HTTP surface for the `nexttools task` CLI.
         .route("/api/task/list", get(task_list_handler))
         .route("/api/task/get", get(task_get_handler))
         .route("/api/task/create-direct", post(task_create_direct_handler))
@@ -3748,11 +3748,11 @@ async fn handle_bridge_message(
 // ========================================================================
 //
 // These endpoints are called by the Bun Admin API (admin-api.ts), which in
-// turn is called by the `myagents task` CLI. The CLI is the entry point for
+// turn is called by the `nexttools task` CLI. The CLI is the entry point for
 // `actor` / `source` audit classification (PRD §10.2.1 caller-inference table):
 //
-// - `MYAGENTS_SESSION_ID` set in the CLI process → `actor=agent, source=cli`
-// - Otherwise (user terminal reading `~/.myagents/sidecar.port`) →
+// - `NEXTTOOLS_SESSION_ID` set in the CLI process → `actor=agent, source=cli`
+// - Otherwise (user terminal reading `~/.nexttools/sidecar.port`) →
 //   `actor=user, source=cli`
 //
 // That classification happens in the CLI script itself (knows its own env)
@@ -4494,7 +4494,7 @@ struct ThoughtListQuery {
     query: Option<String>,
     limit: Option<usize>,
     /// `active` (default) / `archived` / `all`. CLI parity with v0.2.16
-    /// archive feature so `myagents thought list --archived` works.
+    /// archive feature so `nexttools thought list --archived` works.
     archived: Option<String>,
 }
 
@@ -4693,8 +4693,8 @@ fn space_cli_error(error: String) -> serde_json::Value {
         .unwrap_or_else(|| ("SPACE_COMMAND_FAILED".to_string(), error));
     let (suggestion, suggested_command) = match code.as_str() {
         "SPACE_REQUIRED" | "SPACE_NOT_AVAILABLE" => (
-            Some("Run `myagents space list --json`, then retry with one returned slug."),
-            Some("myagents space list --json"),
+            Some("Run `nexttools space list --json`, then retry with one returned slug."),
+            Some("nexttools space list --json"),
         ),
         "ASSIGNEE_ID_INVALID" => (
             Some("List valid typed assignee IDs for the selected Space, then retry with one returned assigneeId."),
@@ -4702,11 +4702,11 @@ fn space_cli_error(error: String) -> serde_json::Value {
         ),
         "GOAL_NOT_FOUND" | "GOAL_IS_ARCHIVED" | "GOAL_ID_REQUIRED" => (
             Some("List active Goals for the selected Space and copy a current data.items[].id."),
-            Some("myagents space goal list --space <slug> --json"),
+            Some("nexttools space goal list --space <slug> --json"),
         ),
         "ISSUE_MUTATION_CONFLICT" => (
             Some("Re-read the authoritative Issue, then retry only after reconciling the concurrent change."),
-            Some("myagents space issue view <issueId> --space <slug> --json"),
+            Some("nexttools space issue view <issueId> --space <slug> --json"),
         ),
         "ATTACHMENT_REQUIRED" => (
             Some("Add one or more workspace files with repeated --file flags."),
@@ -4741,7 +4741,7 @@ fn space_cli_error(error: String) -> serde_json::Value {
             None,
         ),
         "SPACE_AGENT_BINDING_INVALID" | "SPACE_CONTEXT_INVALID" | "SPACE_CONTEXT_MISMATCH" => (
-            Some("Verify the selected Space and current identity with `myagents space whoami --space <slug> --json`."),
+            Some("Verify the selected Space and current identity with `nexttools space whoami --space <slug> --json`."),
             None,
         ),
         code if code.contains("PERMISSION")
@@ -4756,7 +4756,7 @@ fn space_cli_error(error: String) -> serde_json::Value {
             || code == "THIS_ISSUE_IS_OUTSIDE_THIS_REGISTERED_AGENT_SUBSCRIPTION"
             || code == "ONLY_OWNER_ADMIN_OR_THE_CREATOR_OF_AN_OPEN_ISSUE_CAN_EDIT_IT" => (
             Some("Verify the effective actor with space whoami; retry only with a User or Registered Agent that has permission for this action."),
-            Some("myagents space whoami --space <slug> --json"),
+            Some("nexttools space whoami --space <slug> --json"),
         ),
         code if code.contains("NOT_FOUND") => (
             Some("Re-read the current Space or Issue state, copy a current stable ID, and retry."),
@@ -5005,7 +5005,7 @@ struct TaskReadDocQuery {
     doc: String,
 }
 
-/// `GET /api/task/read-doc?id=&doc=` — used by the `myagents task show-doc`
+/// `GET /api/task/read-doc?id=&doc=` — used by the `nexttools task show-doc`
 /// CLI so Agents running in a workspace can read a Task's markdown without
 /// hardcoding the filesystem path (task docs live in the user profile dir
 /// after v0.1.69, not in the workspace).
@@ -5443,7 +5443,7 @@ fn resolve_speech_caller(
             "ok": false,
             "code": "SPEECH_MANAGER_UNAVAILABLE",
             "error": "The Sidecar identity owner is unavailable.",
-            "suggestion": "Restart MyAgents and retry.",
+            "suggestion": "Restart NextTools and retry.",
         }));
     };
     sidecars
@@ -5546,8 +5546,8 @@ async fn speech_list_handler(
 fn speech_error_value(code: &str) -> serde_json::Value {
     let (error, suggestion) = match code {
         "SPEECH_SESSION_REQUIRED" => (
-            "Speech recognition requires an active MyAgents Session with an authoritative Workspace.",
-            "Run the command from the MyAgents Session that should own the job.",
+            "Speech recognition requires an active NextTools Session with an authoritative Workspace.",
+            "Run the command from the NextTools Session that should own the job.",
         ),
         "SPEECH_RESOURCE_REQUIRED" | "SPEECH_MODEL_PACK_UNAVAILABLE" | "SPEECH_NATIVE_RUNTIME_UNAVAILABLE" => (
             "The local speech recognition resources are not ready.",
@@ -5555,11 +5555,11 @@ fn speech_error_value(code: &str) -> serde_json::Value {
         ),
         "SPEECH_JOB_NOT_FOUND" => (
             "The speech job was not found for this Session.",
-            "Run `myagents speech list` in the Session that submitted the job.",
+            "Run `nexttools speech list` in the Session that submitted the job.",
         ),
         "SPEECH_JOB_NOT_CANCELLABLE" => (
             "The speech job is already terminal and cannot be cancelled.",
-            "Run `myagents speech status <job-id>` to inspect its terminal result.",
+            "Run `nexttools speech status <job-id>` to inspect its terminal result.",
         ),
         "SPEECH_MEDIA_LIMIT_EXCEEDED" => (
             "The media source is empty or exceeds the 4 GiB / 8 hour limits.",
@@ -5575,7 +5575,7 @@ fn speech_error_value(code: &str) -> serde_json::Value {
         ),
         "SPEECH_UNSUPPORTED_CODEC" => (
             "The probed media container and audio codec combination is not supported.",
-            "Re-export the audio as WAV/PCM or another format listed by `myagents speech transcribe --help`.",
+            "Re-export the audio as WAV/PCM or another format listed by `nexttools speech transcribe --help`.",
         ),
         "SPEECH_CORRUPT_MEDIA" => (
             "The media container or selected audio stream is damaged.",
@@ -5583,7 +5583,7 @@ fn speech_error_value(code: &str) -> serde_json::Value {
         ),
         "SPEECH_DEADLINE_EXCEEDED" | "SPEECH_WORKER_TIMEOUT" => (
             "Local speech processing stopped because the Worker exceeded its deadline or heartbeat window.",
-            "Retry once; if it repeats, re-export the media and inspect MyAgents diagnostics.",
+            "Retry once; if it repeats, re-export the media and inspect NextTools diagnostics.",
         ),
         "SPEECH_SOURCE_UNAVAILABLE" | "SPEECH_SOURCE_UNSAFE" | "SPEECH_SOURCE_PATH_INVALID" | "SPEECH_SOURCE_CHANGED" => (
             "The media source is missing, unsafe, outside the current Workspace, or changed during admission.",
@@ -5595,15 +5595,15 @@ fn speech_error_value(code: &str) -> serde_json::Value {
         ),
         "SPEECH_LIST_LIMIT_INVALID" => (
             "Speech list limit must be from 1 through 100.",
-            "Retry with `myagents speech list --limit 20`.",
+            "Retry with `nexttools speech list --limit 20`.",
         ),
         "SPEECH_MANAGER_UNAVAILABLE" => (
             "The speech recognition manager is unavailable.",
-            "Restart MyAgents and retry.",
+            "Restart NextTools and retry.",
         ),
         _ => (
             "The speech recognition operation failed.",
-            "Inspect the returned code, then run `myagents speech --help` for recovery guidance.",
+            "Inspect the returned code, then run `nexttools speech --help` for recovery guidance.",
         ),
     };
     serde_json::json!({
@@ -5689,9 +5689,9 @@ fn document_manager_unavailable() -> Json<serde_json::Value> {
         "ok": false,
         "code": "DOCUMENT_MANAGER_UNAVAILABLE",
         "error": "The document manager is unavailable.",
-        "suggestion": "Restart MyAgents and retry.",
+        "suggestion": "Restart NextTools and retry.",
         "recoveryHint": {
-            "message": "Restart MyAgents and retry."
+            "message": "Restart NextTools and retry."
         }
     }))
 }
@@ -5910,12 +5910,12 @@ mod tests {
         );
         assert_eq!(
             response.get("suggestedCommand").and_then(Value::as_str),
-            Some("myagents space list --json")
+            Some("nexttools space list --json")
         );
         assert!(response
             .get("suggestion")
             .and_then(Value::as_str)
-            .is_some_and(|value| value.starts_with("Run `myagents space list")));
+            .is_some_and(|value| value.starts_with("Run `nexttools space list")));
     }
 
     #[test]
@@ -5925,7 +5925,7 @@ mod tests {
             assert_eq!(response.get("code").and_then(Value::as_str), Some(code));
             assert_eq!(
                 response.get("suggestedCommand").and_then(Value::as_str),
-                Some("myagents space goal list --space <slug> --json")
+                Some("nexttools space goal list --space <slug> --json")
             );
             assert!(response
                 .get("suggestion")
@@ -5938,7 +5938,7 @@ mod tests {
         );
         assert_eq!(
             conflict.get("suggestedCommand").and_then(Value::as_str),
-            Some("myagents space issue view <issueId> --space <slug> --json")
+            Some("nexttools space issue view <issueId> --space <slug> --json")
         );
 
         for code in [
@@ -5952,7 +5952,7 @@ mod tests {
             assert_eq!(permission.get("code").and_then(Value::as_str), Some(code));
             assert_eq!(
                 permission.get("suggestedCommand").and_then(Value::as_str),
-                Some("myagents space whoami --space <slug> --json")
+                Some("nexttools space whoami --space <slug> --json")
             );
         }
     }

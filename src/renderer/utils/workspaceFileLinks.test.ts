@@ -11,7 +11,7 @@ import {
   toWorkspaceRelativePath,
 } from './workspaceFileLinks';
 
-const WORKSPACE = '/Users/zhihu/Documents/project/MyAgents';
+const WORKSPACE = '/Users/zhihu/Documents/project/NextTools';
 
 describe('toWorkspaceRelativePath — total on missing input (restore-old-session crash)', () => {
   // A file-tool chip can pass an undefined `file_path` (partial/streaming or a
@@ -57,7 +57,7 @@ describe('resolveWorkspaceFileLinkTarget', () => {
 
   it('supports file URLs and percent-encoded spaces', () => {
     expect(resolveWorkspaceFileLinkTarget(
-      'file:///Users/zhihu/Documents/project/MyAgents/docs/My%20Note.md:7',
+      'file:///Users/zhihu/Documents/project/NextTools/docs/My%20Note.md:7',
       WORKSPACE,
     )).toEqual({
       path: 'docs/My Note.md',
@@ -177,8 +177,8 @@ describe('document reference base', () => {
 
 describe('resolveAgainstWorkspace', () => {
   it('joins a workspace-relative path to an absolute path', () => {
-    expect(resolveAgainstWorkspace('myagents_files/generated_audio/tts_x.mp3', WORKSPACE))
-      .toBe('/Users/zhihu/Documents/project/MyAgents/myagents_files/generated_audio/tts_x.mp3');
+    expect(resolveAgainstWorkspace('nexttools_files/generated_audio/tts_x.mp3', WORKSPACE))
+      .toBe('/Users/zhihu/Documents/project/NextTools/nexttools_files/generated_audio/tts_x.mp3');
   });
 
   it('normalizes ./ and collapses redundant segments', () => {
@@ -187,8 +187,8 @@ describe('resolveAgainstWorkspace', () => {
   });
 
   it('passes an already-absolute path through unchanged (posix)', () => {
-    expect(resolveAgainstWorkspace('/Users/me/.myagents/generated/x.mp3', WORKSPACE))
-      .toBe('/Users/me/.myagents/generated/x.mp3');
+    expect(resolveAgainstWorkspace('/Users/me/.nexttools/generated/x.mp3', WORKSPACE))
+      .toBe('/Users/me/.nexttools/generated/x.mp3');
   });
 
   it('passes an already-absolute Windows path through unchanged', () => {
@@ -263,7 +263,7 @@ describe('resolveFileActionTarget', () => {
 
   it('supports file URLs, encoded spaces and line suffixes through the shared resolver', () => {
     expect(resolveFileActionTarget(
-      'file:///Users/zhihu/Documents/project/MyAgents/docs/My%20Note.md:7',
+      'file:///Users/zhihu/Documents/project/NextTools/docs/My%20Note.md:7',
       WORKSPACE,
     )).toEqual({
       scope: 'workspace',
@@ -271,7 +271,7 @@ describe('resolveFileActionTarget', () => {
       initialLineNumber: 7,
     });
     expect(resolveFileActionTarget(
-      'file:///Users/zhihu/Documents/project/MyAgents/docs/Issue%231.md',
+      'file:///Users/zhihu/Documents/project/NextTools/docs/Issue%231.md',
       WORKSPACE,
     )).toEqual({
       scope: 'workspace',
@@ -328,11 +328,11 @@ describe('resolveFileActionTarget', () => {
 
   it('keeps an encoded Windows Task candidate link outside the workspace', () => {
     expect(resolveFileActionTarget(
-      'file:///C:/Users/me/.myagents/task-discussions/discussion%201/candidates/review/task.md',
+      'file:///C:/Users/me/.nexttools/task-discussions/discussion%201/candidates/review/task.md',
       'C:\\Users\\me\\work',
     )).toEqual({
       scope: 'local',
-      path: 'C:\\Users\\me\\.myagents\\task-discussions\\discussion 1\\candidates\\review\\task.md',
+      path: 'C:\\Users\\me\\.nexttools\\task-discussions\\discussion 1\\candidates\\review\\task.md',
     });
   });
 });

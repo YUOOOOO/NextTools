@@ -32,10 +32,10 @@ export function useSettingsNavigation({
   const getInitialSection = (): SettingsSection => {
     if (initialSection && VALID_SECTIONS.includes(initialSection as SettingsSection)) {
       if (initialSection === 'desktop-pet' && floatingBallDisabled) {
-        return 'about';
+        return 'general';
       }
       if (initialSection === 'developer' && !isDeveloperSectionUnlocked()) {
-        return 'about';
+        return 'general';
       }
       return initialSection as SettingsSection;
     }
@@ -52,12 +52,12 @@ export function useSettingsNavigation({
     if (initialSection && VALID_SECTIONS.includes(initialSection as SettingsSection)) {
       const timer = window.setTimeout(() => {
         if (initialSection === 'desktop-pet' && floatingBallDisabled) {
-          setActiveSection('about');
+          setActiveSection('general');
           notifySectionChange();
           return;
         }
         if (initialSection === 'developer' && !isDeveloperSectionUnlocked()) {
-          setActiveSection('about');
+          setActiveSection('general');
           notifySectionChange();
           return;
         }
@@ -74,7 +74,7 @@ export function useSettingsNavigation({
   useEffect(() => {
     if (activeSection === 'desktop-pet' && floatingBallDisabled) {
       const timer = window.setTimeout(() => {
-        setActiveSection('about');
+        setActiveSection('general');
       }, 0);
 
       return () => {

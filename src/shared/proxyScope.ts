@@ -54,7 +54,7 @@ export function normalizeProxyScope(
   return { mode: 'custom', generalRequests, providerIds };
 }
 
-export function shouldUseMyAgentsProxyForGeneralRequests(
+export function shouldUseNextToolsProxyForGeneralRequests(
   proxySettings: ProxySettings | null | undefined,
 ): boolean {
   if (!proxySettings?.enabled) return false;
@@ -62,7 +62,7 @@ export function shouldUseMyAgentsProxyForGeneralRequests(
   return scope.mode === 'all' || scope.generalRequests === true;
 }
 
-export function shouldUseMyAgentsProxyForProvider(
+export function shouldUseNextToolsProxyForProvider(
   proxySettings: ProxySettings | null | undefined,
   providerId: string | null | undefined,
 ): boolean {
@@ -79,26 +79,26 @@ export function effectiveProxyScopeKey(
   providerId: string | null | undefined,
 ): string {
   const id = providerId?.trim();
-  if (!proxySettings?.enabled || !id) return 'myagents-proxy:none';
-  if (!shouldUseMyAgentsProxyForProvider(proxySettings, id)) {
-    return `myagents-proxy:disabled-for-provider:${id}`;
+  if (!proxySettings?.enabled || !id) return 'nexttools-proxy:none';
+  if (!shouldUseNextToolsProxyForProvider(proxySettings, id)) {
+    return `nexttools-proxy:disabled-for-provider:${id}`;
   }
   const protocol = proxySettings.protocol || 'http';
   const host = proxySettings.host || '127.0.0.1';
   const port = proxySettings.port || 7890;
-  return `myagents-proxy:${id}:${protocol}://${host}:${port}`;
+  return `nexttools-proxy:${id}:${protocol}://${host}:${port}`;
 }
 
 export function effectiveGeneralProxyScopeKey(
   proxySettings: ProxySettings | null | undefined,
 ): string {
-  if (!shouldUseMyAgentsProxyForGeneralRequests(proxySettings)) {
-    return 'myagents-proxy:general:inherited';
+  if (!shouldUseNextToolsProxyForGeneralRequests(proxySettings)) {
+    return 'nexttools-proxy:general:inherited';
   }
   const protocol = proxySettings?.protocol || 'http';
   const host = proxySettings?.host || '127.0.0.1';
   const port = proxySettings?.port || 7890;
-  return `myagents-proxy:general:${protocol}://${host}:${port}`;
+  return `nexttools-proxy:general:${protocol}://${host}:${port}`;
 }
 
 export function normalizeProxySettingsScope(

@@ -29,7 +29,7 @@ describe('server MCP catalogue merge', () => {
       command: 'npx',
       args: ['@playwright/mcp@0.0.68', '--user-data-dir=/tmp/playwright-profile'],
     });
-    expect(servers.find((server) => server.id === 'myagents-browser')).toMatchObject({
+    expect(servers.find((server) => server.id === 'nexttools-browser')).toMatchObject({
       command: '__browser_host__',
       args: [],
     });
@@ -39,7 +39,7 @@ describe('server MCP catalogue merge', () => {
     const servers = getAllMcpServers({
       mcpServers: [
         { id: 'playwright', name: 'shadow', type: 'stdio', command: 'shadow', isBuiltin: false },
-        { id: 'myagents-browser', name: 'shadow', type: 'stdio', command: 'shadow', isBuiltin: false },
+        { id: 'nexttools-browser', name: 'shadow', type: 'stdio', command: 'shadow', isBuiltin: false },
       ],
       mcpEnabledServers: [],
     });
@@ -48,16 +48,16 @@ describe('server MCP catalogue merge', () => {
       command: 'npx',
       isBuiltin: true,
     });
-    expect(servers.find((server) => server.id === 'myagents-browser')).toMatchObject({
+    expect(servers.find((server) => server.id === 'nexttools-browser')).toMatchObject({
       command: '__browser_host__',
       isBuiltin: true,
     });
   });
 
   it('resolves owned Session IDs against current definitions and global enablement', () => {
-    const scratch = mkdtempSync(join(tmpdir(), 'myagents-admin-config-'));
+    const scratch = mkdtempSync(join(tmpdir(), 'nexttools-admin-config-'));
     scratchDirs.push(scratch);
-    const configDir = join(scratch, '.myagents');
+    const configDir = join(scratch, '.nexttools');
     mkdirSync(configDir, { recursive: true });
     vi.stubEnv(process.platform === 'win32' ? 'USERPROFILE' : 'HOME', scratch);
     const configPath = join(configDir, 'config.json');

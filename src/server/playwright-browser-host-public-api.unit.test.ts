@@ -37,7 +37,7 @@ describe('@playwright/mcp public Browser Host API', () => {
         fetch: (input, init) => serverTransport.handleRequest(new Request(input, init)),
       },
     );
-    const client = new Client({ name: 'myagents-browser-host-spike', version: '0.4.10' });
+    const client = new Client({ name: 'nexttools-browser-host-spike', version: '0.4.10' });
 
     try {
       await client.connect(clientTransport);

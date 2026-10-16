@@ -110,7 +110,7 @@ impl OsIdentityStore {
         #[cfg(target_os = "linux")]
         let builder = keyring::secret_service::default_credential_builder();
         let credential = builder
-            .build(None, "MyAgents.AgentNetwork.v1", &user)
+            .build(None, "NextTools.AgentNetwork.v1", &user)
             .map_err(|_| CryptoError::CredentialUnavailable)?;
         Ok(keyring::Entry::new_with_credential(credential))
     }
@@ -239,7 +239,7 @@ impl DevicePrivateKey {
         params.distinguished_name = rcgen::DistinguishedName::new();
         params
             .distinguished_name
-            .push(rcgen::DnType::CommonName, "MyAgents Device");
+            .push(rcgen::DnType::CommonName, "NextTools Device");
         params
             .serialize_request(&pair)
             .and_then(|csr| csr.pem())
@@ -259,7 +259,7 @@ impl DevicePrivateKey {
         if nonce_bytes.len() != 32 || URL_SAFE_NO_PAD.encode(&nonce_bytes) != nonce {
             return Err(CryptoError::InvalidProof);
         }
-        let mut input = format!("MyAgents Agent Network PoP v1\n{challenge_id}\n").into_bytes();
+        let mut input = format!("NextTools Agent Network PoP v1\n{challenge_id}\n").into_bytes();
         input.extend(nonce_bytes);
         let key = SigningKey::from_pkcs8_der(&self.der).map_err(|_| CryptoError::InvalidKey)?;
         let signature: Signature = key.sign(&input);
@@ -351,7 +351,7 @@ impl TlsIdentity {
         config.max_early_data_size = 0;
         config.send_tls13_tickets = 0;
         config.session_storage = Arc::new(rustls::server::NoServerSessionStorage {});
-        config.alpn_protocols = vec![b"myagents-agent/1".to_vec()];
+        config.alpn_protocols = vec![b"nexttools-agent/1".to_vec()];
         Ok(config)
     }
 }
@@ -373,7 +373,7 @@ impl InnerTls {
         expected_san: String,
         expected_fingerprint: String,
     ) -> Result<Self, CryptoError> {
-        let config = identity.client_config(roots, b"myagents-agent/1")?;
+        let config = identity.client_config(roots, b"nexttools-agent/1")?;
         let name =
             ServerName::try_from(expected_san).map_err(|_| CryptoError::InvalidCertificate)?;
         let mut connection = ClientConnection::new(Arc::new(config), name.clone())
@@ -453,7 +453,7 @@ impl InnerTls {
                 rustls::client::verify_server_name(&parsed, &self.expected_name)
                     .map_err(|_| CryptoError::PeerMismatch)?;
                 if certificate_fingerprint(peer) != self.expected_fingerprint
-                    || self.connection.alpn_protocol() != Some(b"myagents-agent/1".as_slice())
+                    || self.connection.alpn_protocol() != Some(b"nexttools-agent/1".as_slice())
                     || self.connection.protocol_version() != Some(rustls::ProtocolVersion::TLSv1_3)
                 {
                     return Err(CryptoError::PeerMismatch);
@@ -748,7 +748,7 @@ pub(crate) mod tests {
     #[test]
     fn dpop_uses_stable_rfc7638_key_and_canonical_method_uri_and_token_hash() {
         let key = DevicePrivateKey::generate().unwrap();
-        let url = url::Url::parse("https://relay.myagents.test/v1/devices?cursor=ignored#ignored")
+        let url = url::Url::parse("https://relay.nexttools.test/v1/devices?cursor=ignored#ignored")
             .unwrap();
         let proof = key
             .dpop("GET", &url, "isolated-token", Some("test-nonce"))
@@ -762,7 +762,7 @@ pub(crate) mod tests {
         assert!(header["jwk"].get("d").is_none());
         let claims: serde_json::Value =
             serde_json::from_slice(&URL_SAFE_NO_PAD.decode(segments[1]).unwrap()).unwrap();
-        assert_eq!(claims["htu"], "https://relay.myagents.test/v1/devices");
+        assert_eq!(claims["htu"], "https://relay.nexttools.test/v1/devices");
         assert_eq!(claims["htm"], "GET");
         assert_eq!(claims["nonce"], "test-nonce");
         assert_eq!(
@@ -814,7 +814,7 @@ pub(crate) mod tests {
         assert_eq!(proof.len(), 64);
         let signature = Signature::from_slice(&proof).unwrap();
         let signing = SigningKey::from_pkcs8_der(&key.der).unwrap();
-        let mut message = format!("MyAgents Agent Network PoP v1\n{id}\n").into_bytes();
+        let mut message = format!("NextTools Agent Network PoP v1\n{id}\n").into_bytes();
         message.extend([42u8; 32]);
         signing
             .verifying_key()
@@ -835,7 +835,7 @@ pub(crate) mod tests {
     #[ignore = "Explicit OS integration: creates and deletes isolated real system credentials"]
     fn network_os_credentials_persist_scope_and_never_replace_a_generation() {
         let scope = KeyScope {
-            issuer: "https://isolated-credentials.myagents.invalid".into(),
+            issuer: "https://isolated-credentials.nexttools.invalid".into(),
             environment: "development".into(),
             service_id: uuid::Uuid::new_v4().to_string(),
             principal_id: "isolated-test-owner".into(),

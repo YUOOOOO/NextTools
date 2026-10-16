@@ -56,7 +56,7 @@ impl PlatformImpl {
         // inheritance the helper guards against is irrelevant here.
         let mut cmd = process_cmd::new(&inhibit_bin);
         cmd.arg("--what=idle:sleep")
-            .arg("--who=MyAgents")
+            .arg("--who=NextTools")
             .arg(format!("--why={}", reason.replace('"', "'")))
             .arg("--mode=block")
             .arg("sleep")

@@ -4,7 +4,7 @@
 export * from "./core.auto.js";
 // === END AUTO-AUGMENT ===
 
-// OpenClaw plugin-sdk/core shim for MyAgents Plugin Bridge
+// OpenClaw plugin-sdk/core shim for NextTools Plugin Bridge
 // Re-exports core types and factory functions used by 3.22+ plugins.
 
 // Re-export account-id utilities (plugins import from core or account-id)

@@ -21,7 +21,7 @@ describe('managed subscription SDK env', () => {
     { mainContext: 1_000_000, childContext: 200_000, mainSuffix: '[1m]', childSuffix: '' },
     { mainContext: 200_000, childContext: 1_000_000, mainSuffix: '', childSuffix: '[1m]' },
   ])('keeps routed split aliases scoped to their own context: $mainContext / $childContext', async ({ mainContext, childContext, mainSuffix, childSuffix }) => {
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', 'test-session');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', 'test-session');
     const grant = { providerId: 'antigravity-sub', baseUrl: 'http://127.0.0.1:15432', apiKey: 'local-test-key'.repeat(4),
       instanceGeneration: randomUUID(), accountGeneration: randomUUID(), leaseId: randomUUID(),
       modelPolicy: { id: 'main-model', thinking: false, contextLength: mainContext } };
@@ -41,7 +41,7 @@ describe('managed subscription SDK env', () => {
   });
 
   it('uses the execution binding and approved capability snapshot instead of inherited routing or edited metadata', async () => {
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', 'test-session');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', 'test-session');
     vi.stubEnv('ANTHROPIC_BASE_URL', 'https://other.example');
     vi.stubEnv('ANTHROPIC_AUTH_TOKEN', 'inherited-secret');
     vi.stubEnv('CLAUDE_CODE_OAUTH_TOKEN', 'inherited-oauth');
@@ -72,17 +72,17 @@ describe('buildClaudeSessionEnv npm prefix isolation', () => {
     vi.unstubAllEnvs();
   });
 
-  it('does not leak MyAgents npm prefix variables into the SDK shell env', () => {
+  it('does not leak NextTools npm prefix variables into the SDK shell env', () => {
     const home = process.platform === 'win32'
-      ? 'C:\\Users\\myagents-test'
-      : '/tmp/myagents-env-home';
+      ? 'C:\\Users\\nexttools-test'
+      : '/tmp/nexttools-env-home';
     const prefix = process.platform === 'win32'
-      ? resolve(home, '.myagents', 'npm-global')
-      : `${home}/.myagents/npm-global`;
+      ? resolve(home, '.nexttools', 'npm-global')
+      : `${home}/.nexttools/npm-global`;
     const binDir = process.platform === 'win32' ? prefix : `${prefix}/bin`;
     const appBinDir = process.platform === 'win32'
-      ? resolve(home, '.myagents', 'bin')
-      : `${home}/.myagents/bin`;
+      ? resolve(home, '.nexttools', 'bin')
+      : `${home}/.nexttools/bin`;
 
     vi.stubEnv(process.platform === 'win32' ? 'USERPROFILE' : 'HOME', home);
     vi.stubEnv('npm_config_prefix', prefix);
@@ -99,7 +99,7 @@ describe('buildClaudeSessionEnv npm prefix isolation', () => {
     expect(env.npm_config_prefix).toBeUndefined();
     expect(env.NPM_CONFIG_PREFIX).toBeUndefined();
     expect(env.PREFIX).toBeUndefined();
-    expect(env.MYAGENTS_NPM_GLOBAL_PREFIX).toBe(prefix);
+    expect(env.NEXTTOOLS_NPM_GLOBAL_PREFIX).toBe(prefix);
     const pathEntries = pathValue.split(delimiter);
     expect(pathEntries).toContain(binDir);
     expect(pathEntries).toContain(appBinDir);
@@ -141,7 +141,7 @@ describe('Windows SDK subprocess UTF-8 env', () => {
   });
 
   it('installs a Git Bash UTF-8 BASH_ENV prelude without touching an existing shell prefix', () => {
-    const home = mkdtempSync(resolve(tmpdir(), 'myagents-env-home-'));
+    const home = mkdtempSync(resolve(tmpdir(), 'nexttools-env-home-'));
     tempHomes.push(home);
     const env: NodeJS.ProcessEnv = {
       BASH_ENV: 'C:\\custom\\bash-env.sh',
@@ -151,16 +151,16 @@ describe('Windows SDK subprocess UTF-8 env', () => {
     applyWindowsUtf8SubprocessEnv(env, { platform: 'win32', useBashEnvPrelude: true, home });
 
     expect(env.BASH_ENV).toContain('windows-utf8-bash-env.sh');
-    expect(env.MYAGENTS_ORIGINAL_BASH_ENV).toBe('C:/custom/bash-env.sh');
+    expect(env.NEXTTOOLS_ORIGINAL_BASH_ENV).toBe('C:/custom/bash-env.sh');
     expect(env.CLAUDE_CODE_SHELL_PREFIX).toBe('echo existing;');
     const prelude = readFileSync(env.BASH_ENV!, 'utf-8');
-    expect(prelude).toContain('MYAGENTS_WINDOWS_UTF8');
-    expect(prelude).toContain('MYAGENTS_ORIGINAL_BASH_ENV');
+    expect(prelude).toContain('NEXTTOOLS_WINDOWS_UTF8');
+    expect(prelude).toContain('NEXTTOOLS_ORIGINAL_BASH_ENV');
     expect(prelude).toContain('chcp.com 65001');
   });
 
   it('does not replace the BASH_ENV prelude when applied repeatedly', () => {
-    const home = mkdtempSync(resolve(tmpdir(), 'myagents-env-home-'));
+    const home = mkdtempSync(resolve(tmpdir(), 'nexttools-env-home-'));
     tempHomes.push(home);
     const env: NodeJS.ProcessEnv = {};
 
@@ -172,7 +172,7 @@ describe('Windows SDK subprocess UTF-8 env', () => {
   });
 
   it.each([undefined, '0'])('enables PowerShell alongside Git Bash and UTF-8 with inherited switch %s', (inheritedSwitch) => {
-    const home = mkdtempSync(resolve(tmpdir(), 'myagents-env-home-'));
+    const home = mkdtempSync(resolve(tmpdir(), 'nexttools-env-home-'));
     tempHomes.push(home);
     const inheritedGitBashPath = resolve(process.cwd(), 'package.json');
     vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
@@ -197,7 +197,7 @@ describe('Windows SDK subprocess UTF-8 env', () => {
   });
 
   it('keeps the BASH_ENV prelude when Git Bash falls back to SDK PATH lookup', () => {
-    const home = mkdtempSync(resolve(tmpdir(), 'myagents-env-home-'));
+    const home = mkdtempSync(resolve(tmpdir(), 'nexttools-env-home-'));
     tempHomes.push(home);
     vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
     vi.stubEnv('USERPROFILE', home);
@@ -212,7 +212,7 @@ describe('Windows SDK subprocess UTF-8 env', () => {
   });
 
   it.each(['darwin', 'linux'] as const)('does not opt into PowerShell on %s', (platform) => {
-    const home = mkdtempSync(resolve(tmpdir(), 'myagents-env-home-'));
+    const home = mkdtempSync(resolve(tmpdir(), 'nexttools-env-home-'));
     tempHomes.push(home);
     vi.spyOn(process, 'platform', 'get').mockReturnValue(platform);
     vi.stubEnv('HOME', home);
@@ -325,11 +325,11 @@ describe('Claude SDK context window env', () => {
 
   it('keeps Anthropic subscription 4.6 at 200K when another provider discovers the same model id as 1M (#444)', () => {
     const prevHome = process.env.HOME;
-    const tempHome = mkdtempSync(join(tmpdir(), 'myagents-env-home-'));
+    const tempHome = mkdtempSync(join(tmpdir(), 'nexttools-env-home-'));
     try {
-      mkdirSync(join(tempHome, '.myagents'), { recursive: true });
+      mkdirSync(join(tempHome, '.nexttools'), { recursive: true });
       writeFileSync(
-        join(tempHome, '.myagents', 'config.json'),
+        join(tempHome, '.nexttools', 'config.json'),
         JSON.stringify({
           presetCustomModels: {
             'custom-dragon': [{ model: 'claude-opus-4-6', contextLength: 1_000_000 }],
@@ -360,9 +360,9 @@ describe('Claude SDK context window env', () => {
 
   it('uses only the active provider row for context and adopts its later discovery metadata (#516)', () => {
     const prevHome = process.env.HOME;
-    const tempHome = mkdtempSync(join(tmpdir(), 'myagents-env-home-'));
-    const providerDir = join(tempHome, '.myagents', 'providers');
-    const cacheDir = join(tempHome, '.myagents', 'cache');
+    const tempHome = mkdtempSync(join(tmpdir(), 'nexttools-env-home-'));
+    const providerDir = join(tempHome, '.nexttools', 'providers');
+    const cacheDir = join(tempHome, '.nexttools', 'cache');
     const providerPath = join(providerDir, 'amd.json');
     try {
       mkdirSync(providerDir, { recursive: true });

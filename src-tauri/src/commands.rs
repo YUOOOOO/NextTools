@@ -35,7 +35,7 @@ use crate::sidecar::{
 };
 use crate::{ulog_error, ulog_info, ulog_warn};
 
-const NETWORK_PROBE_USER_AGENT: &str = "MyAgents-Network-Probe/1.0";
+const NETWORK_PROBE_USER_AGENT: &str = "NextTools-Network-Probe/1.0";
 const PROXY_CONNECTIVITY_TEST_URL: &str = "https://www.google.com/generate_204";
 
 // ============= Legacy Commands (for backward compatibility) =============
@@ -375,7 +375,7 @@ pub fn cmd_get_platform() -> String {
 }
 
 /// Command: Get or create device ID
-/// Stored in ~/.myagents/device_id to persist across app reinstalls
+/// Stored in ~/.nexttools/device_id to persist across app reinstalls
 /// Only regenerates if the file is deleted by user
 #[tauri::command]
 pub fn cmd_get_device_id() -> Result<String, String> {
@@ -402,7 +402,7 @@ const DEFAULT_BUNDLED_WORKSPACE_TEMPLATE_ID: &str = "mino";
 /// Resolve one immutable workspace template shipped with the current app.
 ///
 /// The bundled template is the only authority for creating a fresh builtin
-/// workspace. A user-owned copy under `~/.myagents/projects/` must never be
+/// workspace. A user-owned copy under `~/.nexttools/projects/` must never be
 /// used as a fallback source because it may already contain private identity,
 /// memory, credentials references, or other user customizations.
 fn resolve_bundled_workspace_template_at(
@@ -436,17 +436,17 @@ fn resolve_bundled_workspace_template<R: Runtime>(
 }
 
 /// Command: Initialize bundled workspace (mino) on first launch
-/// Copies from the immutable app template to ~/.myagents/projects/mino/.
+/// Copies from the immutable app template to ~/.nexttools/projects/mino/.
 /// An existing user-owned workspace is never overwritten.
 #[tauri::command]
 pub fn cmd_initialize_bundled_workspace<R: Runtime>(
     app_handle: AppHandle<R>,
 ) -> Result<InitBundledWorkspaceResult, String> {
     let home_dir = dirs::home_dir().ok_or("Failed to get home dir")?;
-    let mino_dest = home_dir.join(".myagents").join("projects").join("mino");
+    let mino_dest = home_dir.join(".nexttools").join("projects").join("mino");
 
     // NOTE: Path::exists() follows symlinks, so a dangling
-    // ~/.myagents/projects/mino link returns false here and we'd fall
+    // ~/.nexttools/projects/mino link returns false here and we'd fall
     // through to copy_dir_recursive — which fails on EEXIST and surfaces
     // a workspace-init error to the user every launch until they clear
     // the link by hand. Same family as the cpSync crash fixed in
@@ -492,7 +492,7 @@ pub fn cmd_create_bot_workspace<R: Runtime>(
     workspace_name: String,
 ) -> Result<InitBundledWorkspaceResult, String> {
     let home_dir = dirs::home_dir().ok_or("Failed to get home dir")?;
-    let projects_dir = home_dir.join(".myagents").join("projects");
+    let projects_dir = home_dir.join(".nexttools").join("projects");
 
     // Sanitize name: remove @, replace non-alphanumeric (except CJK) with dash, trim
     let sanitized = sanitize_workspace_name(&workspace_name);
@@ -527,11 +527,11 @@ pub fn cmd_create_bot_workspace<R: Runtime>(
 }
 
 /// Command: Remove a workspace directory created by `cmd_create_bot_workspace`.
-/// Safety: only allows deleting directories under `~/.myagents/projects/`.
+/// Safety: only allows deleting directories under `~/.nexttools/projects/`.
 #[tauri::command]
 pub fn cmd_remove_bot_workspace(workspace_path: String) -> Result<(), String> {
     let home_dir = dirs::home_dir().ok_or("Failed to get home dir")?;
-    let projects_dir = home_dir.join(".myagents").join("projects");
+    let projects_dir = home_dir.join(".nexttools").join("projects");
 
     let target = PathBuf::from(&workspace_path);
     // Canonicalize both paths to prevent traversal attacks
@@ -543,7 +543,7 @@ pub fn cmd_remove_bot_workspace(workspace_path: String) -> Result<(), String> {
         .map_err(|e| format!("Failed to resolve workspace path: {}", e))?;
 
     if !canon_target.starts_with(&canon_projects) || canon_target == canon_projects {
-        return Err("Refusing to delete: path is not inside ~/.myagents/projects/".to_string());
+        return Err("Refusing to delete: path is not inside ~/.nexttools/projects/".to_string());
     }
 
     fs::remove_dir_all(&canon_target)
@@ -552,12 +552,12 @@ pub fn cmd_remove_bot_workspace(workspace_path: String) -> Result<(), String> {
     Ok(())
 }
 
-/// Command: Remove a template directory from ~/.myagents/templates/.
-/// Safety: only allows deleting directories under ~/.myagents/templates/.
+/// Command: Remove a template directory from ~/.nexttools/templates/.
+/// Safety: only allows deleting directories under ~/.nexttools/templates/.
 #[tauri::command]
 pub fn cmd_remove_template_folder(template_path: String) -> Result<(), String> {
     let home_dir = dirs::home_dir().ok_or("Failed to get home dir")?;
-    let templates_dir = home_dir.join(".myagents").join("templates");
+    let templates_dir = home_dir.join(".nexttools").join("templates");
 
     if !templates_dir.exists() {
         return Err("Templates directory does not exist".to_string());
@@ -579,7 +579,7 @@ pub fn cmd_remove_template_folder(template_path: String) -> Result<(), String> {
         .map_err(|e| format!("Failed to resolve template path: {}", e))?;
 
     if !canon_target.starts_with(&canon_templates) || canon_target == canon_templates {
-        return Err("Refusing to delete: path is not inside ~/.myagents/templates/".to_string());
+        return Err("Refusing to delete: path is not inside ~/.nexttools/templates/".to_string());
     }
 
     fs::remove_dir_all(&canon_target)
@@ -677,7 +677,7 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
 
 /// Command: Create a workspace from a user template (copy source dir to dest dir).
 /// Reuses copy_dir_recursive which skips .git and node_modules.
-/// Safety: source_path must be under ~/.myagents/templates/.
+/// Safety: source_path must be under ~/.nexttools/templates/.
 /// The dest_path parent must exist; the dest_path itself must NOT exist.
 #[tauri::command]
 pub fn cmd_create_workspace_from_template(
@@ -691,9 +691,9 @@ pub fn cmd_create_workspace_from_template(
         return Err(format!("Template source not found: {}", source_path));
     }
 
-    // Validate source is under ~/.myagents/templates/
+    // Validate source is under ~/.nexttools/templates/
     let home_dir = dirs::home_dir().ok_or("Failed to get home dir")?;
-    let templates_dir = home_dir.join(".myagents").join("templates");
+    let templates_dir = home_dir.join(".nexttools").join("templates");
     if templates_dir.exists() {
         let canon_templates = templates_dir
             .canonicalize()
@@ -702,7 +702,7 @@ pub fn cmd_create_workspace_from_template(
             .canonicalize()
             .map_err(|e| format!("Failed to resolve source path: {}", e))?;
         if !canon_src.starts_with(&canon_templates) {
-            return Err("Source path must be inside ~/.myagents/templates/".to_string());
+            return Err("Source path must be inside ~/.nexttools/templates/".to_string());
         }
     } else {
         return Err("Templates directory does not exist".to_string());
@@ -797,7 +797,7 @@ fn resolve_template_source<R: Runtime>(
             return Err(format!("Template source not found: {}", p));
         }
         let home_dir = dirs::home_dir().ok_or("Failed to get home dir")?;
-        let templates_dir = home_dir.join(".myagents").join("templates");
+        let templates_dir = home_dir.join(".nexttools").join("templates");
         if !templates_dir.exists() {
             return Err("Templates directory does not exist".to_string());
         }
@@ -808,7 +808,7 @@ fn resolve_template_source<R: Runtime>(
             .canonicalize()
             .map_err(|e| format!("Failed to resolve source path: {}", e))?;
         if !canon_src.starts_with(&canon_templates) {
-            return Err("Source path must be inside ~/.myagents/templates/".to_string());
+            return Err("Source path must be inside ~/.nexttools/templates/".to_string());
         }
         // Return canonical path (not the original `src`) — closes the TOCTOU between
         // validation and consumption, since the caller will read from canon_src directly.
@@ -906,7 +906,7 @@ pub fn cmd_apply_template_to_workspace<R: Runtime>(
     Ok(())
 }
 
-/// Command: Copy a local folder into the templates library (~/.myagents/templates/<name>/).
+/// Command: Copy a local folder into the templates library (~/.nexttools/templates/<name>/).
 /// Returns the destination path.
 #[tauri::command]
 pub fn cmd_copy_folder_to_templates(
@@ -919,7 +919,7 @@ pub fn cmd_copy_folder_to_templates(
     }
 
     let home_dir = dirs::home_dir().ok_or("Failed to get home dir")?;
-    let templates_dir = home_dir.join(".myagents").join("templates");
+    let templates_dir = home_dir.join(".nexttools").join("templates");
     fs::create_dir_all(&templates_dir)
         .map_err(|e| format!("Failed to create templates dir: {}", e))?;
 
@@ -956,7 +956,7 @@ pub fn cmd_copy_folder_to_templates(
 
 const ADMIN_AGENT_VERSION: &str = "29";
 
-/// Helper-bundled paths (relative to `~/.myagents/`) that previous versions
+/// Helper-bundled paths (relative to `~/.nexttools/`) that previous versions
 /// shipped but that have since been retired.
 ///
 /// `merge_dir_recursive` is overwrite-only ("never deletes"), so a file
@@ -965,15 +965,15 @@ const ADMIN_AGENT_VERSION: &str = "29";
 /// silently diverge fresh-install from upgrade behavior. Each retire
 /// MUST also append the relative path here so the next sync removes it.
 ///
-/// Once `~/.myagents/.admin-agent-version` has rolled past the version
+/// Once `~/.nexttools/.admin-agent-version` has rolled past the version
 /// that introduced the retire, the entry is harmless to keep (it just
 /// no-ops on absent paths).
 const RETIRED_ADMIN_PATHS: &[&str] = &[
-    // v16: /self-config promoted to global system skill /myagents-cli
+    // v16: /self-config promoted to global system skill /nexttools-cli
     ".claude/skills/self-config",
 ];
 
-/// Merge bundled admin agent files into ~/.myagents/
+/// Merge bundled admin agent files into ~/.nexttools/
 /// Version-gated: only runs when ADMIN_AGENT_VERSION changes.
 #[tauri::command]
 pub async fn cmd_sync_admin_agent<R: Runtime>(app_handle: AppHandle<R>) -> Result<bool, String> {
@@ -984,7 +984,7 @@ pub async fn cmd_sync_admin_agent<R: Runtime>(app_handle: AppHandle<R>) -> Resul
 
 fn sync_admin_agent_blocking<R: Runtime>(app_handle: AppHandle<R>) -> Result<bool, String> {
     let home = dirs::home_dir().ok_or("Home dir not found")?;
-    let dest = home.join(".myagents");
+    let dest = home.join(".nexttools");
 
     // Version gate
     let ver_file = dest.join(".admin-agent-version");
@@ -1000,7 +1000,7 @@ fn sync_admin_agent_blocking<R: Runtime>(app_handle: AppHandle<R>) -> Result<boo
         .path()
         .resource_dir()
         .map_err(|e| format!("Resource dir: {}", e))?;
-    let src = res.join("bundled-agents").join("myagents_helper");
+    let src = res.join("bundled-agents").join("nexttools_helper");
     if !src.exists() {
         return Err(format!("Admin agent not found: {:?}", src));
     }
@@ -1040,7 +1040,7 @@ fn sync_admin_agent_blocking<R: Runtime>(app_handle: AppHandle<R>) -> Result<boo
         }
     }
 
-    // Merge into ~/.myagents/
+    // Merge into ~/.nexttools/
     merge_dir_recursive(&src, &dest).map_err(|e| format!("Merge failed: {}", e))?;
 
     fs::write(&ver_file, ADMIN_AGENT_VERSION)
@@ -1059,7 +1059,7 @@ fn sync_admin_agent_blocking<R: Runtime>(app_handle: AppHandle<R>) -> Result<boo
 //
 // System skills are different: they encode flow-level contracts that
 // must evolve in lockstep with Rust / CLI / shape changes. Example:
-// `/task-implement` used to call `myagents task update-progress <id>
+// `/task-implement` used to call `nexttools task update-progress <id>
 // "..."`; when we removed that CLI in v0.1.69+ the skill had to update
 // in the same release, else existing users' AI calls would fail with
 // "unknown command". The seed-once path can't deliver updates — we
@@ -1088,52 +1088,52 @@ const SYSTEM_SKILLS: &[&str] = &[
     // v51: one product-owned Task discussion workflow replaces the former
     // alignment/executor pair. Ordinary dispatch now hands task.md directly
     // to the Runtime, so execution no longer depends on a Skill name.
-    "myagents-task-alignment",
+    "nexttools-task-alignment",
     // v10: ultra-research removed — not generic enough to ship as system
-    // skill. Existing installs retain the dir at ~/.myagents/skills/
+    // skill. Existing installs retain the dir at ~/.nexttools/skills/
     // ultra-research/ until the user deletes it (no orphan cleanup logic).
     "download-anything",
-    // v52: myagents-cli documents physical local directory/.zip/.skill
+    // v52: nexttools-cli documents physical local directory/.zip/.skill
     // installs and the CLI-owned explicit-relative cwd boundary.
-    // v9: myagents-cli promoted from helper-bundled skill (was at
-    // bundled-agents/myagents_helper/.claude/skills/self-config/) to a
-    // global system skill. Every AI session inside MyAgents — Chat / IM Bot
+    // v9: nexttools-cli promoted from helper-bundled skill (was at
+    // bundled-agents/nexttools_helper/.claude/skills/self-config/) to a
+    // global system skill. Every AI session inside NextTools — Chat / IM Bot
     // / Cron / Helper — should be able to drive the product's own
     // capabilities (cron, task center, MCP, Provider, channels, plugins,
     // skills, Cloud Space, widgets) through the CLI. SKILL.md changes track CLI surface
     // changes, so it must force-overwrite on version bumps.
-    "myagents-cli",
+    "nexttools-cli",
     // v49: progressively disclosed contract for the bundled local document
     // converter. It is required because every Runtime must discover the same
     // App-owned job surface without an always-on prompt section.
-    "myagents-anydoc",
+    "nexttools-anydoc",
     // v54: progressive instructions for the Session-scoped local attachment
     // transcription CLI. Identity stays product-injected; the Skill exposes
     // only the public job and artifact contract.
-    "myagents-speech-recognition",
+    "nexttools-speech-recognition",
     // v53: Task automation documents the stable Agent-facing receipt,
     // idempotent run semantics, and existing result channels. Command
     // Detector protocol remains a progressive reference, not a competing
     // Sensor product entry.
-    "myagents-task-automation",
-    // v35: product-use knowledge shared by every MyAgents session. It owns
+    "nexttools-task-automation",
+    // v35: product-use knowledge shared by every NextTools session. It owns
     // stable user-facing concepts, feature relationships, prerequisites and
-    // expected behaviour; live state/actions stay in myagents-cli and the
+    // expected behaviour; live state/actions stay in nexttools-cli and the
     // helper-local support skill owns diagnosis.
-    "myagents-docs",
+    "nexttools-docs",
     // v18: tool-creator — meta-skill for the CLI tool registry (PRD 0.2.36
     // cli_first_tool_registry). Teaches AI to author standards-compliant
     // Agent-CLI tools (tool.json + entry + readme/--help contract) and
-    // register them via `myagents tool add`. System skill because its
+    // register them via `nexttools tool add`. System skill because its
     // contract must track the registry's server-side validation (800-char
     // description cap, reserved names) in lockstep.
     "tool-creator",
-    // v33: MyAgents memory maintenance skills. These are managed flow
+    // v33: NextTools memory maintenance skills. These are managed flow
     // targets, so their bundled contracts must stay in lockstep with the
     // hidden scheduler, injected-turn prompt, and rule-substrate templates.
-    "myagents-memory-update",
-    "myagents-memory-gardener",
-    "myagents-memory-molt",
+    "nexttools-memory-update",
+    "nexttools-memory-gardener",
+    "nexttools-memory-molt",
     // v50: skill-creator promoted from utility → system skill. Its authoring
     // and evaluation workflow evolves with the bundled scripts, so existing
     // installs must receive updates instead of retaining the seed-once copy.
@@ -1147,12 +1147,12 @@ const SYSTEM_SKILLS: &[&str] = &[
 ];
 
 /// Product-owned system skills whose former independent workflow must not
-/// survive an upgrade. These directories were force-overwritten by MyAgents,
+/// survive an upgrade. These directories were force-overwritten by NextTools,
 /// so removing the exact retired names cannot delete a user-owned skill.
-const RETIRED_SYSTEM_SKILLS: &[&str] = &["myagents-sensor", "task-alignment", "task-implement"];
+const RETIRED_SYSTEM_SKILLS: &[&str] = &["nexttools-sensor", "task-alignment", "task-implement"];
 
 /// Force-sync every system skill from the app bundle to
-/// `~/.myagents/skills/<name>/`. Runs once per `SYSTEM_SKILLS_VERSION`
+/// `~/.nexttools/skills/<name>/`. Runs once per `SYSTEM_SKILLS_VERSION`
 /// bump — idempotent otherwise. User edits to these directories will
 /// be overwritten when the version changes, by design (see module
 /// comment above).
@@ -1190,11 +1190,11 @@ pub(crate) async fn sync_system_skills_for_startup<R: Runtime>(
 
 fn ensure_system_skills_installation_current() -> Result<(), String> {
     let home = dirs::home_dir().ok_or("Home dir not found")?;
-    ensure_system_skills_installation_current_at(&home.join(".myagents"))
+    ensure_system_skills_installation_current_at(&home.join(".nexttools"))
 }
 
-fn ensure_system_skills_installation_current_at(myagents_dir: &Path) -> Result<(), String> {
-    let version_path = myagents_dir.join(".system-skills-version");
+fn ensure_system_skills_installation_current_at(nexttools_dir: &Path) -> Result<(), String> {
+    let version_path = nexttools_dir.join(".system-skills-version");
     let installed_version = fs::read_to_string(&version_path).map_err(|e| {
         format!(
             "system skills are not ready: failed to read {}: {}",
@@ -1210,7 +1210,7 @@ fn ensure_system_skills_installation_current_at(myagents_dir: &Path) -> Result<(
         ));
     }
 
-    let skills_dir = myagents_dir.join("skills");
+    let skills_dir = nexttools_dir.join("skills");
     if !all_installed_system_skills_complete(&skills_dir) {
         return Err(format!(
             "system skills are not ready: one or more required SKILL.md files are missing under {}",
@@ -1228,8 +1228,8 @@ fn ensure_system_skills_installation_current_at(myagents_dir: &Path) -> Result<(
 
 fn sync_system_skills_blocking<R: Runtime>(app_handle: AppHandle<R>) -> Result<bool, String> {
     let home = dirs::home_dir().ok_or("Home dir not found")?;
-    let myagents_dir = home.join(".myagents");
-    let skills_dir = myagents_dir.join("skills");
+    let nexttools_dir = home.join(".nexttools");
+    let skills_dir = nexttools_dir.join("skills");
 
     let res = app_handle
         .path()
@@ -1249,12 +1249,12 @@ fn sync_system_skills_blocking<R: Runtime>(app_handle: AppHandle<R>) -> Result<b
     //
     // The version stamp alone is NOT proof the install is healthy (issue #321):
     // the old destructive sync could write the version after leaving empty
-    // `~/.myagents/skills/<name>/` dirs, freezing that broken state forever.
+    // `~/.nexttools/skills/<name>/` dirs, freezing that broken state forever.
     // Validating the on-disk result here makes the gate self-healing — a frozen
     // or incomplete install re-runs the (now non-destructive) sync regardless of
     // whether the version happened to be bumped. Healthy installs still
     // early-return after the cheap per-skill SKILL.md stat.
-    let ver_file = myagents_dir.join(".system-skills-version");
+    let ver_file = nexttools_dir.join(".system-skills-version");
     if ver_file.exists() {
         let ver = fs::read_to_string(&ver_file).unwrap_or_default();
         if ver.trim() == SYSTEM_SKILLS_VERSION
@@ -1314,7 +1314,7 @@ fn sync_system_skills_blocking<R: Runtime>(app_handle: AppHandle<R>) -> Result<b
     // actually installed. This preserves the existing non-destructive sync
     // guarantee when a bundle is incomplete, while still removing the exact
     // obsolete workflow before the new version stamp is committed.
-    let retired = if skill_dir_is_complete(&skills_dir.join("myagents-task-automation")) {
+    let retired = if skill_dir_is_complete(&skills_dir.join("nexttools-task-automation")) {
         remove_retired_system_skills(&skills_dir)?
     } else {
         Vec::new()
@@ -1323,7 +1323,7 @@ fn sync_system_skills_blocking<R: Runtime>(app_handle: AppHandle<R>) -> Result<b
     // Only advance the version gate when every system skill actually landed.
     // A missing/incomplete bundled source is a packaging defect; freezing the
     // version on a partial sweep would make the broken state permanent (the
-    // old behavior that produced empty `~/.myagents/skills/<name>` dirs on
+    // old behavior that produced empty `~/.nexttools/skills/<name>` dirs on
     // Windows — issue #321). Leaving the version unwritten retries next launch
     // and keeps the warnings above visible.
     let complete =
@@ -1346,7 +1346,7 @@ fn sync_system_skills_blocking<R: Runtime>(app_handle: AppHandle<R>) -> Result<b
 }
 
 /// Outcome of syncing one system skill from the app bundle into
-/// `~/.myagents/skills/`.
+/// `~/.nexttools/skills/`.
 enum SystemSkillSync {
     /// Source was valid and copied over `dst`.
     Synced,
@@ -1361,7 +1361,7 @@ enum SystemSkillSync {
 /// one file every SKILL.md-gated scanner (Settings panel, slash picker, SDK
 /// runtime) requires to recognize a skill. An empty / SKILL.md-less directory
 /// is a packaging defect, not a skill. Applies equally to a bundled source dir
-/// and an installed `~/.myagents/skills/<name>` dir.
+/// and an installed `~/.nexttools/skills/<name>` dir.
 fn skill_dir_is_complete(dir: &Path) -> bool {
     if dir.file_name().is_some_and(|name| name == "cuse") {
         return crate::cuse_skill::complete(dir);
@@ -1435,7 +1435,7 @@ fn sync_one_system_skill(src: &Path, dst: &Path) -> Result<SystemSkillSync, Stri
     // SYSTEM_SKILLS_VERSION bumps mean "the whole skill snapshot is new".
     //
     // Path::exists() follows symlinks → returns false for broken links, so a
-    // dangling `~/.myagents/skills/<name>` left by the user (e.g. pointing at
+    // dangling `~/.nexttools/skills/<name>` left by the user (e.g. pointing at
     // a moved repo) would slip past and then trip `fs::create_dir_all` in
     // `merge_dir_recursive` with EEXIST, failing the whole startup sync.
     // symlink_metadata() does NOT follow, so it's the right probe for "is
@@ -1606,65 +1606,65 @@ mod system_skills_tests {
         assert_eq!(SYSTEM_SKILLS_VERSION, "60");
         assert!(SYSTEM_SKILLS.contains(&"cuse"));
         assert!(!REQUIRED_SYSTEM_SKILLS.contains(&"cuse"));
-        assert!(SYSTEM_SKILLS.contains(&"myagents-task-alignment"));
+        assert!(SYSTEM_SKILLS.contains(&"nexttools-task-alignment"));
         assert!(RETIRED_SYSTEM_SKILLS.contains(&"task-alignment"));
         assert!(RETIRED_SYSTEM_SKILLS.contains(&"task-implement"));
         assert!(SYSTEM_SKILLS.contains(&"skill-creator"));
-        let bundled = include_str!("../../bundled-skills/myagents-cli/SKILL.md");
-        let anydoc = include_str!("../../bundled-skills/myagents-anydoc/SKILL.md");
-        let speech = include_str!("../../bundled-skills/myagents-speech-recognition/SKILL.md");
+        let bundled = include_str!("../../bundled-skills/nexttools-cli/SKILL.md");
+        let anydoc = include_str!("../../bundled-skills/nexttools-anydoc/SKILL.md");
+        let speech = include_str!("../../bundled-skills/nexttools-speech-recognition/SKILL.md");
         let description = bundled
             .split("---")
             .nth(1)
-            .expect("myagents-cli frontmatter");
+            .expect("nexttools-cli frontmatter");
         assert!(!description.to_ascii_lowercase().contains("anydoc"));
         assert!(bundled.contains("AnyDoc"));
-        assert!(bundled.contains("myagents anydoc --help"));
-        assert!(bundled.contains("/myagents-anydoc"));
-        assert!(anydoc.contains("myagents anydoc convert --file <input>"));
-        assert!(bundled.contains("/myagents-speech-recognition"));
-        assert!(speech.contains("myagents speech transcribe --file <input>"));
+        assert!(bundled.contains("nexttools anydoc --help"));
+        assert!(bundled.contains("/nexttools-anydoc"));
+        assert!(anydoc.contains("nexttools anydoc convert --file <input>"));
+        assert!(bundled.contains("/nexttools-speech-recognition"));
+        assert!(speech.contains("nexttools speech transcribe --file <input>"));
         assert!(!speech.contains("--session-id"));
-        assert!(bundled.contains("myagents space list --json"));
-        assert!(bundled.contains("myagents space whoami --space <slug> --json"));
-        assert!(bundled.contains("myagents space goal list --space <slug> --json"));
-        assert!(bundled.contains("myagents space issue update <issueId>"));
+        assert!(bundled.contains("nexttools space list --json"));
+        assert!(bundled.contains("nexttools space whoami --space <slug> --json"));
+        assert!(bundled.contains("nexttools space goal list --space <slug> --json"));
+        assert!(bundled.contains("nexttools space issue update <issueId>"));
         assert!(bundled.contains("--clear-goal"));
         assert!(bundled.contains("只有精确 leaf help 明确声明支持的命令才使用 `--dry-run`"));
         assert!(bundled.contains("所有 Space 业务命令都必须带 `--space <slug>`"));
-        assert!(bundled.contains("myagents goal create --objective-file goal-objective.txt"));
+        assert!(bundled.contains("nexttools goal create --objective-file goal-objective.txt"));
         assert!(bundled.contains("workspace 或系统 temp 均可"));
         assert!(bundled.contains("--max-executions <正整数>"));
-        assert!(bundled.contains("myagents-task-automation"));
-        assert!(bundled.contains("myagents task start <taskId>"));
-        assert!(bundled.contains("myagents agent current --json"));
+        assert!(bundled.contains("nexttools-task-automation"));
+        assert!(bundled.contains("nexttools task start <taskId>"));
+        assert!(bundled.contains("nexttools agent current --json"));
         assert!(bundled.contains("enabled/runtime/runtimeConfig/providerId/model/permissionMode"));
         assert!(bundled.contains("--providerId X --model X"));
         assert!(bundled.contains("--query X --limit N"));
-        assert!(bundled.contains("myagents record create"));
+        assert!(bundled.contains("nexttools record create"));
         assert!(bundled.contains("--sourceRecordId X"));
-        assert!(!bundled.contains("myagents thought create '...'"));
+        assert!(!bundled.contains("nexttools thought create '...'"));
         assert!(!bundled.contains("--sourceThoughtId X"));
         assert!(bundled.contains("没有 30 天恢复或 undelete 承诺"));
-        assert!(!bundled.contains("myagents-sensor"));
+        assert!(!bundled.contains("nexttools-sensor"));
 
-        let automation = include_str!("../../bundled-skills/myagents-task-automation/SKILL.md");
+        let automation = include_str!("../../bundled-skills/nexttools-task-automation/SKILL.md");
         assert!(automation.contains("Task 与立即执行/Record/Goal 的边界"));
         assert!(!automation.contains("Task 与立即执行/Thought/Goal 的边界"));
         assert!(automation.contains("references/command-detector.md"));
         assert!(automation.contains("--startAt"));
         assert!(automation.contains("默认在 `run` 后约 2 秒"));
         assert!(automation.contains("没有 30 天恢复承诺"));
-        assert!(automation.contains("myagents task readme"));
+        assert!(automation.contains("nexttools task readme"));
         assert!(automation.contains("--maxExecutions 1"));
         assert!(automation.contains("`data.receipt`"));
         assert!(automation.contains("`changed: false`"));
-        assert!(SYSTEM_SKILLS.contains(&"myagents-task-automation"));
+        assert!(SYSTEM_SKILLS.contains(&"nexttools-task-automation"));
 
-        let memory_update = include_str!("../../bundled-skills/myagents-memory-update/SKILL.md");
-        assert!(memory_update.contains("author: MyAgents"));
+        let memory_update = include_str!("../../bundled-skills/nexttools-memory-update/SKILL.md");
+        assert!(memory_update.contains("author: NextTools"));
         assert!(memory_update
-            .contains("仅当系统或用户明确指定完整名称 `myagents-memory-update` 时使用"));
+            .contains("仅当系统或用户明确指定完整名称 `nexttools-memory-update` 时使用"));
         assert!(memory_update.contains("不要根据任务语义或相似表述自行触发"));
         assert!(memory_update.contains("错误的长期记忆通常比暂时缺失更有害"));
         assert!(memory_update.contains("无法说明未来判断或行动差异的信息，不写"));
@@ -1673,27 +1673,27 @@ mod system_skills_tests {
         assert!(memory_update.contains("不从已有 topic 名称或工作区结构猜测事件归属"));
         assert!(memory_update.contains("不要落盘“未升级偏好”"));
         assert!(memory_update.contains("commit 后 push 当前分支"));
-        assert!(SYSTEM_SKILLS.contains(&"myagents-memory-update"));
+        assert!(SYSTEM_SKILLS.contains(&"nexttools-memory-update"));
 
-        let gardener = include_str!("../../bundled-skills/myagents-memory-gardener/SKILL.md");
+        let gardener = include_str!("../../bundled-skills/nexttools-memory-gardener/SKILL.md");
         assert!(gardener.contains("已有的未提交改动不阻断记忆维护"));
         assert!(gardener.contains("只暂存并提交本次记忆维护产生的改动"));
         assert!(!gardener.contains("存在非本次任务的未提交改动时，只做只读体检"));
 
-        let product_docs = include_str!("../../bundled-skills/myagents-docs/SKILL.md");
-        assert!(product_docs.contains("name: myagents-docs"));
-        assert!(product_docs.contains("author: MyAgents"));
+        let product_docs = include_str!("../../bundled-skills/nexttools-docs/SKILL.md");
+        assert!(product_docs.contains("name: nexttools-docs"));
+        assert!(product_docs.contains("author: NextTools"));
         assert!(product_docs.contains("它面向软件使用而非源码开发"));
-        assert!(product_docs.contains("随后加载 `/myagents-cli`"));
+        assert!(product_docs.contains("随后加载 `/nexttools-cli`"));
         assert!(product_docs.contains("在内置小助理里加载 `/support`"));
         assert!(product_docs.contains("Record / Task / Cron / Goal"));
-        assert!(SYSTEM_SKILLS.contains(&"myagents-docs"));
+        assert!(SYSTEM_SKILLS.contains(&"nexttools-docs"));
 
         for content in [
-            include_str!("../../bundled-skills/myagents-memory-gardener/SKILL.md"),
-            include_str!("../../bundled-skills/myagents-memory-molt/SKILL.md"),
+            include_str!("../../bundled-skills/nexttools-memory-gardener/SKILL.md"),
+            include_str!("../../bundled-skills/nexttools-memory-molt/SKILL.md"),
         ] {
-            assert!(content.contains("author: MyAgents"));
+            assert!(content.contains("author: NextTools"));
         }
     }
 
@@ -1711,7 +1711,7 @@ mod system_skills_tests {
     fn system_skill_sync_removes_only_the_retired_product_owned_sensor_skill() {
         let tmp = tempfile::tempdir().unwrap();
         let skills = tmp.path().join("skills");
-        let retired = skills.join("myagents-sensor");
+        let retired = skills.join("nexttools-sensor");
         let user = skills.join("user-sensor-helper");
         fs::create_dir_all(&retired).unwrap();
         fs::create_dir_all(&user).unwrap();
@@ -1721,7 +1721,7 @@ mod system_skills_tests {
         assert!(!retired_system_skills_absent(&skills));
         assert_eq!(
             remove_retired_system_skills(&skills).unwrap(),
-            vec!["myagents-sensor"]
+            vec!["nexttools-sensor"]
         );
         assert!(retired_system_skills_absent(&skills));
         assert!(!retired.exists());
@@ -1729,43 +1729,43 @@ mod system_skills_tests {
     }
 
     #[test]
-    fn myagents_authored_bundle_frontmatter_uses_standard_metadata_map() {
+    fn nexttools_authored_bundle_frontmatter_uses_standard_metadata_map() {
         for (name, content) in [
             (
                 "download-anything",
                 include_str!("../../bundled-skills/download-anything/SKILL.md"),
             ),
             (
-                "myagents-cli",
-                include_str!("../../bundled-skills/myagents-cli/SKILL.md"),
+                "nexttools-cli",
+                include_str!("../../bundled-skills/nexttools-cli/SKILL.md"),
             ),
             (
-                "myagents-docs",
-                include_str!("../../bundled-skills/myagents-docs/SKILL.md"),
+                "nexttools-docs",
+                include_str!("../../bundled-skills/nexttools-docs/SKILL.md"),
             ),
             (
-                "myagents-memory-gardener",
-                include_str!("../../bundled-skills/myagents-memory-gardener/SKILL.md"),
+                "nexttools-memory-gardener",
+                include_str!("../../bundled-skills/nexttools-memory-gardener/SKILL.md"),
             ),
             (
-                "myagents-memory-molt",
-                include_str!("../../bundled-skills/myagents-memory-molt/SKILL.md"),
+                "nexttools-memory-molt",
+                include_str!("../../bundled-skills/nexttools-memory-molt/SKILL.md"),
             ),
             (
-                "myagents-memory-update",
-                include_str!("../../bundled-skills/myagents-memory-update/SKILL.md"),
+                "nexttools-memory-update",
+                include_str!("../../bundled-skills/nexttools-memory-update/SKILL.md"),
             ),
             (
-                "myagents-task-automation",
-                include_str!("../../bundled-skills/myagents-task-automation/SKILL.md"),
+                "nexttools-task-automation",
+                include_str!("../../bundled-skills/nexttools-task-automation/SKILL.md"),
             ),
             (
                 "prompt-writer",
                 include_str!("../../bundled-skills/prompt-writer/SKILL.md"),
             ),
             (
-                "myagents-task-alignment",
-                include_str!("../../bundled-skills/myagents-task-alignment/SKILL.md"),
+                "nexttools-task-alignment",
+                include_str!("../../bundled-skills/nexttools-task-alignment/SKILL.md"),
             ),
         ] {
             let yaml = content
@@ -1790,7 +1790,7 @@ mod system_skills_tests {
                 metadata
                     .get(&serde_yaml::Value::String("author".into()))
                     .and_then(serde_yaml::Value::as_str),
-                Some("MyAgents"),
+                Some("NextTools"),
                 "{name} must publish metadata.author"
             );
         }
@@ -1799,19 +1799,19 @@ mod system_skills_tests {
     #[test]
     fn helper_routes_product_knowledge_diagnosis_and_tool_install() {
         assert_eq!(ADMIN_AGENT_VERSION, "29");
-        let helper = include_str!("../../bundled-agents/myagents_helper/CLAUDE.md");
+        let helper = include_str!("../../bundled-agents/nexttools_helper/CLAUDE.md");
         let support =
-            include_str!("../../bundled-agents/myagents_helper/.claude/skills/support/SKILL.md");
+            include_str!("../../bundled-agents/nexttools_helper/.claude/skills/support/SKILL.md");
         let tool_install = include_str!(
-            "../../bundled-agents/myagents_helper/.claude/skills/tool-install/SKILL.md"
+            "../../bundled-agents/nexttools_helper/.claude/skills/tool-install/SKILL.md"
         );
-        assert!(helper.contains("`/myagents-docs`"));
-        assert!(helper.contains("`/myagents-cli`"));
+        assert!(helper.contains("`/nexttools-docs`"));
+        assert!(helper.contains("`/nexttools-cli`"));
         assert!(helper.contains("`/support`"));
         assert!(helper.contains("`/tool-install`"));
-        assert!(support.contains("先用 `/myagents-docs` 确认正确产品预期"));
-        assert!(support.contains("不读取 `~/.myagents/credentials/`"));
-        assert!(tool_install.contains("MYAGENTS_NPM_GLOBAL_PREFIX"));
+        assert!(support.contains("先用 `/nexttools-docs` 确认正确产品预期"));
+        assert!(support.contains("不读取 `~/.nexttools/credentials/`"));
+        assert!(tool_install.contains("NEXTTOOLS_NPM_GLOBAL_PREFIX"));
         assert!(tool_install.contains("不写 Agent-CLI Registry"));
     }
 
@@ -1855,15 +1855,15 @@ mod system_skills_tests {
             }
         }
 
-        assert_reference_closure("bundled-skills/myagents-docs");
-        assert_reference_closure("bundled-skills/myagents-task-automation");
-        assert_reference_closure("bundled-agents/myagents_helper/.claude/skills/support");
+        assert_reference_closure("bundled-skills/nexttools-docs");
+        assert_reference_closure("bundled-skills/nexttools-task-automation");
+        assert_reference_closure("bundled-agents/nexttools_helper/.claude/skills/support");
 
         let redactor_cli = include_str!(
-            "../../bundled-agents/myagents_helper/.claude/skills/support/scripts/redact-log-output.mjs"
+            "../../bundled-agents/nexttools_helper/.claude/skills/support/scripts/redact-log-output.mjs"
         );
         let redactor_core = include_str!(
-            "../../bundled-agents/myagents_helper/.claude/skills/support/scripts/redact-log-core.mjs"
+            "../../bundled-agents/nexttools_helper/.claude/skills/support/scripts/redact-log-core.mjs"
         );
         assert!(redactor_cli.contains("./redact-log-core.mjs"));
         assert!(redactor_cli.contains("runCli().catch"));
@@ -1902,16 +1902,16 @@ mod system_skills_tests {
     fn all_memory_skill_descriptions_require_the_exact_full_name() {
         for (name, content) in [
             (
-                "myagents-memory-update",
-                include_str!("../../bundled-skills/myagents-memory-update/SKILL.md"),
+                "nexttools-memory-update",
+                include_str!("../../bundled-skills/nexttools-memory-update/SKILL.md"),
             ),
             (
-                "myagents-memory-gardener",
-                include_str!("../../bundled-skills/myagents-memory-gardener/SKILL.md"),
+                "nexttools-memory-gardener",
+                include_str!("../../bundled-skills/nexttools-memory-gardener/SKILL.md"),
             ),
             (
-                "myagents-memory-molt",
-                include_str!("../../bundled-skills/myagents-memory-molt/SKILL.md"),
+                "nexttools-memory-molt",
+                include_str!("../../bundled-skills/nexttools-memory-molt/SKILL.md"),
             ),
         ] {
             assert!(
@@ -1940,8 +1940,8 @@ mod system_skills_tests {
     #[test]
     fn sync_readiness_requires_current_version_and_complete_snapshot() {
         let tmp = tempfile::tempdir().unwrap();
-        let myagents_dir = tmp.path();
-        let skills_dir = myagents_dir.join("skills");
+        let nexttools_dir = tmp.path();
+        let skills_dir = nexttools_dir.join("skills");
         for name in SYSTEM_SKILLS {
             let dir = skills_dir.join(name);
             fs::create_dir_all(&dir).unwrap();
@@ -1952,23 +1952,23 @@ mod system_skills_tests {
         }
 
         fs::write(
-            myagents_dir.join(".system-skills-version"),
+            nexttools_dir.join(".system-skills-version"),
             SYSTEM_SKILLS_VERSION,
         )
         .unwrap();
-        ensure_system_skills_installation_current_at(myagents_dir)
+        ensure_system_skills_installation_current_at(nexttools_dir)
             .expect("current complete snapshot is ready");
 
-        fs::write(myagents_dir.join(".system-skills-version"), "32").unwrap();
-        assert!(ensure_system_skills_installation_current_at(myagents_dir).is_err());
+        fs::write(nexttools_dir.join(".system-skills-version"), "32").unwrap();
+        assert!(ensure_system_skills_installation_current_at(nexttools_dir).is_err());
 
         fs::write(
-            myagents_dir.join(".system-skills-version"),
+            nexttools_dir.join(".system-skills-version"),
             SYSTEM_SKILLS_VERSION,
         )
         .unwrap();
-        fs::remove_file(skills_dir.join("myagents-memory-update").join("SKILL.md")).unwrap();
-        assert!(ensure_system_skills_installation_current_at(myagents_dir).is_err());
+        fs::remove_file(skills_dir.join("nexttools-memory-update").join("SKILL.md")).unwrap();
+        assert!(ensure_system_skills_installation_current_at(nexttools_dir).is_err());
     }
 
     #[test]
@@ -2006,9 +2006,9 @@ mod system_skills_tests {
     #[test]
     #[ignore = "explicit native acceptance against a prepared Cuse bundle; no user directories"]
     fn cuse_prepared_bundle_native_smoke() {
-        let source = std::env::var_os("MYAGENTS_CUSE_SMOKE_SOURCE")
+        let source = std::env::var_os("NEXTTOOLS_CUSE_SMOKE_SOURCE")
             .map(std::path::PathBuf::from)
-            .expect("set MYAGENTS_CUSE_SMOKE_SOURCE to the prepared cuse directory");
+            .expect("set NEXTTOOLS_CUSE_SMOKE_SOURCE to the prepared cuse directory");
         let tmp = tempfile::tempdir().unwrap();
         let installed = tmp.path().join("cuse");
         assert!(matches!(
@@ -2165,8 +2165,8 @@ const CREDENTIAL_PATHS: &[&str] = &[
     ".kube",
     ".docker",
     ".config/op",
-    ".myagents/codex/auth.json",
-    ".myagents/credentials",
+    ".nexttools/codex/auth.json",
+    ".nexttools/credentials",
 ];
 #[cfg(target_os = "macos")]
 const MAC_SENSITIVE_SUBDIRS: &[&str] = &[
@@ -2368,19 +2368,19 @@ mod path_safety_crosscheck_tests {
     fn managed_codex_blacklist_protects_only_auth_file() {
         let home = Path::new(env!("CARGO_MANIFEST_DIR")).join("target/controlled-test-home");
         assert!(validate_file_path_with_home(
-            &home.join(".myagents/codex/auth.json").to_string_lossy(),
+            &home.join(".nexttools/codex/auth.json").to_string_lossy(),
             &home,
         )
         .is_err());
         assert!(validate_file_path_with_home(
             &home
-                .join(".myagents/codex/generated_images/thread/call.png")
+                .join(".nexttools/codex/generated_images/thread/call.png")
                 .to_string_lossy(),
             &home,
         )
         .is_ok());
         assert!(validate_file_path_with_home(
-            &home.join(".myagents/codex/config.toml").to_string_lossy(),
+            &home.join(".nexttools/codex/config.toml").to_string_lossy(),
             &home,
         )
         .is_ok());
@@ -2396,7 +2396,7 @@ mod path_safety_crosscheck_tests {
             .unwrap();
         let home = tmp.path().join("home");
         let src = tmp.path().join("template");
-        let dst = home.join(".myagents/codex");
+        let dst = home.join(".nexttools/codex");
         fs::create_dir_all(&src).unwrap();
         fs::create_dir_all(&dst).unwrap();
         fs::write(src.join("auth.json"), "replacement").unwrap();
@@ -2491,7 +2491,7 @@ mod path_safety_crosscheck_tests {
 }
 
 /// Read a workspace text file. Returns content if exists, null if not.
-/// Bypasses Tauri fs plugin scope (which only covers ~/.myagents).
+/// Bypasses Tauri fs plugin scope (which only covers ~/.nexttools).
 #[tauri::command]
 pub async fn cmd_read_workspace_file(path: String) -> Result<Option<String>, String> {
     let resolved = validate_file_path(&path)?;
@@ -2503,7 +2503,7 @@ pub async fn cmd_read_workspace_file(path: String) -> Result<Option<String>, Str
 }
 
 /// Write content to a workspace text file, creating parent directories if needed.
-/// Bypasses Tauri fs plugin scope (which only covers ~/.myagents).
+/// Bypasses Tauri fs plugin scope (which only covers ~/.nexttools).
 #[tauri::command]
 pub async fn cmd_write_workspace_file(path: String, content: String) -> Result<(), String> {
     let resolved = validate_file_path(&path)?;
@@ -2518,7 +2518,7 @@ pub async fn cmd_write_workspace_file(path: String, content: String) -> Result<(
 }
 
 /// Delete a workspace file. Returns true if deleted, false if not found.
-/// Bypasses Tauri fs plugin scope (which only covers ~/.myagents).
+/// Bypasses Tauri fs plugin scope (which only covers ~/.nexttools).
 #[tauri::command]
 pub async fn cmd_delete_workspace_file(path: String) -> Result<bool, String> {
     let resolved = validate_file_path(&path)?;
@@ -2603,7 +2603,7 @@ pub async fn cmd_wecom_qr_generate() -> Result<WecomQrGenerateResult, String> {
         3
     };
     let url = format!(
-        "https://work.weixin.qq.com/ai/qc/generate?source=myagents&plat={}",
+        "https://work.weixin.qq.com/ai/qc/generate?source=nexttools&plat={}",
         plat
     );
 
@@ -3571,7 +3571,7 @@ fn json_string_at<'a>(value: &'a serde_json::Value, path: &[&str]) -> Option<&'a
 }
 
 fn detect_dsh_runtime(resource_dir: Option<&Path>) -> RuntimeDetectionResult {
-    let lock = serde_json::from_str::<serde_json::Value>(env!("MYAGENTS_DSH_EFFECTIVE_LOCK_JSON"));
+    let lock = serde_json::from_str::<serde_json::Value>(env!("NEXTTOOLS_DSH_EFFECTIVE_LOCK_JSON"));
     let Ok(lock) = lock else {
         return RuntimeDetectionResult {
             installed: false,

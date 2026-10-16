@@ -3,7 +3,7 @@ import { buildFallbackPath, getFallbackPaths, mergeSearchPaths } from './shell';
 import pathCases from '../../shared/fixtures/runtime-search-path.json';
 
 describe('external runtime shell PATH fallback', () => {
-  it('includes MyAgents-managed CLI locations on Windows', () => {
+  it('includes NextTools-managed CLI locations on Windows', () => {
     const env = {
       USERPROFILE: 'C:\\Users\\tester',
       LOCALAPPDATA: 'C:\\Users\\tester\\AppData\\Local',
@@ -16,19 +16,19 @@ describe('external runtime shell PATH fallback', () => {
     const paths = getFallbackPaths({
       platform: 'win32',
       env,
-      bundledNodeDir: 'C:\\Users\\tester\\AppData\\Local\\MyAgents\\nodejs',
+      bundledNodeDir: 'C:\\Users\\tester\\AppData\\Local\\NextTools\\nodejs',
     });
 
     expect(paths).toContain(
-      'C:\\Users\\tester\\AppData\\Local\\MyAgents\\nodejs',
+      'C:\\Users\\tester\\AppData\\Local\\NextTools\\nodejs',
     );
-    expect(paths).toContain('C:\\Users\\tester\\.myagents\\npm-global');
-    expect(paths).toContain('C:\\Users\\tester\\.myagents\\bin');
-    expect(paths.indexOf('C:\\Users\\tester\\.myagents\\bin')).toBeLessThan(
+    expect(paths).toContain('C:\\Users\\tester\\.nexttools\\npm-global');
+    expect(paths).toContain('C:\\Users\\tester\\.nexttools\\bin');
+    expect(paths.indexOf('C:\\Users\\tester\\.nexttools\\bin')).toBeLessThan(
       paths.indexOf('C:\\Users\\tester\\AppData\\Roaming\\npm'),
     );
-    expect(paths.indexOf('C:\\Users\\tester\\.myagents\\bin')).toBeLessThan(
-      paths.indexOf('C:\\Users\\tester\\.myagents\\npm-global'),
+    expect(paths.indexOf('C:\\Users\\tester\\.nexttools\\bin')).toBeLessThan(
+      paths.indexOf('C:\\Users\\tester\\.nexttools\\npm-global'),
     );
   });
 
@@ -40,11 +40,11 @@ describe('external runtime shell PATH fallback', () => {
         LOCALAPPDATA: 'C:\\Users\\tester\\AppData\\Local',
         Path: 'C:\\Windows\\System32',
       },
-      bundledNodeDir: 'C:\\Users\\tester\\AppData\\Local\\MyAgents\\nodejs',
+      bundledNodeDir: 'C:\\Users\\tester\\AppData\\Local\\NextTools\\nodejs',
     });
 
     expect(
-      fallback.indexOf('C:\\Users\\tester\\AppData\\Local\\MyAgents\\nodejs'),
+      fallback.indexOf('C:\\Users\\tester\\AppData\\Local\\NextTools\\nodejs'),
     ).toBeGreaterThan(fallback.indexOf('C:\\Windows\\System32'));
   });
 
@@ -53,15 +53,15 @@ describe('external runtime shell PATH fallback', () => {
       platform: 'darwin',
       env: { HOME: '/Users/tester', PATH: '/usr/bin' },
       bundledNodeDir:
-        '/Applications/MyAgents.app/Contents/Resources/nodejs/bin',
+        '/Applications/NextTools.app/Contents/Resources/nodejs/bin',
       exists: () => false,
     });
 
-    expect(paths).toContain('/Users/tester/.myagents/npm-global/bin');
-    expect(paths).toContain('/Users/tester/.myagents/bin');
+    expect(paths).toContain('/Users/tester/.nexttools/npm-global/bin');
+    expect(paths).toContain('/Users/tester/.nexttools/bin');
     expect(
-      paths.indexOf('/Users/tester/.myagents/bin'),
-    ).toBeLessThan(paths.indexOf('/Users/tester/.myagents/npm-global/bin'));
+      paths.indexOf('/Users/tester/.nexttools/bin'),
+    ).toBeLessThan(paths.indexOf('/Users/tester/.nexttools/npm-global/bin'));
   });
 });
 

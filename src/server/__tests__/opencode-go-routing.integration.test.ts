@@ -3,12 +3,12 @@ import { mkdirSync, rmSync } from 'node:fs';
 import { materializeProviderRouteEnv, type AdminAppConfig } from '../utils/admin-config';
 import { providerEnvEqual } from '../builtin-session/config';
 
-const scratch = vi.hoisted(() => ({ home: `/tmp/myagents-go-route-${process.pid}-${Date.now()}` }));
+const scratch = vi.hoisted(() => ({ home: `/tmp/nexttools-go-route-${process.pid}-${Date.now()}` }));
 vi.mock('../utils/platform', async importOriginal => ({
   ...(await importOriginal<typeof import('../utils/platform')>()),
   getHomeDirOrNull: () => scratch.home,
 }));
-beforeAll(() => mkdirSync(`${scratch.home}/.myagents`, { recursive: true }));
+beforeAll(() => mkdirSync(`${scratch.home}/.nexttools`, { recursive: true }));
 afterAll(() => rmSync(scratch.home, { recursive: true, force: true }));
 
 const config: AdminAppConfig = {

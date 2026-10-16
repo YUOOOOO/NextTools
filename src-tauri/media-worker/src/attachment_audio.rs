@@ -1,7 +1,7 @@
 //! Bounded adapter from the product's attachment whitelist to mature media crates.
 //!
 //! Symphonia owns container probing, demuxing, and codec decoding. Rubato owns
-//! sample-rate conversion. This module only applies MyAgents' container/codec
+//! sample-rate conversion. This module only applies NextTools' container/codec
 //! admission table, resource limits, mono projection, and stable 16 kHz sample
 //! timeline.
 

@@ -141,7 +141,7 @@ export default function WorkspaceBasicsSection({ project, agent, agentDir }: Wor
       const label = runtime === 'claude-code' ? 'Claude Code'
         : runtime === 'dsh' ? 'DSH'
         : runtime === 'codex' ? 'Codex'
-        : 'MyAgents';
+        : 'NextTools';
       toast.success(t('agentSettings.basics.runtimeChanged', { label }));
     } catch (err) {
       console.error('[runtime] Failed to save runtime:', err);
@@ -432,23 +432,23 @@ export default function WorkspaceBasicsSection({ project, agent, agentDir }: Wor
               Only relevant when the agent runs an external CLI (Codex / CC),
               so hidden for builtin. */}
           {usesExternalCliConfiguration && agent && (() => {
-            // Read current policy; default to 'myagents' for backwards compat.
+            // Read current policy; default to 'nexttools' for backwards compat.
             // runtimeConfig is on AgentConfig as a free-form record — keep the
             // narrow `as` cast so we don't expand its public schema unnecessarily.
             // Legacy disk values (the removed `'direct'` from 0.2.16 dev) fall
-            // through the literal narrowing and read as default `'myagents'`,
+            // through the literal narrowing and read as default `'nexttools'`,
             // matching the server-side `resolveAgentEnvPolicy` validator.
             const rc = (agent.runtimeConfig as Record<string, unknown> | undefined) ?? {};
             const rawPolicy = (rc.envPolicy as { proxy?: unknown } | undefined)?.proxy;
-            const proxyMode: 'myagents' | 'terminal' =
-              rawPolicy === 'terminal' ? 'terminal' : 'myagents';
+            const proxyMode: 'nexttools' | 'terminal' =
+              rawPolicy === 'terminal' ? 'terminal' : 'nexttools';
 
-            const onSelect = (next: 'myagents' | 'terminal') => {
+            const onSelect = (next: 'nexttools' | 'terminal') => {
               void patchAgentConfig(agent.id, { runtimeConfigPatch: { envPolicy: { proxy: next } } });
             };
 
             const radio = (
-              value: 'myagents' | 'terminal',
+              value: 'nexttools' | 'terminal',
               label: string,
               hint: string,
             ) => (
@@ -479,7 +479,7 @@ export default function WorkspaceBasicsSection({ project, agent, agentDir }: Wor
               <div className="flex items-start gap-3">
                 <label className="w-16 shrink-0 pt-2 text-sm text-[var(--ink-muted)]">{t('agentSettings.basics.networkProxy')}</label>
                 <div className="flex-1 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {radio('myagents', t('agentSettings.basics.proxyMyAgents'), t('agentSettings.basics.proxyMyAgentsHint'))}
+                  {radio('nexttools', t('agentSettings.basics.proxyNextTools'), t('agentSettings.basics.proxyNextToolsHint'))}
                   {radio('terminal', t('agentSettings.basics.proxyTerminal'), t('agentSettings.basics.proxyTerminalHint'))}
                 </div>
               </div>

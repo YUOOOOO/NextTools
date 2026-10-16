@@ -52,7 +52,7 @@ struct CrashRetentionResult {
 /// Start the one application-lifetime owner. The first pass handles upgrade
 /// backlog even if no Global or Session Sidecar is ever started.
 pub fn start_crash_artifact_retention_owner() {
-    let Some(data_dir) = crate::app_dirs::myagents_data_dir() else {
+    let Some(data_dir) = crate::app_dirs::nexttools_data_dir() else {
         ulog_warn!("[crash-retention] Home directory unavailable; retention disabled");
         return;
     };

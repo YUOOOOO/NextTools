@@ -46,7 +46,7 @@ pub fn verify_bundle(app_version: &str) {
         signature,
         "bundled CLIProxy manifest",
     )
-    .expect("CLIProxy bundle must have a valid MyAgents resource signature");
+    .expect("CLIProxy bundle must have a valid NextTools resource signature");
     let manifest: serde_json::Value =
         serde_json::from_slice(&bytes).expect("CLIProxy manifest JSON");
     let source: serde_json::Value =

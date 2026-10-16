@@ -8,7 +8,7 @@ use std::{path::Path, process::Stdio, time::Duration};
 #[tokio::test]
 #[ignore = "Requires an explicitly selected source-verified native CLIProxy executable; no account or browser"]
 async fn native_process_management_contract() {
-    let executable = std::env::var("MYAGENTS_CLIPROXY_SMOKE_EXECUTABLE")
+    let executable = std::env::var("NEXTTOOLS_CLIPROXY_SMOKE_EXECUTABLE")
         .expect("Set the verified native executable path");
     let scratch = tempfile::tempdir().unwrap();
     let (_cancel, cancelled) = tokio::sync::watch::channel(false);
@@ -43,8 +43,8 @@ async fn native_process_management_contract() {
 #[tokio::test]
 #[ignore = "Opens the system browser and requires an explicitly selected real Google account"]
 async fn native_account_sdk_tool_and_history_contract() {
-    let executable = std::env::var("MYAGENTS_CLIPROXY_SMOKE_EXECUTABLE")
-        .expect("Set MYAGENTS_CLIPROXY_SMOKE_EXECUTABLE to the source-verified upstream binary");
+    let executable = std::env::var("NEXTTOOLS_CLIPROXY_SMOKE_EXECUTABLE")
+        .expect("Set NEXTTOOLS_CLIPROXY_SMOKE_EXECUTABLE to the source-verified upstream binary");
     let scratch = tempfile::tempdir().unwrap();
     let callback = callback::Receiver::bind().await.unwrap();
     let (_cancel, cancelled) = tokio::sync::watch::channel(false);
@@ -70,7 +70,7 @@ async fn native_account_sdk_tool_and_history_contract() {
         let account = instance.client.account().await?.ok_or_else(super::types::Error::contract)?;
         let registered = instance.client.registered_models(&account.name).await?;
         let routed = instance.client.routed_models().await?;
-        let requested = std::env::var("MYAGENTS_CLIPROXY_SMOKE_MODEL").ok();
+        let requested = std::env::var("NEXTTOOLS_CLIPROXY_SMOKE_MODEL").ok();
         let model = routed.iter().find(|id| requested.as_ref().is_none_or(|requested| requested == *id)
             && registered.iter().any(|m| m["id"].as_str() == Some(id.as_str())))
             .ok_or_else(|| super::types::Error::new("models", "No matching account model"))?;
@@ -79,7 +79,7 @@ async fn native_account_sdk_tool_and_history_contract() {
             .stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null());
         let mut child = crate::process_cmd::spawn_tree(&mut command).map_err(|_| super::types::Error::contract())?;
         let payload = serde_json::to_vec(&serde_json::json!({ "baseUrl": instance.client.base_url(), "apiKey": instance.client.model_key(),
-            "model": model, "thinking": std::env::var("MYAGENTS_CLIPROXY_SMOKE_THINKING").as_deref() == Ok("1") })).unwrap();
+            "model": model, "thinking": std::env::var("NEXTTOOLS_CLIPROXY_SMOKE_THINKING").as_deref() == Ok("1") })).unwrap();
         let mut stdin = child.stdin.take().unwrap();
         stdin.write_all(&payload).map_err(|_| super::types::Error::contract())?;
         drop(stdin);

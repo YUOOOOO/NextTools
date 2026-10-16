@@ -63,9 +63,9 @@ src-tauri/resources/server-dist.js.map
 src-tauri/resources/plugin-bridge-dist.mjs
 src-tauri/resources/plugin-bridge-dist.mjs.map
 src-tauri/resources/claude-agent-sdk
-src-tauri/resources/cli/myagents.js
-src-tauri/resources/cli/myagents.cjs
-src-tauri/resources/cli/myagents.cmd
+src-tauri/resources/cli/nexttools.js
+src-tauri/resources/cli/nexttools.cjs
+src-tauri/resources/cli/nexttools.cmd
 src-tauri/resources/sharp-runtime
 src-tauri/resources/document-processing/*
 !src-tauri/resources/document-processing/.gitkeep
@@ -118,8 +118,8 @@ specs/assets/avatar-candidates/**/r2/
 specs/assets/avatar-candidates/**/manifest.json
 
 # Dev
-.claude/plans/myagents/
-myagents_files/
+.claude/plans/nexttools/
+nexttools_files/
 /HEARTBEAT.md
 
 # Agent long-term memory (raw daily notes & topic files, per .claude/rules/04-MEMORY.md)

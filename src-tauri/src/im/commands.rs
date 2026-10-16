@@ -201,11 +201,11 @@ pub async fn cmd_im_conversations(
 
 // ===== Unified Config Commands (v0.1.26) =====
 
-/// Persist a partial patch to a single bot's entry in `~/.myagents/config.json`.
+/// Persist a partial patch to a single bot's entry in `~/.nexttools/config.json`.
 /// Uses the shared config lock. `None` = no change, `Some("")` = clear.
 pub(super) fn persist_bot_config_patch(bot_id: &str, patch: &BotConfigPatch) -> Result<(), String> {
     let home = dirs::home_dir().ok_or("[im] Home dir not found")?;
-    let config_path = home.join(".myagents").join("config.json");
+    let config_path = home.join(".nexttools").join("config.json");
     with_config_lock(&config_path, true, |config| {
         // Find the bot/channel entry: search legacy imBotConfigs first, then agents[].channels[] (v0.1.42)
         // Use JSON Pointer path to locate the entry, then get a mutable reference.
@@ -522,10 +522,10 @@ async fn update_bot_config_internal<R: Runtime>(
     Ok(())
 }
 
-/// Add a new bot entry to `~/.myagents/config.json`.
+/// Add a new bot entry to `~/.nexttools/config.json`.
 fn add_bot_config_to_disk(bot_config: &serde_json::Value) -> Result<(), String> {
     let home = dirs::home_dir().ok_or("[im] Home dir not found")?;
-    let config_path = home.join(".myagents").join("config.json");
+    let config_path = home.join(".nexttools").join("config.json");
     with_config_lock(&config_path, true, |config| {
         // Ensure imBotConfigs array exists
         if config.get("imBotConfigs").is_none() {
@@ -553,10 +553,10 @@ fn add_bot_config_to_disk(bot_config: &serde_json::Value) -> Result<(), String> 
     Ok(())
 }
 
-/// Remove a bot entry from `~/.myagents/config.json`.
+/// Remove a bot entry from `~/.nexttools/config.json`.
 fn remove_bot_config_from_disk(bot_id: &str) -> Result<(), String> {
     let home = dirs::home_dir().ok_or("[im] Home dir not found")?;
-    let config_path = home.join(".myagents").join("config.json");
+    let config_path = home.join(".nexttools").join("config.json");
     with_config_lock(&config_path, true, |config| {
         if let Some(bots) = config
             .get_mut("imBotConfigs")
@@ -570,7 +570,7 @@ fn remove_bot_config_from_disk(bot_id: &str) -> Result<(), String> {
     Ok(())
 }
 
-/// Read `availableProvidersJson` from the top-level field of `~/.myagents/config.json`.
+/// Read `availableProvidersJson` from the top-level field of `~/.nexttools/config.json`.
 
 /// Unified config update command: replaces all 6 old hot-update commands.
 #[deprecated(note = "Use cmd_update_agent_config instead")]
@@ -1710,7 +1710,7 @@ pub async fn cmd_update_agent_config(
 
 /// Re-read the authoritative Agent record from disk and project the selected
 /// fields into running Agent/IM instances. Shared by the Tauri command and the
-/// loopback Management API used by `myagents agent set`.
+/// loopback Management API used by `nexttools agent set`.
 pub(crate) async fn reload_agent_config_from_disk<R: Runtime>(
     app_handle: &AppHandle<R>,
     agent_state: &ManagedAgents,

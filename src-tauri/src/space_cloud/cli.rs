@@ -510,7 +510,7 @@ fn parse_cli_assignee(value: Option<&str>) -> Result<Option<Value>, String> {
         return Ok(None);
     };
     let (kind, id) = value.split_once(':').ok_or_else(|| {
-        "ASSIGNEE_ID_INVALID: Use a typed ID returned by `myagents space assignee list --json`, such as agent:<id> or user:<id>.".to_string()
+        "ASSIGNEE_ID_INVALID: Use a typed ID returned by `nexttools space assignee list --json`, such as agent:<id> or user:<id>.".to_string()
     })?;
     if id.trim().is_empty() {
         return Err("ASSIGNEE_ID_INVALID: Assignee ID is empty.".to_string());
@@ -1206,7 +1206,7 @@ pub(super) async fn resolve_space_cli_context(
     }
     let (session, user_session) = if session_origin.is_some() {
         let session = read_current_session()?
-            .ok_or_else(|| "NOT_AUTHENTICATED: Not logged in to MyAgents Space.".to_string())?;
+            .ok_or_else(|| "NOT_AUTHENTICATED: Not logged in to NextTools Space.".to_string())?;
         (session, None)
     } else {
         let authenticated = refresh_cli_session().await?;
@@ -1369,7 +1369,7 @@ pub(super) async fn resolve_space_cli_context(
             .map(AuthenticatedSpaceSession::session_token)
             .map(ToString::to_string)
             .ok_or_else(|| {
-                "SPACE_REAUTH_REQUIRED: MyAgents Space login is required.".to_string()
+                "SPACE_REAUTH_REQUIRED: NextTools Space login is required.".to_string()
             })?,
         workspace_id: workspace_id
             .map(str::trim)

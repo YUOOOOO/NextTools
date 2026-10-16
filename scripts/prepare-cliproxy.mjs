@@ -42,7 +42,7 @@ function validArtifact(bytes, artifact) {
 export async function prepareCliproxy({
   platform = `${process.platform}-${process.arch}`,
   repoRoot = repo,
-  distributionDir = process.env.MYAGENTS_CLIPROXY_DISTRIBUTION_DIR,
+  distributionDir = process.env.NEXTTOOLS_CLIPROXY_DISTRIBUTION_DIR,
   fetchImpl = fetch,
 } = {}) {
   // CLIProxy has no Linux distribution; the Rust target gate agrees.

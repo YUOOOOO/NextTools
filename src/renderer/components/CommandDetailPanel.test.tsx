@@ -42,7 +42,7 @@ describe('CommandDetailPanel', () => {
       command: {
         name: '旧展示名',
         fileName: 'stable-command',
-        path: '/tmp/.myagents/commands/stable-command.md',
+        path: '/tmp/.nexttools/commands/stable-command.md',
         frontmatter: { name: '旧展示名', description: 'description' },
         body: 'body',
       },

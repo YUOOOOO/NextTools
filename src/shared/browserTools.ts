@@ -1,5 +1,5 @@
 export const STANDARD_PLAYWRIGHT_MCP_ID = 'playwright' as const;
-export const MANAGED_BROWSER_MCP_ID = 'myagents-browser' as const;
+export const MANAGED_BROWSER_MCP_ID = 'nexttools-browser' as const;
 
 export const DEFAULT_STANDARD_PLAYWRIGHT_ARGS = ['--isolated'] as const;
 
@@ -58,7 +58,7 @@ export function hasUserEditableMcpSettings(serverId: string): boolean {
 }
 
 /**
- * The two MyAgents-owned browser entries intentionally expose overlapping
+ * The two NextTools-owned browser entries intentionally expose overlapping
  * browser_* tools. Keep a single execution selection (Session, Agent default,
  * Launcher, or Task override) mutually exclusive for these exact preset IDs:
  * selecting one removes the other; deselecting one never changes its peer.

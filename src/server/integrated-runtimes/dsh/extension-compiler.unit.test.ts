@@ -42,21 +42,21 @@ describe('DSH declarative extension compiler', () => {
       skills: [{ name: 'review', description: 'Review', path, scope: 'project', sourceId: 'workspace', contentSha256: sha256(content) }],
       mcpServers: [
         { id: 'zzz', name: 'Other MCP', type: 'http', url: 'https://example.com/mcp', isBuiltin: false },
-        { id: 'myagents-browser', name: 'Browser', type: 'http', url: 'http://localhost:1234/mcp', isBuiltin: true,
+        { id: 'nexttools-browser', name: 'Browser', type: 'http', url: 'http://localhost:1234/mcp', isBuiltin: true,
           headers: { Authorization: 'Bearer synthetic' }, runtimeConfigRevision: 'browser-one' },
       ],
     });
     const admitted = compileDshProductExtensionPlane(input);
     unlinkSync(path);
     expect(refreshDshManagedBrowserPlane(admitted, input).snapshot).toEqual(admitted.snapshot);
-    const rotated = refreshDshManagedBrowserPlane(admitted, { ...input, mcpServers: input.mcpServers.map(server => server.id === 'myagents-browser'
+    const rotated = refreshDshManagedBrowserPlane(admitted, { ...input, mcpServers: input.mcpServers.map(server => server.id === 'nexttools-browser'
       ? { ...server, runtimeConfigRevision: 'browser-two', headers: { Authorization: 'Bearer rotated' } } : server) });
     expect(rotated.snapshot.revision).not.toBe(admitted.snapshot.revision);
     expect(rotated.snapshot.resources).toEqual(admitted.snapshot.resources);
     expect(rotated.snapshot.components.filter(component => component.kind !== 'mcp')).toEqual(admitted.snapshot.components.filter(component => component.kind !== 'mcp'));
     expect(rotated.expectedSkillNames).toEqual(['review']);
-    const unavailable = refreshDshManagedBrowserPlane(admitted, { ...input, mcpServers: input.mcpServers.filter(server => server.id !== 'myagents-browser'),
-      components: [{ component: 'mcp', id: 'myagents-browser', state: 'failed', code: 'dsh_browser_host_unavailable' }] });
+    const unavailable = refreshDshManagedBrowserPlane(admitted, { ...input, mcpServers: input.mcpServers.filter(server => server.id !== 'nexttools-browser'),
+      components: [{ component: 'mcp', id: 'nexttools-browser', state: 'failed', code: 'dsh_browser_host_unavailable' }] });
     expect(refreshDshManagedBrowserPlane(unavailable, input).snapshot).toEqual(admitted.snapshot);
   });
 
@@ -152,7 +152,7 @@ describe('DSH declarative extension compiler', () => {
         },
       ],
       dynamicTools: [{
-        name: 'myagents__mcp__builtin__lookup',
+        name: 'nexttools__mcp__builtin__lookup',
         description: 'Looks up Product data',
         inputSchema: {
           type: 'object',
@@ -217,7 +217,7 @@ describe('DSH declarative extension compiler', () => {
     const hostTool = plane.hostToolBindings[0]!;
     expect(findDshHostToolBinding(plane, hostTool.publicToolName)).toBe(hostTool);
     expect(hostTool.publicToolName).toBe(
-      'mcp__myagents_host__myagents__mcp__builtin__lookup',
+      'mcp__nexttools_host__nexttools__mcp__builtin__lookup',
     );
     expect(plane.expectedSkillNames).toEqual(['review']);
     expect(plane.diagnostics).toContainEqual(expect.objectContaining({

@@ -1,14 +1,14 @@
-# MyAgents 系统提示词架构
+# NextTools 系统提示词架构
 
 ## 文档职责
 
-本文记录 MyAgents 对话 Session 的系统上下文如何组成、由谁拥有、何时固化，以及
+本文记录 NextTools 对话 Session 的系统上下文如何组成、由谁拥有、何时固化，以及
 Builtin Claude Agent SDK、Claude Code、Codex、Integrated DSH 四条 Runtime 路径如何接收同一套
 产品指令。
 
 本文拥有以下内容：
 
-- MyAgents 产品级 system prompt append 的分层、场景选择和预设片段矩阵。
+- NextTools 产品级 system prompt append 的分层、场景选择和预设片段矩阵。
 - 工作区指令文件与产品级 Prompt 的边界。
 - 各 Runtime 的投送方式和 Session 生命周期语义。
 - CLI 能力提示、用户注册工具和真实 Tool/Skill surface 的边界。
@@ -21,7 +21,7 @@ Builtin Claude Agent SDK、Claude Code、Codex、Integrated DSH 四条 Runtime �
   [`space_issue_delivery_protocol.md`](./space_issue_delivery_protocol.md) 拥有。
 - Runtime 原生协议与启动参数细节由
   [`multi_agent_runtime.md`](./multi_agent_runtime.md) 拥有。
-- `myagents` CLI 的命令契约、工具注册表和实验门控由
+- `nexttools` CLI 的命令契约、工具注册表和实验门控由
   [`cli_architecture.md`](./cli_architecture.md) 拥有。
 
 当前模板、条件和 Runtime 参数以代码、类型和测试为最终事实；本文解释 owner、边界和
@@ -34,7 +34,7 @@ Builtin Claude Agent SDK、Claude Code、Codex、Integrated DSH 四条 Runtime �
 ```text
 Runtime 原生 base/preset
         +
-MyAgents 产品级 Prompt append
+NextTools 产品级 Prompt append
         +
 Workspace 指令（CLAUDE.md / rules / AGENTS.md）
         +
@@ -46,12 +46,12 @@ Workspace 指令（CLAUDE.md / rules / AGENTS.md）
 | 来源                   | Owner / 权威实现                                                             | 生命周期                                              | 典型内容                                                    |
 | ---------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------- |
 | Runtime 原生 Prompt    | Claude SDK / Claude Code / Codex / DSH 自身及对应 adapter                 | Runtime 进程或 thread 创建时                          | 工具协议、安全规则、Runtime 自身行为约定                    |
-| MyAgents 产品级 append | `src/server/system-prompt.ts`、`system-prompt-cli-tools.ts`                  | Session Query / external thread 创建或 replacement 时 | MyAgents 身份、入口场景、产品能力发现提示                   |
+| NextTools 产品级 append | `src/server/system-prompt.ts`、`system-prompt-cli-tools.ts`                  | Session Query / external thread 创建或 replacement 时 | NextTools 身份、入口场景、产品能力发现提示                   |
 | Workspace 指令         | Workspace 文件；加载兼容层为 `src/server/runtimes/workspace-instructions.ts` | Runtime 启动时读取，或由 Runtime 原生发现             | `CLAUDE.md`、`.claude/rules/*.md`、`AGENTS.md` |
 | 动态 Reminder          | 对应业务 owner + `src/shared/systemReminder.ts`                              | 每个需要补充上下文的 Turn                             | Goal、Task、浮球、群聊、Space、Heartbeat 等动态事实         |
 
 不要把四者都叫作“System Prompt”：`system-reminder` 在传输上仍是 user message，
-Workspace 指令可能由 Runtime 原生加载，Codex 的 MyAgents append 则使用
+Workspace 指令可能由 Runtime 原生加载，Codex 的 NextTools append 则使用
 `developerInstructions`。产品层的统一目标是语义一致，不是强迫所有 Runtime 使用同一
 协议字段。
 
@@ -70,7 +70,7 @@ Workspace 指令可能由 Runtime 原生加载，Codex 的 MyAgents append 则�
 
 - `InteractionScenario`：当前 Session 的交互入口和场景。
 - `runtime`：用于生成准确的 Runtime 身份描述。
-- `cliToolsEnabled`：是否追加稳定的 MyAgents CLI 能力提示；当前 Builtin 和全部
+- `cliToolsEnabled`：是否追加稳定的 NextTools CLI 能力提示；当前 Builtin 和全部
   External Runtime 路径都传 `true`。
 - `userCliToolsEnabled`：是否读取用户 CLI 工具注册表，受实验开关控制。
 - `enabledOfficialToolIds`：当前 Session 实际启用的官方 CLI 工具。
@@ -78,7 +78,7 @@ Workspace 指令可能由 Runtime 原生加载，Codex 的 MyAgents append 则�
 模板直接内联在 TypeScript 中，不从运行时文件系统加载。单文件 bundle 不能依赖源码
 目录中的模板路径；内联内容让生产包与源码使用同一个事实来源。
 
-受管「浏览器」的登录态保存不属于 Prompt 契约。应用级 Browser Host 会在成功工具调用和 Context teardown 边界自动 checkpoint Cookie；模型无需、也不应被提示主动调用存储工具来维持产品正确性。该 headed Context 不使用 Playwright `storageState()`，避免身份维护创建用户可见的临时页面；localStorage 与 IndexedDB 不跨 Product Session 恢复。标准 `playwright` 仍遵循上游 MCP 的 argv/storage-state 语义，MyAgents 不用隐藏 Prompt 改写它。
+受管「浏览器」的登录态保存不属于 Prompt 契约。应用级 Browser Host 会在成功工具调用和 Context teardown 边界自动 checkpoint Cookie；模型无需、也不应被提示主动调用存储工具来维持产品正确性。该 headed Context 不使用 Playwright `storageState()`，避免身份维护创建用户可见的临时页面；localStorage 与 IndexedDB 不跨 Product Session 恢复。标准 `playwright` 仍遵循上游 MCP 的 argv/storage-state 语义，NextTools 不用隐藏 Prompt 改写它。
 
 ### 场景模型
 
@@ -101,7 +101,7 @@ Workspace 指令可能由 Runtime 原生加载，Codex 的 MyAgents append 则�
 
 | 层                | 职责                                                                           | 组合方式             |
 | ----------------- | ------------------------------------------------------------------------------ | -------------------- |
-| L1 基础身份       | MyAgents 身份、当前 Runtime、全局目录、时间判断约束                            | 始终包含             |
+| L1 基础身份       | NextTools 身份、当前 Runtime、全局目录、时间判断约束                            | 始终包含             |
 | L2 交互渠道       | 桌面，或具体 IM/Agent Channel 与私聊/群聊信息                                  | 互斥选一             |
 | L3 场景与产品交互 | Task、Heartbeat、Registered Agent、浮球、Widget、Session 协作                  | 按条件叠加           |
 | L4 CLI 能力发现   | Task、Goal、Record、IM 媒体、Vision、用户注册工具                              | 按场景与能力开关叠加 |
@@ -112,36 +112,36 @@ Workspace 指令可能由 Runtime 原生加载，Codex 的 MyAgents append 则�
 
 | XML-like block                           | 主要内容                                                | 注入条件                                           |
 | ---------------------------------------- | ------------------------------------------------------- | -------------------------------------------------- |
-| `myagents-identity`                      | 产品身份、准确 Runtime 名称、`~/.myagents`、时间检查    | 全部场景                                           |
-| `myagents-interaction-channel`           | 桌面或 IM/Channel 入口、平台、私聊/群聊、Bot 昵称       | 全部场景；渠道互斥                                 |
-| `myagents-cron-task-instructions`        | Task ID、触发间隔、可选自结束说明                       | `cron`                                             |
-| `myagents-heartbeat-instructions`        | 如何处理周期 Heartbeat                                  | `im`、`agent-channel`                              |
-| `myagents-registered-agent-instructions` | Registered Agent 身份、Issue 行动边界与当前状态读取要求 | `registeredAgent`                                  |
-| `myagents-floating-ball-instructions`    | 小窗回复应简短、桌面相邻上下文                          | `desktop.surface === floating-ball`                |
-| `myagents-generative-ui`                 | Widget 触发规则及按需读取设计契约                       | 全部 `desktop`，包括浮球                           |
-| `myagents-session-events`                | Agent/Session identity、start/send/watch 协作方式       | 全部场景                                           |
-| `myagents-cli-task-automation`           | “以后再做”统一使用 Task Skill/CLI，不用 OS cron         | 全部场景                                           |
-| `myagents-cli-goal`                      | Goal Mode 只在用户明确要求时创建                        | `desktop`，以及私聊 `im` / `agent-channel`         |
-| `myagents-cli-task-exit`                 | 目标完成时用 CLI 提前结束 Task                          | `cron && aiCanExit`                                |
-| `myagents-cli-im-media`                  | 向当前聊天发送文件、图片、PDF 等                        | `im`、`agent-channel`                              |
-| `myagents-cli-record`                    | 仅在用户明确要求“记一下”时创建文字 Record               | `desktop`，以及私聊 `im` / `agent-channel`         |
-| `myagents-cli-vision`                    | 当前模型不能读图时调用图片理解 helper                   | Session 启用 image-understanding 官方工具          |
-| `myagents-user-tools`                    | 用户注册 CLI 工具的名称、description 与发现方法         | 实验开关开启且注册表存在 enabled 工具              |
+| `nexttools-identity`                      | 产品身份、准确 Runtime 名称、`~/.nexttools`、时间检查    | 全部场景                                           |
+| `nexttools-interaction-channel`           | 桌面或 IM/Channel 入口、平台、私聊/群聊、Bot 昵称       | 全部场景；渠道互斥                                 |
+| `nexttools-cron-task-instructions`        | Task ID、触发间隔、可选自结束说明                       | `cron`                                             |
+| `nexttools-heartbeat-instructions`        | 如何处理周期 Heartbeat                                  | `im`、`agent-channel`                              |
+| `nexttools-registered-agent-instructions` | Registered Agent 身份、Issue 行动边界与当前状态读取要求 | `registeredAgent`                                  |
+| `nexttools-floating-ball-instructions`    | 小窗回复应简短、桌面相邻上下文                          | `desktop.surface === floating-ball`                |
+| `nexttools-generative-ui`                 | Widget 触发规则及按需读取设计契约                       | 全部 `desktop`，包括浮球                           |
+| `nexttools-session-events`                | Agent/Session identity、start/send/watch 协作方式       | 全部场景                                           |
+| `nexttools-cli-task-automation`           | “以后再做”统一使用 Task Skill/CLI，不用 OS cron         | 全部场景                                           |
+| `nexttools-cli-goal`                      | Goal Mode 只在用户明确要求时创建                        | `desktop`，以及私聊 `im` / `agent-channel`         |
+| `nexttools-cli-task-exit`                 | 目标完成时用 CLI 提前结束 Task                          | `cron && aiCanExit`                                |
+| `nexttools-cli-im-media`                  | 向当前聊天发送文件、图片、PDF 等                        | `im`、`agent-channel`                              |
+| `nexttools-cli-record`                    | 仅在用户明确要求“记一下”时创建文字 Record               | `desktop`，以及私聊 `im` / `agent-channel`         |
+| `nexttools-cli-vision`                    | 当前模型不能读图时调用图片理解 helper                   | Session 启用 image-understanding 官方工具          |
+| `nexttools-user-tools`                    | 用户注册 CLI 工具的名称、description 与发现方法         | 实验开关开启且注册表存在 enabled 工具              |
 
 `cron` 与 `registeredAgent` 使用 desktop-style shell I/O 的 channel block，但不因此成为
 桌面交互场景；它们不会获得 Widget、Record 或 Goal 的桌面能力提示。
 
 ### 渐进披露与工具边界
 
-System Prompt 的职责是让模型在正确场景“想起” MyAgents 能力，不是承载每项能力的
+System Prompt 的职责是让模型在正确场景“想起” NextTools 能力，不是承载每项能力的
 完整手册：
 
 1. 稳定产品能力只注入触发条件、关键边界和发现命令。
-2. 完整用法由模型按需执行 `myagents <topic> readme` 或 `--help` 获取。
+2. 完整用法由模型按需执行 `nexttools <topic> readme` 或 `--help` 获取。
 3. 用户注册工具只注入 enabled 工具的名称与 description；实际执行由
-   `~/.myagents/bin` shim 和工具目录拥有。
+   `~/.nexttools/bin` shim 和工具目录拥有。
 4. 用户工具注入最多展开 `CLI_TOOL_PROMPT_MAX_TOOLS` 个，超出部分降级为
-   `myagents tool list` 指引；description 也有独立长度上限，避免注册表无限挤占上下文。
+   `nexttools tool list` 指引；description 也有独立长度上限，避免注册表无限挤占上下文。
 5. 注册表读取使用 mtime + size 缓存。开关或注册表变化影响下一次 Session 创建 /
    pre-warm，不会 retroactive 改写已运行 Session 的 Prompt。
 
@@ -159,7 +159,7 @@ Prompt 中出现一个能力名称，不等于真实 Tool 已被注册或授权�
 ## Workspace 指令文件
 
 设置界面的“系统提示词”面板管理 `CLAUDE.md` 和 `.claude/rules/*.md`。这些文件属于
-具体 Workspace 的用户/项目指令，不是 `buildSystemPromptAppend()` 中的 MyAgents 产品
+具体 Workspace 的用户/项目指令，不是 `buildSystemPromptAppend()` 中的 NextTools 产品
 模板。
 
 不同 Runtime 使用各自最忠实的加载方式：
@@ -168,7 +168,7 @@ Prompt 中出现一个能力名称，不等于真实 Tool 已被注册或授权�
 | ------------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | Builtin Claude Agent SDK | Claude Code preset + `systemPrompt.append`                  | `settingSources: ['project']` 原生读取项目配置；全局启用 Skill 先投影到项目目录                               |
 | Claude Code CLI          | 临时文件 + `--append-system-prompt-file`                    | Claude Code 原生发现 `CLAUDE.md` / rules                                                                      |
-| Codex                    | `thread/start` / `thread/resume` 的 `developerInstructions` | Codex 原生发现 `AGENTS.md`，并将 `CLAUDE.md` 配为 fallback；MyAgents 另外把 `.claude/rules/*.md` 格式化后追加 |
+| Codex                    | `thread/start` / `thread/resume` 的 `developerInstructions` | Codex 原生发现 `AGENTS.md`，并将 `CLAUDE.md` 配为 fallback；NextTools 另外把 `.claude/rules/*.md` 格式化后追加 |
 | Integrated DSH           | 当前生成契约中的 `systemContext.sections/contexts`        | DSH 每目录互斥加载 `CLAUDE.md` → `AGENTS.override.md` → `AGENTS.md`；Host 仅冻结 `.claude/CLAUDE.md` 与 rules companion supplement |
 
 External Runtime 的兼容读取拒绝 symlink，并限制递归深度、文件数量、单文件大小和总
@@ -188,10 +188,10 @@ name/description。Integrated DSH 在调用 Skill 时通过 DSH `resourceBase` �
 `src/server/agent-session.ts` 在 Query 创建时使用：
 
 ```text
-systemPrompt = { type: preset, preset: claude_code, append: MyAgentsPrompt, snapshot: false }
+systemPrompt = { type: preset, preset: claude_code, append: NextToolsPrompt, snapshot: false }
 ```
 
-因此 Claude preset 仍拥有底层工具约定，MyAgents 只追加产品身份、场景与能力提示。
+因此 Claude preset 仍拥有底层工具约定，NextTools 只追加产品身份、场景与能力提示。
 `currentScenario` 必须在 Query birth 前设置正确；persistent Query 创建后，普通状态变量
 变化不会原地重写其 system prompt。
 
@@ -212,7 +212,7 @@ SDK 默认会记录并跨 resume 复用 system prompt；Builtin 显式关闭该�
 DSH 不消费上述单体 append。`external-session.ts` 在 Session create/resume/config apply
 边界调用 `buildDshSystemContext()`，按下列稳定顺序发送：
 
-1. `global/product-identity`（order `-80`）：MyAgents 产品身份；
+1. `global/product-identity`（order `-80`）：NextTools 产品身份；
 2. `global/capability-routing`（order `-70`）：按需使用 Tool/Skill，不把 Prompt 当权限；
 3. `root/product-session`（order `10`）：当前 scenario 和产品会话内容；
 4. Runtime 根据 initialize 已接受的执行环境注册 `runtime:workspace` context（order `90`）；
@@ -234,7 +234,7 @@ child；它不增加 allowed root，也不授予文件或进程权限。该值�
 排序的 `.claude/rules/**/*.md`，并遵循现有 symlink/深度/数量/大小边界。
 
 Managed Codex 的 IM/Agent Channel 当前还会在中央 assembler 之后追加
-`myagents-managed-codex-interaction-limits`：禁用结构化问答工具的场景必须改用普通聊天
+`nexttools-managed-codex-interaction-limits`：禁用结构化问答工具的场景必须改用普通聊天
 文本向 IM 用户澄清。这是 Runtime capability 限制，不应伪装成通用场景规则。
 
 ### Pre-warm 与场景变化
@@ -281,7 +281,7 @@ payload，而 UI 只展示 envelope 后的 visible tail 或 badge。它适合 Tu
 Plugin 或工具的数据仍需结构化标记、转义并声明为 untrusted context，不能因为被隐藏就
 当成系统指令。
 
-Task 智能讨论采用“薄动态 reminder + product-owned Skill”分工：`TASK_DISCUSSION` 只携带 discussion/workspace/可选 Record identity 和原始 visible tail，`InitialMessage.requiredSystemSkill` 要求 app-owned `myagents-task-alignment` exact source/hash/inventory revision。澄清方法、完整 `task.md` 写作和确认协议留在 Skill；Task 参数事实由 `myagents-task-automation` 与 CLI leaf help 按需披露。不得在 App handler 再复制问卷、参数矩阵或四文档模板，也不得仅靠 slash 文本猜 Skill 已加载。
+Task 智能讨论采用“薄动态 reminder + product-owned Skill”分工：`TASK_DISCUSSION` 只携带 discussion/workspace/可选 Record identity 和原始 visible tail，`InitialMessage.requiredSystemSkill` 要求 app-owned `nexttools-task-alignment` exact source/hash/inventory revision。澄清方法、完整 `task.md` 写作和确认协议留在 Skill；Task 参数事实由 `nexttools-task-automation` 与 CLI leaf help 按需披露。不得在 App handler 再复制问卷、参数矩阵或四文档模板，也不得仅靠 slash 文本猜 Skill 已加载。
 
 ## 其它独立 Prompt
 
@@ -324,7 +324,7 @@ badge、visible tail、标题、预览、搜索和测试 Checklist。
 新 adapter 必须说明：
 
 - 如何保留 Runtime 原生 base prompt；
-- 如何投送 MyAgents product append；
+- 如何投送 NextTools product append；
 - 如何发现或兼容 Workspace 指令；
 - Prompt 在 start/resume/replacement 中何时固化和清理；
 - 哪些差异是真实 Runtime capability 限制，不能靠 Prompt 假装支持。

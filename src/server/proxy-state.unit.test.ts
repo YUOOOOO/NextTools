@@ -30,8 +30,8 @@ const PROXY_ENV_KEYS = [
   'all_proxy',
   'NO_PROXY',
   'no_proxy',
-  'MYAGENTS_PROXY_INJECTED',
-  'MYAGENTS_PROXY_INHERITED_ENV_JSON',
+  'NEXTTOOLS_PROXY_INJECTED',
+  'NEXTTOOLS_PROXY_INHERITED_ENV_JSON',
 ] as const;
 
 const originalEnv = { ...process.env };
@@ -65,7 +65,7 @@ async function loadProxyState() {
 const scopedProxySettings: ProxySettings = {
   enabled: true,
   protocol: 'http',
-  host: 'myagents.proxy',
+  host: 'nexttools.proxy',
   port: 7890,
   scope: { mode: 'custom', generalRequests: false, providerIds: ['included-provider'] },
 };
@@ -123,15 +123,15 @@ describe('proxy-state provider scope', () => {
     generalUsesApp,
     providerUsesApp,
   }) => {
-    process.env.MYAGENTS_PROXY_INJECTED = '1';
-    process.env.MYAGENTS_PROXY_INHERITED_ENV_JSON = JSON.stringify({
+    process.env.NEXTTOOLS_PROXY_INJECTED = '1';
+    process.env.NEXTTOOLS_PROXY_INHERITED_ENV_JSON = JSON.stringify({
       HTTPS_PROXY: 'http://system.proxy:8080',
       NO_PROXY: '.corp.local',
     });
-    process.env.HTTP_PROXY = 'http://myagents.proxy:7890';
-    process.env.HTTPS_PROXY = 'http://myagents.proxy:7890';
-    process.env.http_proxy = 'http://myagents.proxy:7890';
-    process.env.https_proxy = 'http://myagents.proxy:7890';
+    process.env.HTTP_PROXY = 'http://nexttools.proxy:7890';
+    process.env.HTTPS_PROXY = 'http://nexttools.proxy:7890';
+    process.env.http_proxy = 'http://nexttools.proxy:7890';
+    process.env.https_proxy = 'http://nexttools.proxy:7890';
     process.env.NO_PROXY = 'localhost,127.0.0.1';
     process.env.no_proxy = 'localhost,127.0.0.1';
 
@@ -146,23 +146,23 @@ describe('proxy-state provider scope', () => {
     });
 
     expect(process.env.HTTPS_PROXY).toBe(
-      generalUsesApp ? 'http://myagents.proxy:7890' : 'http://system.proxy:8080',
+      generalUsesApp ? 'http://nexttools.proxy:7890' : 'http://system.proxy:8080',
     );
     expect(process.env.HTTP_PROXY).toBe(
-      generalUsesApp ? 'http://myagents.proxy:7890' : undefined,
+      generalUsesApp ? 'http://nexttools.proxy:7890' : undefined,
     );
     expect(proxyState.getProxyForUrl('https://space.example.com/v1')).toBe(
-      generalUsesApp ? 'http://myagents.proxy:7890' : 'http://system.proxy:8080',
+      generalUsesApp ? 'http://nexttools.proxy:7890' : 'http://system.proxy:8080',
     );
     // WebFetch must follow the general owner's snapshot even if an unrelated
     // component changes process.env after proxy state was committed.
     process.env.HTTPS_PROXY = '';
     process.env.https_proxy = '';
     expect(proxyState.getProxyForUrl('https://example.com/page')).toBe(
-      generalUsesApp ? 'http://myagents.proxy:7890' : 'http://system.proxy:8080',
+      generalUsesApp ? 'http://nexttools.proxy:7890' : 'http://system.proxy:8080',
     );
-    expect(proxyState.getMyAgentsProxyForGeneralUrl('https://space.example.com/v1')).toBe(
-      generalUsesApp ? 'http://myagents.proxy:7890' : undefined,
+    expect(proxyState.getNextToolsProxyForGeneralUrl('https://space.example.com/v1')).toBe(
+      generalUsesApp ? 'http://nexttools.proxy:7890' : undefined,
     );
 
     const shellEnv = buildDshChildEnvironment({
@@ -172,9 +172,9 @@ describe('proxy-state provider scope', () => {
       proxyEnvironment: proxyState.getGeneralProxyEnvironment(),
     }).env;
     expect(shellEnv.HTTPS_PROXY).toBe(
-      generalUsesApp ? 'http://myagents.proxy:7890' : 'http://system.proxy:8080',
+      generalUsesApp ? 'http://nexttools.proxy:7890' : 'http://system.proxy:8080',
     );
-    expect(shellEnv.HTTP_PROXY).toBe(generalUsesApp ? 'http://myagents.proxy:7890' : undefined);
+    expect(shellEnv.HTTP_PROXY).toBe(generalUsesApp ? 'http://nexttools.proxy:7890' : undefined);
     expect(shellEnv.NO_PROXY).toContain('localhost');
     expect(shellEnv.no_proxy).toBe(shellEnv.NO_PROXY);
     if (!generalUsesApp) expect(shellEnv.NO_PROXY).toContain('.corp.local');
@@ -182,10 +182,10 @@ describe('proxy-state provider scope', () => {
     const providerEnv: Record<string, string | undefined> = {};
     proxyState.applyProviderProxyPolicyToEnv(providerEnv, providerId);
     expect(providerEnv.HTTPS_PROXY).toBe(
-      providerUsesApp ? 'http://myagents.proxy:7890' : 'http://system.proxy:8080',
+      providerUsesApp ? 'http://nexttools.proxy:7890' : 'http://system.proxy:8080',
     );
     expect(providerEnv.HTTP_PROXY).toBe(
-      providerUsesApp ? 'http://myagents.proxy:7890' : undefined,
+      providerUsesApp ? 'http://nexttools.proxy:7890' : undefined,
     );
     const requestPolicy = proxyState.getProviderRequestProxyPolicy(providerId);
     expect(requestPolicy.httpProxy).toBe(providerEnv.HTTP_PROXY);
@@ -194,10 +194,10 @@ describe('proxy-state provider scope', () => {
     expect(Object.isFrozen(requestPolicy)).toBe(true);
     expect(providerEnv.NO_PROXY).toContain('localhost');
     if (!providerUsesApp) expect(providerEnv.NO_PROXY).toContain('.corp.local');
-    expect(providerEnv.MYAGENTS_PROXY_INJECTED).toBeUndefined();
-    expect(providerEnv.MYAGENTS_PROXY_INHERITED_ENV_JSON).toBeUndefined();
+    expect(providerEnv.NEXTTOOLS_PROXY_INJECTED).toBeUndefined();
+    expect(providerEnv.NEXTTOOLS_PROXY_INHERITED_ENV_JSON).toBeUndefined();
     expect(proxyState.getProxyForProviderUrl(providerId, 'https://api.example.com/v1')).toBe(
-      providerUsesApp ? 'http://myagents.proxy:7890' : 'http://system.proxy:8080',
+      providerUsesApp ? 'http://nexttools.proxy:7890' : 'http://system.proxy:8080',
     );
   });
 
@@ -217,8 +217,8 @@ describe('proxy-state provider scope', () => {
     generalUsesApp,
     providerUsesApp,
   }) => {
-    process.env.MYAGENTS_PROXY_INJECTED = '1';
-    process.env.MYAGENTS_PROXY_INHERITED_ENV_JSON = JSON.stringify({
+    process.env.NEXTTOOLS_PROXY_INJECTED = '1';
+    process.env.NEXTTOOLS_PROXY_INHERITED_ENV_JSON = JSON.stringify({
       HTTP_PROXY: 'http://system-http.proxy:8080',
       HTTPS_PROXY: 'http://system-https.proxy:8443',
     });
@@ -227,12 +227,12 @@ describe('proxy-state provider scope', () => {
     await proxyState.setProcessProxyConfig({
       enabled: true,
       protocol,
-      host: 'myagents.proxy',
+      host: 'nexttools.proxy',
       port: 7890,
       scope: { mode: 'custom', generalRequests, providerIds: ['included-provider'] },
     });
 
-    const appUrl = `${protocol}://myagents.proxy:7890`;
+    const appUrl = `${protocol}://nexttools.proxy:7890`;
     const generalOptions = proxyState._getGeneralRequestProxyOptionsForTests();
     expect(generalOptions.httpProxy).toBe(
       generalUsesApp ? appUrl : 'http://system-http.proxy:8080',
@@ -246,8 +246,8 @@ describe('proxy-state provider scope', () => {
   });
 
   it('keeps a SOCKS bridge overlay for a selected provider when general requests inherit', async () => {
-    process.env.MYAGENTS_PROXY_INJECTED = '1';
-    process.env.MYAGENTS_PROXY_INHERITED_ENV_JSON = JSON.stringify({
+    process.env.NEXTTOOLS_PROXY_INJECTED = '1';
+    process.env.NEXTTOOLS_PROXY_INHERITED_ENV_JSON = JSON.stringify({
       HTTPS_PROXY: 'http://system.proxy:8080',
       NO_PROXY: '.corp.local',
     });
@@ -292,8 +292,8 @@ describe('proxy-state provider scope', () => {
     generalUsesApp,
     providerUsesApp,
   }) => {
-    process.env.MYAGENTS_PROXY_INJECTED = '1';
-    process.env.MYAGENTS_PROXY_INHERITED_ENV_JSON = JSON.stringify({
+    process.env.NEXTTOOLS_PROXY_INJECTED = '1';
+    process.env.NEXTTOOLS_PROXY_INHERITED_ENV_JSON = JSON.stringify({
       HTTP_PROXY: 'http://system.proxy:8080',
       HTTPS_PROXY: 'http://system.proxy:8080',
     });
@@ -346,7 +346,7 @@ describe('proxy-state provider scope', () => {
     const proxyState = await loadProxyState();
     await proxyState.setProcessProxyConfig({ ...scopedProxySettings, scope: { mode: 'all' } });
     const previous = proxyState.getGeneralProxyEnvironment();
-    expect(previous.https_proxy).toBe('http://myagents.proxy:7890');
+    expect(previous.https_proxy).toBe('http://nexttools.proxy:7890');
     expect(previous.ALL_PROXY).toBeUndefined();
 
     await proxyState.setProcessProxyConfig({ ...scopedProxySettings, enabled: false });
@@ -357,7 +357,7 @@ describe('proxy-state provider scope', () => {
     expect(current.NO_PROXY).toContain('.corp.local');
     expect(current.NO_PROXY).toContain('127.0.0.1');
     expect(current.NO_PROXY).toContain('::1');
-    expect(previous.https_proxy).toBe('http://myagents.proxy:7890');
+    expect(previous.https_proxy).toBe('http://nexttools.proxy:7890');
   });
 
   it('does not tear down a stable SOCKS bridge from a superseded transition', async () => {

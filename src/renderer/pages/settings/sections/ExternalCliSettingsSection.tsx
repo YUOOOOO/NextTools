@@ -142,8 +142,8 @@ export function ExternalCliSettingsSection() {
   const buildTokenCommand = useCallback(
     (token: string) =>
       state?.launcherPath.toLowerCase().endsWith('.cmd')
-        ? `$env:MYAGENTS_API_TOKEN = "${token}"`
-        : `export MYAGENTS_API_TOKEN="${token}"`,
+        ? `$env:NEXTTOOLS_API_TOKEN = "${token}"`
+        : `export NEXTTOOLS_API_TOKEN="${token}"`,
     [state?.launcherPath],
   );
   const promptReady = state?.skillReady === true && !refreshing && !loadFailed;

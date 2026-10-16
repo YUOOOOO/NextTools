@@ -651,7 +651,7 @@ fn default_change_notice(
         ("codex", _) => "Codex CLI",
         ("claude-code", _) => "Claude Code",
         ("dsh", _) => "DeepSeek Harness",
-        _ => "MyAgents",
+        _ => "NextTools",
     };
     Some(Some(format!("当前 Agent 默认模型发生变化：{}（{}）。当前对话的模型仍然是 {}。\n如需变更，可发送 /new 创建新会话，或发送 /model 调整模型。", model.unwrap_or("默认模型"), runtime, snapshot["model"].as_str().unwrap_or("默认模型"))))
 }

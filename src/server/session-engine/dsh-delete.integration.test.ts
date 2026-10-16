@@ -37,7 +37,7 @@ describe('DSH deletion after Rust owner retirement', () => {
       pendingDshRootOperation: pending,
       pendingDshInputs: [{ ...pending, queueId: 'old-queue', runtimeInputFingerprint: 'b'.repeat(64), delivery: 'realtime', state: 'pending', userMessage: { id: 'old-user', role: 'user', content: 'old input', timestamp: '2026-10-13T00:00:00Z' } }],
     });
-    await writeFile(join(home, '.myagents', 'sessions', `${id}.jsonl`), 'unreadable transcript\n');
+    await writeFile(join(home, '.nexttools', 'sessions', `${id}.jsonl`), 'unreadable transcript\n');
     let state = 'prepared';
     let failed = false;
     const token = `token-${id}`;

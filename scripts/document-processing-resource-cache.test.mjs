@@ -24,7 +24,7 @@ import {
 import { validateDocumentRuntimeDescriptor } from "./speech-inference-resource-cache.mjs";
 
 function scratch() {
-  const root = mkdtempSync(join(tmpdir(), "myagents-document-cache-test-"));
+  const root = mkdtempSync(join(tmpdir(), "nexttools-document-cache-test-"));
   test.after(() => rmSync(root, { recursive: true, force: true }));
   return root;
 }
@@ -103,7 +103,7 @@ test("build fingerprint is deterministic and invalidates source or metadata chan
 
 function createPreparedBundle(root, fingerprint, architecture = "arm64") {
   const files = {
-    worker: "myagents-document-worker",
+    worker: "nexttools-document-worker",
     onnxRuntime: "native/onnxruntime.dylib",
     pdfium: "native/pdfium.dylib",
     detectorModel: "models/det.onnx",

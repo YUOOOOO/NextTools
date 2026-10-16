@@ -68,7 +68,7 @@ test("the release Sidecar can lazily load Browser Host from its packaged runtime
   );
   assert.equal(build.status, 0, `${build.stdout}\n${build.stderr}`);
 
-  const releaseRoot = mkdtempSync(join(tmpdir(), "myagents-browser-release-"));
+  const releaseRoot = mkdtempSync(join(tmpdir(), "nexttools-browser-release-"));
   const resourcesDir = join(releaseRoot, "Resources");
   const packagedNodeModules = join(resourcesDir, "node_modules");
   mkdirSync(resourcesDir, { recursive: true });
@@ -99,7 +99,7 @@ test("the release Sidecar can lazily load Browser Host from its packaged runtime
         ...process.env,
         HOME: homeDir,
         USERPROFILE: homeDir,
-        MYAGENTS_SIDECAR_ID: "__global__",
+        NEXTTOOLS_SIDECAR_ID: "__global__",
       },
       stdio: ["ignore", "pipe", "pipe"],
     },

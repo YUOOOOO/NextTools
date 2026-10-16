@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
   openWithDefault: vi.fn(),
   openPathWithDefault: vi.fn(),
   openPathExternal: vi.fn(),
-  onOpenMyAgentsPreview: vi.fn(),
+  onOpenNextToolsPreview: vi.fn(),
   onRevealInTree: vi.fn(),
   toastInfo: vi.fn(),
   toastError: vi.fn(),
@@ -70,7 +70,7 @@ import { FileActionProvider } from '@/context/FileActionContext';
 
 import Markdown from './Markdown';
 
-const WORKSPACE = '/Users/zhihu/Documents/project/MyAgents';
+const WORKSPACE = '/Users/zhihu/Documents/project/NextTools';
 
 function renderMarkdown(markdown: string, onFilePreviewExternal = vi.fn()) {
   render(
@@ -90,7 +90,7 @@ function renderFloatingMarkdown(markdown: string) {
     <FileActionProvider
       workspacePath={WORKSPACE}
       menuProfile="floatingBall"
-      onOpenMyAgentsPreview={mocks.onOpenMyAgentsPreview}
+      onOpenNextToolsPreview={mocks.onOpenNextToolsPreview}
     >
       <Markdown>{markdown}</Markdown>
     </FileActionProvider>,
@@ -150,7 +150,7 @@ describe('Markdown local file links', () => {
     expect(mocks.openExternal).not.toHaveBeenCalled();
   });
 
-  it('opens workspace absolute path links in the MyAgents file preview instead of the system default app', async () => {
+  it('opens workspace absolute path links in the NextTools file preview instead of the system default app', async () => {
     const { onFilePreviewExternal } = renderMarkdown(
       `[Message.tsx](${WORKSPACE}/src/renderer/components/Message.tsx)`,
     );
@@ -382,7 +382,7 @@ describe('Markdown local file links', () => {
     expect(mocks.openExternal).not.toHaveBeenCalled();
   });
 
-  it('opens previewable workspace links through the floating-ball MyAgents preview bridge', async () => {
+  it('opens previewable workspace links through the floating-ball NextTools preview bridge', async () => {
     renderFloatingMarkdown(
       `[Message.tsx](${WORKSPACE}/src/renderer/components/Message.tsx:42)`,
     );
@@ -393,7 +393,7 @@ describe('Markdown local file links', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Message.tsx' }));
 
     await waitFor(() => {
-      expect(mocks.onOpenMyAgentsPreview).toHaveBeenCalledWith(
+      expect(mocks.onOpenNextToolsPreview).toHaveBeenCalledWith(
         'src/renderer/components/Message.tsx',
         {
           displayPath: `${WORKSPACE}/src/renderer/components/Message.tsx:42`,

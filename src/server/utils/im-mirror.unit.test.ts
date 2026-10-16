@@ -10,7 +10,7 @@ import {
 describe('IM desktop mirror projection', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
-    delete process.env.MYAGENTS_MANAGEMENT_PORT;
+    delete process.env.NEXTTOOLS_MANAGEMENT_PORT;
   });
 
   it('removes stacked hidden system-reminder envelopes from mirrored user text', () => {
@@ -52,7 +52,7 @@ describe('IM desktop mirror projection', () => {
   });
 
   it.each(['NO_REPLY', ' <NO_REPLY> '])('suppresses explicit assistant silence token %j', async (text) => {
-    process.env.MYAGENTS_MANAGEMENT_PORT = '12345';
+    process.env.NEXTTOOLS_MANAGEMENT_PORT = '12345';
     const fetch = vi.fn();
     vi.stubGlobal('fetch', fetch);
 

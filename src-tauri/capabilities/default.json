@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Minimal permissions for MyAgents desktop app",
+  "description": "Minimal permissions for NextTools desktop app",
   "windows": [
     "main",
     "fb-ball",
@@ -31,10 +31,10 @@
       "identifier": "fs:scope",
       "allow": [
         {
-          "path": "$HOME/.myagents"
+          "path": "$HOME/.nexttools"
         },
         {
-          "path": "$HOME/.myagents/**"
+          "path": "$HOME/.nexttools/**"
         }
       ]
     },

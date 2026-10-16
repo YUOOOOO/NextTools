@@ -35,7 +35,7 @@ const row: SessionMessage = {
 };
 
 beforeAll(async () => {
-  testHome = mkdtempSync(join(tmpdir(), 'myagents-partial-append-'));
+  testHome = mkdtempSync(join(tmpdir(), 'nexttools-partial-append-'));
   originalHome = process.env.HOME;
   process.env.HOME = testHome;
   vi.resetModules();
@@ -57,7 +57,7 @@ describe('Session transcript partial append convergence', () => {
     const failed = await store.appendSessionMessages(session.id, snapshot.cursor, [row]);
     expect(failed).toMatchObject({ ok: false, reason: 'write-error' });
     if (failed.ok || !('cursor' in failed)) return;
-    const path = join(testHome, '.myagents', 'sessions', `${session.id}.jsonl`);
+    const path = join(testHome, '.nexttools', 'sessions', `${session.id}.jsonl`);
     expect(readFileSync(path)).toHaveLength(0);
 
     const retry = await store.appendSessionMessages(session.id, failed.cursor, [row]);

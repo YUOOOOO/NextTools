@@ -140,8 +140,8 @@ export function projectWorkHistory(history: DshNativeHistory, callId: string): S
   }
   const hash = createHash('sha256');
   for (const part of created.admission === 'reserved'
-    ? ['myagents-work-activation-v2', agentId, String(ordinal)]
-    : ['myagents-work-activation-v1', agentId, String(startSeq)]) hash.update(part).update('\0');
+    ? ['nexttools-work-activation-v2', agentId, String(ordinal)]
+    : ['nexttools-work-activation-v1', agentId, String(startSeq)]) hash.update(part).update('\0');
   return {
     activation: { id: hash.digest('hex'), ordinal, state },
     handleState, handleRevision, agentId, taskId,

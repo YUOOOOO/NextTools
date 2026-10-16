@@ -57,7 +57,7 @@ function expectViewportSafeAgentDialog(dialog: HTMLElement) {
 
 const testAgent: LocalRegisteredAgent = {
   id: "rag-1",
-  baseUrl: "https://space.myagents.test",
+  baseUrl: "https://space.nexttools.test",
   spaceId: "space-1",
   displayName: "Build Agent",
   instruction: "Build assigned issues.",
@@ -116,7 +116,7 @@ describe("AgentsWorkspace", () => {
 
     expect(
       screen.getByText(
-        "Make sure the MyAgents client is running and can reach Space Cloud.",
+        "Make sure the NextTools client is running and can reach Space Cloud.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -293,8 +293,8 @@ describe("AgentsWorkspace", () => {
             [
               {
                 id: "workspace-1",
-                name: "MyAgents",
-                path: "/tmp/myagents",
+                name: "NextTools",
+                path: "/tmp/nexttools",
               },
             ] as never
           }
@@ -386,8 +386,8 @@ describe("AgentsWorkspace", () => {
         instruction:
           "Assess reproducibility and identify missing acceptance criteria.",
         workspaceId: "workspace-1",
-        workspacePath: "/tmp/myagents",
-        workspaceLabel: "MyAgents",
+        workspacePath: "/tmp/nexttools",
+        workspaceLabel: "NextTools",
         goalId: "goal-1",
         stateFilter: ["todo"],
         issueSubscriptionRunMode: "new_session",
@@ -405,8 +405,8 @@ describe("AgentsWorkspace", () => {
             [
               {
                 id: "workspace-1",
-                name: "MyAgents",
-                path: "/tmp/myagents",
+                name: "NextTools",
+                path: "/tmp/nexttools",
               },
             ] as never
           }

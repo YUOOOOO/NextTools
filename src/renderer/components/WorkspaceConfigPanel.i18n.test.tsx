@@ -137,7 +137,7 @@ vi.mock('@/hooks/useConfig', () => ({
         workspacePath: '/Users/me/mino',
         runtime: mocks.agentRuntime,
         permissionMode: mocks.agentPermissionMode,
-        runtimeConfig: { envPolicy: { proxy: 'myagents' } },
+        runtimeConfig: { envPolicy: { proxy: 'nexttools' } },
         channels: [],
         mcpEnabledServers: [],
       }],
@@ -195,7 +195,7 @@ describe('WorkspaceConfigPanel i18n', () => {
     expect(screen.getByText('Basic Settings')).toBeInTheDocument();
     expect(screen.getByText('Runtime')).toBeInTheDocument();
     expect(screen.getByText('Network proxy')).toBeInTheDocument();
-    expect(screen.getByText('MyAgents proxy')).toBeInTheDocument();
+    expect(screen.getByText('NextTools proxy')).toBeInTheDocument();
     expect(screen.getByText('Follow terminal')).toBeInTheDocument();
     expect(screen.getByText('Proactive Agent Mode')).toBeInTheDocument();
 

@@ -125,14 +125,14 @@ pub async fn configure_memory_evolution_tasks(
         MANAGED_KIND_MEMORY_GARDENER,
         "Memory Gardener",
         GARDENER_INTERVAL_MINUTES,
-        "myagents-memory-gardener",
+        "nexttools-memory-gardener",
         &request.workspace_path,
     );
     let molt = job_spec(
         MANAGED_KIND_MEMORY_MOLT,
         "Memory Molt",
         MOLT_INTERVAL_MINUTES,
-        "myagents-memory-molt",
+        "nexttools-memory-molt",
         &request.workspace_path,
     );
 
@@ -197,7 +197,7 @@ fn job_spec(
         name,
         interval_minutes,
         prompt: format!(
-            "Use the {} skill to maintain long-term memory for this workspace.\n\nWorkspace: `{}`\n\nConstraints:\n- Only inspect and edit memory-related files unless the skill explicitly requires a small supporting read.\n- If this workspace is a git repository, commit only the memory-related files changed by this run.\n- Do not push.\n- If required memory substrate files are missing, create them from the MyAgents defaults before continuing.",
+            "Use the {} skill to maintain long-term memory for this workspace.\n\nWorkspace: `{}`\n\nConstraints:\n- Only inspect and edit memory-related files unless the skill explicitly requires a small supporting read.\n- If this workspace is a git repository, commit only the memory-related files changed by this run.\n- Do not push.\n- If required memory substrate files are missing, create them from the NextTools defaults before continuing.",
             skill_name, workspace_path
         ),
     }
@@ -473,11 +473,11 @@ async fn backfill_system_maintenance_session_markers(
         return Ok(0);
     }
 
-    let myagents_dir = crate::app_dirs::myagents_data_dir()
-        .ok_or_else(|| "无法定位 MyAgents 数据目录".to_string())?;
-    let sessions_path = myagents_dir.join("sessions.json");
-    let tmp_path = myagents_dir.join("sessions.json.tmp");
-    let lock_path = myagents_dir.join("sessions.lock");
+    let nexttools_dir = crate::app_dirs::nexttools_data_dir()
+        .ok_or_else(|| "无法定位 NextTools 数据目录".to_string())?;
+    let sessions_path = nexttools_dir.join("sessions.json");
+    let tmp_path = nexttools_dir.join("sessions.json.tmp");
+    let lock_path = nexttools_dir.join("sessions.lock");
 
     let result = crate::utils::file_lock::with_file_lock(
         &lock_path,

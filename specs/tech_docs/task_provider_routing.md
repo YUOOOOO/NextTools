@@ -120,7 +120,7 @@ Task 和 Goal 可同时关联同一 Session，因为它们职责不同：
 - Goal 只负责 Session 的长期目标状态与 continuation。
 - Runtime queue 负责实际 Turn 排序；双方不得各自维护并行消息队列。
 
-Task prompt 可以显式要求 AI 在目标 Session 调 `myagents goal create`；这种组合仍通过
+Task prompt 可以显式要求 AI 在目标 Session 调 `nexttools goal create`；这种组合仍通过
 Session queue 和现有 CLI 完成。Task Store、Task Scheduler 与 Goal Store 不持有彼此引用。
 
 ## 6. Legacy 迁移

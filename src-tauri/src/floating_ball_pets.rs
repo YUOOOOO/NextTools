@@ -1,7 +1,7 @@
 //! Codex-compatible desktop pet pack management.
 //!
 //! Runtime windows live in `floating_ball.rs`; this module owns filesystem
-//! concerns for user-installed pet packs under `~/.myagents/pets`.
+//! concerns for user-installed pet packs under `~/.nexttools/pets`.
 
 use futures_util::StreamExt;
 use serde::Serialize;
@@ -76,9 +76,9 @@ struct ValidPetManifest {
 }
 
 fn pets_dir() -> Result<PathBuf, String> {
-    crate::app_dirs::myagents_data_dir()
+    crate::app_dirs::nexttools_data_dir()
         .map(|dir| dir.join("pets"))
-        .ok_or_else(|| "无法定位 ~/.myagents 目录".to_string())
+        .ok_or_else(|| "无法定位 ~/.nexttools 目录".to_string())
 }
 
 fn codex_pets_dir() -> Option<PathBuf> {
@@ -643,7 +643,7 @@ fn import_pet_from_root(root: &Path) -> Result<FbPetEntry, String> {
     let dest = pets_root_canon.join(&manifest.id);
 
     if root_canon == dest {
-        return read_pet_entry(&dest, "myagents");
+        return read_pet_entry(&dest, "nexttools");
     }
 
     let tmp = pets_root_canon.join(format!(".import-{}-{}", manifest.id, uuid::Uuid::new_v4()));
@@ -692,7 +692,7 @@ fn import_pet_from_root(root: &Path) -> Result<FbPetEntry, String> {
     if had_existing {
         let _ = remove_path_if_exists(&backup);
     }
-    read_pet_entry(&dest, "myagents")
+    read_pet_entry(&dest, "nexttools")
 }
 
 fn list_pet_dirs(root: &Path, source: &str) -> Result<Vec<FbPetEntry>, String> {
@@ -728,7 +728,7 @@ fn list_pet_dirs(root: &Path, source: &str) -> Result<Vec<FbPetEntry>, String> {
 
 fn list_installed_pets_blocking() -> Result<Vec<FbPetEntry>, String> {
     let root = pets_dir()?;
-    list_pet_dirs(&root, "myagents")
+    list_pet_dirs(&root, "nexttools")
 }
 
 fn delete_installed_pet_blocking(id: String) -> Result<(), String> {
@@ -891,7 +891,7 @@ fn build_external_http_client(timeout_secs: u64) -> Result<reqwest::Client, Stri
                 attempt.error("Petdex redirect target is not allowed")
             }
         }))
-        .user_agent(format!("MyAgents/{}", env!("CARGO_PKG_VERSION")));
+        .user_agent(format!("NextTools/{}", env!("CARGO_PKG_VERSION")));
     crate::proxy_config::build_client_with_proxy(builder)
 }
 

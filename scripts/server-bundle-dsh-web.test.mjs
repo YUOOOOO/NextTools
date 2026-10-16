@@ -29,7 +29,7 @@ test('the bundled DSH transport passes frozen page and Provider headers through 
       absWorkingDir: repoRoot,
       entryPoints: ['src/server/integrated-runtimes/dsh/safe-http.ts'], outfile,
       bundle: true, platform: 'node', target: 'node22', format: 'esm',
-      banner: { js: 'import { createRequire as __myAgentsCreateRequire } from "module"; const require = __myAgentsCreateRequire(import.meta.url);' },
+      banner: { js: 'import { createRequire as __nextToolsCreateRequire } from "module"; const require = __nextToolsCreateRequire(import.meta.url);' },
     });
     const module = await import(pathToFileURL(outfile));
     transport = new module.DshNodeProxyHttpTransport(4096);

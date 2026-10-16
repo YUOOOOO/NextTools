@@ -674,7 +674,7 @@ export function TaskEditPanel({
           title={t('detail.taskDocTitle')}
           action={<OpenFolderButton onClick={() => void handleOpenDocsDir()} />}
         >
-          <DocPathRow path={`~/.myagents/tasks/${task.id}/task.md`} />
+          <DocPathRow path={`~/.nexttools/tasks/${task.id}/task.md`} />
           {taskMdReadState === 'failed' ? (
             <div className="rounded-[var(--radius-md)] border border-[var(--error)]/30 bg-[var(--error-bg)] px-3 py-2.5 text-xs text-[var(--error)]">
               {t('edit.taskReadFailed')}

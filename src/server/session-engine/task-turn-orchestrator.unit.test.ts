@@ -224,12 +224,12 @@ describe('Task turn orchestrator', () => {
     expect(result).toMatchObject({ success: true, turnDispatched: true });
     expect(prepareScheduledTurn).toHaveBeenCalledWith(expect.objectContaining({
       operation: expect.objectContaining({
-        requiredSystemSkill: 'myagents-memory-gardener',
+        requiredSystemSkill: 'nexttools-memory-gardener',
       }),
     }));
     const prompt = runInjectedTurn.mock.calls[0][0].prompt;
     expect(prompt).not.toContain('Task collaboration:');
-    expect(prompt).not.toContain('myagents task comment');
+    expect(prompt).not.toContain('nexttools task comment');
   });
 
   it('materializes one exact external Session before runtime-native preparation', async () => {

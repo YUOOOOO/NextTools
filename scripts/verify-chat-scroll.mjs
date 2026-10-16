@@ -12,7 +12,7 @@ import { patchReactVirtuoso } from './patch-react-virtuoso.mjs';
 
 const repo = resolve(import.meta.dirname, '..');
 patchReactVirtuoso(resolve(repo, 'node_modules/react-virtuoso'), true);
-const output = await mkdtemp(resolve(tmpdir(), 'myagents-scroll-verification-'));
+const output = await mkdtemp(resolve(tmpdir(), 'nexttools-scroll-verification-'));
 const engine = process.argv[2] ?? 'webkit';
 const followOnly = process.argv.includes('--follow-only');
 assert.ok(['webkit', 'chrome', 'chromium'].includes(engine), 'Choose webkit, chrome or chromium');

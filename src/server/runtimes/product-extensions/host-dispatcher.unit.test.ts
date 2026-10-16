@@ -71,19 +71,19 @@ describe('Managed Codex Host tool dispatcher', () => {
       workspacePath: '/workspace',
     });
     expect(first.dynamicTools).toEqual([expect.objectContaining({
-      name: 'myagents__mcp__local-tools__echo',
+      name: 'nexttools__mcp__local-tools__echo',
       description: 'Echo a value',
     })]);
     expect(first.dynamicTools[0]?.name).not.toMatch(/^mcp(?:__|$)/);
     expect(first.dynamicTools[0]?.name).toMatch(/^[A-Za-z0-9_-]+$/);
     await expect(first.hostToolDispatcher!.dispatch(
-      call('myagents__mcp__local-tools__echo', { value: 'hello' }),
+      call('nexttools__mcp__local-tools__echo', { value: 'hello' }),
     )).resolves.toEqual({
       success: true,
       contentItems: [{ type: 'text', text: 'echo:hello' }],
     });
     await expect(first.hostToolDispatcher!.dispatch(
-      call('myagents__mcp__local-tools__echo', { value: 42 }),
+      call('nexttools__mcp__local-tools__echo', { value: 42 }),
     )).resolves.toMatchObject({ success: false });
 
     first.hostToolDispatcher!.dispose('process generation ended');
@@ -93,7 +93,7 @@ describe('Managed Codex Host tool dispatcher', () => {
       workspacePath: '/workspace',
     });
     await expect(second.hostToolDispatcher!.dispatch(
-      call('myagents__mcp__local-tools__echo', { value: 'again' }, 'generation-two'),
+      call('nexttools__mcp__local-tools__echo', { value: 'again' }, 'generation-two'),
     )).resolves.toMatchObject({
       success: true,
       contentItems: [{ type: 'text', text: 'echo:again' }],
@@ -114,9 +114,9 @@ describe('Managed Codex Host tool dispatcher', () => {
       workspacePath: '/workspace',
     });
 
-    await attached.hostToolDispatcher!.dispatch(call('myagents__mcp__local-tools__once', {}));
+    await attached.hostToolDispatcher!.dispatch(call('nexttools__mcp__local-tools__once', {}));
     await expect(attached.hostToolDispatcher!.dispatch(
-      call('myagents__mcp__local-tools__once', {}, 'stale-generation'),
+      call('nexttools__mcp__local-tools__once', {}, 'stale-generation'),
     )).rejects.toThrow(/stale/i);
     expect(handler).toHaveBeenCalledOnce();
     attached.hostToolDispatcher!.dispose('test complete');

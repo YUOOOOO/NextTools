@@ -10,7 +10,7 @@
     "thoughtSaved": "记录已保存，可在任务中心查看",
     "runtimeNeedsAgent": "该工作区未配置 Agent，无法切换 Runtime",
     "runtimeSwitchFailed": "切换 Runtime 失败，请重试",
-    "runtimeUnavailable": "此 Runtime 产物不可用或未通过完整性校验，请先修复或重新安装 MyAgents",
+    "runtimeUnavailable": "此 Runtime 产物不可用或未通过完整性校验，请先修复或重新安装 NextTools",
     "selectCompatibleProviderModel": "请先选择此 Runtime 支持的 Provider 和模型",
     "setDefaultFailed": "设为默认失败，请重试",
     "selectWorkspaceFirst": "请先选择工作区",
@@ -126,7 +126,7 @@
       "capInstructionsMissingDescription": "可以之后在文件夹里放一个 AGENTS.md，告诉 Agent 项目约定"
     },
     "mino": {
-      "title": "个人助理 Mino",
+      "title": "个人助理 Nexo",
       "description": "能记忆、会进化的 AI Agent。从 minimal 开始，长成你想要的样子。",
       "intro": "有名字、有性格、有记忆的长期伙伴。第一次聊天时，你们会花大约 5 分钟一起确定它的名字和性格，之后它会越来越懂你。",
       "capEvolveTitle": "持续进化",

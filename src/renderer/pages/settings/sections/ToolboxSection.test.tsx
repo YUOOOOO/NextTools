@@ -14,7 +14,7 @@ vi.mock('@/components/CliToolsSection', () => ({
 const browserServer: McpServerDefinition = {
   id: MANAGED_BROWSER_MCP_ID,
   name: '浏览器',
-  description: 'MyAgents 托管的 Chromium',
+  description: 'NextTools 托管的 Chromium',
   type: 'stdio',
   command: '__browser_host__',
   args: [],

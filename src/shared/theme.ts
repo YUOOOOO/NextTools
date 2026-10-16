@@ -10,10 +10,10 @@
  * Renderer-owned structural fallback. This package is always registered and
  * statically protects the pre-React frame when a requested package is invalid.
  */
-export const CANONICAL_THEME_ID = 'myagents-default';
+export const CANONICAL_THEME_ID = 'nexttools-default';
 
 /** Product default for users who have never explicitly selected a Theme. */
-export const DEFAULT_THEME_ID = 'myagents-light';
+export const DEFAULT_THEME_ID = 'nexttools-light';
 export const DEFAULT_APPEARANCE_MODE = 'system';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';

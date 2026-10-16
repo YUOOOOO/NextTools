@@ -51,7 +51,7 @@ export async function discoverAgents(
   local: LocalAgent[],
   localOnly = false,
 ): Promise<AgentDiscovery> {
-  const sidecarId = process.env.MYAGENTS_SIDECAR_ID?.trim();
+  const sidecarId = process.env.NEXTTOOLS_SIDECAR_ID?.trim();
   const result = sidecarId
     ? await managementApi(
         "/api/agent-network/discovery",

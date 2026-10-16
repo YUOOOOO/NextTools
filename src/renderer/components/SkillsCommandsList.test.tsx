@@ -25,15 +25,15 @@ vi.mock('@/components/Toast', () => ({
 }));
 
 const requiredSkill: SkillItem = {
-  name: 'myagents-cli',
+  name: 'nexttools-cli',
   description: 'Required operations',
   scope: 'user',
-  path: '/global/myagents-cli/SKILL.md',
-  folderName: 'myagents-cli',
+  path: '/global/nexttools-cli/SKILL.md',
+  folderName: 'nexttools-cli',
   systemOwned: true,
   required: true,
   enabled: true,
-  capabilityId: 'global:skill:myagents-cli',
+  capabilityId: 'global:skill:nexttools-cli',
   origin: 'global',
 };
 
@@ -59,7 +59,7 @@ const globalCommand: CommandItem = {
   enabled: false,
   capabilityId: 'global:command:ship',
   origin: 'global',
-  author: 'MyAgents',
+  author: 'NextTools',
 };
 
 describe('SkillsCommandsList project capability controls', () => {
@@ -91,13 +91,13 @@ describe('SkillsCommandsList project capability controls', () => {
     );
 
     const reviewTitle = await screen.findByText('review');
-    const requiredCard = screen.getByText('myagents-cli').closest('.group');
+    const requiredCard = screen.getByText('nexttools-cli').closest('.group');
     const reviewCard = reviewTitle.closest('.group');
     expect(apiMocks.get).toHaveBeenCalledTimes(1);
     expect(apiMocks.get).toHaveBeenCalledWith('/api/project-capabilities?agentDir=%2Fworkspace');
     expect(requiredCard?.querySelector('[role="switch"]')).toBeNull();
     expect(reviewCard?.querySelector('[role="switch"]')).not.toBeNull();
-    const requiredTitle = screen.getByText('myagents-cli');
+    const requiredTitle = screen.getByText('nexttools-cli');
     const systemStatus = screen.getByText('系统');
     const commandTitle = screen.getByText('ship');
     const commandCard = commandTitle.closest('.group');
@@ -110,7 +110,7 @@ describe('SkillsCommandsList project capability controls', () => {
     expect(commandAuthor).not.toHaveClass('rounded-full', 'bg-[var(--paper-inset)]');
 
     fireEvent.click(requiredCard!);
-    expect(onSelectSkill).toHaveBeenCalledWith('myagents-cli', 'user');
+    expect(onSelectSkill).toHaveBeenCalledWith('nexttools-cli', 'user');
 
     fireEvent.click(reviewCard!.querySelector('[role="switch"]')!);
 

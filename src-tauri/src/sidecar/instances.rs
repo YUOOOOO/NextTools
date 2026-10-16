@@ -255,7 +255,7 @@ fn start_tab_sidecar_admitted<R: Runtime>(
         // A UUID keeps directory ownership generation-specific even after the
         // bounded port allocator eventually reuses a port.
         let temp_dir = std::env::temp_dir().join(format!(
-            "myagents-global-{}-{}",
+            "nexttools-global-{}-{}",
             std::process::id(),
             uuid::Uuid::new_v4()
         ));
@@ -295,7 +295,7 @@ fn start_tab_sidecar_admitted<R: Runtime>(
     // Inject management API port for Bun→Rust IPC (v0.1.21)
     let mgmt_port = crate::management_api::get_management_port();
     if mgmt_port > 0 {
-        cmd.env("MYAGENTS_MANAGEMENT_PORT", mgmt_port.to_string());
+        cmd.env("NEXTTOOLS_MANAGEMENT_PORT", mgmt_port.to_string());
     }
     crate::external_cli::inject_internal_token(&mut cmd);
     // Reserve generation identity only after all fallible filesystem setup.
@@ -398,9 +398,9 @@ fn start_tab_sidecar_admitted<R: Runtime>(
             port
         );
     }
-    cmd.env("MYAGENTS_SIDECAR_ID", tab_id);
+    cmd.env("NEXTTOOLS_SIDECAR_ID", tab_id);
     cmd.env(
-        "MYAGENTS_SIDECAR_GENERATION",
+        "NEXTTOOLS_SIDECAR_GENERATION",
         sidecar_generation.to_string(),
     );
 
@@ -410,13 +410,13 @@ fn start_tab_sidecar_admitted<R: Runtime>(
     // for a DSH-only distribution.
     if let Some(identity) = &runtime_identity {
         if let Some(runtime) = identity.runtime_for_env() {
-            cmd.env("MYAGENTS_RUNTIME", runtime);
+            cmd.env("NEXTTOOLS_RUNTIME", runtime);
         }
         if let Some(runtime_source) = identity.runtime_source_for_env() {
-            cmd.env("MYAGENTS_RUNTIME_SOURCE", runtime_source);
+            cmd.env("NEXTTOOLS_RUNTIME_SOURCE", runtime_source);
         }
         if let Some(runtime_binding_json) = &identity.runtime_binding_json {
-            cmd.env("MYAGENTS_RUNTIME_BINDING", runtime_binding_json);
+            cmd.env("NEXTTOOLS_RUNTIME_BINDING", runtime_binding_json);
         }
     }
 

@@ -49,7 +49,7 @@ describe('codex command context', () => {
   });
 
   it('keeps system-cli on PATH resolution semantics', async () => {
-    tempHome = mkdtempSync(join(tmpdir(), 'myagents-cli-selection-'));
+    tempHome = mkdtempSync(join(tmpdir(), 'nexttools-cli-selection-'));
     const selected = join(tempHome, 'selected');
     const fallback = join(tempHome, 'fallback');
     mkdirSync(selected);
@@ -96,20 +96,20 @@ describe('codex command context', () => {
       return;
     }
 
-    tempHome = mkdtempSync(join(tmpdir(), 'myagents-managed-codex-'));
+    tempHome = mkdtempSync(join(tmpdir(), 'nexttools-managed-codex-'));
     vi.stubEnv('HOME', tempHome);
     vi.stubEnv('USERPROFILE', tempHome);
     vi.stubEnv('OPENAI_API_KEY', 'must-not-leak');
     vi.stubEnv('CODEX_ACCESS_TOKEN', 'must-not-leak');
     vi.stubEnv('CODEX_HOME', '/tmp/user-codex-home');
-    vi.stubEnv('MYAGENTS_PORT', '31415');
-    vi.stubEnv('MYAGENTS_MANAGEMENT_PORT', '27182');
-    vi.stubEnv('MYAGENTS_VERSION', '9.9.9-test');
-    vi.stubEnv('MYAGENTS_INTERNAL_CLI_TOKEN', 'internal-sidecar-capability');
+    vi.stubEnv('NEXTTOOLS_PORT', '31415');
+    vi.stubEnv('NEXTTOOLS_MANAGEMENT_PORT', '27182');
+    vi.stubEnv('NEXTTOOLS_VERSION', '9.9.9-test');
+    vi.stubEnv('NEXTTOOLS_INTERNAL_CLI_TOKEN', 'internal-sidecar-capability');
 
     const installDir = join(
       tempHome,
-      '.myagents',
+      '.nexttools',
       'runtimes',
       'codex',
       MANAGED_CODEX_REQUIRED_RUNTIME.version,
@@ -118,7 +118,7 @@ describe('codex command context', () => {
     mkdirSync(installDir, { recursive: true });
     const binary = join(installDir, process.platform === 'win32' ? 'codex.exe' : 'codex');
     writeFileSync(binary, '');
-    const root = join(tempHome, '.myagents', 'runtimes', 'codex');
+    const root = join(tempHome, '.nexttools', 'runtimes', 'codex');
     writeFileSync(join(root, 'installed.json'), JSON.stringify({
       ...verifiedInstalledMetadata(platform),
       executableRelativePath: process.platform === 'win32' ? 'codex.exe' : 'codex',
@@ -132,24 +132,24 @@ describe('codex command context', () => {
     expect(context.env.CODEX_HOME).toBe(getManagedCodexHome());
     expect(context.env.OPENAI_API_KEY).toBeUndefined();
     expect(context.env.CODEX_ACCESS_TOKEN).toBeUndefined();
-    expect(context.env.MYAGENTS_PORT).toBe('31415');
-    expect(context.env.MYAGENTS_MANAGEMENT_PORT).toBe('27182');
-    expect(context.env.MYAGENTS_VERSION).toBe('9.9.9-test');
-    expect(context.env.MYAGENTS_INTERNAL_CLI_TOKEN).toBe('internal-sidecar-capability');
-    const rules = readFileSync(join(getManagedCodexHome(), 'rules', 'myagents.rules'), 'utf-8');
-    expect(rules).toContain('prefix_rule(pattern=["myagents"], decision="allow")');
-    expect(rules).toContain(JSON.stringify(join(tempHome, '.myagents', 'bin', process.platform === 'win32' ? 'myagents.cmd' : 'myagents')));
+    expect(context.env.NEXTTOOLS_PORT).toBe('31415');
+    expect(context.env.NEXTTOOLS_MANAGEMENT_PORT).toBe('27182');
+    expect(context.env.NEXTTOOLS_VERSION).toBe('9.9.9-test');
+    expect(context.env.NEXTTOOLS_INTERNAL_CLI_TOKEN).toBe('internal-sidecar-capability');
+    const rules = readFileSync(join(getManagedCodexHome(), 'rules', 'nexttools.rules'), 'utf-8');
+    expect(rules).toContain('prefix_rule(pattern=["nexttools"], decision="allow")');
+    expect(rules).toContain(JSON.stringify(join(tempHome, '.nexttools', 'bin', process.platform === 'win32' ? 'nexttools.cmd' : 'nexttools')));
   });
 
   it('prefers executableRelativePath from managed installed metadata', async () => {
     const platform = platformKey();
     if (!platform) return;
 
-    tempHome = mkdtempSync(join(tmpdir(), 'myagents-managed-codex-'));
+    tempHome = mkdtempSync(join(tmpdir(), 'nexttools-managed-codex-'));
     vi.stubEnv('HOME', tempHome);
     vi.stubEnv('USERPROFILE', tempHome);
 
-    const root = join(tempHome, '.myagents', 'runtimes', 'codex');
+    const root = join(tempHome, '.nexttools', 'runtimes', 'codex');
     const installDir = join(root, MANAGED_CODEX_REQUIRED_RUNTIME.version, platform);
     const nestedDir = join(installDir, 'package', 'bin');
     mkdirSync(nestedDir, { recursive: true });
@@ -169,12 +169,12 @@ describe('codex command context', () => {
     const platform = platformKey();
     if (!platform) return;
 
-    tempHome = mkdtempSync(join(tmpdir(), 'myagents-managed-codex-'));
+    tempHome = mkdtempSync(join(tmpdir(), 'nexttools-managed-codex-'));
     vi.stubEnv('HOME', tempHome);
     vi.stubEnv('USERPROFILE', tempHome);
 
     const staleVersion = '0.146.0';
-    const root = join(tempHome, '.myagents', 'runtimes', 'codex');
+    const root = join(tempHome, '.nexttools', 'runtimes', 'codex');
     const installDir = join(root, staleVersion, platform);
     mkdirSync(installDir, { recursive: true });
     const binary = join(installDir, process.platform === 'win32' ? 'codex.exe' : 'codex');
@@ -195,12 +195,12 @@ describe('codex command context', () => {
     const platform = platformKey();
     if (!platform) return;
 
-    tempHome = mkdtempSync(join(tmpdir(), 'myagents-managed-codex-'));
+    tempHome = mkdtempSync(join(tmpdir(), 'nexttools-managed-codex-'));
     vi.stubEnv('HOME', tempHome);
     vi.stubEnv('USERPROFILE', tempHome);
 
     const staleVersion = '0.0.0-unverified';
-    const root = join(tempHome, '.myagents', 'runtimes', 'codex');
+    const root = join(tempHome, '.nexttools', 'runtimes', 'codex');
     const installDir = join(root, staleVersion, platform);
     mkdirSync(installDir, { recursive: true });
     writeFileSync(join(installDir, process.platform === 'win32' ? 'codex.exe' : 'codex'), '');
@@ -218,11 +218,11 @@ describe('codex command context', () => {
     const platform = platformKey();
     if (!platform) return;
 
-    tempHome = mkdtempSync(join(tmpdir(), 'myagents-managed-codex-'));
+    tempHome = mkdtempSync(join(tmpdir(), 'nexttools-managed-codex-'));
     vi.stubEnv('HOME', tempHome);
     vi.stubEnv('USERPROFILE', tempHome);
 
-    const root = join(tempHome, '.myagents', 'runtimes', 'codex');
+    const root = join(tempHome, '.nexttools', 'runtimes', 'codex');
     const installDir = join(root, MANAGED_CODEX_REQUIRED_RUNTIME.version, platform);
     const nestedDir = join(installDir, 'vendor', 'x86_64-pc-windows-msvc', 'bin');
     mkdirSync(nestedDir, { recursive: true });
@@ -242,11 +242,11 @@ describe('codex command context', () => {
     const platform = platformKey();
     if (!platform) return;
 
-    tempHome = mkdtempSync(join(tmpdir(), 'myagents-managed-codex-'));
+    tempHome = mkdtempSync(join(tmpdir(), 'nexttools-managed-codex-'));
     vi.stubEnv('HOME', tempHome);
     vi.stubEnv('USERPROFILE', tempHome);
 
-    const root = join(tempHome, '.myagents', 'runtimes', 'codex');
+    const root = join(tempHome, '.nexttools', 'runtimes', 'codex');
     const installDir = join(root, MANAGED_CODEX_REQUIRED_RUNTIME.version, platform);
     mkdirSync(installDir, { recursive: true });
     writeFileSync(join(root, 'installed.json'), JSON.stringify({
@@ -262,11 +262,11 @@ describe('codex command context', () => {
     const platform = platformKey();
     if (!platform) return;
 
-    tempHome = mkdtempSync(join(tmpdir(), 'myagents-managed-codex-'));
+    tempHome = mkdtempSync(join(tmpdir(), 'nexttools-managed-codex-'));
     vi.stubEnv('HOME', tempHome);
     vi.stubEnv('USERPROFILE', tempHome);
 
-    const root = join(tempHome, '.myagents', 'runtimes', 'codex');
+    const root = join(tempHome, '.nexttools', 'runtimes', 'codex');
     const escapedDir = join(root, '..', platform);
     mkdirSync(escapedDir, { recursive: true });
     mkdirSync(root, { recursive: true });

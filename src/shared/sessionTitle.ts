@@ -23,7 +23,7 @@ import {
  */
 
 /**
- * Remove MyAgents system wrappers from a raw message and recover the meaningful
+ * Remove NextTools system wrappers from a raw message and recover the meaningful
  * title text. Handles `<system-reminder>` envelopes (even when truncated before
  * the closing tag), strips `<CRON_TASK>` / `<HEARTBEAT>` / `<MEMORY_UPDATE>`
  * markers, collapses whitespace, and extracts the `执行任务：<name>` task title

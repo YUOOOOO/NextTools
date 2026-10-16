@@ -1,12 +1,12 @@
 //! Centralized application data directory and PID lock file management.
 //!
-//! All code that needs `~/.myagents/` SHOULD use [`myagents_data_dir()`] instead of
+//! All code that needs `~/.nexttools/` SHOULD use [`nexttools_data_dir()`] instead of
 //! hardcoding the path. This enables future dev/prod isolation (separate data dirs
 //! for debug vs release builds) with a single change to this module.
 //!
 //! ## PID Lock File
 //!
-//! `~/.myagents/app.lock` contains the PID of the running MyAgents instance.
+//! `~/.nexttools/app.lock` contains the PID of the running NextTools instance.
 //! - Written by [`acquire_lock()`] during app startup (after single-instance check).
 //! - Read by build scripts (`build_dev.sh`, `start_dev.sh`) to precisely kill the
 //!   running instance before starting a new one.
@@ -45,7 +45,7 @@ const LAST_EXIT_FILE: &str = "last-exit.json";
 /// write only costs a dismissable restore pill on the next launch — the safe
 /// failure direction.
 pub fn record_clean_exit(is_restart: bool) {
-    let Some(dir) = myagents_data_dir() else {
+    let Some(dir) = nexttools_data_dir() else {
         return;
     };
     match write_clean_exit_marker(&dir, is_restart) {
@@ -80,7 +80,7 @@ fn write_clean_exit_marker(dir: &std::path::Path, is_restart: bool) -> std::io::
     Ok(true)
 }
 
-/// Outcome of [`acquire_lock`] — encodes whether a prior MyAgents instance
+/// Outcome of [`acquire_lock`] — encodes whether a prior NextTools instance
 /// existed on this machine when we started.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LockAcquireResult {
@@ -88,7 +88,7 @@ pub enum LockAcquireResult {
     /// full uninstall / manual data wipe). Caller can skip stale-process
     /// scans because there are no possible orphans.
     FreshLaunch,
-    /// Lock file existed and pointed at a live MyAgents process — we killed
+    /// Lock file existed and pointed at a live NextTools process — we killed
     /// it before taking over. Orphan children are likely.
     ReplacedRunning,
     /// Lock file existed but pointed at a dead PID — previous instance
@@ -97,31 +97,31 @@ pub enum LockAcquireResult {
 }
 
 impl LockAcquireResult {
-    /// `true` if a prior MyAgents instance may have left orphaned child
+    /// `true` if a prior NextTools instance may have left orphaned child
     /// processes. The startup cleanup pass should run.
     pub fn had_prior_instance(self) -> bool {
         !matches!(self, Self::FreshLaunch)
     }
 }
 
-/// Return the MyAgents data directory (`~/.myagents/` by default).
+/// Return the NextTools data directory (`~/.nexttools/` by default).
 ///
-/// Future: debug builds may return `~/.myagents-dev/` to enable simultaneous
+/// Future: debug builds may return `~/.nexttools-dev/` to enable simultaneous
 /// dev/prod operation with fully isolated state (config, bots, sidecars, ports).
 /// For now, both profiles share the same directory.
-pub fn myagents_data_dir() -> Option<PathBuf> {
-    dirs::home_dir().map(|h| h.join(".myagents"))
+pub fn nexttools_data_dir() -> Option<PathBuf> {
+    dirs::home_dir().map(|h| h.join(".nexttools"))
 }
 
 /// Path to the PID lock file.
 fn lock_file_path() -> Option<PathBuf> {
-    myagents_data_dir().map(|d| d.join("app.lock"))
+    nexttools_data_dir().map(|d| d.join("app.lock"))
 }
 
-/// Write the current process PID to `~/.myagents/app.lock` and report
+/// Write the current process PID to `~/.nexttools/app.lock` and report
 /// whether a prior instance's state was encountered.
 ///
-/// If an existing lock file contains a PID of a still-running MyAgents process,
+/// If an existing lock file contains a PID of a still-running NextTools process,
 /// that process is killed with SIGKILL before the new PID is written. This handles
 /// the case where macOS auto-restarts a killed `.app` (Automatic Termination)
 /// before the new build starts, leaving two instances fighting over shared resources.
@@ -151,9 +151,9 @@ pub fn acquire_lock() -> LockAcquireResult {
                         // with the same PID (rare) or we're restarting in
                         // place. Treat as crash recovery.
                         LockAcquireResult::CrashRecovery
-                    } else if is_myagents_process(old_pid) {
+                    } else if is_nexttools_process(old_pid) {
                         ulog_warn!(
-                            "[app-lock] Killing stale MyAgents instance (PID {}) before acquiring lock",
+                            "[app-lock] Killing stale NextTools instance (PID {}) before acquiring lock",
                             old_pid
                         );
                         kill_pid(old_pid);
@@ -202,13 +202,13 @@ pub fn release_lock() {
     }
 }
 
-/// Check if a PID belongs to a running MyAgents process (not just any process).
+/// Check if a PID belongs to a running NextTools process (not just any process).
 /// Prevents SIGKILL-ing an unrelated process that recycled the stale PID.
 ///
 /// Unified implementation via `sysinfo` — native API on both platforms, no
 /// subprocess spawn (replacing the prior `ps -p …` on Unix and `tasklist`
 /// on Windows which cost 100–500 ms each).
-fn is_myagents_process(pid: u32) -> bool {
+fn is_nexttools_process(pid: u32) -> bool {
     // First check existence cheaply via `kill(pid, 0)` on Unix, or skip on
     // Windows where sysinfo already short-circuits on unknown PIDs.
     #[cfg(unix)]
@@ -221,14 +221,14 @@ fn is_myagents_process(pid: u32) -> bool {
         }
     }
 
-    crate::process_cleanup::is_myagents_pid(pid)
+    crate::process_cleanup::is_nexttools_pid(pid)
 }
 
 /// Kill a process with SIGKILL (Unix) or TerminateProcess (Windows).
 #[cfg(unix)]
 fn kill_pid(pid: u32) {
     // SAFETY: SIGKILL is a valid signal for any PID we own permission to kill.
-    // Caller has already verified this PID is a MyAgents process.
+    // Caller has already verified this PID is a NextTools process.
     unsafe {
         libc::kill(pid as i32, libc::SIGKILL);
     }

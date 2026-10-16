@@ -1136,8 +1136,8 @@ describe('session-engine selector and adapters', () => {
   it('routes DSH retry through the admission-aware mutation owner', async () => {
     mocks.state.useExternal = true;
     mocks.getActiveRuntimeType.mockReturnValue('dsh');
-    const previousRuntime = process.env.MYAGENTS_RUNTIME;
-    process.env.MYAGENTS_RUNTIME = 'dsh';
+    const previousRuntime = process.env.NEXTTOOLS_RUNTIME;
+    process.env.NEXTTOOLS_RUNTIME = 'dsh';
 
     try {
       await expect(retryLastExternalUserMessageAtSelector('user-dsh-1')).resolves.toEqual({
@@ -1145,8 +1145,8 @@ describe('session-engine selector and adapters', () => {
         content: 'dsh-retry',
       });
     } finally {
-      if (previousRuntime === undefined) delete process.env.MYAGENTS_RUNTIME;
-      else process.env.MYAGENTS_RUNTIME = previousRuntime;
+      if (previousRuntime === undefined) delete process.env.NEXTTOOLS_RUNTIME;
+      else process.env.NEXTTOOLS_RUNTIME = previousRuntime;
     }
     expect(mocks.retryLastExternalUserMessage).toHaveBeenCalledWith('user-dsh-1');
     expect(mocks.popLastUserMessageForRetry).not.toHaveBeenCalled();
@@ -1258,8 +1258,8 @@ describe('session-engine selector and adapters', () => {
     mocks.state.useExternal = true;
     mocks.state.externalActive = false;
     mocks.getActiveRuntimeType.mockReturnValue('dsh');
-    const previousRuntime = process.env.MYAGENTS_RUNTIME;
-    process.env.MYAGENTS_RUNTIME = 'dsh';
+    const previousRuntime = process.env.NEXTTOOLS_RUNTIME;
+    process.env.NEXTTOOLS_RUNTIME = 'dsh';
 
     try {
       await expect(stopActiveTurn()).resolves.toEqual({ success: true, alreadyStopped: true });
@@ -1268,8 +1268,8 @@ describe('session-engine selector and adapters', () => {
         alreadyStopped: true,
       });
     } finally {
-      if (previousRuntime === undefined) delete process.env.MYAGENTS_RUNTIME;
-      else process.env.MYAGENTS_RUNTIME = previousRuntime;
+      if (previousRuntime === undefined) delete process.env.NEXTTOOLS_RUNTIME;
+      else process.env.NEXTTOOLS_RUNTIME = previousRuntime;
     }
 
     expect(mocks.interruptCurrentResponse).not.toHaveBeenCalled();
@@ -1539,7 +1539,7 @@ describe('session-engine selector and adapters', () => {
       scenario: desktopScenario,
       permissionMode: 'fullAgency',
       timeoutMs: 1_000,
-      requiredSystemSkill: 'myagents-memory-update',
+      requiredSystemSkill: 'nexttools-memory-update',
     });
 
     expect(result).toMatchObject({
@@ -1548,7 +1548,7 @@ describe('session-engine selector and adapters', () => {
       status: 409,
       error: 'required Skill missing',
     });
-    expect(mocks.requireCurrentBuiltinSkill).toHaveBeenCalledWith('myagents-memory-update');
+    expect(mocks.requireCurrentBuiltinSkill).toHaveBeenCalledWith('nexttools-memory-update');
   });
 
   it('waits for an in-flight domain claim and durable abort before publishing dispatch-timeout rejection', async () => {
@@ -3039,16 +3039,16 @@ describe('session-engine selector and adapters', () => {
     mocks.state.useExternal = true;
     mocks.state.externalActive = false;
     mocks.state.pendingExternalAsk = false;
-    const previousRuntime = process.env.MYAGENTS_RUNTIME;
-    process.env.MYAGENTS_RUNTIME = 'dsh';
+    const previousRuntime = process.env.NEXTTOOLS_RUNTIME;
+    process.env.NEXTTOOLS_RUNTIME = 'dsh';
 
     try {
       expect(getPermissionResponseEngine().kind).toBe('integrated');
       expect(getAskUserQuestionResponseEngine('stale-ask').kind).toBe('integrated');
       expect(getPlanApprovalResponseEngine('stale-plan').kind).toBe('integrated');
     } finally {
-      if (previousRuntime === undefined) delete process.env.MYAGENTS_RUNTIME;
-      else process.env.MYAGENTS_RUNTIME = previousRuntime;
+      if (previousRuntime === undefined) delete process.env.NEXTTOOLS_RUNTIME;
+      else process.env.NEXTTOOLS_RUNTIME = previousRuntime;
     }
   });
 });

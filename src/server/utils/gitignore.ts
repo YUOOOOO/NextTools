@@ -3,7 +3,7 @@ import { join } from 'path';
 
 /**
  * Ensure a pattern exists in the workspace .gitignore (idempotent, non-fatal).
- * Used by tools that create files under myagents_files/ to prevent accidental commits.
+ * Used by tools that create files under nexttools_files/ to prevent accidental commits.
  */
 export function ensureGitignorePattern(workspacePath: string, pattern: string): void {
   try {

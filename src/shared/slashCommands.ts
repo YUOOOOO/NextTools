@@ -1,6 +1,6 @@
 // Slash Commands Service
 // Provides slash command discovery and management for the chat input
-// Supports builtin commands, custom commands (.claude/commands/), and skills (.claude/skills/, ~/.myagents/skills/)
+// Supports builtin commands, custom commands (.claude/commands/), and skills (.claude/skills/, ~/.nexttools/skills/)
 
 import { load as yamlLoad } from 'js-yaml';
 
@@ -20,7 +20,7 @@ export interface SlashCommand {
 /**
  * Skill frontmatter projection used by the editor. Standard fields remain
  * round-trippable; `author` is a normalized compatibility view; the remaining
- * advanced fields are MyAgents/Claude extensions.
+ * advanced fields are NextTools/Claude extensions.
  */
 export interface SkillFrontmatter {
     name: string;

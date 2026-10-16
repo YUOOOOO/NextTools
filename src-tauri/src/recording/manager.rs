@@ -702,7 +702,7 @@ impl RecordingManager {
         }
 
         let (wake_lock, wake_warning) = if self.acquire_wake_lock {
-            match WakeLock::acquire(&format!("MyAgents recording {}", record.id)) {
+            match WakeLock::acquire(&format!("NextTools recording {}", record.id)) {
                 Ok(lock) => (Some(lock), None),
                 Err(error) => {
                     if let Err(journal_error) = journal.append(

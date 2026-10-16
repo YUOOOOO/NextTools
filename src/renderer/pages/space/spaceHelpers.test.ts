@@ -31,12 +31,12 @@ const session = (
   role: SpaceSession["membership"]["role"],
   userId = "user-1",
 ): SpaceSession => ({
-  baseUrl: "https://space.myagents.test",
+  baseUrl: "https://space.nexttools.test",
   user: { id: userId, email: "user@example.com" },
   space: {
     id: "space-1",
     slug: "official",
-    name: "MyAgents社区",
+    name: "NextTools社区",
     joinPolicy: "open",
   },
   membership: { id: "membership-1", role },
@@ -108,28 +108,28 @@ describe("space issue helpers", () => {
 
   it("builds a concise read-first Issue handoff prompt", () => {
     const prompt = buildIssueCommandPrompt({
-      spaceName: "MyAgents社区",
+      spaceName: "NextTools社区",
       spaceSlug: "official",
       issueId: "iss_123",
     });
 
     expect(prompt).toBe(
       [
-        "Instruction: 这是一个来自 MyAgents Space「MyAgents社区」的 Issue。请先通过下方只读命令获取当前上下文（标题、正文、附件元数据和最新评论）；如附件与判断有关，按需下载并读取。读取后，先向用户概括你的理解并提出下一步建议，等待用户确认后再修改代码、执行处理动作或变更 Issue 状态。",
+        "Instruction: 这是一个来自 NextTools Space「NextTools社区」的 Issue。请先通过下方只读命令获取当前上下文（标题、正文、附件元数据和最新评论）；如附件与判断有关，按需下载并读取。读取后，先向用户概括你的理解并提出下一步建议，等待用户确认后再修改代码、执行处理动作或变更 Issue 状态。",
         "",
         "- Issue ID: iss_123",
         "- Space slug: official",
         "",
         "阅读 Issue：",
-        "`myagents space issue view iss_123 --space official --comments --json`",
+        "`nexttools space issue view iss_123 --space official --comments --json`",
         "",
         "查看其他可用操作：",
-        "`myagents space issue --help`",
+        "`nexttools space issue --help`",
       ].join("\n"),
     );
-    expect(prompt).not.toContain("myagents space issue claim");
-    expect(prompt).not.toContain("myagents space issue complete");
-    expect(prompt).not.toContain("myagents issue iss_123");
+    expect(prompt).not.toContain("nexttools space issue claim");
+    expect(prompt).not.toContain("nexttools space issue complete");
+    expect(prompt).not.toContain("nexttools issue iss_123");
   });
 
   it("exposes status options by permission", () => {
@@ -210,7 +210,7 @@ describe("space issue helpers", () => {
     ] as Project[];
     const agent = {
       id: "agent-1",
-      baseUrl: "https://space.myagents.test",
+      baseUrl: "https://space.nexttools.test",
       spaceId: "space-1",
       workspaceId: "project-1",
       displayName: "Builder",
@@ -343,7 +343,7 @@ describe("space issue helpers", () => {
   it("requires local registered agents to match the current space identity", () => {
     const agent = {
       id: "agent-1",
-      baseUrl: "https://space.myagents.test",
+      baseUrl: "https://space.nexttools.test",
       spaceId: "space-1",
       ownerUserId: "user-1",
       deviceId: "device-1",

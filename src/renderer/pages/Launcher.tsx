@@ -1,7 +1,7 @@
 import { resolveDefaultWorkspaceProject } from '@/components/launcher/WorkspaceSelector';
 import { reasoningEffortAfterModelChange } from '../../shared/reasoningEffort';
 /**
- * Launcher - Main entry page for MyAgents
+ * Launcher - Main entry page for NextTools
  * Lightweight new-work page. Global navigation and workspace/session history
  * live in the App Shell sidebar; this page owns only launch composition.
  */

@@ -186,7 +186,7 @@ describe('Task Center UX refinements', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    window.localStorage.setItem('myagents:task-center:view', 'list');
+    window.localStorage.setItem('nexttools:task-center:view', 'list');
     taskApiMocks.taskGetRunStats.mockResolvedValue({ executionCount: 0 });
     taskApiMocks.taskList.mockResolvedValue([]);
     taskApiMocks.getSessions.mockResolvedValue([]);
@@ -203,7 +203,7 @@ describe('Task Center UX refinements', () => {
   });
 
   it('defaults the task panel to list view when no preference is stored', async () => {
-    window.localStorage.removeItem('myagents:task-center:view');
+    window.localStorage.removeItem('nexttools:task-center:view');
 
     render(<TaskListPanel onCreateTask={vi.fn()} />);
 
@@ -220,7 +220,7 @@ describe('Task Center UX refinements', () => {
   });
 
   it('keeps an explicit card preference and persists a later list choice', async () => {
-    window.localStorage.setItem('myagents:task-center:view', 'card');
+    window.localStorage.setItem('nexttools:task-center:view', 'card');
 
     render(<TaskListPanel onCreateTask={vi.fn()} />);
 
@@ -233,7 +233,7 @@ describe('Task Center UX refinements', () => {
 
     fireEvent.click(screen.getByTitle(/列表视图|List view/));
 
-    expect(window.localStorage.getItem('myagents:task-center:view')).toBe(
+    expect(window.localStorage.getItem('nexttools:task-center:view')).toBe(
       'list',
     );
     expect(screen.getByTitle(/列表视图|List view/)).toHaveAttribute(
@@ -562,8 +562,8 @@ describe('Task Center UX refinements', () => {
   it('shows the canonical Task path with a home-relative prefix and no redundant heading', async () => {
     const taskWithDocs = task({
       docs: {
-        dir: '/Users/zhihu/.myagents/tasks/task-1',
-        taskMd: '/Users/zhihu/.myagents/tasks/task-1/task.md',
+        dir: '/Users/zhihu/.nexttools/tasks/task-1',
+        taskMd: '/Users/zhihu/.nexttools/tasks/task-1/task.md',
       },
     });
 
@@ -579,12 +579,12 @@ describe('Task Center UX refinements', () => {
 
     expect(
       await screen.findByRole('button', {
-        name: '~/.myagents/tasks/task-1/task.md',
+        name: '~/.nexttools/tasks/task-1/task.md',
       }),
     ).toBeInTheDocument();
     expect(screen.queryByText('task.md · 执行 Prompt')).not.toBeInTheDocument();
     expect(
-      screen.queryByText('/Users/zhihu/.myagents/tasks/task-1/task.md'),
+      screen.queryByText('/Users/zhihu/.nexttools/tasks/task-1/task.md'),
     ).not.toBeInTheDocument();
   });
 
@@ -603,7 +603,7 @@ describe('Task Center UX refinements', () => {
     expect(screen.queryByText('简短描述')).not.toBeInTheDocument();
     expect(screen.queryByText('标签')).not.toBeInTheDocument();
     expect(
-      screen.queryByPlaceholderText('以逗号分隔，例如 MyAgents, 维护'),
+      screen.queryByPlaceholderText('以逗号分隔，例如 NextTools, 维护'),
     ).not.toBeInTheDocument();
     expect(screen.getByText('任务需求 Task.md')).toBeInTheDocument();
     expect(

@@ -2,7 +2,7 @@ import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
 import { isTauriEnvironment } from "@/utils/browserMock";
 
-const DEVICE_ID_KEY = "myagents_device_id";
+const DEVICE_ID_KEY = "nexttools_device_id";
 
 let cachedDeviceId: string | null = null;
 let cachedAppVersion: string | null = null;

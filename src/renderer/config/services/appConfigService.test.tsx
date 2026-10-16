@@ -63,7 +63,7 @@ describe('atomicModifyConfig — CONFIG_CHANGED_EVENT dispatch (issue #303)', ()
   });
 
   it('keeps the Rust-owned external CLI token out of the ordinary AppConfig projection', async () => {
-    localStorage.setItem('myagents:config', JSON.stringify({
+    localStorage.setItem('nexttools:config', JSON.stringify({
       defaultPermissionMode: 'auto',
       externalCliAccess: {
         enabled: true,
@@ -79,7 +79,7 @@ describe('atomicModifyConfig — CONFIG_CHANGED_EVENT dispatch (issue #303)', ()
 
   it('defaults unset or invalid reading preferences to standard and preserves saved large', async () => {
     expect((await loadAppConfig()).markdownReadingSize).toBe('standard');
-    localStorage.setItem('myagents:config', JSON.stringify({ markdownReadingSize: 'unexpected' }));
+    localStorage.setItem('nexttools:config', JSON.stringify({ markdownReadingSize: 'unexpected' }));
     expect((await loadAppConfig()).markdownReadingSize).toBe('standard');
 
     const updated = await atomicModifyConfig(config => ({
@@ -124,7 +124,7 @@ describe('atomicModifyConfig — CONFIG_CHANGED_EVENT dispatch (issue #303)', ()
   });
 
   it.each(['light', 'dark', 'system'] as const)('heals legacy theme=%s on the next real locked-style write', async (legacyMode) => {
-    localStorage.setItem('myagents:config', JSON.stringify({ theme: legacyMode }));
+    localStorage.setItem('nexttools:config', JSON.stringify({ theme: legacyMode }));
 
     const result = await atomicModifyConfig(config => ({
       ...config,
@@ -132,12 +132,12 @@ describe('atomicModifyConfig — CONFIG_CHANGED_EVENT dispatch (issue #303)', ()
     }));
 
     expect(result.appearanceMode).toBe(legacyMode);
-    expect(result.themeId).toBe('myagents-light');
+    expect(result.themeId).toBe('nexttools-light');
     expect(result.themeSelectionExplicit).toBe(false);
-    const stored = JSON.parse(localStorage.getItem('myagents:config') ?? '{}') as Record<string, unknown>;
+    const stored = JSON.parse(localStorage.getItem('nexttools:config') ?? '{}') as Record<string, unknown>;
     expect(stored.theme).toBeUndefined();
     expect(stored.appearanceMode).toBe(legacyMode);
-    expect(stored.themeId).toBe('myagents-light');
+    expect(stored.themeId).toBe('nexttools-light');
     expect(stored.themeSelectionExplicit).toBe(false);
   });
 });
@@ -153,13 +153,13 @@ describe('ensureManagedCodexProviderDevGateDefault', () => {
   });
 
   it('persists the release default as an explicit true when the raw config omits it', async () => {
-    localStorage.setItem('myagents:config', JSON.stringify({ theme: 'dark' }));
+    localStorage.setItem('nexttools:config', JSON.stringify({ theme: 'dark' }));
 
     await ensureManagedCodexProviderDevGateDefault();
 
-    const stored = JSON.parse(localStorage.getItem('myagents:config') ?? '{}') as Record<string, unknown>;
+    const stored = JSON.parse(localStorage.getItem('nexttools:config') ?? '{}') as Record<string, unknown>;
     expect(stored.theme).toBeUndefined();
-    expect(stored.themeId).toBe('myagents-light');
+    expect(stored.themeId).toBe('nexttools-light');
     expect(stored.themeSelectionExplicit).toBe(false);
     expect(stored.appearanceMode).toBe('dark');
     expect(stored.managedCodexProviderDevGate).toBe(true);
@@ -167,14 +167,14 @@ describe('ensureManagedCodexProviderDevGateDefault', () => {
   });
 
   it('preserves an explicit false so users can keep the provider hidden', async () => {
-    localStorage.setItem('myagents:config', JSON.stringify({
+    localStorage.setItem('nexttools:config', JSON.stringify({
       theme: 'dark',
       managedCodexProviderDevGate: false,
     }));
 
     await ensureManagedCodexProviderDevGateDefault();
 
-    const stored = JSON.parse(localStorage.getItem('myagents:config') ?? '{}') as Record<string, unknown>;
+    const stored = JSON.parse(localStorage.getItem('nexttools:config') ?? '{}') as Record<string, unknown>;
     expect(stored.managedCodexProviderDevGate).toBe(false);
     // No write occurs when the explicit flag already exists, so disk healing
     // correctly waits for the next real config mutation.

@@ -26,7 +26,7 @@ describe('stripSystemWrapper', () => {
     const raw = [
       '<system-reminder>',
       '<CRON_TASK>',
-      'You are running inside a MyAgents scheduled task execution.',
+      'You are running inside a NextTools scheduled task execution.',
       'cronTaskId: cron_123',
       '</CRON_TASK>',
       '</system-reminder>',

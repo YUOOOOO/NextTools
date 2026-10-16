@@ -52,7 +52,7 @@ describe('effective MCP observer owns every asynchronous completion', () => {
     resetLifecycleForTest();
     resetQueueForTest();
     resetConfigForTest();
-    await initializeAgent('/tmp/myagents-mcp-effective-observer', null, undefined, { preWarmDisabled: true });
+    await initializeAgent('/tmp/nexttools-mcp-effective-observer', null, undefined, { preWarmDisabled: true });
     setCurrentMcpServers([{ id: 'playwright', name: 'Browser', isBuiltin: false, type: 'http', url: 'https://example.invalid/mcp' }]);
     vi.useFakeTimers();
   });
@@ -159,12 +159,12 @@ describe('effective MCP observer owns every asynchronous completion', () => {
     browser.acquire.mockResolvedValueOnce(cap(10)); // Initial map.
     browser.acquire.mockResolvedValueOnce(cap(11)); // Observer recovery acquire.
     browser.acquire.mockImplementationOnce(() => staleBuild.promise); // Nested map build.
-    setCurrentMcpServers([{ id: 'myagents-browser', name: 'Browser', isBuiltin: true, type: 'stdio', command: '__browser_host__' }]);
-    await install(query(async () => [{ name: 'myagents-browser', status: 'failed' }]), 'browser-first');
+    setCurrentMcpServers([{ id: 'nexttools-browser', name: 'Browser', isBuiltin: true, type: 'stdio', command: '__browser_host__' }]);
+    await install(query(async () => [{ name: 'nexttools-browser', status: 'failed' }]), 'browser-first');
     expect(browser.acquire).toHaveBeenCalledTimes(3);
 
     browser.acquire.mockResolvedValue(cap(12));
-    const replacement = query(async () => [{ name: 'myagents-browser', status: 'connected' }]);
+    const replacement = query(async () => [{ name: 'nexttools-browser', status: 'connected' }]);
     await install(replacement, 'replacement');
     const current = getBuiltinMcpEffectiveSnapshot();
     staleBuild.resolve(cap(11));
@@ -180,8 +180,8 @@ describe('effective MCP observer owns every asynchronous completion', () => {
     const capability = deferred<unknown>();
     browser.acquire.mockResolvedValueOnce({ url: 'http://127.0.0.1:9000/mcp/playwright', token: 'a'.repeat(32), hostGeneration: 1 });
     browser.acquire.mockImplementationOnce(() => capability.promise);
-    setCurrentMcpServers([{ id: 'myagents-browser', name: 'Browser', isBuiltin: true, type: 'stdio', command: '__browser_host__' }]);
-    await install(query(async () => [{ name: 'myagents-browser', status: 'failed' }]), 'browser-first');
+    setCurrentMcpServers([{ id: 'nexttools-browser', name: 'Browser', isBuiltin: true, type: 'stdio', command: '__browser_host__' }]);
+    await install(query(async () => [{ name: 'nexttools-browser', status: 'failed' }]), 'browser-first');
     expect(browser.acquire).toHaveBeenCalledTimes(2);
     setCurrentMcpServers([{ id: 'playwright', name: 'Browser', isBuiltin: false, type: 'http', url: 'https://example.invalid/mcp' }]);
     const replacement = query(async () => ready);

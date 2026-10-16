@@ -245,7 +245,7 @@ function stripNpxWrapper(input: string): { positional?: string; skillName?: stri
       continue;
     }
     if (tok === '-g' || tok === '--global' || tok === '--project' || tok === '--user') {
-      continue; // scope flags are handled separately by MyAgents UI/CLI
+      continue; // scope flags are handled separately by NextTools UI/CLI
     }
     if (tok.startsWith('-')) {
       // Unknown flag — skip gracefully (forwards-compat with future `npx skills` flags)

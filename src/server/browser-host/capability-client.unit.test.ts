@@ -11,7 +11,7 @@ const managementApiMock = vi.mocked(managementApi);
 
 describe('Browser Host capability client', () => {
   beforeEach(() => {
-    vi.stubEnv('MYAGENTS_SIDECAR_ID', 'session-birth');
+    vi.stubEnv('NEXTTOOLS_SIDECAR_ID', 'session-birth');
     managementApiMock.mockReset();
   });
 

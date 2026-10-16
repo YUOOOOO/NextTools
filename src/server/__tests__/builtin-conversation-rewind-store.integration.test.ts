@@ -14,7 +14,7 @@ let originalUserProfile: string | undefined;
 let store: SessionStoreModule;
 
 beforeAll(async () => {
-  testHome = mkdtempSync(join(tmpdir(), 'myagents-builtin-rewind-store-'));
+  testHome = mkdtempSync(join(tmpdir(), 'nexttools-builtin-rewind-store-'));
   originalHome = process.env.HOME;
   originalUserProfile = process.env.USERPROFILE;
   process.env.HOME = testHome;
@@ -66,7 +66,7 @@ async function seedTranscript(sessionId: string, messages: SessionMessage[]) {
 }
 
 function writeIntent(sessionId: string, intent: PendingConversationMutation): void {
-  const path = join(testHome, '.myagents', 'sessions.json');
+  const path = join(testHome, '.nexttools', 'sessions.json');
   const sessions = JSON.parse(readFileSync(path, 'utf-8')) as SessionMetadata[];
   const index = sessions.findIndex(session => session.id === sessionId);
   sessions[index] = { ...sessions[index], pendingConversationMutation: intent };

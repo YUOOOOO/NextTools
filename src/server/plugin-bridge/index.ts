@@ -92,7 +92,7 @@ import { parseArgs } from 'util';
 //
 // 3. Official Lark same-chat queue lifecycle (v2026.7.9)
 //    The plugin serializes each account+chat/thread task until the entire AI
-//    reply and CardKit delivery finish. MyAgents already has a bounded Rust
+//    reply and CardKit delivery finish. NextTools already has a bounded Rust
 //    ingress queue plus request-scoped ReplyRouter ownership, so that private
 //    queue turns normal follow-ups into head-of-line blocking. The narrow
 //    structural patch below advances only after Bridge→Rust admission while
@@ -453,7 +453,7 @@ async function loadPlugin() {
 
   // Add the registered ChannelPlugin.id as an additional alias when it differs
   // from the manifest channel key. The manifest key is canonical for OpenClaw
-  // config, while historical MyAgents data and some plugins still mention
+  // config, while historical NextTools data and some plugins still mention
   // install/package identities.
   const openclawCfg = addOpenClawChannelAliases(openclawConfig, [capturedPlugin.id], channelKey);
   compatApi.config = openclawCfg;

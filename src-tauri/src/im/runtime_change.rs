@@ -46,11 +46,11 @@ pub(crate) fn resolve_peer_file_lock_freeze_outcome(
 pub(crate) async fn freeze_via_file_lock_status(
     session_id: &str,
 ) -> Result<FileLockFreezeOutcome, String> {
-    let myagents_dir = dirs::home_dir()
+    let nexttools_dir = dirs::home_dir()
         .ok_or_else(|| "home_dir unavailable".to_string())?
-        .join(".myagents");
-    let sessions_path = myagents_dir.join("sessions.json");
-    let lock_path = myagents_dir.join("sessions.lock");
+        .join(".nexttools");
+    let sessions_path = nexttools_dir.join("sessions.json");
+    let lock_path = nexttools_dir.join("sessions.lock");
 
     let session_id_owned = session_id.to_string();
 

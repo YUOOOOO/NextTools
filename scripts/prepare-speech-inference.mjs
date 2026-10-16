@@ -97,7 +97,7 @@ const buildJobs = String(
     1,
     Math.min(
       4,
-      Number.parseInt(process.env.MYAGENTS_NATIVE_BUILD_JOBS ?? '', 10) ||
+      Number.parseInt(process.env.NEXTTOOLS_NATIVE_BUILD_JOBS ?? '', 10) ||
         availableParallelism(),
     ),
   ),
@@ -284,7 +284,7 @@ function configurePreparation(options) {
       ? appleSigningIdentity || 'adhoc-development-build'
       : targetLock.platform === 'windows'
         ? windowsCertificateSha1?.toLowerCase() || 'development-build'
-        : 'MyAgents-resource-manifest-v1';
+        : 'NextTools-resource-manifest-v1';
   buildFingerprint = computeBuildFingerprint({
     projectRoot,
     metadata: {
@@ -757,9 +757,9 @@ export async function prepareSpeechInference(options, documentResult) {
         adapterBuild,
         '-DCMAKE_BUILD_TYPE=Release',
         `-DBUILD_TESTING=${speechNativeTestPlan(target).buildTesting}`,
-        `-DMYAGENTS_SHERPA_INCLUDE_DIR=${sherpaSource}`,
-        `-DMYAGENTS_SHERPA_LIBRARY=${sherpaLinkLibrary}`,
-        `-DMYAGENTS_HCLUST_INCLUDE_DIR=${hclustIncludeRoot}`,
+        `-DNEXTTOOLS_SHERPA_INCLUDE_DIR=${sherpaSource}`,
+        `-DNEXTTOOLS_SHERPA_LIBRARY=${sherpaLinkLibrary}`,
+        `-DNEXTTOOLS_HCLUST_INCLUDE_DIR=${hclustIncludeRoot}`,
         ...configurePlatformArgs(),
       ],
       { stdio: 'inherit' },
@@ -782,8 +782,8 @@ export async function prepareSpeechInference(options, documentResult) {
       adapterBuild,
       (path) =>
         basename(path) ===
-        `${targetLock.platform === 'windows' ? '' : 'lib'}myagents-speech-adapter${sharedLibraryExtension}`,
-      'MyAgents speech adapter shared library',
+        `${targetLock.platform === 'windows' ? '' : 'lib'}nexttools-speech-adapter${sharedLibraryExtension}`,
+      'NextTools speech adapter shared library',
     );
 
     execFileSync(
@@ -805,8 +805,8 @@ export async function prepareSpeechInference(options, documentResult) {
     );
     const workerName =
       targetLock.platform === 'windows'
-        ? 'myagents-media-worker.exe'
-        : 'myagents-media-worker';
+        ? 'nexttools-media-worker.exe'
+        : 'nexttools-media-worker';
     const workerSource = join(
       mediaWorkerRoot,
       'target',
@@ -822,7 +822,7 @@ export async function prepareSpeechInference(options, documentResult) {
     const adapterDestination = join(
       stageRoot,
       'native',
-      `myagents-speech-adapter${sharedLibraryExtension}`,
+      `nexttools-speech-adapter${sharedLibraryExtension}`,
     );
     const sherpaDestination = join(
       stageRoot,
@@ -933,14 +933,14 @@ export async function prepareSpeechInference(options, documentResult) {
       mediaWorker: nativeFile(
         workerDestination,
         'AGPL-3.0-only',
-        `MyAgents/${appVersion}`,
-        'current MyAgents source tree',
+        `NextTools/${appVersion}`,
+        'current NextTools source tree',
       ),
       adapter: nativeFile(
         adapterDestination,
         'AGPL-3.0-only',
-        `MyAgents/${appVersion}; adapter ABI ${speechLock.adapterAbiVersion}`,
-        'current MyAgents source tree',
+        `NextTools/${appVersion}; adapter ABI ${speechLock.adapterAbiVersion}`,
+        'current NextTools source tree',
       ),
       sherpaOnnx: nativeFile(
         sherpaDestination,

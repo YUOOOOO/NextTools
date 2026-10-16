@@ -26,12 +26,12 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration - same bucket as publish_release.sh (download.myagents.io domain)
-R2_BUCKET="myagents-releases"
+R2_BUCKET="nexttools-releases"
 TARGET_PATH="assets/feedback_qr_code.png"
 PUBLIC_URL="https://download.myagents.io/${TARGET_PATH}"
 
 echo -e "${CYAN}╔════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║     MyAgents QR Code Upload Tool               ║${NC}"
+echo -e "${CYAN}║     NextTools QR Code Upload Tool               ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════╝${NC}"
 echo ""
 

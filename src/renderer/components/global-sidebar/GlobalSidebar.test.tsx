@@ -55,8 +55,8 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('@/features/account/useMyAgentsAccount', () => ({
-  useMyAgentsAccount: () => ({
+vi.mock('@/features/account/useNextToolsAccount', () => ({
+  useNextToolsAccount: () => ({
     scope: 'production', enabled: false, generation: 0, loadState: 'ready',
     view: null, error: null,
     avatarPresets: { people: [], agents: [], lastFetchedAt: 0, isLoading: false, error: null },
@@ -188,7 +188,6 @@ function sidebar(overrides: Partial<SidebarProps> = {}) {
       onOpenSpace={vi.fn()}
       onOpenCapabilities={vi.fn()}
       onOpenSettings={vi.fn()}
-      onOpenBugReport={vi.fn()}
       onOpenWorkspace={vi.fn(async () => true)}
       onOpenSession={vi.fn(async () => true)}
       onRenameSession={vi.fn(async () => null)}
@@ -247,19 +246,19 @@ describe('GlobalSidebar rail flyout', () => {
     vi.unstubAllGlobals();
   });
 
-  it('keeps helper and settings above independent account and notification controls', () => {
+  it('keeps settings above independent account and notification controls without a helper entry', () => {
     mocks.forcedRail = false;
     const onOpenSpace = vi.fn();
     renderSidebar({ onOpenSpace });
     const footer = document.querySelector('[data-global-sidebar-footer-actions]')!;
     const row = document.querySelector('[data-global-sidebar-account-row]')!;
-    const account = screen.getByRole('button', { name: '登录 MyAgents' });
+    const account = screen.getByRole('button', { name: '登录' });
     const notification = screen.getByRole('button', { name: String(i18n.t('app:notificationCenter.bell')) });
     expect(footer.lastElementChild).toBe(row);
     expect(row.contains(account)).toBe(true);
     expect(row.contains(notification)).toBe(true);
     expect(row.contains(screen.getByRole('button', { name: '设置' }))).toBe(false);
-    expect(row.contains(screen.getByRole('button', { name: '小助理' }))).toBe(false);
+    expect(screen.queryByRole('button', { name: '小助理' })).not.toBeInTheDocument();
     fireEvent.click(account);
     expect(onOpenSpace).toHaveBeenCalledOnce();
     expect(mocks.notificationRefresh).not.toHaveBeenCalled();
@@ -319,12 +318,6 @@ describe('GlobalSidebar rail flyout', () => {
     expect(document.querySelectorAll('[data-notification-center-shell]')).toHaveLength(1);
   });
 
-  it('extends the helper popover anchor to the sidebar edge', () => {
-    renderSidebar();
-
-    const anchor = document.querySelector('[data-feedback-popover-anchor]');
-    expect(anchor).toHaveClass('-mr-3', 'pr-3');
-  });
 
   it('keeps App Shell flyouts mutually exclusive in both directions', () => {
     renderSidebar();
@@ -336,30 +329,22 @@ describe('GlobalSidebar rail flyout', () => {
       name: String(i18n.t('app:notificationCenter.title')),
     })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', {
-      name: String(i18n.t('app:globalSidebar.helper')),
-    }));
-    expect(screen.queryByRole('dialog', {
-      name: String(i18n.t('app:notificationCenter.title')),
-    })).not.toBeInTheDocument();
-
-    fireEvent.click(bell);
-    const workspaceTrigger = screen.getByRole('button', { name: 'Agent 工作区' });
+    const workspaceTrigger = screen.getByRole('button', { name: '工作区' });
     fireEvent.pointerEnter(workspaceTrigger);
     act(() => vi.advanceTimersByTime(125));
     expect(screen.queryByRole('dialog', {
       name: String(i18n.t('app:notificationCenter.title')),
     })).not.toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
   });
 
   it('opens idempotently on click even after the hover delay has elapsed', () => {
     renderSidebar();
-    const trigger = screen.getByRole('button', { name: 'Agent 工作区' });
+    const trigger = screen.getByRole('button', { name: '工作区' });
 
     fireEvent.pointerEnter(trigger);
     act(() => vi.advanceTimersByTime(125));
-    const region = screen.getByRole('region', { name: 'Agent 工作区' });
+    const region = screen.getByRole('region', { name: '工作区' });
     expect(region).toBeInTheDocument();
     const shell = region.closest('[data-global-sidebar-flyout]');
     expect(shell).toHaveClass(
@@ -371,43 +356,33 @@ describe('GlobalSidebar rail flyout', () => {
     expect(shell).not.toHaveClass('bg-[var(--global-sidebar-bg)]', 'shadow-md');
 
     fireEvent.click(trigger);
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
   });
 
-  it('opens the product website from the compact brand link without a row hover surface', async () => {
+  it('keeps the product brand non-interactive', () => {
     mocks.forcedRail = false;
     renderSidebar();
-
-    const brandLink = screen.getByRole('button', {
-      name: String(i18n.t('app:globalSidebar.openWebsite')),
-    });
-    const brandRow = brandLink.closest('[data-global-sidebar-brand-row]');
-
-    expect(brandLink).toHaveClass('cursor-pointer');
-    expect(brandLink).not.toHaveClass('w-full', 'hover:bg-[var(--hover-bg)]', 'hover:bg-[var(--paper-inset)]');
-    expect(brandRow).not.toHaveClass('cursor-pointer', 'hover:bg-[var(--hover-bg)]');
-
-    fireEvent.click(brandLink);
-
-    await vi.waitFor(() => {
-      expect(mocks.openExternal).toHaveBeenCalledWith('https://myagents.io');
-    });
+    const brand = document.querySelector('[data-global-sidebar-brand-link]')!;
+    expect(brand.tagName).toBe('DIV');
+    expect(brand.closest('button, a')).toBeNull();
+    fireEvent.click(brand);
+    expect(mocks.openExternal).not.toHaveBeenCalled();
   });
 
   it('opens immediately from keyboard focus', () => {
     renderSidebar();
-    const trigger = screen.getByRole('button', { name: 'Agent 工作区' });
+    const trigger = screen.getByRole('button', { name: '工作区' });
 
     fireEvent.focus(trigger);
 
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
   });
 
   it('hands Tab focus from the rail trigger into the viewport-owned flyout', () => {
     renderSidebar();
-    const trigger = screen.getByRole('button', { name: 'Agent 工作区' });
+    const trigger = screen.getByRole('button', { name: '工作区' });
     fireEvent.focus(trigger);
-    const region = screen.getByRole('region', { name: 'Agent 工作区' });
+    const region = screen.getByRole('region', { name: '工作区' });
 
     fireEvent.keyDown(trigger, { key: 'Tab' });
 
@@ -420,9 +395,9 @@ describe('GlobalSidebar rail flyout', () => {
 
   it('hands Shift+Tab focus from the first flyout action back to its rail trigger', () => {
     renderSidebar();
-    const trigger = screen.getByRole('button', { name: 'Agent 工作区' });
+    const trigger = screen.getByRole('button', { name: '工作区' });
     fireEvent.focus(trigger);
-    const region = screen.getByRole('region', { name: 'Agent 工作区' });
+    const region = screen.getByRole('region', { name: '工作区' });
     fireEvent.keyDown(trigger, { key: 'Tab' });
     const firstAction = within(region).getByRole('button', {
       name: String(i18n.t('app:globalSidebar.workspaceViewOptions')),
@@ -439,33 +414,33 @@ describe('GlobalSidebar rail flyout', () => {
     const onOpenWorkspace = vi.fn(async () => true);
     mocks.projects.push({ id: 'project-1', name: 'Project one', path: '/work/project-one' });
     renderSidebar({ onOpenWorkspace });
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: String(i18n.t('app:globalSidebar.newChatHere')) }));
     });
 
     await vi.waitFor(() => expect(onOpenWorkspace).toHaveBeenCalledTimes(1));
-    expect(screen.queryByRole('region', { name: 'Agent 工作区' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '工作区' })).not.toBeInTheDocument();
   });
 
   it('closes on Escape from the rail trigger and restores trigger focus', () => {
     renderSidebar();
-    const trigger = screen.getByRole('button', { name: 'Agent 工作区' });
+    const trigger = screen.getByRole('button', { name: '工作区' });
     fireEvent.click(trigger);
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
 
     trigger.focus();
     fireEvent.keyDown(trigger, { key: 'Escape' });
 
-    expect(screen.queryByRole('region', { name: 'Agent 工作区' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '工作区' })).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
   });
 
   it('closes on Escape from inside the viewport-owned flyout and restores trigger focus', () => {
     mocks.projects.push({ id: 'project-1', name: 'Project one', path: '/work/project-one' });
     renderSidebar();
-    const trigger = screen.getByRole('button', { name: 'Agent 工作区' });
+    const trigger = screen.getByRole('button', { name: '工作区' });
     fireEvent.click(trigger);
     const workspaceToggle = screen.getByText('Project one')
       .closest('[data-global-sidebar-workspace-row]')!
@@ -474,22 +449,22 @@ describe('GlobalSidebar rail flyout', () => {
     workspaceToggle.focus();
     fireEvent.keyDown(workspaceToggle, { key: 'Escape' });
 
-    expect(screen.queryByRole('region', { name: 'Agent 工作区' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '工作区' })).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
   });
 
   it('closes after the pointer leaves an otherwise idle flyout', () => {
     renderSidebar();
-    const trigger = screen.getByRole('button', { name: 'Agent 工作区' });
+    const trigger = screen.getByRole('button', { name: '工作区' });
     fireEvent.click(trigger);
-    const region = screen.getByRole('region', { name: 'Agent 工作区' });
+    const region = screen.getByRole('region', { name: '工作区' });
 
     fireEvent.pointerLeave(region);
     act(() => vi.advanceTimersByTime(219));
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
 
     act(() => vi.advanceTimersByTime(1));
-    expect(screen.queryByRole('region', { name: 'Agent 工作区' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '工作区' })).not.toBeInTheDocument();
   });
 
   it('keeps the flyout open when collapsing a workspace only changes layout beneath the pointer', () => {
@@ -521,8 +496,8 @@ describe('GlobalSidebar rail flyout', () => {
       sessionView: 'all',
     }));
     renderSidebar();
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
-    const region = screen.getByRole('region', { name: 'Agent 工作区' });
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
+    const region = screen.getByRole('region', { name: '工作区' });
     const flyout = region.closest('[data-global-sidebar-flyout]')!;
     const session = screen.getByRole('button', { name: /Focused session/ });
     const workspaceToggle = screen.getByText('Project one').closest('[data-global-sidebar-workspace-row]')!
@@ -541,7 +516,7 @@ describe('GlobalSidebar rail flyout', () => {
     expect(screen.getByRole('button', { name: /Focused session/, hidden: true })).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(1));
 
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Focused session/ })).not.toBeInTheDocument();
   });
 
@@ -557,9 +532,9 @@ describe('GlobalSidebar rail flyout', () => {
       sessionView: 'all',
     }));
     renderSidebar();
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
-    const region = screen.getByRole('region', { name: 'Agent 工作区' });
+    const region = screen.getByRole('region', { name: '工作区' });
     const flyout = region.closest('[data-global-sidebar-flyout]');
     expect(flyout).toHaveClass('bg-[var(--paper-elevated)]', 'shadow-xl');
     expect(flyout).toHaveClass('fixed', 'top-32', 'bottom-28');
@@ -577,7 +552,7 @@ describe('GlobalSidebar rail flyout', () => {
   it('opens the single New Agent panel from the + button and the empty state', () => {
     const onNewAgentPanelOpenChange = vi.fn();
     renderSidebar({ onNewAgentPanelOpenChange });
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     fireEvent.click(screen.getByRole('button', { name: String(i18n.t('launcher:newAgentPanel.title')) }));
     fireEvent.click(screen.getByRole('button', { name: String(i18n.t('launcher:rightRail.addFolder')) }));
@@ -588,7 +563,7 @@ describe('GlobalSidebar rail flyout', () => {
   it('returns focus to the + entry after the panel it opened closes', () => {
     const onNewAgentPanelOpenChange = vi.fn();
     const view = renderSidebar({ onNewAgentPanelOpenChange });
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
     const addButton = screen.getByRole('button', { name: String(i18n.t('launcher:newAgentPanel.title')) });
 
     fireEvent.click(addButton);
@@ -605,7 +580,7 @@ describe('GlobalSidebar rail flyout', () => {
     mocks.projects.push({ id: 'project-1', name: 'Project one', path: '/work/project-one' });
     const onNewAgentPanelOpenChange = vi.fn();
     renderSidebar({ newAgentPanelOpen: true, onNewAgentPanelOpenChange });
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     fireEvent.click(screen.getByTestId('fake-new-agent-panel'));
 
@@ -621,7 +596,7 @@ describe('GlobalSidebar rail flyout', () => {
   it('uses instant portaled tooltips for workspace header and row actions', () => {
     mocks.projects.push({ id: 'project-1', name: 'Project one', path: '/work/project-one' });
     renderSidebar();
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     const addButton = screen.getByRole('button', { name: String(i18n.t('launcher:newAgentPanel.title')) });
     const viewOptionsButton = screen.getByRole('button', { name: String(i18n.t('app:globalSidebar.workspaceViewOptions')) });
@@ -653,7 +628,7 @@ describe('GlobalSidebar rail flyout', () => {
     const workspacePath = 'D:\\work\\project-one';
     mocks.projects.push({ id: 'project-1', name: 'Project one', path: workspacePath });
     renderSidebar();
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     const workspaceRow = screen.getByText('Project one').closest<HTMLElement>('[data-global-sidebar-workspace-row]')!;
     expect(workspaceRow).toHaveClass('select-none');
@@ -702,7 +677,7 @@ describe('GlobalSidebar rail flyout', () => {
       sessionView: 'all',
     }));
     renderSidebar();
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     const sessionRow = screen.getByText('Selectable session').closest<HTMLElement>('[data-global-sidebar-session-row]')!;
     expect(sessionRow).toHaveClass('select-none');
@@ -739,7 +714,7 @@ describe('GlobalSidebar rail flyout', () => {
       sessionView: 'all',
     }));
     renderSidebar({ onRenameSession });
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     const row = screen.getByText('Before rename').closest<HTMLElement>('[data-global-sidebar-session-row]')!;
     fireEvent.contextMenu(row);
@@ -781,7 +756,7 @@ describe('GlobalSidebar rail flyout', () => {
       sessionView: 'favorites',
     }));
     renderSidebar();
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     const titles = Array.from(document.querySelectorAll('[data-global-sidebar-session-title]'))
       .map((element) => element.textContent);
@@ -811,7 +786,7 @@ describe('GlobalSidebar rail flyout', () => {
       sessionView: 'all',
     }));
     renderSidebar();
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     const row = screen.getByText('Pin me').closest<HTMLElement>('[data-global-sidebar-session-row]')!;
     fireEvent.contextMenu(row);
@@ -841,7 +816,7 @@ describe('GlobalSidebar rail flyout', () => {
       sessionView: 'all',
     }));
     renderSidebar();
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     const trigger = document.querySelector<HTMLElement>('[data-global-sidebar-session-title]')!;
     expect(trigger).not.toHaveTextContent(title);
@@ -874,7 +849,7 @@ describe('GlobalSidebar rail flyout', () => {
       sessionView: 'all',
     }));
     renderSidebar();
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     const row = screen.getByText('Deletable session').closest<HTMLElement>('[data-global-sidebar-session-row]')!;
     fireEvent.click(within(row).getByRole('button', { name: String(i18n.t('launcher:rightRail.more')) }));
@@ -909,7 +884,7 @@ describe('GlobalSidebar rail flyout', () => {
       sessionView: 'all',
     }));
     renderSidebar();
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     const row = screen.getByText('Protected session').closest<HTMLElement>('[data-global-sidebar-session-row]')!;
     fireEvent.click(within(row).getByRole('button', { name: String(i18n.t('launcher:rightRail.more')) }));
@@ -945,7 +920,7 @@ describe('GlobalSidebar rail flyout', () => {
       sessionView: 'all',
     }));
     renderSidebar();
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     const sessionRow = screen.getByText('Copyable session').closest<HTMLElement>('[data-global-sidebar-session-row]')!;
     fireEvent.click(within(sessionRow).getByRole('button', { name: String(i18n.t('launcher:rightRail.more')) }));
@@ -967,7 +942,7 @@ describe('GlobalSidebar rail flyout', () => {
   it('reserves tooltips for non-workspace rail actions', () => {
     renderSidebar();
 
-    expect(screen.queryByRole('tooltip', { name: 'Agent 工作区' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tooltip', { name: '工作区' })).not.toBeInTheDocument();
     const taskButton = screen.getByRole('button', { name: '自动化任务' });
     fireEvent.mouseEnter(taskButton.parentElement!);
     const taskTip = screen.getByRole('tooltip', { name: '自动化任务' });
@@ -975,8 +950,6 @@ describe('GlobalSidebar rail flyout', () => {
     expect(taskTip).not.toHaveClass('delay-500', 'transition-opacity');
 
     fireEvent.mouseLeave(taskButton.parentElement!);
-    fireEvent.click(screen.getByRole('button', { name: '小助理' }));
-    expect(screen.queryByRole('tooltip', { name: '小助理' })).not.toBeInTheDocument();
   });
 
   it('keeps the hover Task-create tooltip trigger inside an absolute row overlay', () => {
@@ -1022,14 +995,14 @@ describe('GlobalSidebar rail flyout', () => {
     }));
     const onOpenSession = vi.fn(async () => false);
     renderSidebar({ onOpenSession });
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Rejected session/ }));
     });
 
     expect(onOpenSession).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
   });
 
   it('keeps the workspace surface open when Session navigation throws', async () => {
@@ -1054,14 +1027,14 @@ describe('GlobalSidebar rail flyout', () => {
       throw new Error('navigation failed');
     });
     renderSidebar({ onOpenSession });
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Failed session/ }));
     });
 
     expect(onOpenSession).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
     expect(errorSpy).toHaveBeenCalledWith(
       '[GlobalSidebar] Failed to open Session:',
       expect.any(Error),
@@ -1072,8 +1045,8 @@ describe('GlobalSidebar rail flyout', () => {
   it('closes the workspace surface when the authoritative active Tab changes', () => {
     mocks.projects.push({ id: 'project-1', name: 'Project one', path: '/work/project-one' });
     const view = renderSidebar();
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
 
     const activeSessionTab: Tab = {
       id: 'active-session-tab',
@@ -1089,7 +1062,7 @@ describe('GlobalSidebar rail flyout', () => {
       activeWorkspacePath: '/work/project-one',
     }));
 
-    expect(screen.queryByRole('region', { name: 'Agent 工作区' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '工作区' })).not.toBeInTheDocument();
   });
 
   it('does not let an old Session completion close a newly reopened flyout', async () => {
@@ -1114,7 +1087,7 @@ describe('GlobalSidebar rail flyout', () => {
       resolveOpen = resolve;
     }));
     const view = renderSidebar({ onOpenSession });
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
     fireEvent.click(screen.getByRole('button', { name: /Slow session/ }));
 
     const activeSessionTab: Tab = {
@@ -1131,17 +1104,17 @@ describe('GlobalSidebar rail flyout', () => {
       activeWorkspacePath: '/work/project-one',
       onOpenSession,
     }));
-    expect(screen.queryByRole('region', { name: 'Agent 工作区' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '工作区' })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
 
     await act(async () => {
       resolveOpen(true);
       await Promise.resolve();
     });
 
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
   });
 
   it('does not let an old workspace completion close a newly reopened flyout', async () => {
@@ -1151,7 +1124,7 @@ describe('GlobalSidebar rail flyout', () => {
       resolveOpen = resolve;
     }));
     const view = renderSidebar({ onOpenWorkspace });
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
     fireEvent.click(screen.getByRole('button', { name: String(i18n.t('app:globalSidebar.newChatHere')) }));
 
     const pendingWorkspaceTab: Tab = {
@@ -1168,17 +1141,17 @@ describe('GlobalSidebar rail flyout', () => {
       activeWorkspacePath: '/work/project-one',
       onOpenWorkspace,
     }));
-    expect(screen.queryByRole('region', { name: 'Agent 工作区' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '工作区' })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
 
     await act(async () => {
       resolveOpen(true);
       await Promise.resolve();
     });
 
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
   });
 
   it('keeps toggle, search and notification mounted across manual modes and replaces the rail website entry', () => {
@@ -1259,7 +1232,7 @@ describe('GlobalSidebar rail flyout', () => {
     expect(navigation.querySelector('[data-global-sidebar-workspace-rail]')).not.toBeInTheDocument();
     expect(navigation.querySelector('[data-global-sidebar-workspace-region]')).not.toHaveClass('border-t', 'border-[var(--line-subtle)]');
     expect(navigation.querySelector('[data-global-sidebar-footer-actions]')).not.toHaveClass('global-sidebar-rail-stack');
-    expect(brandName?.querySelector('[data-myagents-logotype]')).toHaveAccessibleName('MyAgents');
+    expect(brandName?.querySelector('[data-nexttools-logotype]')).toHaveAccessibleName('NextTools');
     expect(brandName).toHaveClass('theme-product-wordmark', 'text-sm', 'font-medium');
     expect(brandName).not.toHaveClass('font-semibold', 'tracking-wide', 'theme-launcher-hero-title');
     expect(brandName).toHaveAttribute('aria-hidden', 'false');
@@ -1313,9 +1286,7 @@ describe('GlobalSidebar rail flyout', () => {
     for (const label of [
       i18n.t('app:globalSidebar.newChat'),
       i18n.t('app:globalSidebar.tasks'),
-      i18n.t('app:globalSidebar.more'),
       i18n.t('app:globalSidebar.capabilities'),
-      i18n.t('app:globalSidebar.helper'),
       i18n.t('app:globalSidebar.settings'),
     ]) {
       const action = screen.getAllByRole('button', { name: String(label) }).find(button => button.hasAttribute('data-global-sidebar-nav-button'))!;
@@ -1337,11 +1308,11 @@ describe('GlobalSidebar rail flyout', () => {
     const notificationButton = screen.getByRole('button', {
       name: String(i18n.t('app:notificationCenter.bell')),
     });
-    const helperButton = screen.getByRole('button', {
-      name: String(i18n.t('app:globalSidebar.helper')),
+    const settingsButton = screen.getByRole('button', {
+      name: String(i18n.t('app:globalSidebar.settings')),
     });
     expect(notificationButton.querySelector('.global-sidebar-nav-label')).not.toBeInTheDocument();
-    expect(helperButton.querySelector('.global-sidebar-nav-label')).toBeInTheDocument();
+    expect(settingsButton.querySelector('.global-sidebar-nav-label')).toBeInTheDocument();
     const workspaceFade = document.querySelector<HTMLElement>('[data-global-sidebar-workspace-fade]');
     expect(workspaceFade).toHaveClass('pointer-events-none', 'absolute', 'inset-x-0', 'bottom-0', 'h-6');
     expect(workspaceFade?.style.background).toContain('linear-gradient(to bottom');
@@ -1485,8 +1456,8 @@ describe('GlobalSidebar rail flyout', () => {
     expect(screen.queryByRole('button', { name: String(i18n.t('app:globalSidebar.team')) }))
       .not.toBeInTheDocument();
     expect(onOpenSpace).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: String(i18n.t('app:globalSidebar.more')) })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: String(i18n.t('app:globalSidebar.agentNetwork')) })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: String(i18n.t('app:globalSidebar.more')) })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: String(i18n.t('app:globalSidebar.agentNetwork')) })).not.toBeInTheDocument();
   });
 
   it('does not let an old Session completion close a newly reopened search overlay', async () => {
@@ -1538,7 +1509,7 @@ describe('GlobalSidebar rail flyout', () => {
     });
     renderSidebar();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
     const archived = screen.getByRole('button', { name: /已归档/ });
     expect(archived).toBeInTheDocument();
     fireEvent.click(archived);
@@ -1559,8 +1530,8 @@ describe('GlobalSidebar rail flyout', () => {
     mocks.projects.push({ id: 'project-1', name: 'Project one', path: '/work/project-one' });
     renderSidebar();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
-    const region = screen.getByRole('region', { name: 'Agent 工作区' });
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
+    const region = screen.getByRole('region', { name: '工作区' });
     const workspaceRow = screen.getByText('Project one').closest<HTMLElement>('[data-global-sidebar-workspace-row]')!;
     const moreButton = within(workspaceRow).getByRole('button', { name: String(i18n.t('launcher:workspaceCard.more')) });
     fireEvent.click(moreButton);
@@ -1568,7 +1539,7 @@ describe('GlobalSidebar rail flyout', () => {
 
     fireEvent.pointerLeave(region);
     act(() => vi.advanceTimersByTime(220));
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /取消/ }));
     expect(moreButton).toHaveFocus();
@@ -1578,8 +1549,8 @@ describe('GlobalSidebar rail flyout', () => {
     mocks.projects.push({ id: 'project-1', name: 'Project one', path: '/work/project-one' });
     renderSidebar();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
-    const region = screen.getByRole('region', { name: 'Agent 工作区' });
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
+    const region = screen.getByRole('region', { name: '工作区' });
     const workspaceRow = screen.getByText('Project one').closest<HTMLElement>('[data-global-sidebar-workspace-row]')!;
     const moreButton = within(workspaceRow).getByRole('button', { name: String(i18n.t('launcher:workspaceCard.more')) });
     fireEvent.click(moreButton);
@@ -1590,7 +1561,7 @@ describe('GlobalSidebar rail flyout', () => {
     expect(moreButton).toHaveFocus();
     fireEvent.pointerLeave(region);
     act(() => vi.advanceTimersByTime(220));
-    expect(screen.getByRole('region', { name: 'Agent 工作区' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '工作区' })).toBeInTheDocument();
   });
 
   it('pages 11 sessions as 5 → 10 → 11, exposes every tag, and leaves no icon spacer for a closed session', () => {
@@ -1619,7 +1590,7 @@ describe('GlobalSidebar rail flyout', () => {
     ]);
 
     renderSidebar({ activeWorkspacePath: '/work/project-one' });
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     expect(document.querySelector('[data-global-sidebar-workspace-list]')).not.toHaveClass('space-y-1');
     const workspaceRow = screen.getByText('Project one').closest('[data-global-sidebar-workspace-row]');
@@ -1720,7 +1691,7 @@ describe('GlobalSidebar rail flyout', () => {
       activeTab: activeSessionTab,
       activeWorkspacePath: '/work/project-one',
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     const rowFor = (title: string) => screen.getByText(title).closest<HTMLElement>('[data-global-sidebar-session-row]')!;
     const activeRow = rowFor('Active session');
@@ -1769,7 +1740,7 @@ describe('GlobalSidebar rail flyout', () => {
     mocks.taskData.workspaceSessionStates.set('/work/b', { isLoading: false, error: null });
 
     renderSidebar();
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     expect(screen.getByText('A failed')).toBeInTheDocument();
     expect(screen.getByText('Healthy session')).toBeInTheDocument();
@@ -1779,7 +1750,7 @@ describe('GlobalSidebar rail flyout', () => {
   it('shows config loading failures with an explicit retry action', () => {
     mocks.configError = 'config unavailable';
     renderSidebar();
-    fireEvent.click(screen.getByRole('button', { name: 'Agent 工作区' }));
+    fireEvent.click(screen.getByRole('button', { name: '工作区' }));
 
     expect(screen.getByText('config unavailable')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: String(i18n.t('launcher:rightRail.retry')) }));
@@ -1787,79 +1758,20 @@ describe('GlobalSidebar rail flyout', () => {
   });
 });
 
-describe('Agent network and Space navigation', () => {
+describe('Simplified sidebar navigation', () => {
   beforeEach(() => { vi.useRealTimers(); vi.clearAllMocks(); mocks.projects = []; window.localStorage.clear(); });
-  it('opens the right menu by keyboard and restores focus on Escape', async () => {
-    const onOpenSpace = vi.fn();
-    renderSidebar({ onOpenSpace });
-    const more = screen.getByRole('button', { name: String(i18n.t('app:globalSidebar.more')) });
-    more.focus(); fireEvent.keyDown(more, { key: 'ArrowRight' });
-    const space = await screen.findByRole('menuitem', { name: String(i18n.t('app:globalSidebar.team')) });
-    expect(more).toHaveAttribute('aria-expanded', 'true');
-    await vi.waitFor(() => expect(space).toHaveFocus());
-    const bot = screen.getByRole('menuitem', { name: '聊天机器人 Bot' });
-    fireEvent.keyDown(space, { key: 'ArrowDown' });
-    expect(bot).toHaveFocus();
-    fireEvent.keyDown(bot, { key: 'ArrowUp' });
-    expect(space).toHaveFocus();
-    fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
-    expect(more).toHaveFocus();
-    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-    fireEvent.click(more); fireEvent.click(await screen.findByRole('menuitem', { name: String(i18n.t('app:globalSidebar.team')) }));
-    expect(onOpenSpace).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-  });
-  it('exposes AgentNet in primary navigation and keeps Space and the Bot shortcut in the hover menu', async () => {
-    const onOpenAgentNetwork = vi.fn();
-    const networkTab: Tab = { id: 'network-tab', view: 'agentnetwork', title: 'AgentNet' };
-    const view = renderSidebar({ onOpenAgentNetwork, activeTab: networkTab });
-    const buttons = screen.getAllByRole('button').filter(button => button.hasAttribute('data-global-sidebar-nav-button'));
-    const labels = buttons.map(button => button.getAttribute('aria-label'));
-    expect(labels).toEqual(['新对话', '自动化任务', '技能与工具', 'AgentNet 局域网络', '更多', '小助理', '设置']);
-    const network = screen.getByRole('button', { name: String(i18n.t('app:globalSidebar.agentNetwork')) });
-    const more = screen.getByRole('button', { name: String(i18n.t('app:globalSidebar.more')) });
-    expect(network).toHaveAttribute('aria-current', 'page');
-    expect(more).not.toHaveAttribute('aria-current');
-    fireEvent.click(network);
-    expect(onOpenAgentNetwork).toHaveBeenCalledOnce();
-    fireEvent.pointerEnter(screen.getByRole('button', { name: String(i18n.t('app:globalSidebar.more')) }));
-    expect(await screen.findByRole('menuitem', { name: String(i18n.t('app:globalSidebar.team')) })).toBeVisible();
-    expect(screen.getAllByRole('menuitem').map(item => item.textContent)).toEqual([String(i18n.t('app:globalSidebar.team')), '聊天机器人 Bot']);
-    expect(screen.queryByRole('menuitem', { name: String(i18n.t('app:globalSidebar.agentNetwork')) })).not.toBeInTheDocument();
-    fireEvent.click(more);
-    expect(more).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('menuitem', { name: String(i18n.t('app:globalSidebar.team')) })).toBeVisible();
-    fireEvent.click(more);
-    expect(screen.getByRole('menu')).toBeVisible();
-    fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
-    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-    const spaceTab: Tab = { id: 'space-tab', view: 'space', title: 'Space' };
-    view.rerender(sidebar({ onOpenAgentNetwork, activeTab: spaceTab }));
-    expect(screen.getByRole('button', { name: String(i18n.t('app:globalSidebar.more')) })).toHaveAttribute('aria-current', 'page');
-    expect(network).not.toHaveAttribute('aria-current');
-  });
-});
-describe('Bot settings shortcut', () => {
-  beforeEach(() => { vi.useRealTimers(); vi.clearAllMocks(); mocks.projects = []; window.localStorage.clear(); });
-  it.each([true, false])('opens Bot with Space available=%s, closes the menu, and preserves Settings navigation', async available => {
+  it.each([true, false])('hides secondary entries with Space available=%s while preserving Settings', available => {
     const onOpenSettings = vi.fn();
     const settingsTab: Tab = { id: 'settings-tab', view: 'settings', title: 'Settings' };
     renderSidebar({ teamSpaceAvailable: available, onOpenSettings, activeTab: settingsTab });
-    const more = screen.getByRole('button', { name: String(i18n.t('app:globalSidebar.more')) });
+    const labels = screen.getAllByRole('button')
+      .filter(button => button.hasAttribute('data-global-sidebar-nav-button'))
+      .map(button => button.getAttribute('aria-label'));
+    expect(labels).toEqual(['新对话', '自动化任务', '技能与工具', '设置']);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     const settings = screen.getByRole('button', { name: '设置' });
     expect(settings).toHaveAttribute('aria-current', 'page');
-    expect(more).not.toHaveAttribute('aria-current');
-    fireEvent.pointerEnter(more);
-    const bot = await screen.findByRole('menuitem', { name: '聊天机器人 Bot' });
-    expect(screen.queryByRole('menuitem', { name: String(i18n.t('app:globalSidebar.team')) }) !== null).toBe(available);
-    fireEvent.click(bot);
-    expect(onOpenSettings).toHaveBeenCalledWith('agent');
-    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     fireEvent.click(settings);
-    expect(onOpenSettings).toHaveBeenLastCalledWith('general');
-    fireEvent.keyDown(more, { key: 'ArrowRight' });
-    expect(await screen.findByRole('menuitem', { name: '聊天机器人 Bot' })).toBeVisible();
-    fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
-    expect(more).toHaveFocus();
+    expect(onOpenSettings).toHaveBeenCalledWith('general');
   });
 });

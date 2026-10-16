@@ -4,7 +4,7 @@
 //! when the host enters idle sleep: TCP streams to the Anthropic API die,
 //! the SDK never detects the dead socket, and the 10-minute watchdog kills
 //! the turn. Real incident: 2026-05-19 19:11–19:26, see
-//! `~/.myagents/logs/unified-2026-05-19.log`.
+//! `~/.nexttools/logs/unified-2026-05-19.log`.
 //!
 //! ## What this prevents
 //!
@@ -145,12 +145,12 @@ fn read_force_wake_lock_from(config_path: &std::path::Path) -> bool {
     cfg.force_wake_lock.unwrap_or(false)
 }
 
-/// Read `~/.myagents/config.json` for `forceWakeLock`. Defaults to `false`
+/// Read `~/.nexttools/config.json` for `forceWakeLock`. Defaults to `false`
 /// when the field is absent / file unreadable / JSON malformed. **Disk-first,
 /// never cached** — both startup boot and the tray initial-state lookup go
 /// through this single function. Mirrors `tray::should_minimize_to_tray()`.
 pub fn should_force_wake_lock() -> bool {
-    if let Some(dir) = crate::app_dirs::myagents_data_dir() {
+    if let Some(dir) = crate::app_dirs::nexttools_data_dir() {
         let v = read_force_wake_lock_from(&dir.join("config.json"));
         ulog_debug!("[force-wake-lock] disk: forceWakeLock={}", v);
         return v;
@@ -169,7 +169,7 @@ pub fn should_force_wake_lock() -> bool {
 /// two callers interleave to leave state/disk/tray/UI disagreeing.
 fn toggle_lock_inner(guard: &mut Option<WakeLock>, enabled: bool) {
     match (enabled, guard.is_some()) {
-        (true, false) => match WakeLock::acquire("MyAgents force wake-lock") {
+        (true, false) => match WakeLock::acquire("NextTools force wake-lock") {
             Ok(lock) => {
                 *guard = Some(lock);
                 ulog_info!("[force-wake-lock] acquired (user opted in)");
@@ -195,7 +195,7 @@ fn toggle_lock_inner(guard: &mut Option<WakeLock>, enabled: bool) {
 /// the only sanctioned reader/modifier/writer for this file). Tolerates the
 /// rare case where `config.json` exists but is not a JSON object root.
 fn persist_to_disk(value: bool) -> Result<(), String> {
-    let dir = crate::app_dirs::myagents_data_dir()
+    let dir = crate::app_dirs::nexttools_data_dir()
         .ok_or_else(|| "[force-wake-lock] cannot resolve data dir".to_string())?;
     let config_path = dir.join("config.json");
     crate::config_io::with_config_lock(&config_path, false, |cfg| {
@@ -333,7 +333,7 @@ mod tests {
 
     // ─── PRD 0.2.35 · should_force_wake_lock disk-read covenant ─────────────
     //
-    // The public `should_force_wake_lock()` reads `~/.myagents/config.json`,
+    // The public `should_force_wake_lock()` reads `~/.nexttools/config.json`,
     // which can't be redirected per-test. We exercise the inner
     // `read_force_wake_lock_from(path)` against tempfiles to lock down the
     // three cases the PRD specifies + the BOM / corruption tolerances every
@@ -343,7 +343,7 @@ mod tests {
 
     fn write_tmp(name: &str, body: &[u8]) -> std::path::PathBuf {
         let path = std::env::temp_dir().join(format!(
-            "myagents_force_wl_test_{}_{}.json",
+            "nexttools_force_wl_test_{}_{}.json",
             std::process::id(),
             name
         ));
@@ -379,7 +379,7 @@ mod tests {
     fn force_wake_lock_default_false_when_file_missing() {
         // Path doesn't exist (first-launch on a fresh machine).
         let p = std::env::temp_dir().join(format!(
-            "myagents_force_wl_test_nonexistent_{}.json",
+            "nexttools_force_wl_test_nonexistent_{}.json",
             std::process::id()
         ));
         if p.exists() {

@@ -9,7 +9,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host ""
 Write-Host "╔═══════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║  🔧 MyAgents 彻底清理重建                              ║" -ForegroundColor Cyan
+Write-Host "║  🔧 NextTools 彻底清理重建                              ║" -ForegroundColor Cyan
 Write-Host "╚═══════════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 
@@ -58,7 +58,7 @@ if (-not $SkipUninstall) {
     Write-Host "[2/6] 检查并卸载旧版本..." -ForegroundColor Blue
 
     # 检查是否安装
-    $app = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -like "MyAgents*" } | Select-Object -First 1
+    $app = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -like "NextTools*" } | Select-Object -First 1
 
     if ($app) {
         Write-Host "  找到已安装版本: $($app.Name) $($app.Version)" -ForegroundColor Yellow
@@ -94,7 +94,7 @@ if (-not $SkipUninstall) {
 # ========================================
 Write-Host "[3/6] 清理 WebView 缓存..." -ForegroundColor Blue
 
-$webviewCache = "$env:LOCALAPPDATA\MyAgents\EBWebView"
+$webviewCache = "$env:LOCALAPPDATA\NextTools\EBWebView"
 if (Test-Path $webviewCache) {
     Write-Host "  删除: $webviewCache" -ForegroundColor Yellow
     Remove-Item -Recurse -Force $webviewCache -ErrorAction SilentlyContinue
@@ -103,7 +103,7 @@ if (Test-Path $webviewCache) {
     Write-Host "  未找到 WebView 缓存" -ForegroundColor Gray
 }
 
-$appData = "$env:APPDATA\MyAgents"
+$appData = "$env:APPDATA\NextTools"
 if (Test-Path $appData) {
     Write-Host "  保留用户数据: $appData" -ForegroundColor Gray
 }
@@ -116,7 +116,7 @@ Write-Host ""
 Write-Host "[4/6] 杀死残留进程..." -ForegroundColor Blue
 
 $killed = 0
-Get-Process | Where-Object { $_.ProcessName -eq "MyAgents" } | ForEach-Object {
+Get-Process | Where-Object { $_.ProcessName -eq "NextTools" } | ForEach-Object {
     Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
     $killed++
 }
@@ -139,7 +139,7 @@ $cleanDirs = @(
     "dist",
     "src-tauri\target\x86_64-pc-windows-msvc\release\bundle",
     "src-tauri\target\x86_64-pc-windows-msvc\release\resources",
-    "src-tauri\target\x86_64-pc-windows-msvc\release\build\myagents-*",
+    "src-tauri\target\x86_64-pc-windows-msvc\release\build\nexttools-*",
     "src-tauri\target\release\bundle",
     "src-tauri\target\release\resources"
 )

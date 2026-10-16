@@ -1,13 +1,13 @@
 ---
 name: hatch-pet
-description: Create, repair, validate, visually QA, and package MyAgents/Codex-compatible animated pets and pet spritesheets from character art, generated images, company or prospect brand cues, or visual references. Use when a user wants a lightweight-worker desktop pet workflow, a non-pixel custom pet style, a prospect or company mascot pet, or a full 8x9 animated pet atlas with transparent unused cells, QA contact sheets, and pet.json packaging. This skill composes the installed $imagegen system skill for visual generation and uses bundled scripts for deterministic spritesheet assembly.
+description: Create, repair, validate, visually QA, and package NextTools/Codex-compatible animated pets and pet spritesheets from character art, generated images, company or prospect brand cues, or visual references. Use when a user wants a lightweight-worker desktop pet workflow, a non-pixel custom pet style, a prospect or company mascot pet, or a full 8x9 animated pet atlas with transparent unused cells, QA contact sheets, and pet.json packaging. This skill composes the installed $imagegen system skill for visual generation and uses bundled scripts for deterministic spritesheet assembly.
 ---
 
 # Hatch Pet
 
 ## Overview
 
-Create a MyAgents/Codex-compatible animated pet from a concept, brand cue, company/prospect name, one or more reference images, or any combination of those inputs. This workflow keeps the deterministic hatch-pet pipeline for atlas geometry, validation, visual QA, and packaging, while using concise state-specific prompts and allowing any pet-safe visual style.
+Create a NextTools/Codex-compatible animated pet from a concept, brand cue, company/prospect name, one or more reference images, or any combination of those inputs. This workflow keeps the deterministic hatch-pet pipeline for atlas geometry, validation, visual QA, and packaging, while using concise state-specific prompts and allowing any pet-safe visual style.
 
 User-facing inputs are optional. If the user omits a pet name, infer one from the concept, brand, company, or reference filenames; if that is not possible, choose a short friendly name. If the user omits a description, infer one from the concept or references. If the user omits reference images, generate the base pet from text first, then use that base as the canonical reference for every animation row.
 
@@ -29,12 +29,12 @@ Use this skill's scripts for deterministic image work only: preparing layout gui
 
 ## Storage Controls
 
-The built-in `$imagegen` path stores generated PNG bytes in the rollout that invokes it, even when it also writes a file under `${CODEX_HOME:-$HOME/.codex}/generated_images` or `${MYAGENTS_HOME:-$HOME/.myagents}/generated_images`. Deleting files later reduces filesystem use, but it does not shrink an already-written rollout. Keep image generation isolated and bounded:
+The built-in `$imagegen` path stores generated PNG bytes in the rollout that invokes it, even when it also writes a file under `${CODEX_HOME:-$HOME/.codex}/generated_images` or `${NEXTTOOLS_HOME:-$HOME/.nexttools}/generated_images`. Deleting files later reduces filesystem use, but it does not shrink an already-written rollout. Keep image generation isolated and bounded:
 
 - Use one lightweight generation worker per visual job. Do not batch multiple base/row jobs into the same worker.
 - Workers must return only `selected_source=...` and `qa_note=...`; they must not include Markdown image previews, base64, or extra visual attachments in their final response.
 - The parent must not open every generated PNG visually. Use worker QA for each job and inspect only the final contact sheet.
-- After copying the selected generated output into `decoded/`, remove the selected original from `${CODEX_HOME:-$HOME/.codex}/generated_images` or `${MYAGENTS_HOME:-$HOME/.myagents}/generated_images` when it lives there, then remove its now-empty generation directory if possible.
+- After copying the selected generated output into `decoded/`, remove the selected original from `${CODEX_HOME:-$HOME/.codex}/generated_images` or `${NEXTTOOLS_HOME:-$HOME/.nexttools}/generated_images` when it lives there, then remove its now-empty generation directory if possible.
 - For storage-sensitive full runs, ask the user whether to use the `$imagegen` CLI fallback when available. That path requires local API credentials and explicit user confirmation, but it can avoid built-in image payloads being embedded in rollout events.
 
 ## Brand Discovery
@@ -92,7 +92,7 @@ brand_sources=<same comma-separated URLs from Generation handoff>
 
 The parent should save the markdown brief before preparing the run, then pass it to `prepare_pet_run.py` as `--brand-discovery-file` together with `--brand-name`, `--brand-brief`, repeated `--brand-source`, and a concise `--pet-notes` value based on `avatar_seed` when the user did not provide a better avatar description. Keep the full brief for review; only the compact handoff fields should shape prompts. If web search is unavailable and the user gave only a bare brand name, ask for brand cues before generating.
 
-For a normal pet run, expect up to 10 visual generation jobs: 1 base pet plus 9 row-strip jobs. The MyAgents/Codex pet contract currently uses all 9 states: `idle`, `running-right`, `running-left`, `waving`, `jumping`, `failed`, `waiting`, `running`, and `review`. The only deterministic visual derivation is `running-left`, which may be produced by mirroring `running-right` only after `running-right` has been generated, visually inspected, and explicitly approved as safe to mirror. If mirroring is not appropriate, generate `running-left` as a normal grounded `$imagegen` row.
+For a normal pet run, expect up to 10 visual generation jobs: 1 base pet plus 9 row-strip jobs. The NextTools/Codex pet contract currently uses all 9 states: `idle`, `running-right`, `running-left`, `waving`, `jumping`, `failed`, `waiting`, `running`, and `review`. The only deterministic visual derivation is `running-left`, which may be produced by mirroring `running-right` only after `running-right` has been generated, visually inspected, and explicitly approved as safe to mirror. If mirroring is not appropriate, generate `running-left` as a normal grounded `$imagegen` row.
 
 After selecting a visual output, the parent agent copies that exact image into the job's `decoded/` path and marks the job complete in `imagegen-jobs.json`. Do not write helper scripts that populate row outputs. The deterministic Python scripts may only process already-generated visual outputs.
 
@@ -171,8 +171,8 @@ Only mark a step complete when the real file, image, or decision exists. If this
 1. Prepare a pet run folder and imagegen job manifest:
 
 ```bash
-MYAGENTS_HOME="${MYAGENTS_HOME:-$HOME/.myagents}"
-SKILL_DIR="${HATCH_PET_SKILL_DIR:-$MYAGENTS_HOME/skills/hatch-pet}"
+NEXTTOOLS_HOME="${NEXTTOOLS_HOME:-$HOME/.nexttools}"
+SKILL_DIR="${HATCH_PET_SKILL_DIR:-$NEXTTOOLS_HOME/skills/hatch-pet}"
 python "$SKILL_DIR/scripts/prepare_pet_run.py" \
   --pet-name "<Name>" \
   --description "<one sentence>" \
@@ -238,7 +238,7 @@ mv "$TMP_MANIFEST" "$RUN_DIR/imagegen-jobs.json"
 If the copied source is under a known generated-images directory, delete the original generated file after the decoded copy exists:
 
 ```bash
-for GENERATED_ROOT in "${MYAGENTS_HOME:-$HOME/.myagents}/generated_images" "${CODEX_HOME:-$HOME/.codex}/generated_images"; do
+for GENERATED_ROOT in "${NEXTTOOLS_HOME:-$HOME/.nexttools}/generated_images" "${CODEX_HOME:-$HOME/.codex}/generated_images"; do
   case "$SOURCE" in
     "$GENERATED_ROOT"/*)
       rm -f "$SOURCE"
@@ -343,10 +343,10 @@ run/
   qa/run-summary.json
 ```
 
-Package output is written outside the run directory by default. In MyAgents, write custom pets to `${MYAGENTS_HOME:-$HOME/.myagents}/pets` so the desktop pet picker can load them directly. The same package shape is compatible with Codex if copied under `${CODEX_HOME:-$HOME/.codex}/pets`.
+Package output is written outside the run directory by default. In NextTools, write custom pets to `${NEXTTOOLS_HOME:-$HOME/.nexttools}/pets` so the desktop pet picker can load them directly. The same package shape is compatible with Codex if copied under `${CODEX_HOME:-$HOME/.codex}/pets`.
 
 ```text
-${MYAGENTS_HOME:-$HOME/.myagents}/pets/<pet-name>/
+${NEXTTOOLS_HOME:-$HOME/.nexttools}/pets/<pet-name>/
   pet.json
   spritesheet.webp
 ```
@@ -358,8 +358,8 @@ RUN_DIR=/absolute/path/to/run
 PET_ID=$(jq -r '.pet_id' "$RUN_DIR/pet_request.json")
 DISPLAY_NAME=$(jq -r '.display_name' "$RUN_DIR/pet_request.json")
 DESCRIPTION=$(jq -r '.description' "$RUN_DIR/pet_request.json")
-MYAGENTS_HOME="${MYAGENTS_HOME:-$HOME/.myagents}"
-PET_DIR="$MYAGENTS_HOME/pets/$PET_ID"
+NEXTTOOLS_HOME="${NEXTTOOLS_HOME:-$HOME/.nexttools}"
+PET_DIR="$NEXTTOOLS_HOME/pets/$PET_ID"
 mkdir -p "$PET_DIR"
 cp "$RUN_DIR/final/spritesheet.webp" "$PET_DIR/spritesheet.webp"
 jq -n --arg id "$PET_ID" --arg displayName "$DISPLAY_NAME" --arg description "$DESCRIPTION" '{id: $id, displayName: $displayName, description: $description, spritesheetPath: "spritesheet.webp"}' > "$PET_DIR/pet.json"
@@ -415,7 +415,7 @@ Row worker responsibilities:
 Final visual QA worker responsibilities:
 
 - inspect `qa/contact-sheet.png` plus the row GIFs under `qa/previews/`, with `qa/review.json` and `final/validation.json` as text context when useful
-- verify all 9 rows match the MyAgents/Codex pet state contract and the same pet identity
+- verify all 9 rows match the NextTools/Codex pet state contract and the same pet identity
 - return a compact result: `visual_qa=pass` or `visual_qa=fail`, plus row-specific repair notes when failing
 - do not edit files, queue repairs, package, or clean up
 
@@ -536,7 +536,7 @@ For extraction-induced motion popping, do not regenerate imagery first. If the s
 - Atlas follows the row/frame counts in `references/animation-rows.md`.
 - Contact sheet and per-row motion previews have been produced and inspected by a lightweight visual QA worker.
 - `qa/review.json` has no errors.
-- Row-by-row review confirms the animation cycles are complete enough for the MyAgents/Codex pet contract.
+- Row-by-row review confirms the animation cycles are complete enough for the NextTools/Codex pet contract.
 - Motion previews do not show unintended size popping, reversed directional cadence, or wrong row semantics.
 - Non-pixel styles are accepted when readable at pet size and consistent across rows.
-- `${MYAGENTS_HOME:-$HOME/.myagents}/pets/<pet-name>/pet.json` and `${MYAGENTS_HOME:-$HOME/.myagents}/pets/<pet-name>/spritesheet.webp` are staged together for custom pets.
+- `${NEXTTOOLS_HOME:-$HOME/.nexttools}/pets/<pet-name>/pet.json` and `${NEXTTOOLS_HOME:-$HOME/.nexttools}/pets/<pet-name>/spritesheet.webp` are staged together for custom pets.

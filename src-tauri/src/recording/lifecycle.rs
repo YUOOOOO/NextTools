@@ -2,7 +2,7 @@
 
 use crate::durable_journal::DurableRecordJournal;
 use crate::record::AudioTrackKind;
-use myagents_media_worker_protocol::record_timeline::{
+use nexttools_media_worker_protocol::record_timeline::{
     CaptureTimeQuality, RecordTrackTimeline, TrackTimeSpan, MAX_TRACK_TIME_SPANS,
 };
 use serde::{Deserialize, Serialize};

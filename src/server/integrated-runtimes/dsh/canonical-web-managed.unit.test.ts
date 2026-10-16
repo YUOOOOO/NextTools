@@ -8,7 +8,7 @@ vi.mock('./provider-credential', () => ({ resolveDshProviderApiKey: vi.fn() }));
 describe('DSH Host Web with managed Provider credentials', () => {
   it('resolves the primary Grok binding at the Web tool request boundary', async () => {
     const profile = {
-      revision: 'grok-profile', providerRouteId: 'myagents-xai-sub-openai-responses',
+      revision: 'grok-profile', providerRouteId: 'nexttools-xai-sub-openai-responses',
       provider: 'xai-sub', api: 'openai-responses', modelId: 'grok-4.5',
     } as DshModelExecutionProfile;
     const binding = { profile, apiKey: '', authType: 'api_key' as const, managedOauth: true as const };
@@ -43,7 +43,7 @@ describe('DSH Host Web with managed Provider credentials', () => {
   });
 
   it('reports an unavailable managed credential as a Provider failure', async () => {
-    const profile = { revision: 'grok-profile', providerRouteId: 'myagents-xai-sub-openai-responses',
+    const profile = { revision: 'grok-profile', providerRouteId: 'nexttools-xai-sub-openai-responses',
       provider: 'xai-sub', api: 'openai-responses', modelId: 'grok-4.5' } as DshModelExecutionProfile;
     vi.mocked(resolveDshProviderApiKey).mockRejectedValue(new Error('secret-bearing upstream error'));
     const host = new DshCanonicalWebHost({

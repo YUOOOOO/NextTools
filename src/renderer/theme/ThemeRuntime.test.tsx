@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ThemeRegistry, themeRegistry } from './registry';
-import { myAgentsDefaultTheme } from './themes/myagents-default';
+import { nextToolsDefaultTheme } from './themes/nexttools-default';
 import {
   primeThemeRuntimeFromBootstrap,
   THEME_SELECTION_CHANGED_EVENT,
@@ -64,7 +64,7 @@ function Probe({ onTheme }: { onTheme?: (key: string) => void }) {
 }
 
 describe('ThemeRuntimeProvider', () => {
-  const registry = new ThemeRegistry([myAgentsDefaultTheme, syntheticTheme]);
+  const registry = new ThemeRegistry([nextToolsDefaultTheme, syntheticTheme]);
 
   beforeEach(() => {
     localStorage.clear();
@@ -102,7 +102,7 @@ describe('ThemeRuntimeProvider', () => {
     expect(resolved.key).toBe('linear:dark');
     expect(document.documentElement.dataset.themeId).toBe('linear');
     expect(document.documentElement.dataset.colorScheme).toBe('dark');
-    expect(document.getElementById('myagents-active-theme-stylesheet')).toHaveAttribute(
+    expect(document.getElementById('nexttools-active-theme-stylesheet')).toHaveAttribute(
       'data-theme-id',
       'linear',
     );
@@ -142,7 +142,7 @@ describe('ThemeRuntimeProvider', () => {
 
   it('projects the configured Markdown reading size on the document root', () => {
     const view = render(
-      <ThemeRuntimeProvider selection={{ themeId: 'myagents-default', appearanceMode: 'light' }}>
+      <ThemeRuntimeProvider selection={{ themeId: 'nexttools-default', appearanceMode: 'light' }}>
         <Probe />
       </ThemeRuntimeProvider>,
     );
@@ -150,7 +150,7 @@ describe('ThemeRuntimeProvider', () => {
 
     view.rerender(
       <ThemeRuntimeProvider
-        selection={{ themeId: 'myagents-default', appearanceMode: 'light' }}
+        selection={{ themeId: 'nexttools-default', appearanceMode: 'light' }}
         markdownReadingSize="large"
       >
         <Probe />
@@ -184,7 +184,7 @@ describe('ThemeRuntimeProvider', () => {
     const view = render(
       <ThemeRuntimeProvider
         registry={themeRegistry}
-        selection={{ themeId: 'myagents-default', appearanceMode: 'light' }}
+        selection={{ themeId: 'nexttools-default', appearanceMode: 'light' }}
       >
         <Probe />
       </ThemeRuntimeProvider>,
@@ -203,7 +203,7 @@ describe('ThemeRuntimeProvider', () => {
         expect(document.documentElement.dataset.themeId).toBe(themeId);
         expect(document.documentElement.dataset.colorScheme).toBe(appearanceMode);
         expect(screen.getByTestId('theme-probe')).toHaveTextContent(`${themeId}:${appearanceMode}`);
-        expect(document.getElementById('myagents-active-theme-stylesheet')).toHaveAttribute(
+        expect(document.getElementById('nexttools-active-theme-stylesheet')).toHaveAttribute(
           'data-theme-id',
           themeId,
         );
@@ -304,15 +304,15 @@ describe('ThemeRuntimeProvider', () => {
       </ThemeRuntimeProvider>,
     );
 
-    expect(document.documentElement.dataset.themeId).toBe('myagents-default');
+    expect(document.documentElement.dataset.themeId).toBe('nexttools-default');
     expect(document.documentElement.dataset.colorScheme).toBe('light');
     expect(document.documentElement).not.toHaveClass('dark');
     expect(screen.getByTestId('theme-probe').textContent).not.toContain('synthetic-');
-    const activeStylesheet = document.getElementById('myagents-active-theme-stylesheet');
-    expect(activeStylesheet).toHaveAttribute('data-theme-id', 'myagents-default');
+    const activeStylesheet = document.getElementById('nexttools-active-theme-stylesheet');
+    expect(activeStylesheet).toHaveAttribute('data-theme-id', 'nexttools-default');
     expect(activeStylesheet?.textContent).not.toContain(SYNTHETIC_THEME_ID);
     expect(JSON.parse(localStorage.getItem(THEME_BOOTSTRAP_KEY) ?? '{}')).toMatchObject({
-      themeId: 'myagents-default',
+      themeId: 'nexttools-default',
       appearanceMode: 'light',
     });
   });

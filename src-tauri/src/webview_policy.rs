@@ -1,6 +1,6 @@
 use tauri::webview::ScrollBarStyle;
 
-/// Resolve the one native scrollbar policy shared by every MyAgents WebView.
+/// Resolve the one native scrollbar policy shared by every NextTools WebView.
 ///
 /// WebView2 requires every WebView targeting the same data directory to use
 /// the same scrollbar style. Keep that choice here instead of letting window

@@ -1,4 +1,4 @@
-// Global shortcut: summon-or-toggle MyAgents from anywhere on the OS.
+// Global shortcut: summon-or-toggle NextTools from anywhere on the OS.
 //
 // Behaviour:
 //   window visible + focused  →  hide to tray (Raycast-style toggle)
@@ -23,7 +23,7 @@ use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut,
 
 use crate::{ulog_error, ulog_info, ulog_warn};
 
-/// Canonical default; M = MyAgents, three-platform-safe.
+/// Canonical default; M = NextTools, three-platform-safe.
 pub const DEFAULT_ACCELERATOR: &str = "CmdOrCtrl+Shift+M";
 
 /// AppConfig.globalSummonShortcut shape — mirror of TS type in shared/config-types.
@@ -49,7 +49,7 @@ impl Default for GlobalSummonConfig {
 static CURRENT_ACCELERATOR: Mutex<Option<String>> = Mutex::new(None);
 
 fn config_path() -> Option<PathBuf> {
-    crate::app_dirs::myagents_data_dir().map(|d| d.join("config.json"))
+    crate::app_dirs::nexttools_data_dir().map(|d| d.join("config.json"))
 }
 
 /// Read GlobalSummonConfig from config.json. Missing or malformed → defaults.

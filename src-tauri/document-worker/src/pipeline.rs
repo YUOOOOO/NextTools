@@ -629,7 +629,7 @@ fn validate_private_paths(input: &Path, staging: &Path) -> Result<(), String> {
         let metadata = entry
             .metadata()
             .map_err(|_| "DOCUMENT_PRIVATE_PATH_INVALID".to_string())?;
-        if entry.file_name() != ".myagents-owner"
+        if entry.file_name() != ".nexttools-owner"
             || !metadata.is_file()
             || metadata.file_type().is_symlink()
             || metadata.len() != 32
@@ -706,7 +706,7 @@ fn directory_size(path: &Path) -> Result<u64, String> {
             fs::read_dir(directory).map_err(|_| "DOCUMENT_STAGING_READ_FAILED".to_string())?
         {
             let entry = entry.map_err(|_| "DOCUMENT_STAGING_READ_FAILED".to_string())?;
-            if entry.path() == path.join(".myagents-owner") {
+            if entry.path() == path.join(".nexttools-owner") {
                 continue;
             }
             let metadata = entry

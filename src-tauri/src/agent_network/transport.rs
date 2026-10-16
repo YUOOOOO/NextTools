@@ -188,7 +188,7 @@ impl NetworkTransport {
             .header("Upgrade", "websocket")
             .header("Sec-WebSocket-Key", &key)
             .header("Sec-WebSocket-Version", "13")
-            .header("Sec-WebSocket-Protocol", "myagents-agent-network.v1");
+            .header("Sec-WebSocket-Protocol", "nexttools-agent-network.v1");
         let diagnostic = RequestDiagnostic::new("agent-network", &reqwest::Method::GET, "/v1/ws");
         let response = self
             .authenticated(request, &reqwest::Method::GET, &url, token, &diagnostic)
@@ -205,7 +205,7 @@ impl NetworkTransport {
                     .any(|token| token.trim().eq_ignore_ascii_case("upgrade"))
             })
             || get("Sec-WebSocket-Accept") != Some(derive_accept_key(key.as_bytes()).as_str())
-            || get("Sec-WebSocket-Protocol") != Some("myagents-agent-network.v1")
+            || get("Sec-WebSocket-Protocol") != Some("nexttools-agent-network.v1")
             || headers.contains_key("Sec-WebSocket-Extensions")
         {
             diagnostic.failure("upgrade", "http", Some(response.status().as_u16()), None);

@@ -1,5 +1,5 @@
 /**
- * Exact package versions for MyAgents-owned npm MCP presets.
+ * Exact package versions for NextTools-owned npm MCP presets.
  *
  * Presets are product dependencies, not user-selected floating dependencies.
  * Keeping their package spec exact prevents every runtime process from paying

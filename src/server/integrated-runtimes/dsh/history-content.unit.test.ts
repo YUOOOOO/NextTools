@@ -95,7 +95,7 @@ describe('native child history presentation', () => {
     expect(mergeSubagentLifecycleUpdate(reopened, closed!)).toEqual(reopened);
     expect(mergeSubagentLifecycleUpdate(closed, reopened!)).toMatchObject({ handleState: 'open', result: 'retained success' });
     append('myagents/work/phase', { ordinal: 2, phase: 'queued' });
-    const expected = createHash('sha256').update(['myagents-work-activation-v2', 'child-1', '2', ''].join('\0')).digest('hex');
+    const expected = createHash('sha256').update(['nexttools-work-activation-v2', 'child-1', '2', ''].join('\0')).digest('hex');
     expect(project()).toMatchObject({ activation: { id: expected, ordinal: 2, state: 'queued' }, status: 'running' });
   });
 

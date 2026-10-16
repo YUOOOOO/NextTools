@@ -88,7 +88,7 @@ describe('managed Codex package command spawning', () => {
     });
   });
 
-  it('never emits MyAgents signatures for unsigned probe packages', () => {
+  it('never emits NextTools signatures for unsigned probe packages', () => {
     expect(shouldSignManagedCodexPackage({ allowUnsigned: true })).toBe(false);
     expect(shouldSignManagedCodexPackage({ allowUnsigned: false })).toBe(true);
   });

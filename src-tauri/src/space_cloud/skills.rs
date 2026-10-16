@@ -161,7 +161,7 @@ pub async fn cmd_space_install_skill(
     let session = require_session()?;
     let install_root = match input.target {
         SpaceSkillInstallTarget::Global => {
-            let root = crate::app_dirs::myagents_data_dir()
+            let root = crate::app_dirs::nexttools_data_dir()
                 .ok_or_else(|| "Home dir not found".to_string())?
                 .join("skills");
             fs::create_dir_all(&root).map_err(|e| format!("Failed to create skills dir: {}", e))?;
@@ -194,7 +194,7 @@ pub async fn cmd_space_install_skill(
         return Err(format!("Skill package exceeds {} bytes", MAX_SKILL_ZIP_BYTES).into());
     }
     let staging_dir = install_root.join(format!(
-        ".{}.myagents-installing-{}",
+        ".{}.nexttools-installing-{}",
         base_name,
         uuid::Uuid::new_v4()
     ));
@@ -204,7 +204,7 @@ pub async fn cmd_space_install_skill(
         let _ = fs::remove_dir_all(&staging_dir);
         return Err(error.into());
     }
-    let commit_lock = install_root.join(format!(".{base_name}.myagents-install.lock"));
+    let commit_lock = install_root.join(format!(".{base_name}.nexttools-install.lock"));
     let commit_staging = staging_dir.clone();
     let commit_target = target_dir.clone();
     let overwrite = input.overwrite;
@@ -245,7 +245,7 @@ pub async fn cmd_space_list_local_skills(
     let mut items = Vec::new();
     if let Some(home) = dirs::home_dir() {
         scan_local_skill_dir(
-            &home.join(".myagents").join("skills"),
+            &home.join(".nexttools").join("skills"),
             "global",
             None,
             None,
@@ -490,7 +490,7 @@ struct SkillUploadPackage {
 }
 
 fn skill_url_export_root() -> Option<PathBuf> {
-    dirs::home_dir().map(|home| home.join(".myagents").join("tmp").join("skill-url-export"))
+    dirs::home_dir().map(|home| home.join(".nexttools").join("tmp").join("skill-url-export"))
 }
 
 fn cleanup_skill_export_path(raw_path: &str) -> Result<(), String> {
@@ -949,7 +949,7 @@ fn commit_staged_skill_install(
         .and_then(|value| value.to_str())
         .unwrap_or("skill");
     let backup_dir = target_dir.with_file_name(format!(
-        ".{target_name}.myagents-replacing-{}",
+        ".{target_name}.nexttools-replacing-{}",
         uuid::Uuid::new_v4()
     ));
     fs::rename(target_dir, &backup_dir)
@@ -1127,7 +1127,7 @@ mod tests {
                 .expect("install entry")
                 .file_name()
                 .to_string_lossy()
-                .contains("myagents-replacing")));
+                .contains("nexttools-replacing")));
     }
 
     #[test]
@@ -1152,7 +1152,7 @@ mod tests {
                 .expect("install entry")
                 .file_name()
                 .to_string_lossy()
-                .contains("myagents-replacing")));
+                .contains("nexttools-replacing")));
     }
 
     #[cfg(unix)]

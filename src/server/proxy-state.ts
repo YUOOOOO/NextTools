@@ -8,8 +8,8 @@ import {
   effectiveProxyScopeKey,
   normalizeProxyScope,
   PROXY_ENV_KEYS,
-  shouldUseMyAgentsProxyForGeneralRequests,
-  shouldUseMyAgentsProxyForProvider,
+  shouldUseNextToolsProxyForGeneralRequests,
+  shouldUseNextToolsProxyForProvider,
 } from '../shared/proxyScope';
 import {
   isSocksBridgeRunning,
@@ -19,10 +19,10 @@ import {
 
 export const PROXY_NO_PROXY_VAL = 'localhost,localhost.localdomain,127.0.0.1,127.0.0.0/8,::1';
 
-const proxyWasInjectedByRust = process.env.MYAGENTS_PROXY_INJECTED === '1';
-const proxyInheritedEnvJson = process.env.MYAGENTS_PROXY_INHERITED_ENV_JSON;
-delete process.env.MYAGENTS_PROXY_INJECTED;
-delete process.env.MYAGENTS_PROXY_INHERITED_ENV_JSON;
+const proxyWasInjectedByRust = process.env.NEXTTOOLS_PROXY_INJECTED === '1';
+const proxyInheritedEnvJson = process.env.NEXTTOOLS_PROXY_INHERITED_ENV_JSON;
+delete process.env.NEXTTOOLS_PROXY_INJECTED;
+delete process.env.NEXTTOOLS_PROXY_INHERITED_ENV_JSON;
 
 let inheritedProxySnapshot: Record<string, string | undefined> = readInheritedProxySnapshot();
 
@@ -37,7 +37,7 @@ let generalRequestDispatcher: { key: string; dispatcher: Dispatcher } | null = n
 
 /**
  * Select a direct or protocol-specific proxy child with the canonical
- * NO_PROXY matcher. MyAgents' localhost invariant includes the whole 127/8
+ * NO_PROXY matcher. NextTools' localhost invariant includes the whole 127/8
  * range, which Undici's conventional hostname matcher does not cover.
  */
 class GeneralRequestDispatcher extends Dispatcher {
@@ -127,7 +127,7 @@ function readInheritedProxySnapshot(): Record<string, string | undefined> {
 
 function readInitialProxySettings(): ProxySettings | null {
   try {
-    const raw = readFileSync(join(homedir(), '.myagents', 'config.json'), 'utf8');
+    const raw = readFileSync(join(homedir(), '.nexttools', 'config.json'), 'utf8');
     const parsed = JSON.parse(raw.replace(/^\uFEFF/, '')) as { proxySettings?: unknown };
     return coerceProxySettings(parsed.proxySettings);
   } catch {
@@ -176,8 +176,8 @@ function copyProxyEnvVars(
     if (value !== undefined) target[key] = value;
     else delete target[key];
   }
-  delete target.MYAGENTS_PROXY_INJECTED;
-  delete target.MYAGENTS_PROXY_INHERITED_ENV_JSON;
+  delete target.NEXTTOOLS_PROXY_INJECTED;
+  delete target.NEXTTOOLS_PROXY_INHERITED_ENV_JSON;
   const inheritedNoProxy = target.no_proxy || target.NO_PROXY;
   const noProxy = mergeNoProxyWithLocalhost(inheritedNoProxy);
   target.NO_PROXY = noProxy;
@@ -200,7 +200,7 @@ function mergeNoProxyWithLocalhost(value: string | undefined): string {
 
 function applyGeneralProxyEnv(): void {
   if (
-    shouldUseMyAgentsProxyForGeneralRequests(currentProxySettings)
+    shouldUseNextToolsProxyForGeneralRequests(currentProxySettings)
     && appProxyEnvSnapshot
   ) {
     copyProxyEnvVars(process.env, appProxyEnvSnapshot);
@@ -332,7 +332,7 @@ async function applyProcessProxyConfig(
       }
       const bridgeUrl = `http://127.0.0.1:${bridgePort}`;
       commitProxyState(proxySettings, createAppProxyEnvSnapshot(bridgeUrl));
-      console.log(`[proxy-state] owner=general path=${shouldUseMyAgentsProxyForGeneralRequests(proxySettings) ? 'myagents-proxy' : 'inherited'} protocol=socks5-bridge`);
+      console.log(`[proxy-state] owner=general path=${shouldUseNextToolsProxyForGeneralRequests(proxySettings) ? 'nexttools-proxy' : 'inherited'} protocol=socks5-bridge`);
       return;
     } catch (err) {
       if (generation !== proxyConfigGeneration) {
@@ -348,7 +348,7 @@ async function applyProcessProxyConfig(
     await stopSocksBridge().catch(() => { /* ignore */ });
   }
   commitProxyState(proxySettings, createAppProxyEnvSnapshot(proxyUrl));
-  console.log(`[proxy-state] owner=general path=${shouldUseMyAgentsProxyForGeneralRequests(proxySettings) ? 'myagents-proxy' : 'inherited'} protocol=${proxySettings.protocol || 'http'}`);
+  console.log(`[proxy-state] owner=general path=${shouldUseNextToolsProxyForGeneralRequests(proxySettings) ? 'nexttools-proxy' : 'inherited'} protocol=${proxySettings.protocol || 'http'}`);
 }
 
 function commitProxyState(
@@ -372,7 +372,7 @@ function retireGeneralRequestDispatcher(): void {
 }
 
 function generalRequestEnvSnapshot(): Record<string, string | undefined> {
-  return shouldUseMyAgentsProxyForGeneralRequests(currentProxySettings)
+  return shouldUseNextToolsProxyForGeneralRequests(currentProxySettings)
     ? (appProxyEnvSnapshot ?? {})
     : inheritedProxySnapshot;
 }
@@ -400,7 +400,7 @@ function envHttpProxyOptions(env: Record<string, string | undefined>): {
 }
 
 /**
- * Dispatcher for generic MyAgents-owned network requests. The selected source
+ * Dispatcher for generic NextTools-owned network requests. The selected source
  * is either the live app-proxy overlay or the immutable startup environment;
  * it never reinterprets the process env after Rust/Node have overlaid it.
  */
@@ -432,13 +432,13 @@ export function applyProviderProxyPolicyToEnv(
   env: Record<string, string | undefined>,
   providerId: string,
 ): void {
-  const useAppProxy = shouldUseMyAgentsProxyForProvider(currentProxySettings, providerId);
+  const useAppProxy = shouldUseNextToolsProxyForProvider(currentProxySettings, providerId);
   if (useAppProxy) {
     copyProxyEnvVars(env, appProxyEnvSnapshot ?? {});
   } else {
     copyProxyEnvVars(env, inheritedProxySnapshot);
   }
-  console.log(`[proxy-state] owner=provider provider=${providerId} path=${useAppProxy ? 'myagents-proxy' : 'inherited'}`);
+  console.log(`[proxy-state] owner=provider provider=${providerId} path=${useAppProxy ? 'nexttools-proxy' : 'inherited'}`);
 }
 
 /** Ephemeral Provider request policy for the DSH credential reverse response. */
@@ -447,14 +447,14 @@ export function getProviderRequestProxyPolicy(providerId: string): Readonly<{
   httpsProxy?: string;
   noProxy: string;
 }> {
-  const source = shouldUseMyAgentsProxyForProvider(currentProxySettings, providerId)
+  const source = shouldUseNextToolsProxyForProvider(currentProxySettings, providerId)
     ? (appProxyEnvSnapshot ?? {})
     : inheritedProxySnapshot;
   return Object.freeze(envHttpProxyOptions(source));
 }
 
 export function getProxyForProviderUrl(providerId: string, url: string): string | undefined {
-  const source = shouldUseMyAgentsProxyForProvider(currentProxySettings, providerId)
+  const source = shouldUseNextToolsProxyForProvider(currentProxySettings, providerId)
     ? (appProxyEnvSnapshot ?? {})
     : inheritedProxySnapshot;
   return proxyForUrlFromEnv(url, source);
@@ -466,12 +466,12 @@ export function getProxyForUrl(url: string): string | undefined {
 }
 
 /**
- * Resolve only the proxy explicitly configured by MyAgents for general
+ * Resolve only the proxy explicitly configured by NextTools for general
  * requests. Security-sensitive callers use this to distinguish the trusted
  * app overlay from the inherited baseline.
  */
-export function getMyAgentsProxyForGeneralUrl(url: string): string | undefined {
-  if (!shouldUseMyAgentsProxyForGeneralRequests(currentProxySettings)) return undefined;
+export function getNextToolsProxyForGeneralUrl(url: string): string | undefined {
+  if (!shouldUseNextToolsProxyForGeneralRequests(currentProxySettings)) return undefined;
   return proxyForUrlFromEnv(url, appProxyEnvSnapshot ?? {});
 }
 

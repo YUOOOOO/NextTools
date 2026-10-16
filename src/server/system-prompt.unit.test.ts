@@ -4,11 +4,11 @@ import { buildDshSystemContext, buildSystemPromptAppend } from './system-prompt'
 
 describe('buildSystemPromptAppend floating-ball surface', () => {
   it('adds floating-ball instructions only for the floating desktop surface', () => {
-    expect(buildSystemPromptAppend({ type: 'desktop' })).not.toContain('<myagents-floating-ball-instructions>');
+    expect(buildSystemPromptAppend({ type: 'desktop' })).not.toContain('<nexttools-floating-ball-instructions>');
 
     const prompt = buildSystemPromptAppend({ type: 'desktop', surface: 'floating-ball' });
-    expect(prompt).toContain('<myagents-floating-ball-instructions>');
-    expect(prompt).toContain('MyAgents desktop floating window');
+    expect(prompt).toContain('<nexttools-floating-ball-instructions>');
+    expect(prompt).toContain('NextTools desktop floating window');
     expect(prompt).toContain('Keep responses concise');
   });
 });
@@ -38,12 +38,12 @@ describe('buildDshSystemContext', () => {
       'Current workspace instructions follow.\n\n## .claude/rules/literal.md\nKeep {{name}} literal.',
     );
     expect(snapshot.sections.map(({ id, order, scope }) => ({ id, order, scope }))).toEqual([
-      { id: 'myagents:identity', order: -80, scope: 'global' },
-      { id: 'myagents:capability-routing', order: -70, scope: 'global' },
-      { id: 'myagents:session', order: 10, scope: 'root' },
+      { id: 'nexttools:identity', order: -80, scope: 'global' },
+      { id: 'nexttools:capability-routing', order: -70, scope: 'global' },
+      { id: 'nexttools:session', order: 10, scope: 'root' },
     ]);
-    expect(snapshot.sections[2]?.text).toContain('MyAgents desktop floating window');
-    expect(snapshot.sections[2]?.text).not.toContain('<myagents-identity>');
+    expect(snapshot.sections[2]?.text).toContain('NextTools desktop floating window');
+    expect(snapshot.sections[2]?.text).not.toContain('<nexttools-identity>');
     expect(snapshot.contexts).toEqual([{
       id: 'workspace-supplement',
       order: 100,

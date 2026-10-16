@@ -26,7 +26,7 @@ describe('Agent Channel deletion intent', () => {
     state.stopError = false;
     invoke.mockClear();
     state.current = {
-      defaultPermissionMode: 'auto', themeId: 'myagents-default', appearanceMode: 'system',
+      defaultPermissionMode: 'auto', themeId: 'nexttools-default', appearanceMode: 'system',
       minimizeToTray: true, showDevTools: false, autoStart: false,
       osNotifications: true, notificationSound: true,
       agents: [{

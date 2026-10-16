@@ -1,5 +1,5 @@
 [package]
-name = "myagents-media-worker-protocol"
+name = "nexttools-media-worker-protocol"
 version = "0.4.10"
 edition = "2024"
 rust-version = "1.92"

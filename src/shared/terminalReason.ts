@@ -4,7 +4,7 @@
  * Re-exported directly from `@anthropic-ai/claude-agent-sdk` so SDK upgrades
  * adding new enum values cause tsc errors on the MAP below instead of silent
  * fallback-only behaviour. Double-sourcing was the original mistake here:
- * MyAgents hand-maintained the 12 values against SDK 0.2.107's type, which
+ * NextTools hand-maintained the 12 values against SDK 0.2.107's type, which
  * works today but silently drifts when the SDK bumps.
  *
  * 本文件同时承载 provider 错误的展示映射（`formatApiErrorDetail` / `HTTP_STATUS_HINT`）：

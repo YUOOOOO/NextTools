@@ -17,7 +17,7 @@
  * ---------------
  * An allowlist of roots, each independently resolved and canonicalised:
  *   - current workspace (AI's own workspace directory)
- *   - `~/.myagents/tmp` (scratch space, where AI writes intermediate files)
+ *   - `~/.nexttools/tmp` (scratch space, where AI writes intermediate files)
  *   - platform temp dir (/tmp on Unix, %TEMP% on Windows)
  *
  * A path is accepted iff, after `fs.realpathSync` resolution (dereferencing
@@ -37,7 +37,7 @@ export interface SafeFilePathOptions {
   /** Workspace directory — AI's own project root. Required. */
   workspacePath: string;
   /**
-   * Additional allowed roots. Defaults to `~/.myagents/tmp` and the platform
+   * Additional allowed roots. Defaults to `~/.nexttools/tmp` and the platform
    * temp dir. Pass `[]` to restrict strictly to the workspace.
    */
   extraRoots?: string[];
@@ -68,7 +68,7 @@ export function assertSafeFilePath(filePath: string, options: SafeFilePathOption
   }
 
   // realpathSync dereferences symlinks, so we see where the path *actually*
-  // resolves to. Without this, `~/.myagents/tmp/link → /etc/shadow` slips
+  // resolves to. Without this, `~/.nexttools/tmp/link → /etc/shadow` slips
   // through a naive startsWith check.
   let realPath: string;
   try {
@@ -96,7 +96,7 @@ export function assertSafeFilePath(filePath: string, options: SafeFilePathOption
   const allowed = roots.some(root => isUnder(realPath, root));
   if (!allowed) {
     throw new Error(
-      `path "${filePath}" is outside the allowed roots. Only files under the current workspace, ~/.myagents/tmp, or the system temp directory can be read for this operation.`
+      `path "${filePath}" is outside the allowed roots. Only files under the current workspace, ~/.nexttools/tmp, or the system temp directory can be read for this operation.`
     );
   }
 
@@ -106,7 +106,7 @@ export function assertSafeFilePath(filePath: string, options: SafeFilePathOption
 function defaultExtraRoots(home: string | null): string[] {
   const roots = [tmpdir()];
   if (home) {
-    roots.push(resolve(home, '.myagents', 'tmp'));
+    roots.push(resolve(home, '.nexttools', 'tmp'));
   }
   return roots;
 }

@@ -137,15 +137,15 @@ source ~/.zshrc
 ```bash
 # 验证签名
 codesign --verify --deep --strict --verbose=2 \
-  src-tauri/target/universal-apple-darwin/release/bundle/macos/MyAgents.app
+  src-tauri/target/universal-apple-darwin/release/bundle/macos/NextTools.app
 
 # 验证公证
 spctl --assess --type exec --verbose=2 \
-  src-tauri/target/universal-apple-darwin/release/bundle/macos/MyAgents.app
+  src-tauri/target/universal-apple-darwin/release/bundle/macos/NextTools.app
 
 # 查看公证状态
 xcrun stapler validate \
-  src-tauri/target/universal-apple-darwin/release/bundle/macos/MyAgents.app
+  src-tauri/target/universal-apple-darwin/release/bundle/macos/NextTools.app
 ```
 
 ---
@@ -172,10 +172,10 @@ src-tauri/target/universal-apple-darwin/release/bundle/dmg/
 Tauri CLI 2.11.4 在签名前对 `.app` 执行 `xattr -crs`，简略错误会隐藏具体文件路径。可对失败的构建副本执行同一命令查看底层错误：
 
 ```bash
-/usr/bin/xattr -crs src-tauri/target/debug/bundle/macos/MyAgents.app
+/usr/bin/xattr -crs src-tauri/target/debug/bundle/macos/NextTools.app
 ```
 
-2026-09-06 的 DSH 集成故障由 3 个平台 evidence JSON 的 `0400` 权限引起：导入时保留只读权限，复制进 App 后 `xattr` 返回 `Permission denied`。`ingest:dsh-runtime` 已在临时副本中统一资源权限，保持文件内容和原始交付物不变，并在原子替换前重新校验完整交付包。已有 staging 需用锁定交付物重新运行导入，再运行 `./build_dev.sh`；不要对源交付包递归 chmod，也不要用 `sudo`、跳过签名或忽略 `xattr` 失败来绕过问题。具体权限和校验边界见 [DSH 集成指南](../tech_docs/myagents_dsh_integrated_runtime.md#7-generated-protocol-and-artifact-consumption)。
+2026-09-06 的 DSH 集成故障由 3 个平台 evidence JSON 的 `0400` 权限引起：导入时保留只读权限，复制进 App 后 `xattr` 返回 `Permission denied`。`ingest:dsh-runtime` 已在临时副本中统一资源权限，保持文件内容和原始交付物不变，并在原子替换前重新校验完整交付包。已有 staging 需用锁定交付物重新运行导入，再运行 `./build_dev.sh`；不要对源交付包递归 chmod，也不要用 `sudo`、跳过签名或忽略 `xattr` 失败来绕过问题。具体权限和校验边界见 [DSH 集成指南](../tech_docs/nexttools_dsh_integrated_runtime.md#7-generated-protocol-and-artifact-consumption)。
 
 ### Q: 公证失败怎么办？
 
@@ -209,6 +209,6 @@ xcrun notarytool log <submission-id> --keychain-profile "notarytool-profile"
 - [ ] 创建 App Store Connect API 密钥
 - [ ] 配置环境变量
 - [ ] 运行带签名的构建
-- [ ] 用 `codesign -d --entitlements :- MyAgents.app` 确认录音 entitlement 已进入签名产物
+- [ ] 用 `codesign -d --entitlements :- NextTools.app` 确认录音 entitlement 已进入签名产物
 - [ ] 验证签名和公证
 - [ ] 测试在新 Mac 上安装

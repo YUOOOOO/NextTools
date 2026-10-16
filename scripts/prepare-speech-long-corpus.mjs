@@ -116,7 +116,7 @@ function validateSourceLock() {
     !SAFE_ID.test(sourceLock.corpusVersion ?? "") ||
     !SHA256.test(sourceLock.preparedManifestSha256 ?? "") ||
     sourceLock.tools?.ffmpeg !== "8.0.1" ||
-    source?.qualityCorpusVersion !== "myagents-speech-quality-v1" ||
+    source?.qualityCorpusVersion !== "nexttools-speech-quality-v1" ||
     !SHA256.test(source?.preparedManifestSha256 ?? "") ||
     !SAFE_ID.test(source?.caseId ?? "") ||
     !safeRelativePath(source?.sourcePath) ||

@@ -12,7 +12,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 const executable = process.argv[2];
 if (!executable) throw new Error('Usage: node scripts/verify-cliproxy-contract.mjs <verified-native-executable>');
-const root = await mkdtemp(join(tmpdir(), 'myagents-cliproxy-contract-'));
+const root = await mkdtemp(join(tmpdir(), 'nexttools-cliproxy-contract-'));
 const reserve = (port = 0) => new Promise((accept, reject) => {
   const server = createServer();
   server.once('error', reject);

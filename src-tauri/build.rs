@@ -10,13 +10,13 @@ mod build_cliproxy;
 mod cliproxy_policy;
 
 const SPACE_BUILD_ENV_KEYS: &[&str] = &[
-    "MYAGENTS_SPACE_ENABLED",
-    "MYAGENTS_SPACE_BASE_URL",
-    "MYAGENTS_SPACE_DEV_BASE_URL",
-    "MYAGENTS_SPACE_PUBLIC_CLIENT_ID",
-    "MYAGENTS_SPACE_CLIENT_ID",
-    "MYAGENTS_AGENT_NETWORK_SERVICE_ID",
-    "MYAGENTS_AGENT_NETWORK_DEV_SERVICE_ID",
+    "NEXTTOOLS_SPACE_ENABLED",
+    "NEXTTOOLS_SPACE_BASE_URL",
+    "NEXTTOOLS_SPACE_DEV_BASE_URL",
+    "NEXTTOOLS_SPACE_PUBLIC_CLIENT_ID",
+    "NEXTTOOLS_SPACE_CLIENT_ID",
+    "NEXTTOOLS_AGENT_NETWORK_SERVICE_ID",
+    "NEXTTOOLS_AGENT_NETWORK_DEV_SERVICE_ID",
 ];
 const MANAGED_CODEX_RUNTIME_LOCK_PATH: &str = "../src/shared/managed-codex-runtime.json";
 const MANAGED_BROWSER_RUNTIME_LOCK_PATH: &str = "../src/shared/managed-browser-runtime.json";
@@ -33,7 +33,7 @@ fn main() {
     println!("cargo:rerun-if-changed={}", package_path.display());
     let package: serde_json::Value = serde_json::from_str(&fs::read_to_string(package_path).expect("package.json")).expect("package.json JSON");
     let sdk = package["dependencies"]["@anthropic-ai/claude-agent-sdk"].as_str().expect("pinned Claude SDK version");
-    println!("cargo:rustc-env=MYAGENTS_CLAUDE_SDK_VERSION={sdk}");
+    println!("cargo:rustc-env=NEXTTOOLS_CLAUDE_SDK_VERSION={sdk}");
     build_cliproxy::verify_bundle(package["version"].as_str().expect("App version"));
     expose_managed_codex_runtime_lock();
     expose_managed_browser_runtime_lock();
@@ -60,7 +60,7 @@ fn expose_dsh_build_lock() {
         serde_json::from_slice(&fs::read(release_path).expect("DSH release lock"))
             .expect("DSH release lock JSON")
     };
-    println!("cargo:rustc-env=MYAGENTS_DSH_EFFECTIVE_LOCK_JSON={lock}");
+    println!("cargo:rustc-env=NEXTTOOLS_DSH_EFFECTIVE_LOCK_JSON={lock}");
 }
 
 /// Tauri copies bundle resources beside the binary without removing files that
@@ -231,32 +231,32 @@ fn expose_managed_browser_runtime_lock() {
         .and_then(|artifact| artifact.get("entryCount"))
         .and_then(serde_json::Value::as_u64)
         .unwrap_or(0);
-    println!("cargo:rustc-env=MYAGENTS_BROWSER_RUNTIME_SET={runtime_set}");
-    println!("cargo:rustc-env=MYAGENTS_BROWSER_REVISION={revision}");
-    println!("cargo:rustc-env=MYAGENTS_BROWSER_VERSION={browser_version}");
-    println!("cargo:rustc-env=MYAGENTS_BROWSER_PLAYWRIGHT_MCP_VERSION={playwright_mcp_version}");
-    println!("cargo:rustc-env=MYAGENTS_BROWSER_PLAYWRIGHT_CORE_VERSION={playwright_core_version}");
+    println!("cargo:rustc-env=NEXTTOOLS_BROWSER_RUNTIME_SET={runtime_set}");
+    println!("cargo:rustc-env=NEXTTOOLS_BROWSER_REVISION={revision}");
+    println!("cargo:rustc-env=NEXTTOOLS_BROWSER_VERSION={browser_version}");
+    println!("cargo:rustc-env=NEXTTOOLS_BROWSER_PLAYWRIGHT_MCP_VERSION={playwright_mcp_version}");
+    println!("cargo:rustc-env=NEXTTOOLS_BROWSER_PLAYWRIGHT_CORE_VERSION={playwright_core_version}");
     println!(
-        "cargo:rustc-env=MYAGENTS_BROWSER_ARTIFACT_SOURCE_URL={}",
+        "cargo:rustc-env=NEXTTOOLS_BROWSER_ARTIFACT_SOURCE_URL={}",
         artifact_string("sourceUrl")
     );
     println!(
-        "cargo:rustc-env=MYAGENTS_BROWSER_ARTIFACT_URL={}",
+        "cargo:rustc-env=NEXTTOOLS_BROWSER_ARTIFACT_URL={}",
         artifact_string("url")
     );
     println!(
-        "cargo:rustc-env=MYAGENTS_BROWSER_ARTIFACT_SHA256={}",
+        "cargo:rustc-env=NEXTTOOLS_BROWSER_ARTIFACT_SHA256={}",
         artifact_string("sha256")
     );
-    println!("cargo:rustc-env=MYAGENTS_BROWSER_ARTIFACT_SIZE={archive_size}");
-    println!("cargo:rustc-env=MYAGENTS_BROWSER_UNPACKED_SIZE={unpacked_size}");
-    println!("cargo:rustc-env=MYAGENTS_BROWSER_ENTRY_COUNT={entry_count}");
+    println!("cargo:rustc-env=NEXTTOOLS_BROWSER_ARTIFACT_SIZE={archive_size}");
+    println!("cargo:rustc-env=NEXTTOOLS_BROWSER_UNPACKED_SIZE={unpacked_size}");
+    println!("cargo:rustc-env=NEXTTOOLS_BROWSER_ENTRY_COUNT={entry_count}");
     println!(
-        "cargo:rustc-env=MYAGENTS_BROWSER_ARCHIVE_ROOT={}",
+        "cargo:rustc-env=NEXTTOOLS_BROWSER_ARCHIVE_ROOT={}",
         artifact_string("archiveRoot")
     );
     println!(
-        "cargo:rustc-env=MYAGENTS_BROWSER_EXECUTABLE_RELATIVE_PATH={}",
+        "cargo:rustc-env=NEXTTOOLS_BROWSER_EXECUTABLE_RELATIVE_PATH={}",
         artifact_string("executableRelativePath")
     );
 }
@@ -393,8 +393,8 @@ fn expose_managed_codex_runtime_lock() {
     }
     let runtime_set = format!("codex-{version}");
 
-    println!("cargo:rustc-env=MYAGENTS_MANAGED_CODEX_VERSION={version}");
-    println!("cargo:rustc-env=MYAGENTS_MANAGED_CODEX_RUNTIME_SET={runtime_set}");
+    println!("cargo:rustc-env=NEXTTOOLS_MANAGED_CODEX_VERSION={version}");
+    println!("cargo:rustc-env=NEXTTOOLS_MANAGED_CODEX_RUNTIME_SET={runtime_set}");
 }
 
 fn is_canonical_runtime_version(version: &str) -> bool {
@@ -468,23 +468,23 @@ fn expose_space_build_env() {
 
     // Public deployment identities, never credentials. Keep official builds
     // usable without requiring a new local .env entry on every developer/CI.
-    resolved_env.entry("MYAGENTS_AGENT_NETWORK_SERVICE_ID".to_string())
+    resolved_env.entry("NEXTTOOLS_AGENT_NETWORK_SERVICE_ID".to_string())
         .or_insert_with(|| "98b5376a-4750-49e6-ae82-c5de39b7afef".to_string());
-    resolved_env.entry("MYAGENTS_AGENT_NETWORK_DEV_SERVICE_ID".to_string())
+    resolved_env.entry("NEXTTOOLS_AGENT_NETWORK_DEV_SERVICE_ID".to_string())
         .or_insert_with(|| "c25f1f29-8ac8-4da8-9f7b-c16c9d6c5ac5".to_string());
 
     if env::var("PROFILE").as_deref() == Ok("release") {
         // An inherited process env is visible to `option_env!` even when it is
         // absent from our resolved map. Emit an explicit empty value so a
         // release rustc invocation cannot accidentally bake in the Dev origin.
-        resolved_env.insert("MYAGENTS_SPACE_DEV_BASE_URL".to_string(), String::new());
-        resolved_env.insert("MYAGENTS_AGENT_NETWORK_DEV_SERVICE_ID".to_string(), String::new());
+        resolved_env.insert("NEXTTOOLS_SPACE_DEV_BASE_URL".to_string(), String::new());
+        resolved_env.insert("NEXTTOOLS_AGENT_NETWORK_DEV_SERVICE_ID".to_string(), String::new());
     } else if resolved_env
-        .get("MYAGENTS_SPACE_DEV_BASE_URL")
+        .get("NEXTTOOLS_SPACE_DEV_BASE_URL")
         .map(|value| value.trim().is_empty())
         .unwrap_or(false)
     {
-        resolved_env.remove("MYAGENTS_SPACE_DEV_BASE_URL");
+        resolved_env.remove("NEXTTOOLS_SPACE_DEV_BASE_URL");
     }
 
     normalize_space_build_env(&mut resolved_env);
@@ -559,7 +559,7 @@ fn strip_unquoted_comment(value: &str) -> &str {
 
 fn normalize_space_build_env(values: &mut HashMap<String, String>) {
     let enabled = values
-        .get("MYAGENTS_SPACE_ENABLED")
+        .get("NEXTTOOLS_SPACE_ENABLED")
         .map(String::as_str)
         .map(space_enabled_flag)
         .unwrap_or(false);
@@ -568,26 +568,26 @@ fn normalize_space_build_env(values: &mut HashMap<String, String>) {
     }
 
     let base_url = values
-        .get("MYAGENTS_SPACE_BASE_URL")
+        .get("NEXTTOOLS_SPACE_BASE_URL")
         .map(String::as_str)
         .unwrap_or("")
         .trim();
-    match normalize_space_base_url("MYAGENTS_SPACE_BASE_URL", base_url) {
+    match normalize_space_base_url("NEXTTOOLS_SPACE_BASE_URL", base_url) {
         Ok(normalized) => {
-            values.insert("MYAGENTS_SPACE_BASE_URL".to_string(), normalized);
+            values.insert("NEXTTOOLS_SPACE_BASE_URL".to_string(), normalized);
         }
         Err(error) => panic!("Invalid Space build configuration: {error}"),
     }
 
     if let Some(dev_url) = values
-        .get("MYAGENTS_SPACE_DEV_BASE_URL")
+        .get("NEXTTOOLS_SPACE_DEV_BASE_URL")
         .map(String::as_str)
         .map(str::trim)
         .filter(|value| !value.is_empty())
     {
-        match normalize_space_base_url("MYAGENTS_SPACE_DEV_BASE_URL", dev_url) {
+        match normalize_space_base_url("NEXTTOOLS_SPACE_DEV_BASE_URL", dev_url) {
             Ok(normalized) => {
-                values.insert("MYAGENTS_SPACE_DEV_BASE_URL".to_string(), normalized);
+                values.insert("NEXTTOOLS_SPACE_DEV_BASE_URL".to_string(), normalized);
             }
             Err(error) => panic!("Invalid Space Dev build configuration: {error}"),
         }
@@ -604,7 +604,7 @@ fn space_enabled_flag(value: &str) -> bool {
 fn normalize_space_base_url(key: &str, raw: &str) -> Result<String, String> {
     if raw.is_empty() {
         return Err(format!(
-            "{key} is required when MYAGENTS_SPACE_ENABLED=true"
+            "{key} is required when NEXTTOOLS_SPACE_ENABLED=true"
         ));
     }
     let mut url = url::Url::parse(raw).map_err(|error| format!("Invalid {key}: {error}"))?;

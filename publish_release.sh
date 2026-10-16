@@ -1,5 +1,5 @@
 #!/bin/bash
-# MyAgents 本地发布脚本
+# NextTools 本地发布脚本
 # 将构建产物上传到 Cloudflare R2，并生成更新清单
 #
 # 前置条件：
@@ -21,7 +21,7 @@ BUNDLE_DIR="${PROJECT_DIR}/src-tauri/target"
 ENV_FILE="${PROJECT_DIR}/.env"
 
 # 配置
-R2_BUCKET="myagents-releases"
+R2_BUCKET="nexttools-releases"
 DOWNLOAD_BASE_URL="https://download.myagents.io"
 DMG_MOUNT=""
 
@@ -40,8 +40,8 @@ get_arch_suffix() {
 }
 
 # 获取带架构后缀的 tar.gz 文件名
-# 用法: get_tar_upload_name "MyAgents.app.tar.gz" "aarch64-apple-darwin"
-# 输出: MyAgents_aarch64.app.tar.gz
+# 用法: get_tar_upload_name "NextTools.app.tar.gz" "aarch64-apple-darwin"
+# 输出: NextTools_aarch64.app.tar.gz
 get_tar_upload_name() {
     local base="$1"
     local target="$2"
@@ -67,7 +67,7 @@ NC='\033[0m'
 
 echo ""
 echo -e "${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║${NC}  ${GREEN}🚀 MyAgents 发布到 Cloudflare R2${NC}                     ${CYAN}║${NC}"
+echo -e "${CYAN}║${NC}  ${GREEN}🚀 NextTools 发布到 Cloudflare R2${NC}                     ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}  ${BLUE}Version: ${VERSION}${NC}                                      ${CYAN}║${NC}"
 echo -e "${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
 echo ""
@@ -180,7 +180,7 @@ validate_macos_artifacts() {
     local bundle_dir="$1"
     local dmg="$2"
     local updater_tar="$3"
-    local app_path="${bundle_dir}/macos/MyAgents.app"
+    local app_path="${bundle_dir}/macos/NextTools.app"
     local embedded_version
 
     assert_single_artifact "${bundle_dir}/dmg" "*.dmg" "DMG"
@@ -209,9 +209,9 @@ validate_macos_artifacts() {
         fi
         DMG_MOUNT=$(mktemp -d)
         hdiutil attach "$dmg" -nobrowse -readonly -mountpoint "$DMG_MOUNT" -quiet
-        local dmg_app="${DMG_MOUNT}/MyAgents.app"
+        local dmg_app="${DMG_MOUNT}/NextTools.app"
         if [ ! -d "$dmg_app" ]; then
-            echo -e "${RED}错误: DMG 内缺少 MyAgents.app${NC}"
+            echo -e "${RED}错误: DMG 内缺少 NextTools.app${NC}"
             exit 1
         fi
         local dmg_version
@@ -232,7 +232,7 @@ validate_macos_artifacts() {
     fi
     if [ -n "$updater_tar" ]; then
         local updater_version
-        updater_version=$(tar -xOf "$updater_tar" "MyAgents.app/Contents/Info.plist" \
+        updater_version=$(tar -xOf "$updater_tar" "NextTools.app/Contents/Info.plist" \
             | plutil -extract CFBundleShortVersionString raw -o - -)
         if [ "$updater_version" != "$VERSION" ]; then
             echo -e "${RED}错误: updater 包内版本 ${updater_version} 与待发布版本 ${VERSION} 不一致${NC}"
@@ -454,7 +454,7 @@ for TARGET in "${FOUND_TARGETS[@]}"; do
     TAR_FILENAME=$(basename "$TAR_GZ" 2>/dev/null || echo "")
 
     # 为 tar.gz 文件名添加架构标识，避免 ARM 和 Intel 互相覆盖
-    # MyAgents.app.tar.gz -> MyAgents_aarch64.app.tar.gz 或 MyAgents_x86_64.app.tar.gz
+    # NextTools.app.tar.gz -> NextTools_aarch64.app.tar.gz 或 NextTools_x86_64.app.tar.gz
     if [ -n "$TAR_FILENAME" ]; then
         TAR_UPLOAD_NAME=$(get_tar_upload_name "$TAR_FILENAME" "$TARGET")
     fi
@@ -468,7 +468,7 @@ for TARGET in "${FOUND_TARGETS[@]}"; do
         cat > "${MANIFEST_DIR}/${MANIFEST_NAME}.json" << EOF
 {
   "version": "${VERSION}",
-  "notes": "MyAgents v${VERSION}",
+  "notes": "NextTools v${VERSION}",
   "pub_date": "${PUB_DATE}",
   "signature": "${SIGNATURE}",
   "url": "${DOWNLOAD_BASE_URL}/releases/v${VERSION}/${TAR_UPLOAD_NAME}"
@@ -484,7 +484,7 @@ EOF
 done
 
 # 生成 latest.json（只包含存在的平台）
-LATEST_JSON="{\n  \"version\": \"${VERSION}\",\n  \"pub_date\": \"${PUB_DATE}\",\n  \"release_notes\": \"MyAgents v${VERSION}\",\n  \"downloads\": {"
+LATEST_JSON="{\n  \"version\": \"${VERSION}\",\n  \"pub_date\": \"${PUB_DATE}\",\n  \"release_notes\": \"NextTools v${VERSION}\",\n  \"downloads\": {"
 
 DOWNLOADS_ADDED=0
 if [ -n "$DMG_ARM64" ]; then

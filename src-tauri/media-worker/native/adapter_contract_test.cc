@@ -1,19 +1,19 @@
-#include "myagents_speech_adapter.h"
+#include "nexttools_speech_adapter.h"
 #include <cassert>
 #include <cmath>
 #include <limits>
 #include <vector>
 
 int main() {
-  assert(myagents_speech_adapter_get_api(1) == nullptr);
-  const auto *api = myagents_speech_adapter_get_api(2);
+  assert(nexttools_speech_adapter_get_api(1) == nullptr);
+  const auto *api = nexttools_speech_adapter_get_api(2);
   assert(api != nullptr && api->struct_size == sizeof(*api));
   auto cluster = [&](std::vector<double> distances, uint32_t nodes, double threshold) {
     std::vector<uint32_t> labels(nodes);
     uint32_t speakers = UINT32_MAX;
     const auto original = distances;
     assert(api->cluster_distances(distances.data(), static_cast<uint32_t>(distances.size()), nodes,
-        threshold, labels.data(), nodes, &speakers) == MYAGENTS_SPEECH_STATUS_OK);
+        threshold, labels.data(), nodes, &speakers) == NEXTTOOLS_SPEECH_STATUS_OK);
     assert(distances == original);  // hclust cannot mutate caller-owned evidence.
     assert(speakers <= nodes && (nodes == 0) == (speakers == 0));
     return labels;
@@ -32,9 +32,9 @@ int main() {
   uint32_t count = 0;
   for (double invalid : {std::numeric_limits<double>::quiet_NaN(),
                          std::numeric_limits<double>::infinity(), -0.1, 3.1}) {
-    assert(api->cluster_distances(&invalid, 1, 2, 0.5, labels, 3, &count) == MYAGENTS_SPEECH_STATUS_INVALID_ARGUMENT);
+    assert(api->cluster_distances(&invalid, 1, 2, 0.5, labels, 3, &count) == NEXTTOOLS_SPEECH_STATUS_INVALID_ARGUMENT);
   }
   const double distance = 0.2;
-  assert(api->cluster_distances(&distance, 1, 3, 0.5, labels, 3, &count) == MYAGENTS_SPEECH_STATUS_INVALID_ARGUMENT);
-  assert(api->cluster_distances(&distance, 1, 2049, 0.5, labels, 3, &count) == MYAGENTS_SPEECH_STATUS_INVALID_ARGUMENT);
+  assert(api->cluster_distances(&distance, 1, 3, 0.5, labels, 3, &count) == NEXTTOOLS_SPEECH_STATUS_INVALID_ARGUMENT);
+  assert(api->cluster_distances(&distance, 1, 2049, 0.5, labels, 3, &count) == NEXTTOOLS_SPEECH_STATUS_INVALID_ARGUMENT);
 }

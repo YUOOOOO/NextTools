@@ -8,36 +8,36 @@ import type { DshRawHttpResponse, DshSafeHttpTransport } from './safe-http';
 
 const anthropicProfile: DshModelExecutionProfile = Object.freeze({
   revision: 'anthropic-profile-v1',
-  providerRouteId: 'myagents-anthropic-api-anthropic-messages',
+  providerRouteId: 'nexttools-anthropic-api-anthropic-messages',
   api: 'anthropic-messages',
   provider: 'anthropic-api',
   modelId: 'claude-sonnet-4-6',
   baseUrl: 'https://api.anthropic.com',
-  credentialRef: 'MYAGENTS_PROVIDER_ANTHROPIC_API_API_KEY',
+  credentialRef: 'NEXTTOOLS_PROVIDER_ANTHROPIC_API_API_KEY',
   contextWindow: 200_000,
   maxTokens: 64_000,
 });
 
 const zhipuProfile: DshModelExecutionProfile = Object.freeze({
   revision: 'zhipu-profile-v1',
-  providerRouteId: 'myagents-zhipu-ai-openai-completions',
+  providerRouteId: 'nexttools-zhipu-ai-openai-completions',
   api: 'openai-completions',
   provider: 'zhipu-ai',
   modelId: 'glm-5.3',
   baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-  credentialRef: 'MYAGENTS_PROVIDER_ZHIPU_AI_API_KEY',
+  credentialRef: 'NEXTTOOLS_PROVIDER_ZHIPU_AI_API_KEY',
   contextWindow: 1_000_000,
   maxTokens: 131_072,
 });
 
 const zhipuAnthropicProfile: DshModelExecutionProfile = Object.freeze({
   revision: 'zhipu-anthropic-profile-v1',
-  providerRouteId: 'myagents-zhipu-anthropic-messages',
+  providerRouteId: 'nexttools-zhipu-anthropic-messages',
   api: 'anthropic-messages',
   provider: 'zhipu',
   modelId: 'glm-5.3',
   baseUrl: 'https://open.bigmodel.cn/api/anthropic',
-  credentialRef: 'MYAGENTS_PROVIDER_ZHIPU_API_KEY',
+  credentialRef: 'NEXTTOOLS_PROVIDER_ZHIPU_API_KEY',
   contextWindow: 1_000_000,
   maxTokens: 131_072,
 });
@@ -625,7 +625,7 @@ describe('DshCanonicalWebProvider', () => {
     const result = await providerWith(dispatch).runUtility({
       profile: {
         ...zhipuProfile,
-        providerRouteId: 'myagents-custom-openai-completions',
+        providerRouteId: 'nexttools-custom-openai-completions',
         provider: 'custom',
         baseUrl: 'https://gateway.example.test/v1',
       },

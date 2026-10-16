@@ -16,7 +16,7 @@ import {
 const roots: string[] = [];
 
 function makeRoot(): string {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-plan-files-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-plan-files-'));
   roots.push(root);
   return root;
 }
@@ -30,14 +30,14 @@ afterEach(() => {
 describe('session plan files', () => {
   it('uses a sanitized session-scoped plansDirectory setting', () => {
     expect(sanitizePlanSessionSegment('sid/../bad:value')).toBe('sid_bad_value');
-    expect(getSessionPlansDirectorySetting('sid/../bad:value')).toBe('.claude/plans/myagents/sid_bad_value');
-    expect(getSessionPlansDirectoryPath('/workspace', 'sid/../bad:value')).toContain(join('.claude', 'plans', 'myagents', 'sid_bad_value'));
-    expect(SESSION_PLANS_GITIGNORE_PATTERN).toBe('.claude/plans/myagents/');
+    expect(getSessionPlansDirectorySetting('sid/../bad:value')).toBe('.claude/plans/nexttools/sid_bad_value');
+    expect(getSessionPlansDirectoryPath('/workspace', 'sid/../bad:value')).toContain(join('.claude', 'plans', 'nexttools', 'sid_bad_value'));
+    expect(SESSION_PLANS_GITIGNORE_PATTERN).toBe('.claude/plans/nexttools/');
   });
 
   it('reads the latest markdown plan newer than the current-turn cutoff', async () => {
     const root = makeRoot();
-    const dir = join(root, '.claude', 'plans', 'myagents', 'session-1');
+    const dir = join(root, '.claude', 'plans', 'nexttools', 'session-1');
     mkdirSync(dir, { recursive: true });
 
     const stale = join(dir, 'stale.md');
@@ -62,7 +62,7 @@ describe('session plan files', () => {
   });
 
   it('retries briefly for a plan file created during approval handoff', async () => {
-    const dir = join(makeRoot(), '.claude', 'plans', 'myagents', 'session-1');
+    const dir = join(makeRoot(), '.claude', 'plans', 'nexttools', 'session-1');
     mkdirSync(dir, { recursive: true });
 
     const pending = readLatestPlanMarkdownWithRetry(dir, { attempts: 3, delayMs: 10 });
@@ -75,7 +75,7 @@ describe('session plan files', () => {
 
   it('ignores symlink leaves instead of following them', async () => {
     const root = makeRoot();
-    const dir = join(root, '.claude', 'plans', 'myagents', 'session-1');
+    const dir = join(root, '.claude', 'plans', 'nexttools', 'session-1');
     mkdirSync(dir, { recursive: true });
     const target = join(root, 'secret.md');
     writeFileSync(target, 'secret');
@@ -92,7 +92,7 @@ describe('session plan files', () => {
   it('does not read a plans directory symlink that resolves outside the expected root', async () => {
     const root = makeRoot();
     const outside = makeRoot();
-    const parent = join(root, '.claude', 'plans', 'myagents');
+    const parent = join(root, '.claude', 'plans', 'nexttools');
     const dir = join(parent, 'session-1');
     mkdirSync(parent, { recursive: true });
     writeFileSync(join(outside, 'outside.md'), 'do not read');
@@ -108,7 +108,7 @@ describe('session plan files', () => {
   });
 
   it('truncates large plan files before they enter SSE payloads', async () => {
-    const dir = join(makeRoot(), '.claude', 'plans', 'myagents', 'session-1');
+    const dir = join(makeRoot(), '.claude', 'plans', 'nexttools', 'session-1');
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'big.md'), Buffer.alloc(129 * 1024, 'a'));
 
@@ -120,7 +120,7 @@ describe('session plan files', () => {
   });
 
   it('clears stale markdown plans without touching non-markdown files', async () => {
-    const dir = join(makeRoot(), '.claude', 'plans', 'myagents', 'session-1');
+    const dir = join(makeRoot(), '.claude', 'plans', 'nexttools', 'session-1');
     mkdirSync(dir, { recursive: true });
     const stale = join(dir, 'stale.md');
     const note = join(dir, 'note.txt');
@@ -137,7 +137,7 @@ describe('session plan files', () => {
   it('does not clear a plans directory that resolves outside the expected root', async () => {
     const root = makeRoot();
     const outside = makeRoot();
-    const parent = join(root, '.claude', 'plans', 'myagents');
+    const parent = join(root, '.claude', 'plans', 'nexttools');
     const dir = join(parent, 'session-1');
     mkdirSync(parent, { recursive: true });
     const outsidePlan = join(outside, 'outside.md');

@@ -17,7 +17,7 @@ const logger = {
 const tempDirs: string[] = [];
 
 function createTempCacheDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'myagents-qr-route-test-'));
+  const dir = mkdtempSync(join(tmpdir(), 'nexttools-qr-route-test-'));
   tempDirs.push(dir);
   return dir;
 }

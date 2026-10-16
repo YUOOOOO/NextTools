@@ -725,7 +725,7 @@ impl<'a> TaskApplication<'a> {
         }
         if task.status != TaskStatus::Todo {
             return Err(TaskApplicationError::invalid_state(format!(
-                "task is in state '{}'; inspect it before choosing 'myagents task start {}' or 'myagents task rerun {}'",
+                "task is in state '{}'; inspect it before choosing 'nexttools task start {}' or 'nexttools task rerun {}'",
                 task.status.as_str(), task.id, task.id
             )));
         }
@@ -890,7 +890,7 @@ impl<'a> TaskApplication<'a> {
         }
         if !matches!(task.status, TaskStatus::Todo | TaskStatus::Stopped) {
             return Err(TaskApplicationError::invalid_state(format!(
-                "task is in state '{}'; use 'myagents task rerun {}' to re-dispatch it",
+                "task is in state '{}'; use 'nexttools task rerun {}' to re-dispatch it",
                 task.status.as_str(),
                 task.id
             )));

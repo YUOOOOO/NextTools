@@ -38,7 +38,7 @@ import {
   type SpaceMembersPayload,
   type SpaceSession,
 } from "@/api/spaceCloud";
-import myagentsWebLogo from "@/assets/brand/myagents-web-logo.png";
+import nexttoolsWebLogo from "@/assets/brand/nexttools-web-logo.png";
 import OverlayBackdrop from "@/components/OverlayBackdrop";
 import { useToast } from "@/components/Toast";
 import type { Project } from "@/config/types";
@@ -104,7 +104,7 @@ function planDisplay(plan?: string | null): string {
 function spaceAvatarUrl(space: SpaceSession["space"]): string | null {
   if (space.avatarUrl) return space.avatarUrl;
   if (space.spaceKind === "official" || space.slug === "official")
-    return myagentsWebLogo;
+    return nexttoolsWebLogo;
   return null;
 }
 

@@ -36,12 +36,12 @@ If you discover a security vulnerability, please report it by emailing **myagent
 
 ### Security Best Practices
 
-When using MyAgents:
+When using NextTools:
 
-1. **API Keys**: Store API keys securely. MyAgents stores them locally in `~/.myagents/`
+1. **API Keys**: Store API keys securely. NextTools stores them locally in `~/.nexttools/`
 2. **Project Access**: Only grant access to trusted projects
 3. **Tool Permissions**: Review tool permission requests carefully
-4. **Updates**: Keep MyAgents updated to the latest version
+4. **Updates**: Keep NextTools updated to the latest version
 
 ---
 
@@ -77,9 +77,9 @@ When using MyAgents:
 
 ### 安全最佳实践
 
-使用 MyAgents 时：
+使用 NextTools 时：
 
-1. **API 密钥**：安全存储 API 密钥。MyAgents 将其本地存储在 `~/.myagents/`
+1. **API 密钥**：安全存储 API 密钥。NextTools 将其本地存储在 `~/.nexttools/`
 2. **项目访问**：仅授权访问可信项目
 3. **工具权限**：仔细审查工具权限请求
-4. **更新**：保持 MyAgents 更新到最新版本
+4. **更新**：保持 NextTools 更新到最新版本

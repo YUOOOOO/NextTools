@@ -72,7 +72,7 @@ export async function initAnalytics(): Promise<void> {
   await Promise.all([preloadDeviceId(), preloadAppVersion(), preloadPlatform()]);
 
   // Write analytics config to disk for Sidecar server-side tracking
-  // Sidecar reads ~/.myagents/analytics_config.json to send events directly
+  // Sidecar reads ~/.nexttools/analytics_config.json to send events directly
   await writeAnalyticsConfigForSidecar();
 
   // 注册页面卸载/隐藏事件
@@ -241,7 +241,7 @@ export function isEnabled(): boolean {
 }
 
 /**
- * Write analytics config to ~/.myagents/analytics_config.json
+ * Write analytics config to ~/.nexttools/analytics_config.json
  * so that the Node Sidecar can send server-side events (e.g. ai_turn_complete)
  */
 async function writeAnalyticsConfigForSidecar(): Promise<void> {

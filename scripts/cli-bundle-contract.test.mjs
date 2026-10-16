@@ -13,8 +13,8 @@ const execFileAsync = promisify(execFile);
 const repoRoot = resolve(import.meta.dirname, '..');
 
 test('built CLI keeps internal surfaces and the public external contract', async () => {
-  const scratch = await mkdtemp(join(tmpdir(), 'myagents-cli-contract-'));
-  const outfile = join(scratch, 'myagents.cjs');
+  const scratch = await mkdtemp(join(tmpdir(), 'nexttools-cli-contract-'));
+  const outfile = join(scratch, 'nexttools.cjs');
   const attachment = join(scratch, 'evidence.txt');
   const requests = [];
   const scopedServers = [];
@@ -59,13 +59,13 @@ test('built CLI keeps internal surfaces and the public external contract', async
   try {
     await build({
       absWorkingDir: repoRoot,
-      entryPoints: ['src/cli/myagents.ts'],
+      entryPoints: ['src/cli/nexttools.ts'],
       outfile,
       bundle: true,
       platform: 'node',
       target: 'node22',
       format: 'cjs',
-      define: { __MYAGENTS_VERSION__: JSON.stringify('0.4.7-test') },
+      define: { __NEXTTOOLS_VERSION__: JSON.stringify('0.4.7-test') },
     });
     await writeFile(attachment, 'evidence', 'utf8');
     await new Promise((resolveListen, reject) => {
@@ -117,8 +117,8 @@ test('built CLI keeps internal surfaces and the public external contract', async
         env: {
           ...process.env,
           VITEST: '',
-          MYAGENTS_PORT: contract.overrideInheritedPort ? '1' : String(address.port),
-          MYAGENTS_INTERNAL_CLI_TOKEN: 'internal-test-capability',
+          NEXTTOOLS_PORT: contract.overrideInheritedPort ? '1' : String(address.port),
+          NEXTTOOLS_INTERNAL_CLI_TOKEN: 'internal-test-capability',
         },
       });
       assert.equal(requests.length, before + 1);
@@ -136,9 +136,9 @@ test('built CLI keeps internal surfaces and the public external contract', async
     const beforeHelp = requests.length;
     const help = await execFileAsync(process.execPath, [outfile, '--help'], {
       cwd: repoRoot,
-      env: { ...process.env, VITEST: '', MYAGENTS_PORT: '' },
+      env: { ...process.env, VITEST: '', NEXTTOOLS_PORT: '' },
     });
-    assert.match(help.stdout, /Usage: myagents/);
+    assert.match(help.stdout, /Usage: nexttools/);
     assert.equal(requests.length, beforeHelp, 'top-level help must remain local');
 
     for (const contract of [
@@ -155,8 +155,8 @@ test('built CLI keeps internal surfaces and the public external contract', async
         env: {
           ...process.env,
           VITEST: '',
-          MYAGENTS_PORT: String(address.port),
-          MYAGENTS_INTERNAL_CLI_TOKEN: 'internal-test-capability',
+          NEXTTOOLS_PORT: String(address.port),
+          NEXTTOOLS_INTERNAL_CLI_TOKEN: 'internal-test-capability',
         },
       });
       assert.equal(requests.length, before + 1);
@@ -166,9 +166,9 @@ test('built CLI keeps internal surfaces and the public external contract', async
     const externalEnv = {
       ...process.env,
       VITEST: '',
-      MYAGENTS_PORT: String(address.port),
-      MYAGENTS_API_TOKEN: 'external-test-token',
-      MYAGENTS_INTERNAL_CLI_TOKEN: '',
+      NEXTTOOLS_PORT: String(address.port),
+      NEXTTOOLS_API_TOKEN: 'external-test-token',
+      NEXTTOOLS_INTERNAL_CLI_TOKEN: '',
     };
     for (const contract of [
       {
@@ -196,18 +196,18 @@ test('built CLI keeps internal surfaces and the public external contract', async
     const beforeOfflineHelp = requests.length;
     const leafHelp = await execFileAsync(process.execPath, [outfile, 'task', 'start', '--help'], {
       cwd: repoRoot,
-      env: { ...externalEnv, MYAGENTS_PORT: '' },
+      env: { ...externalEnv, NEXTTOOLS_PORT: '' },
     });
-    assert.match(leafHelp.stdout, /myagents task start <taskId>/);
+    assert.match(leafHelp.stdout, /nexttools task start <taskId>/);
     assert.match(leafHelp.stdout, /Effect:/);
     assert.equal(requests.length, beforeOfflineHelp);
 
     const aliasHelp = await execFileAsync(process.execPath, [outfile, 'task', 'remove', '--help'], {
       cwd: repoRoot,
-      env: { ...externalEnv, MYAGENTS_PORT: '' },
+      env: { ...externalEnv, NEXTTOOLS_PORT: '' },
     });
-    assert.match(aliasHelp.stdout, /myagents task remove <taskId>/);
-    assert.doesNotMatch(aliasHelp.stdout, /myagents task delete <taskId>/);
+    assert.match(aliasHelp.stdout, /nexttools task remove <taskId>/);
+    assert.doesNotMatch(aliasHelp.stdout, /nexttools task delete <taskId>/);
 
     await assert.rejects(
       execFileAsync(process.execPath, [outfile, 'task', 'start', 'task-1', '--mystery', '--json'], {
@@ -281,7 +281,7 @@ test('built CLI keeps internal surfaces and the public external contract', async
     await new Promise(resolveClose => unavailableServer.close(resolveClose));
     const unavailableEnv = {
       ...externalEnv,
-      MYAGENTS_PORT: String(unavailableAddress.port),
+      NEXTTOOLS_PORT: String(unavailableAddress.port),
     };
     for (const extraArgs of [['--json'], []]) {
       await assert.rejects(
@@ -298,9 +298,9 @@ test('built CLI keeps internal surfaces and the public external contract', async
         error => {
           assert.equal(error.code, 3);
           if (extraArgs.length > 0) {
-            assert.equal(JSON.parse(error.stdout).code, 'MYAGENTS_UNAVAILABLE');
+            assert.equal(JSON.parse(error.stdout).code, 'NEXTTOOLS_UNAVAILABLE');
           } else {
-            assert.match(error.stderr, /Cannot connect to the MyAgents app/);
+            assert.match(error.stderr, /Cannot connect to the NextTools app/);
           }
           return true;
         },
@@ -310,7 +310,7 @@ test('built CLI keeps internal surfaces and the public external contract', async
     for (const sessionId of ['product-session-a', 'product-session-b']) {
       const scopedServer = createServer((request, response) => {
         request.resume();
-        scopedRequests.push({ sessionId, path: request.url, header: request.headers['x-myagents-session-id'] });
+        scopedRequests.push({ sessionId, path: request.url, header: request.headers['x-nexttools-session-id'] });
         response.writeHead(200, { 'content-type': 'application/json' });
         response.end(JSON.stringify({ success: true, data: { sessionId } }));
       });
@@ -324,7 +324,7 @@ test('built CLI keeps internal surfaces and the public external contract', async
       for (const args of [['agent', 'current'], ['task', 'list'], ['goal', 'list']]) {
         const output = await execFileAsync(process.execPath, [outfile, ...args, '--json'], {
           cwd: scratch,
-          env: { ...process.env, VITEST: '', MYAGENTS_PORT: String(scopedAddress.port), MYAGENTS_SESSION_ID: sessionId, MYAGENTS_INTERNAL_CLI_TOKEN: 'internal-test-capability' },
+          env: { ...process.env, VITEST: '', NEXTTOOLS_PORT: String(scopedAddress.port), NEXTTOOLS_SESSION_ID: sessionId, NEXTTOOLS_INTERNAL_CLI_TOKEN: 'internal-test-capability' },
         });
         assert.match(output.stdout, new RegExp(sessionId));
         assert.equal(scopedRequests.at(-1).header, sessionId);
@@ -340,7 +340,7 @@ test('built CLI keeps internal surfaces and the public external contract', async
     ]) {
       await assert.rejects(execFileAsync(process.execPath, [outfile, 'agent', 'current', '--json'], {
         cwd: scratch,
-        env: { ...process.env, VITEST: '', MYAGENTS_PORT: port, MYAGENTS_SESSION_ID: sessionId, MYAGENTS_INTERNAL_CLI_TOKEN: 'internal-test-capability' },
+        env: { ...process.env, VITEST: '', NEXTTOOLS_PORT: port, NEXTTOOLS_SESSION_ID: sessionId, NEXTTOOLS_INTERNAL_CLI_TOKEN: 'internal-test-capability' },
       }), error => {
         assert.equal(error.code, 3);
         assert.equal(JSON.parse(error.stdout).code, code);

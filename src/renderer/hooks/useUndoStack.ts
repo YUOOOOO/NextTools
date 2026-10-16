@@ -7,11 +7,11 @@ export interface FileReferenceUndoAction {
   type: 'file-reference';
   /** Unique batch ID - all files from same drop share this ID */
   batchId: string;
-  /** The text that was inserted (e.g., "@myagents_files/document.pdf ") */
+  /** The text that was inserted (e.g., "@nexttools_files/document.pdf ") */
   insertedText: string;
   /** The position where text was inserted */
   insertPosition: number;
-  /** The path of the copied file relative to workspace (e.g., "myagents_files/document.pdf") */
+  /** The path of the copied file relative to workspace (e.g., "nexttools_files/document.pdf") */
   copiedFilePath: string;
 }
 

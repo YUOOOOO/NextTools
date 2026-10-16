@@ -26,8 +26,8 @@ if (!inputPath || !existsSync(inputPath) || !statSync(inputPath).isFile()) {
 
 const workerName =
   process.platform === 'win32'
-    ? 'myagents-document-worker.exe'
-    : 'myagents-document-worker';
+    ? 'nexttools-document-worker.exe'
+    : 'nexttools-document-worker';
 const workerPath = join(resourceRoot, workerName);
 const manifestPath = join(resourceRoot, 'manifest.json');
 if (!existsSync(workerPath) || !existsSync(manifestPath)) {
@@ -46,11 +46,11 @@ if (!manifest.files?.onnxRuntime?.path || !existsSync(onnxRuntimePath)) {
   );
 }
 
-const scratch = mkdtempSync(join(tmpdir(), 'myagents-document-worker-smoke-'));
+const scratch = mkdtempSync(join(tmpdir(), 'nexttools-document-worker-smoke-'));
 const stagingPath = join(scratch, 'staging');
 mkdirSync(stagingPath, { mode: 0o700 });
 writeFileSync(
-  join(stagingPath, '.myagents-owner'),
+  join(stagingPath, '.nexttools-owner'),
   '00000000000000000000000000000001',
   {
     mode: 0o600,
@@ -184,14 +184,14 @@ try {
         terminal,
         documentPreview: readFileSync(documentPath, 'utf8').slice(0, 500),
         keptOutput:
-          process.env.MYAGENTS_KEEP_SMOKE_OUTPUT === '1' ? scratch : undefined,
+          process.env.NEXTTOOLS_KEEP_SMOKE_OUTPUT === '1' ? scratch : undefined,
       },
       null,
       2,
     ),
   );
 } finally {
-  if (process.env.MYAGENTS_KEEP_SMOKE_OUTPUT !== '1') {
+  if (process.env.NEXTTOOLS_KEEP_SMOKE_OUTPUT !== '1') {
     rmSync(scratch, { recursive: true, force: true });
   }
 }

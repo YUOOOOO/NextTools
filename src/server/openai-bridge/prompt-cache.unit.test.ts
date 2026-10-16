@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { buildPromptCacheKey, promptCacheTarget } from './prompt-cache';
 
 const baseInput = {
-  appNamespace: 'myagents' as const,
+  appNamespace: 'nexttools' as const,
   providerId: 'fox',
   model: 'gpt-5.5',
   sessionId: 'session-raw-id-123',
@@ -16,7 +16,7 @@ describe('buildPromptCacheKey', () => {
     const second = buildPromptCacheKey({ ...baseInput });
 
     expect(first).toBe(second);
-    expect(first).toMatch(/^myagents:responses:[a-f0-9]{32}$/);
+    expect(first).toMatch(/^nexttools:responses:[a-f0-9]{32}$/);
     expect(first).not.toContain(baseInput.sessionId);
     expect(first).not.toContain(baseInput.providerId);
     expect(first).not.toContain(baseInput.model);
@@ -26,7 +26,7 @@ describe('buildPromptCacheKey', () => {
     const responsesKey = buildPromptCacheKey(baseInput);
     const chatKey = buildPromptCacheKey({ ...baseInput, upstreamFormat: 'chat_completions' });
 
-    expect(chatKey).toMatch(/^myagents:chat_completions:[a-f0-9]{32}$/);
+    expect(chatKey).toMatch(/^nexttools:chat_completions:[a-f0-9]{32}$/);
     expect(chatKey).not.toBe(responsesKey);
   });
 

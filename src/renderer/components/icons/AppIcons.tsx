@@ -1,7 +1,7 @@
 import type { ComponentType, ReactNode, SVGProps } from 'react';
 
 /**
- * MyAgents product icon set — the only source of UI glyphs in the renderer.
+ * NextTools product icon set — the only source of UI glyphs in the renderer.
  *
  * Grid: 20×20 drawing grid with round caps and joins; container corners use a
  * 3–3.5 radius so every glyph shares one soft silhouette. Icons are displayed

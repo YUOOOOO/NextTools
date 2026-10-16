@@ -22,7 +22,7 @@ export interface AgentFrontmatter {
 }
 
 /**
- * MyAgents extension metadata (_meta.json)
+ * NextTools extension metadata (_meta.json)
  * Stored alongside the .md file, not inside it (preserves Claude Code compatibility)
  */
 export interface AgentMeta {
@@ -36,7 +36,7 @@ export interface AgentMeta {
 
 /**
  * On-disk layout form an agent file takes.
- * - 'folder': <base>/<folderName>/<folderName>.md  (MyAgents canonical, created by /api/agent/create)
+ * - 'folder': <base>/<folderName>/<folderName>.md  (NextTools canonical, created by /api/agent/create)
  * - 'flat':   <base>/<folderName>.md                (Claude Code convention, single-file agent)
  * - 'nested': <base>/<dir>/.../<stem>.md            (arbitrary depth, folderName = 'dir/.../stem')
  *

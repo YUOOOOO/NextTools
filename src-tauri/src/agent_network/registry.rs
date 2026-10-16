@@ -60,7 +60,7 @@ pub(crate) struct NetworkRegistry {
     mutation: tokio::sync::Mutex<()>,
 }
 fn config_path() -> Result<std::path::PathBuf, NetworkError> {
-    crate::app_dirs::myagents_data_dir()
+    crate::app_dirs::nexttools_data_dir()
         .map(|d| d.join("config.json"))
         .ok_or_else(|| NetworkError::new("NETWORK_CONFIG_UNAVAILABLE"))
 }
@@ -195,7 +195,7 @@ impl NetworkRegistry {
         let stored = self.stored.lock().unwrap_or_else(|e| e.into_inner());
         let mut views = vec![ConnectionView {
             id: OFFICIAL.into(),
-            name: "MyAgents".into(),
+            name: "NextTools".into(),
             official: true,
             url: None,
             removing: false,

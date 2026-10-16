@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compose or normalize a MyAgents/Codex-compatible pet spritesheet atlas."""
+"""Compose or normalize a NextTools/Codex-compatible pet spritesheet atlas."""
 
 from __future__ import annotations
 

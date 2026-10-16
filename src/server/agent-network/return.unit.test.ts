@@ -26,10 +26,10 @@ afterEach(() => {
 });
 describe("terminal return transport", () => {
   it("requires the original live Sidecar and sends an opaque reference to the App", async () => {
-    vi.stubEnv("MYAGENTS_SIDECAR_ID", "");
+    vi.stubEnv("NEXTTOOLS_SIDECAR_ID", "");
     expect(await deliverNetworkReturn(reference, event)).toBe("dropped");
     expect(managementApi).not.toHaveBeenCalled();
-    vi.stubEnv("MYAGENTS_SIDECAR_ID", "sidecar-1");
+    vi.stubEnv("NEXTTOOLS_SIDECAR_ID", "sidecar-1");
     managementApi.mockResolvedValue({ ok: true, settlement: "delivered" });
     expect(await deliverNetworkReturn(reference, event)).toBe("delivered");
     expect(managementApi).toHaveBeenCalledWith(
@@ -44,7 +44,7 @@ describe("terminal return transport", () => {
     );
   });
   it("keeps transport ambiguity separate from a dropped route without retrying", async () => {
-    vi.stubEnv("MYAGENTS_SIDECAR_ID", "sidecar-1");
+    vi.stubEnv("NEXTTOOLS_SIDECAR_ID", "sidecar-1");
     managementApi
       .mockResolvedValueOnce({ ok: false, code: "transport_outcome_unknown" })
       .mockResolvedValueOnce({ ok: false, code: "RETURN_ROUTE_LOST" });
@@ -58,7 +58,7 @@ describe("terminal return transport", () => {
     [{ ok: false, code: "transport_outcome_unknown", error: "private transport error" }, "unconfirmed", "transport_outcome_unknown"],
     [{ ok: true, settlement: "delivered" }, "delivered", "none"],
   ])("records callback submission and settlement without private content: %j", async (response, settlement, code) => {
-    vi.stubEnv("MYAGENTS_SIDECAR_ID", "sidecar-1");
+    vi.stubEnv("NEXTTOOLS_SIDECAR_ID", "sidecar-1");
     const info = vi.spyOn(console, "log").mockImplementation(() => {});
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     managementApi.mockResolvedValue(response);
@@ -72,7 +72,7 @@ describe("terminal return transport", () => {
     expect(logs).not.toContain("private");
   });
   it("never logs malformed callbacks or free-form rejection text", async () => {
-    vi.stubEnv("MYAGENTS_SIDECAR_ID", "sidecar-1");
+    vi.stubEnv("NEXTTOOLS_SIDECAR_ID", "sidecar-1");
     const info = vi.spyOn(console, "log").mockImplementation(() => {});
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     expect(await deliverNetworkReturn(reference, { ...event, eventId: "private\nresult" })).toBe("dropped");

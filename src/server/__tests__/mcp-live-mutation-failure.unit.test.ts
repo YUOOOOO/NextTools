@@ -31,7 +31,7 @@ describe('live Query MCP mutation recovery', () => {
     resetLifecycleForTest();
     resetQueueForTest();
     resetConfigForTest();
-    await initializeAgent('/tmp/myagents-mcp-live-mutation-failure', null, undefined, {
+    await initializeAgent('/tmp/nexttools-mcp-live-mutation-failure', null, undefined, {
       preWarmDisabled: true,
     });
   });

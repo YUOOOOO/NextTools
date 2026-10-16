@@ -7,7 +7,7 @@ import { handleAdminSessionWatch, projectSessionWatchManagement } from './watch-
 import { clearPendingSessionWatchesForTest, manageLocalSessionWatches, registerPendingSessionWatch } from './watch-registry';
 
 beforeEach(() => {
-  vi.stubEnv('MYAGENTS_MANAGEMENT_PORT', '31500');
+  vi.stubEnv('NEXTTOOLS_MANAGEMENT_PORT', '31500');
   mocks.metadata.mockReset().mockImplementation(id => id === 'caller' ? { id, agentDir: '/synthetic' } : null);
   mocks.data.mockReset().mockResolvedValue(null);
   mocks.fetch.mockReset();

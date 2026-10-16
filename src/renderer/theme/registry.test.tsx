@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { myAgentsDefaultTheme } from './themes/myagents-default';
+import { nextToolsDefaultTheme } from './themes/nexttools-default';
 import { ThemeRegistry, themeRegistry, validateThemeDefinition } from './registry';
 import {
   collectContractBlocks,
@@ -40,8 +40,8 @@ function presetTokens(
 
 describe('ThemeRegistry', () => {
   const productionThemeIds = [
-    'myagents-light',
-    'myagents-default',
+    'nexttools-light',
+    'nexttools-default',
     'default-black',
     'sage',
     'absolutely',
@@ -54,9 +54,9 @@ describe('ThemeRegistry', () => {
   it('ships nine complete production Themes in product order', () => {
     expect(themeRegistry.getProductionIds()).toEqual(productionThemeIds);
     expect(themeRegistry.getAcceptedDefinitions().map(definition => definition.displayName)).toEqual([
-      'MyAgents Light',
-      'MyAgents Classic',
-      'MyAgents Classic2',
+      'NextTools Light',
+      'NextTools Classic',
+      'NextTools Classic2',
       'Sage',
       'Claude',
       'Linear',
@@ -68,7 +68,7 @@ describe('ThemeRegistry', () => {
   });
 
   it('resolves an omitted preference to the current product default', () => {
-    expect(themeRegistry.resolve(undefined, 'light', false).themeId).toBe('myagents-light');
+    expect(themeRegistry.resolve(undefined, 'light', false).themeId).toBe('nexttools-light');
   });
 
   it('registers every production Theme on WebViews without color-mix support', () => {
@@ -94,9 +94,9 @@ describe('ThemeRegistry', () => {
       expect(swatches.light, `${themeId}.light`).toMatch(/^#/);
       expect(swatches.dark, `${themeId}.dark`).toMatch(/^#/);
     }
-    expect(themeRegistry.getPreviewSwatches('myagents-default').light).toBe('#c26d3a');
+    expect(themeRegistry.getPreviewSwatches('nexttools-default').light).toBe('#c26d3a');
     expect(themeRegistry.getPreviewSwatches('default-black').light).toBe('#111111');
-    expect(themeRegistry.getPreviewSwatches('myagents-light').light).toBe('#111111');
+    expect(themeRegistry.getPreviewSwatches('nexttools-light').light).toBe('#111111');
   });
 
   it('keeps Theme and Appearance orthogonal for every production package', () => {
@@ -121,9 +121,9 @@ describe('ThemeRegistry', () => {
     for (const definition of themeRegistry.getAcceptedDefinitions()) {
       for (const scheme of ['light', 'dark'] as const) {
         const resolved = themeRegistry.resolve(definition.id, scheme, false);
-        expect(resolved.hero.productName).toBe('MyAgents');
-        expect(resolved.hero.slogans['zh-CN']).toBe('每个人都应享受智能的推背感，欢迎来到言出法随的世界');
-        expect(resolved.hero.slogans['en-US']).toBe('Your intent, amplified');
+        expect(resolved.hero.productName).toBe('NextTools');
+        expect(resolved.hero.slogans['zh-CN']).toBe('让每个想法，都有下一步。');
+        expect(resolved.hero.slogans['en-US']).toBe('Every idea deserves a next step.');
         expect(resolved.adapters.xterm.palette.cursor).toBeTruthy();
         expect(resolved.adapters.monaco.data.colors['editorCursor.foreground']).toBeTruthy();
         expect(resolved.adapters.mermaid.themeVariables.primaryColor).toBeTruthy();
@@ -135,7 +135,7 @@ describe('ThemeRegistry', () => {
 
   it('derives optional Widget geometry and material from the same host Theme tokens', () => {
     for (const definition of themeRegistry.getAcceptedDefinitions().filter(
-      candidate => candidate.id !== 'myagents-default' && candidate.id !== 'default-black',
+      candidate => candidate.id !== 'nexttools-default' && candidate.id !== 'default-black',
     )) {
       for (const scheme of ['light', 'dark'] as const) {
         const tokens = presetTokens(definition, scheme);
@@ -150,7 +150,7 @@ describe('ThemeRegistry', () => {
   });
 
   it('projects every adapter and Hero slot from a complete synthetic Theme', () => {
-    const registry = new ThemeRegistry([myAgentsDefaultTheme, syntheticTheme]);
+    const registry = new ThemeRegistry([nextToolsDefaultTheme, syntheticTheme]);
     const light = registry.resolve(SYNTHETIC_THEME_ID, 'light', true);
     const dark = registry.resolve(SYNTHETIC_THEME_ID, 'dark', false);
 
@@ -167,7 +167,7 @@ describe('ThemeRegistry', () => {
   });
 
   it('rejects duplicate IDs and incomplete Theme packages', () => {
-    expect(() => new ThemeRegistry([myAgentsDefaultTheme, myAgentsDefaultTheme])).toThrow('Duplicate Theme ID');
+    expect(() => new ThemeRegistry([nextToolsDefaultTheme, nextToolsDefaultTheme])).toThrow('Duplicate Theme ID');
 
     const missingToken = {
       ...syntheticTheme,
@@ -344,32 +344,32 @@ describe('ThemeRegistry', () => {
     expect(() => validateThemeDefinition(optionalHeroFallback)).toThrow('reserved for the canonical paired fallback');
 
     const standaloneCanonicalFallback = {
-      ...myAgentsDefaultTheme,
-      stylesheetText: `${myAgentsDefaultTheme.stylesheetText}\n:root { --paper: red; }`,
+      ...nextToolsDefaultTheme,
+      stylesheetText: `${nextToolsDefaultTheme.stylesheetText}\n:root { --paper: red; }`,
     } as ThemeDefinition;
     expect(() => validateThemeDefinition(standaloneCanonicalFallback)).toThrow('reserved for the canonical paired fallback');
 
     const lateCanonicalOverride = {
-      ...myAgentsDefaultTheme,
-      stylesheetText: `${myAgentsDefaultTheme.stylesheetText}\nhtml[data-theme-id='myagents-default'][data-color-scheme='light'] { --ink: initial; }`,
+      ...nextToolsDefaultTheme,
+      stylesheetText: `${nextToolsDefaultTheme.stylesheetText}\nhtml[data-theme-id='nexttools-default'][data-color-scheme='light'] { --ink: initial; }`,
     } as ThemeDefinition;
     expect(() => validateThemeDefinition(lateCanonicalOverride)).toThrow('unsupported or unscoped selector');
 
     const escapedCanonicalOverride = {
-      ...myAgentsDefaultTheme,
-      stylesheetText: `${myAgentsDefaultTheme.stylesheetText}\nhtml[data-theme-id='myagents-def\\61ult'][data-color-scheme='light'] { --ink: initial; }`,
+      ...nextToolsDefaultTheme,
+      stylesheetText: `${nextToolsDefaultTheme.stylesheetText}\nhtml[data-theme-id='nexttools-def\\61ult'][data-color-scheme='light'] { --ink: initial; }`,
     } as ThemeDefinition;
     expect(() => validateThemeDefinition(escapedCanonicalOverride)).toThrow('unsupported or unscoped selector');
 
     const splitCanonicalGlobalFallback = {
-      ...myAgentsDefaultTheme,
-      stylesheetText: `${myAgentsDefaultTheme.stylesheetText.replace(/\s*--font-body\s*:[^;]+;/, '')}\nhtml[data-theme-id='myagents-default'] { --font-body: system-ui, sans-serif; }`,
+      ...nextToolsDefaultTheme,
+      stylesheetText: `${nextToolsDefaultTheme.stylesheetText.replace(/\s*--font-body\s*:[^;]+;/, '')}\nhtml[data-theme-id='nexttools-default'] { --font-body: system-ui, sans-serif; }`,
     } as ThemeDefinition;
     expect(() => validateThemeDefinition(splitCanonicalGlobalFallback)).toThrow('unsupported or unscoped selector');
 
     const splitCanonicalSchemeFallback = {
-      ...myAgentsDefaultTheme,
-      stylesheetText: `${myAgentsDefaultTheme.stylesheetText.replace(/\s*--ink\s*:[^;]+;/, '')}\nhtml[data-theme-id='myagents-default'][data-color-scheme='light'] { --ink: #1c1612; }`,
+      ...nextToolsDefaultTheme,
+      stylesheetText: `${nextToolsDefaultTheme.stylesheetText.replace(/\s*--ink\s*:[^;]+;/, '')}\nhtml[data-theme-id='nexttools-default'][data-color-scheme='light'] { --ink: #1c1612; }`,
     } as ThemeDefinition;
     expect(() => validateThemeDefinition(splitCanonicalSchemeFallback)).toThrow('unsupported or unscoped selector');
 
@@ -587,16 +587,16 @@ describe('ThemeRegistry', () => {
 
   it('falls back as one complete default Theme and diagnoses an unknown ID once', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const registry = new ThemeRegistry([myAgentsDefaultTheme, syntheticTheme]);
+    const registry = new ThemeRegistry([nextToolsDefaultTheme, syntheticTheme]);
 
     const first = registry.resolve('missing-theme', 'dark', false);
     const second = registry.resolve('missing-theme', 'light', false);
 
     expect(first.requestedThemeId).toBe('missing-theme');
-    expect(first.themeId).toBe('myagents-default');
-    expect(first.definition).toBe(myAgentsDefaultTheme);
-    expect(first.adapters).toBe(myAgentsDefaultTheme.schemes.dark);
-    expect(second.adapters).toBe(myAgentsDefaultTheme.schemes.light);
+    expect(first.themeId).toBe('nexttools-default');
+    expect(first.definition).toBe(nextToolsDefaultTheme);
+    expect(first.adapters).toBe(nextToolsDefaultTheme.schemes.dark);
+    expect(second.adapters).toBe(nextToolsDefaultTheme.schemes.light);
     expect(warn).toHaveBeenCalledTimes(1);
   });
 
@@ -607,10 +607,10 @@ describe('ThemeRegistry', () => {
       stylesheetText: syntheticTheme.stylesheetText.replace(/\s*--ink\s*:[^;]+;/, ''),
     } as ThemeDefinition;
 
-    const registry = new ThemeRegistry([myAgentsDefaultTheme, invalidTheme]);
+    const registry = new ThemeRegistry([nextToolsDefaultTheme, invalidTheme]);
 
-    expect(registry.getProductionIds()).toEqual(['myagents-default']);
-    expect(registry.resolve(invalidTheme.id, 'dark', false).themeId).toBe('myagents-default');
+    expect(registry.getProductionIds()).toEqual(['nexttools-default']);
+    expect(registry.resolve(invalidTheme.id, 'dark', false).themeId).toBe('nexttools-default');
     expect(warn).toHaveBeenCalled();
   });
 
@@ -618,7 +618,7 @@ describe('ThemeRegistry', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const validAfterFailure = renamedSyntheticTheme('synthetic-after-construction-failure');
     const registry = new ThemeRegistry(
-      [myAgentsDefaultTheme],
+      [nextToolsDefaultTheme],
       [
         {
           id: 'broken-construction',
@@ -629,10 +629,10 @@ describe('ThemeRegistry', () => {
     );
 
     expect(registry.getProductionIds()).toEqual([
-      'myagents-default',
+      'nexttools-default',
       validAfterFailure.id,
     ]);
-    expect(registry.resolve('broken-construction', 'light', false).themeId).toBe('myagents-default');
+    expect(registry.resolve('broken-construction', 'light', false).themeId).toBe('nexttools-default');
     expect(warn).toHaveBeenCalledWith(
       '[theme] Rejected invalid Theme package "broken-construction":',
       expect.any(Error),
@@ -668,15 +668,15 @@ describe('ThemeRegistry', () => {
     corrupt(invalid);
 
     const registry = new ThemeRegistry(
-      [myAgentsDefaultTheme],
+      [nextToolsDefaultTheme],
       [
         { id: invalid.id, create: () => invalid },
         { id: validAfterFailure.id, create: () => validAfterFailure },
       ],
     );
 
-    expect(registry.getProductionIds()).toEqual(['myagents-default', validAfterFailure.id]);
-    expect(registry.resolve(invalid.id, 'dark', false).themeId).toBe('myagents-default');
+    expect(registry.getProductionIds()).toEqual(['nexttools-default', validAfterFailure.id]);
+    expect(registry.resolve(invalid.id, 'dark', false).themeId).toBe('nexttools-default');
     expect(warn).toHaveBeenCalled();
   });
 });

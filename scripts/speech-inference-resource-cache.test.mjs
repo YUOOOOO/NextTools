@@ -35,11 +35,11 @@ function nativeEntry(path, relative, license, signingKind) {
 }
 
 async function speechFixture() {
-  const root = await mkdtemp(join(tmpdir(), 'myagents-speech-bundle-'));
+  const root = await mkdtemp(join(tmpdir(), 'nexttools-speech-bundle-'));
   mkdirSync(join(root, 'native'), { recursive: true });
   mkdirSync(join(root, 'legal'), { recursive: true });
-  const worker = join(root, 'myagents-media-worker');
-  const adapter = join(root, 'native', 'myagents-speech-adapter');
+  const worker = join(root, 'nexttools-media-worker');
+  const adapter = join(root, 'native', 'nexttools-speech-adapter');
   const sherpa = join(root, 'native', 'sherpa-onnx-c-api');
   writeFileSync(worker, 'worker');
   chmodSync(worker, 0o755);
@@ -66,13 +66,13 @@ async function speechFixture() {
   const files = {
     mediaWorker: nativeEntry(
       worker,
-      'myagents-media-worker',
+      'nexttools-media-worker',
       'AGPL-3.0-only',
       expected.signingKind,
     ),
     adapter: nativeEntry(
       adapter,
-      'native/myagents-speech-adapter',
+      'native/nexttools-speech-adapter',
       'AGPL-3.0-only',
       expected.signingKind,
     ),

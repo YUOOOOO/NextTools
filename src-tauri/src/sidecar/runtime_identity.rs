@@ -77,7 +77,7 @@ impl RuntimeIdentity {
 pub(super) fn distribution_default_runtime_identity() -> RuntimeIdentity {
     let policy = crate::runtime_distribution_policy::policy();
     let configured = dirs::home_dir()
-        .and_then(|home| std::fs::read_to_string(home.join(".myagents/config.json")).ok())
+        .and_then(|home| std::fs::read_to_string(home.join(".nexttools/config.json")).ok())
         .and_then(|content| serde_json::from_str::<serde_json::Value>(strip_bom(&content)).ok());
     configured
         .as_ref()
@@ -224,14 +224,14 @@ fn runtime_identity_from_legacy_agent(
     }
 }
 
-/// Look up the `runtime` field from the agent config in ~/.myagents/config.json
+/// Look up the `runtime` field from the agent config in ~/.nexttools/config.json
 /// matching the given workspace path. Returns None for "builtin" (the default).
 /// Used for NEW sessions (the agent config decides the default runtime for new conversations)
 /// and for IM/Agent sidecar paths that don't have a session_id yet.
 pub(crate) fn resolve_agent_runtime_identity_from_config(
     workspace_path: &std::path::Path,
 ) -> Option<RuntimeIdentity> {
-    let config_dir = dirs::home_dir()?.join(".myagents");
+    let config_dir = dirs::home_dir()?.join(".nexttools");
     let config_path = config_dir.join("config.json");
     let content = std::fs::read_to_string(&config_path).ok()?;
     let cfg: serde_json::Value = serde_json::from_str(strip_bom(&content)).ok()?;
@@ -243,7 +243,7 @@ pub(crate) fn resolve_agent_runtime_identity_from_config(
 pub(crate) fn resolve_agent_runtime_identity_by_id_from_config(
     agent_id: &str,
 ) -> Option<RuntimeIdentity> {
-    let config_path = dirs::home_dir()?.join(".myagents").join("config.json");
+    let config_path = dirs::home_dir()?.join(".nexttools").join("config.json");
     let content = std::fs::read_to_string(config_path).ok()?;
     let cfg: serde_json::Value = serde_json::from_str(strip_bom(&content)).ok()?;
     resolve_agent_runtime_identity_by_id_from_value(&cfg, agent_id)
@@ -419,7 +419,7 @@ fn workspace_paths_match(agent_path: &str, workspace_path: &std::path::Path) -> 
         == crate::cron_task::normalize_path(&workspace_path.to_string_lossy())
 }
 
-/// Look up the `runtime` field from session metadata in ~/.myagents/sessions.json.
+/// Look up the `runtime` field from session metadata in ~/.nexttools/sessions.json.
 /// Returns Some("builtin") for builtin/missing-runtime sessions that are found,
 /// and None only when no authoritative session metadata is available.
 ///
@@ -428,14 +428,14 @@ fn workspace_paths_match(agent_path: &str, workspace_path: &std::path::Path) -> 
 /// Agent config (resolve_agent_runtime_identity_from_config) decides the default for NEW sessions
 /// using explicit preference or the root default; session metadata is stable once
 /// created so an existing runtime-A history is never reopened as
-/// runtime B under the same MyAgents session_id.
+/// runtime B under the same NextTools session_id.
 #[allow(dead_code)]
 pub fn resolve_session_runtime_identity(session_id: &str) -> Option<String> {
     resolve_session_runtime_identity_full(session_id).map(|identity| identity.runtime)
 }
 
 pub fn resolve_session_runtime_identity_full(session_id: &str) -> Option<RuntimeIdentity> {
-    let sessions_path = dirs::home_dir()?.join(".myagents").join("sessions.json");
+    let sessions_path = dirs::home_dir()?.join(".nexttools").join("sessions.json");
     let content = std::fs::read_to_string(&sessions_path).ok()?;
     resolve_session_runtime_identity_full_from_json(session_id, &content)
 }
@@ -445,7 +445,7 @@ pub fn resolve_session_runtime_identity_full(session_id: &str) -> Option<Runtime
 /// workspace in which that Session was created; callers must not bind an
 /// existing Session to a Task executing in a different workspace.
 pub fn session_metadata_matches_workspace(session_id: &str, workspace_path: &str) -> bool {
-    let Some(sessions_path) = dirs::home_dir().map(|home| home.join(".myagents/sessions.json"))
+    let Some(sessions_path) = dirs::home_dir().map(|home| home.join(".nexttools/sessions.json"))
     else {
         return false;
     };
@@ -595,7 +595,7 @@ pub(super) fn resolve_session_runtime_identity_full_from_json(
 /// Lazy validation for tab restore (Issue #232 / PRD 0.2.25).
 ///
 /// A restored "cold" chat tab is only activatable if (a) its session still
-/// exists in `~/.myagents/sessions.json` and (b) its workspace directory still
+/// exists in `~/.nexttools/sessions.json` and (b) its workspace directory still
 /// exists on disk. This is read-only and reads the disk directly — it does NOT
 /// depend on the global sidecar being up (which is async + flaky on startup),
 /// matching the PRD's "validate lazily at first activation, decoupled from
@@ -614,7 +614,7 @@ pub fn cmd_can_restore_session(sessionId: String, agentDir: String) -> bool {
     if crate::workspace_files::path_safety::validate_workspace_root(&agentDir).is_err() {
         return false;
     }
-    let Some(sessions_path) = dirs::home_dir().map(|h| h.join(".myagents").join("sessions.json"))
+    let Some(sessions_path) = dirs::home_dir().map(|h| h.join(".nexttools").join("sessions.json"))
     else {
         return false;
     };

@@ -10,7 +10,7 @@ let prevUserProfile: string | undefined;
 
 function writeConfig(config: Record<string, unknown>): void {
   writeFileSync(
-    join(scratch, '.myagents', 'config.json'),
+    join(scratch, '.nexttools', 'config.json'),
     JSON.stringify(config, null, 2),
     'utf-8',
   );
@@ -18,14 +18,14 @@ function writeConfig(config: Record<string, unknown>): void {
 
 function writeProjects(projects: Array<Record<string, unknown>>): void {
   writeFileSync(
-    join(scratch, '.myagents', 'projects.json'),
+    join(scratch, '.nexttools', 'projects.json'),
     JSON.stringify(projects, null, 2),
     'utf-8',
   );
 }
 
 function writeCustomProvider(provider: Record<string, unknown>): void {
-  const dir = join(scratch, '.myagents', 'providers');
+  const dir = join(scratch, '.nexttools', 'providers');
   mkdirSync(dir, { recursive: true });
   writeFileSync(
     join(dir, `${String(provider.id)}.json`),
@@ -49,8 +49,8 @@ function customApiProvider(id: string, model: string, baseUrl: string): Record<s
 }
 
 beforeEach(() => {
-  scratch = mkdtempSync(join(tmpdir(), 'myagents-workspace-perm-'));
-  mkdirSync(join(scratch, '.myagents'), { recursive: true });
+  scratch = mkdtempSync(join(tmpdir(), 'nexttools-workspace-perm-'));
+  mkdirSync(join(scratch, '.nexttools'), { recursive: true });
   prevHome = process.env.HOME;
   prevUserProfile = process.env.USERPROFILE;
   process.env.HOME = scratch;

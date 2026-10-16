@@ -32,12 +32,12 @@ describe('validateExternalReadPathNode — blacklist (lexical, no fs)', () => {
     expect(lexical(path.join(home, '.ssh', 'id_rsa')).ok).toBe(false);
     expect(lexical(path.join(home, '.aws', 'credentials')).ok).toBe(false);
     expect(lexical(path.join(home, '.config', 'op', 'config')).ok).toBe(false);
-    expect(lexical(path.join(home, '.myagents', 'codex', 'auth.json')).ok).toBe(false);
-    expect(lexical(path.join(home, '.myagents', 'credentials', 'grok-oauth.json')).ok).toBe(false);
+    expect(lexical(path.join(home, '.nexttools', 'codex', 'auth.json')).ok).toBe(false);
+    expect(lexical(path.join(home, '.nexttools', 'credentials', 'grok-oauth.json')).ok).toBe(false);
   });
 
   it('protects only Managed Codex auth.json, not sibling runtime state', () => {
-    const managedHome = path.join(homedir(), '.myagents', 'codex');
+    const managedHome = path.join(homedir(), '.nexttools', 'codex');
     expect(lexical(path.join(managedHome, 'auth.json')).ok).toBe(false);
     expect(lexical(path.join(managedHome, 'generated_images', 'thread', 'call.png')).ok).toBe(true);
     expect(lexical(path.join(managedHome, 'config.toml')).ok).toBe(true);

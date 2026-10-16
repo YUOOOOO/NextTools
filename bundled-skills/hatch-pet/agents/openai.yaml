@@ -1,4 +1,4 @@
 interface:
   display_name: "Hatch Pet"
-  short_description: "Hatch style-flexible MyAgents pets"
-  default_prompt: "Use $hatch-pet to create a MyAgents/Codex-compatible animated pet in any pet-safe style from a concept, company brand, or reference image."
+  short_description: "Hatch style-flexible NextTools pets"
+  default_prompt: "Use $hatch-pet to create a NextTools/Codex-compatible animated pet in any pet-safe style from a concept, company brand, or reference image."

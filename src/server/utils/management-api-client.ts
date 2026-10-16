@@ -7,8 +7,8 @@ import {
 
 export const ADMIN_LOOPBACK_TIMEOUT_MS = 10_000;
 
-const MGMT_PORT = process.env.MYAGENTS_MANAGEMENT_PORT;
-const SIDECAR_GENERATION = process.env.MYAGENTS_SIDECAR_GENERATION;
+const MGMT_PORT = process.env.NEXTTOOLS_MANAGEMENT_PORT;
+const SIDECAR_GENERATION = process.env.NEXTTOOLS_SIDECAR_GENERATION;
 
 export function managementRequestHeaders(): Record<string, string> {
   const internalToken = process.env[INTERNAL_CLI_TOKEN_ENV]?.trim();
@@ -16,7 +16,7 @@ export function managementRequestHeaders(): Record<string, string> {
     'Content-Type': 'application/json',
     ...(internalToken ? { [INTERNAL_CLI_TOKEN_HEADER]: internalToken } : {}),
     ...(SIDECAR_GENERATION
-      ? { 'X-MyAgents-Sidecar-Generation': SIDECAR_GENERATION }
+      ? { 'X-NextTools-Sidecar-Generation': SIDECAR_GENERATION }
       : {}),
   };
 }
@@ -33,7 +33,7 @@ export async function managementApi(
       code: 'management_unavailable',
       error: 'Management API not available (app may still be starting)',
       recoveryHint: {
-        recoveryCommand: 'myagents status',
+        recoveryCommand: 'nexttools status',
         message: 'Check whether the app backend is fully up; if not, retry in a few seconds.',
       },
     };
@@ -59,7 +59,7 @@ export async function managementApi(
       code: method === 'POST' ? 'transport_outcome_unknown' : 'management_unavailable',
       error: `Management API unreachable: ${msg}`,
       recoveryHint: {
-        recoveryCommand: 'myagents status',
+        recoveryCommand: 'nexttools status',
         message: 'Check backend health; restart the app if the problem persists.',
       },
     };
@@ -102,7 +102,7 @@ export async function resolveManagedOAuthCredential(
   if (providerId !== 'xai-sub') {
     throw new Error(`Unsupported managed OAuth provider: ${providerId}`);
   }
-  const sidecarId = process.env.MYAGENTS_SIDECAR_ID?.trim();
+  const sidecarId = process.env.NEXTTOOLS_SIDECAR_ID?.trim();
   if (!sidecarId) {
     throw new Error('Managed OAuth requires a Sidecar process identity');
   }

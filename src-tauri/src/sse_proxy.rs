@@ -1114,7 +1114,7 @@ async fn execute_http_request(
     // WebView cannot accidentally downgrade itself to the external policy.
     if target_is_loopback {
         req_builder = req_builder.header(
-            "x-myagents-internal-cli-token",
+            "x-nexttools-internal-cli-token",
             crate::external_cli::internal_token(),
         );
     }

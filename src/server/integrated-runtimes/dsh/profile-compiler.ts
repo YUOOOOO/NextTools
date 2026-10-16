@@ -157,7 +157,7 @@ function assertCredentialRef(value: string): string {
 
 export function dshProviderCredentialRef(providerId: string): string {
   const normalized = providerId.toUpperCase().replace(/[^A-Z0-9_]/g, "_");
-  return assertCredentialRef(`MYAGENTS_PROVIDER_${normalized}_API_KEY`);
+  return assertCredentialRef(`NEXTTOOLS_PROVIDER_${normalized}_API_KEY`);
 }
 
 export function isOfficialDeepSeekDshRoute(
@@ -291,7 +291,7 @@ export function compileDshModelExecutionProfile(args: {
       }
     : {
         providerRouteId: boundedIdentity(
-          `myagents-${providerId}-${constraint.apiFamily}`,
+          `nexttools-${providerId}-${constraint.apiFamily}`,
           "Provider route id",
         ),
         api: constraint.apiFamily,

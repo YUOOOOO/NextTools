@@ -13,7 +13,7 @@ use crate::speech_model_pack::{
     ModelPackLegalSource,
 };
 use futures_util::StreamExt;
-use myagents_media_worker_protocol::{
+use nexttools_media_worker_protocol::{
     read_worker_response, write_control_frame, StartRequest, WorkerCommand, WorkerResponse,
     WorkloadIdentity, WorkloadInput, WorkloadKind, PROTOCOL_VERSION,
 };
@@ -974,7 +974,7 @@ fn release_manifest_url(pack_revision: &str) -> String {
 #[allow(clippy::disallowed_methods)]
 fn speech_model_http_client_builder() -> reqwest::ClientBuilder {
     reqwest::Client::builder()
-        .user_agent(format!("MyAgents/{}", env!("CARGO_PKG_VERSION")))
+        .user_agent(format!("NextTools/{}", env!("CARGO_PKG_VERSION")))
         .redirect(reqwest::redirect::Policy::none())
         .connect_timeout(Duration::from_secs(30))
         .timeout(Duration::from_secs(30 * 60))

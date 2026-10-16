@@ -911,10 +911,10 @@ fn collect_candidates(
     config: &MemoryAutoUpdateConfig,
     summary: &mut MemoryAutoUpdateBatchSummary,
 ) -> Vec<SessionCandidate> {
-    let Some(myagents_dir) = crate::app_dirs::myagents_data_dir() else {
+    let Some(nexttools_dir) = crate::app_dirs::nexttools_data_dir() else {
         return vec![];
     };
-    let sessions_path = myagents_dir.join("sessions.json");
+    let sessions_path = nexttools_dir.join("sessions.json");
     let sessions_content = match std::fs::read_to_string(&sessions_path) {
         Ok(content) => content,
         Err(_) => return vec![],
@@ -954,7 +954,7 @@ fn collect_candidates(
         // fails open, covering a durable append whose metadata write failed.
         let metadata = Value::Object(session.other.clone());
         let format = match crate::session_transcript::session_format(
-            &myagents_dir,
+            &nexttools_dir,
             &session.id,
             Some(&metadata),
         ) {
@@ -964,7 +964,7 @@ fn collect_candidates(
             ) => format,
             _ => continue,
         };
-        let jsonl_path = myagents_dir
+        let jsonl_path = nexttools_dir
             .join(
                 if format == crate::session_transcript::TranscriptFormat::V2 {
                     "sessions-v2"
@@ -1260,7 +1260,7 @@ async fn update_successful_completion<R: Runtime>(
 ) {
     let agent_id = agent_id.to_string();
     let result = tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
-        let config_path = crate::app_dirs::myagents_data_dir()
+        let config_path = crate::app_dirs::nexttools_data_dir()
             .ok_or("No data dir")?
             .join("config.json");
         with_config_lock(&config_path, true, |config| {
@@ -1416,8 +1416,8 @@ fn is_automatic_user_text(text: &str) -> bool {
                 "HEARTBEAT"
                     | "CRON_TASK"
                     | "LOCAL_COMMAND_OUTPUT"
-                    | "myagents-session-event"
-                    | "myagents-space-issue"
+                    | "nexttools-session-event"
+                    | "nexttools-space-issue"
             )
         )
 }
@@ -1788,10 +1788,10 @@ mod tests {
             "<system-reminder><LOCAL_COMMAND_OUTPUT>local</LOCAL_COMMAND_OUTPUT></system-reminder><local-command-stdout>cost output</local-command-stdout>"
         ));
         assert!(is_automatic_user_text(
-            "<system-reminder><myagents-session-event type=\"watch.completed\">result</myagents-session-event></system-reminder>"
+            "<system-reminder><nexttools-session-event type=\"watch.completed\">result</nexttools-session-event></system-reminder>"
         ));
         assert!(is_automatic_user_text(
-            "<system-reminder><myagents-space-issue>issue</myagents-space-issue></system-reminder>"
+            "<system-reminder><nexttools-space-issue>issue</nexttools-space-issue></system-reminder>"
         ));
         assert!(human_user_text("请解释 <inbox-message> 标签").is_some());
     }

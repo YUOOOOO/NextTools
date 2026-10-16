@@ -2,7 +2,7 @@
  * Server-side Analytics
  *
  * Lightweight event tracker for the Node Sidecar.
- * Reads config from ~/.myagents/analytics_config.json (written by frontend at startup).
+ * Reads config from ~/.nexttools/analytics_config.json (written by frontend at startup).
  * Sends events directly via fetch() — Node 20+'s undici-based fetch has no CORS.
  */
 
@@ -12,7 +12,7 @@ import { homedir } from 'os';
 
 import { cancellableFetch } from './utils/cancellation';
 
-const CONFIG_PATH = join(homedir(), '.myagents', 'analytics_config.json');
+const CONFIG_PATH = join(homedir(), '.nexttools', 'analytics_config.json');
 
 interface AnalyticsConfig {
   enabled: boolean;

@@ -38,7 +38,7 @@ const OCR_YIELD_GRACE_SECONDS: u64 = 15;
 const PIPELINE_VERSION: &str = "anydoc-0.1.9_ppocrv6-small_v1";
 const JOB_ID_RANDOM_HEX: usize = 12;
 const JOB_DEADLINE_SECONDS: u64 = 30 * 60;
-const STAGING_OWNER_MARKER: &str = ".myagents-owner";
+const STAGING_OWNER_MARKER: &str = ".nexttools-owner";
 const PRIVATE_STAGING_TOKEN: &str = "staging-owner";
 const PUBLISH_INTENT_FILE: &str = "publish-intent.json";
 
@@ -414,9 +414,9 @@ impl DocumentProcessingManager {
             .map_err(|error| format!("Failed to protect document-processing store: {error}"))?;
         let resource_dir = resource_root.join("document-processing").join("v1");
         let worker_name = if cfg!(windows) {
-            "myagents-document-worker.exe"
+            "nexttools-document-worker.exe"
         } else {
-            "myagents-document-worker"
+            "nexttools-document-worker"
         };
         let worker_path = resource_dir.join(worker_name);
         let manifest_path = resource_dir.join("manifest.json");
@@ -611,9 +611,9 @@ impl DocumentProcessingManager {
             DocumentServiceError::new(
                 "DOCUMENT_UNSUPPORTED_FORMAT",
                 "The source extension is not in the supported document/image allowlist.",
-                "Run `myagents anydoc convert --help` to see supported formats.",
+                "Run `nexttools anydoc convert --help` to see supported formats.",
             )
-            .with_command("myagents anydoc convert --help")
+            .with_command("nexttools anydoc convert --help")
         })?;
         let output_root = resolve_output_root(
             request.output_root.as_deref(),
@@ -639,8 +639,8 @@ impl DocumentProcessingManager {
         if !state.accepting {
             return Err(DocumentServiceError::new(
                 "DOCUMENT_MANAGER_SHUTTING_DOWN",
-                "MyAgents is shutting down and cannot accept a new conversion.",
-                "Restart MyAgents, then submit the conversion again.",
+                "NextTools is shutting down and cannot accept a new conversion.",
+                "Restart NextTools, then submit the conversion again.",
             ));
         }
         if let Some(error) = state.resource_error.clone() {
@@ -652,7 +652,7 @@ impl DocumentProcessingManager {
                 "The document conversion queue is full (16 jobs).",
                 "Wait for an existing job to finish or cancel one, then retry.",
             )
-            .with_command("myagents anydoc list"));
+            .with_command("nexttools anydoc list"));
         }
         let (job_id, staging_dir, public_dir) = reserve_job_identity(&output_root, &state.jobs)?;
         let output_root_identity = same_file::Handle::from_path(&output_root).map_err(|_| {
@@ -670,7 +670,7 @@ impl DocumentProcessingManager {
             return Err(DocumentServiceError::new(
                 "DOCUMENT_PRIVATE_STORAGE_UNAVAILABLE",
                 format!("The private job directory could not be created: {error}"),
-                "Check free disk space and MyAgents data-directory permissions.",
+                "Check free disk space and NextTools data-directory permissions.",
             ));
         }
         if set_private_permissions(&private_dir)
@@ -701,7 +701,7 @@ impl DocumentProcessingManager {
             return Err(DocumentServiceError::new(
                 "DOCUMENT_PRIVATE_STORAGE_UNAVAILABLE",
                 "The staging ownership marker could not be saved.",
-                "Check output and MyAgents data-directory permissions, then retry.",
+                "Check output and NextTools data-directory permissions, then retry.",
             ));
         }
         let now = Utc::now();
@@ -2351,7 +2351,7 @@ fn move_to_random_quarantine(path: &Path) -> bool {
     };
     for _ in 0..8 {
         let suffix = uuid::Uuid::new_v4().simple().to_string();
-        let quarantine = parent.join(format!(".myagents-anydoc-rejected-{}", &suffix[..12]));
+        let quarantine = parent.join(format!(".nexttools-anydoc-rejected-{}", &suffix[..12]));
         match rename_directory_noreplace(path, &quarantine) {
             Ok(()) => return true,
             Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
@@ -2379,7 +2379,7 @@ fn reserve_job_identity(
         if fs::symlink_metadata(&public).is_ok() {
             continue;
         }
-        let staging = output_root.join(format!(".myagents-anydoc-{id}.staging"));
+        let staging = output_root.join(format!(".nexttools-anydoc-{id}.staging"));
         match fs::create_dir(&staging) {
             Ok(()) => return Ok((id, staging, public)),
             Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
@@ -2422,7 +2422,7 @@ fn resolve_output_root(
                     )
                 })?;
             Path::new(workspace)
-                .join("myagents_files")
+                .join("nexttools_files")
                 .join("document-conversions")
                 .to_string_lossy()
                 .into_owned()
@@ -2437,7 +2437,7 @@ fn resolve_output_root(
             "Choose an output root; the tool creates <job-id>/document.md inside it.",
         )
         .with_command(format!(
-            "myagents anydoc convert --file <input> --output \"{}\"",
+            "nexttools anydoc convert --file <input> --output \"{}\"",
             parent.display()
         )));
     }
@@ -2668,9 +2668,9 @@ fn validate_job_id(value: &str) -> Result<(), DocumentServiceError> {
         Err(DocumentServiceError::new(
             "DOCUMENT_JOB_ID_INVALID",
             "The job ID must look like YYYYMMDD_<12 lowercase hex>.",
-            "Copy the job ID from `myagents anydoc list` and retry.",
+            "Copy the job ID from `nexttools anydoc list` and retry.",
         )
-        .with_command("myagents anydoc list"))
+        .with_command("nexttools anydoc list"))
     }
 }
 
@@ -2881,14 +2881,14 @@ fn resource_error(code: &str) -> DocumentServiceError {
     DocumentServiceError::new(
         code,
         "Bundled document-processing resources are missing, corrupt, or incompatible with this build.",
-        "Reinstall this MyAgents build and retry.",
+        "Reinstall this NextTools build and retry.",
     )
 }
 
 fn default_pipeline(onnx_runtime_version: &str) -> DocumentPipeline {
     DocumentPipeline {
         version: PIPELINE_VERSION.into(),
-        anydoc_version: Some("0.1.9+myagents-assets.1".into()),
+        anydoc_version: Some("0.1.9+nexttools-assets.1".into()),
         pdf_inspector_version: Some("1.14.2".into()),
         ocr_model_id: Some(
             "PaddlePaddle/PP-OCRv6_small_det_onnx + PP-OCRv6_small_rec_onnx".into(),
@@ -2981,7 +2981,7 @@ fn recover_publish_intents(root: &Path, jobs: &mut HashMap<String, DocumentJob>)
             .ok()
             .and_then(|content| serde_json::from_str::<PublishIntent>(&content).ok());
         let staging = Path::new(&job.output.root_directory)
-            .join(format!(".myagents-anydoc-{job_id}.staging"));
+            .join(format!(".nexttools-anydoc-{job_id}.staging"));
         let destination = PathBuf::from(&job.output.job_directory);
         let token = parsed
             .filter(|intent| {
@@ -3166,7 +3166,7 @@ fn cleanup_stale_job_paths(root: &Path, job: &DocumentJob) {
     let token = fs::read_to_string(private_dir.join(PRIVATE_STAGING_TOKEN)).ok();
     let _ = fs::remove_dir_all(private_dir.join("input"));
     let staging = Path::new(&job.output.root_directory)
-        .join(format!(".myagents-anydoc-{}.staging", job.job_id));
+        .join(format!(".nexttools-anydoc-{}.staging", job.job_id));
     if let Some(token) = token.filter(|token| valid_staging_token(token.trim())) {
         cleanup_owned_staging(&staging, None, token.trim());
     }
@@ -3282,7 +3282,7 @@ fn cleanup_owned_staging(path: &Path, retained_identity: Option<&same_file::Hand
     };
     for _ in 0..8 {
         let suffix = uuid::Uuid::new_v4().simple().to_string();
-        let quarantine = parent.join(format!(".myagents-anydoc-cleanup-{}", &suffix[..12]));
+        let quarantine = parent.join(format!(".nexttools-anydoc-cleanup-{}", &suffix[..12]));
         match rename_directory_noreplace(path, &quarantine) {
             Ok(()) => {
                 // Re-open after the atomic move. If another process replaced
@@ -3467,13 +3467,13 @@ fn job_not_found(job_id: &str) -> DocumentServiceError {
         format!("Document job {job_id} was not found."),
         "List recent jobs and copy the exact ID.",
     )
-    .with_command("myagents anydoc list")
+    .with_command("nexttools anydoc list")
 }
 fn manager_unavailable() -> DocumentServiceError {
     DocumentServiceError::new(
         "DOCUMENT_MANAGER_UNAVAILABLE",
         "The document manager is unavailable.",
-        "Restart MyAgents and retry.",
+        "Restart NextTools and retry.",
     )
 }
 fn store_error(_message: String) -> DocumentServiceError {
@@ -3491,7 +3491,7 @@ fn cancelled_error() -> DocumentJobError {
         retryable: true,
         recovery_hint: Some(RecoveryHint {
             message: "Submit the source again to create a new job.".into(),
-            recovery_command: Some("myagents anydoc convert --file <input>".into()),
+            recovery_command: Some("nexttools anydoc convert --file <input>".into()),
         }),
     }
 }
@@ -3502,7 +3502,7 @@ fn interrupted_error(job_id: &str) -> DocumentJobError {
         retryable: true,
         recovery_hint: Some(RecoveryHint {
             message: "Submit the conversion again; interrupted jobs are not resumed.".into(),
-            recovery_command: Some("myagents anydoc convert --file <input>".into()),
+            recovery_command: Some("nexttools anydoc convert --file <input>".into()),
         }),
     }
 }
@@ -3511,12 +3511,12 @@ fn worker_error(job_id: &str, code: &str, retryable: bool) -> DocumentJobError {
         "DOCUMENT_PASSWORD_REQUIRED" => (
             "This document is encrypted and requires --password.",
             "Submit a new job with the document password.",
-            Some("myagents anydoc convert --file <input> --password <password>"),
+            Some("nexttools anydoc convert --file <input> --password <password>"),
         ),
         "DOCUMENT_PASSWORD_INVALID" => (
             "The supplied document password is incorrect.",
             "Check the password and submit a new job.",
-            Some("myagents anydoc convert --file <input> --password <password>"),
+            Some("nexttools anydoc convert --file <input> --password <password>"),
         ),
         "DOCUMENT_ENCRYPTION_SCHEME_UNSUPPORTED" => (
             "This document encryption scheme is not supported.",
@@ -3526,17 +3526,17 @@ fn worker_error(job_id: &str, code: &str, retryable: bool) -> DocumentJobError {
         "DOCUMENT_UNSUPPORTED_FORMAT" => (
             "This file format is not supported by the local document converter.",
             "Inspect the supported formats and choose one local file.",
-            Some("myagents anydoc convert --help"),
+            Some("nexttools anydoc convert --help"),
         ),
         "DOCUMENT_RESOURCE_LIMIT" => (
             "The document exceeds a fixed processing safety limit.",
             "Choose a smaller document or split it before retrying.",
-            Some("myagents anydoc convert --help"),
+            Some("nexttools anydoc convert --help"),
         ),
         "DOCUMENT_SOURCE_CHANGED" | "DOCUMENT_INPUT_READ_FAILED" => (
             "The source changed or became unreadable while the job was being admitted.",
             "Wait for the source application to finish saving, then submit a new job.",
-            Some("myagents anydoc convert --file <input>"),
+            Some("nexttools anydoc convert --file <input>"),
         ),
         "DOCUMENT_NO_USABLE_CONTENT" | "DOCUMENT_OCR_NO_TEXT" => (
             "No usable text could be recovered from this document.",
@@ -3546,7 +3546,7 @@ fn worker_error(job_id: &str, code: &str, retryable: bool) -> DocumentJobError {
         "DOCUMENT_MALFORMED" => (
             "The document is damaged or could not be parsed safely.",
             "Open the source in its native application, resave it, and retry.",
-            Some("myagents anydoc convert --file <input>"),
+            Some("nexttools anydoc convert --file <input>"),
         ),
         "DOCUMENT_RESOURCE_MISSING"
         | "DOCUMENT_RESOURCE_INVALID"
@@ -3555,40 +3555,40 @@ fn worker_error(job_id: &str, code: &str, retryable: bool) -> DocumentJobError {
         | "DOCUMENT_OCR_RUNTIME_UNAVAILABLE"
         | "DOCUMENT_PDFIUM_LOAD_FAILED" => (
             "A bundled document-processing resource is missing, corrupt, or could not be loaded.",
-            "Reinstall this MyAgents build and retry.",
+            "Reinstall this NextTools build and retry.",
             None,
         ),
         "DOCUMENT_TIMEOUT" => (
             "The conversion exceeded the 30 minute job deadline.",
             "Split the document into a smaller input and submit a new job.",
-            Some("myagents anydoc convert --file <input>"),
+            Some("nexttools anydoc convert --file <input>"),
         ),
         "DOCUMENT_WORKER_CRASHED"
         | "DOCUMENT_WORKER_START_FAILED"
         | "DOCUMENT_WORKER_PROTOCOL_ERROR" => (
             "The isolated document Worker exited or failed its private protocol.",
-            "Restart MyAgents if the error repeats, then submit a new job.",
-            Some("myagents anydoc convert --file <input>"),
+            "Restart NextTools if the error repeats, then submit a new job.",
+            Some("nexttools anydoc convert --file <input>"),
         ),
         "DOCUMENT_PUBLISH_FAILED" | "DOCUMENT_STAGING_WRITE_FAILED" => (
             "The converted artifact could not be published safely.",
             "Check output permissions and free disk space, then submit a new job.",
-            Some("myagents anydoc convert --file <input>"),
+            Some("nexttools anydoc convert --file <input>"),
         ),
         "DOCUMENT_OUTPUT_COLLISION" => (
             "The reserved output job directory was created by another process before publish.",
             "Submit the conversion again to reserve a new unique job directory.",
-            Some("myagents anydoc convert --file <input>"),
+            Some("nexttools anydoc convert --file <input>"),
         ),
         "DOCUMENT_OUTPUT_PATH_UNSAFE" | "DOCUMENT_OUTPUT_PERMISSION_DENIED" => (
             "The output directory changed or is no longer writable.",
             "Choose a stable writable output directory and submit a new job.",
-            Some("myagents anydoc convert --file <input> --output <directory>"),
+            Some("nexttools anydoc convert --file <input> --output <directory>"),
         ),
         _ => (
             "The document could not be converted safely.",
             "Inspect this terminal job, then submit a new job after correcting the source.",
-            Some("myagents anydoc status <job-id>"),
+            Some("nexttools anydoc status <job-id>"),
         ),
     };
     DocumentJobError {
@@ -4181,7 +4181,7 @@ mod tests {
             let path = entry.unwrap().path();
             path.file_name()
                 .and_then(|name| name.to_str())
-                .is_some_and(|name| name.starts_with(".myagents-anydoc-rejected-"))
+                .is_some_and(|name| name.starts_with(".nexttools-anydoc-rejected-"))
                 && path.join("replacement.txt").is_file()
         }));
     }
@@ -4210,7 +4210,7 @@ mod tests {
             let path = entry.unwrap().path();
             path.file_name()
                 .and_then(|name| name.to_str())
-                .is_some_and(|name| name.starts_with(".myagents-anydoc-rejected-"))
+                .is_some_and(|name| name.starts_with(".nexttools-anydoc-rejected-"))
                 && path.join("replacement.txt").is_file()
         }));
     }
@@ -4227,7 +4227,7 @@ mod tests {
         let destination = output.path().join(job_id);
         let staging = output
             .path()
-            .join(format!(".myagents-anydoc-{job_id}.staging"));
+            .join(format!(".nexttools-anydoc-{job_id}.staging"));
         fs::create_dir_all(&private_dir).unwrap();
         fs::create_dir(&destination).unwrap();
         fs::write(destination.join("document.md"), b"committed").unwrap();
@@ -4266,7 +4266,7 @@ mod tests {
         job.output.artifact_available = true;
         let private_dir = data.path().join("jobs").join(job_id);
         let destination = output_path.join(job_id);
-        let staging = output_path.join(format!(".myagents-anydoc-{job_id}.staging"));
+        let staging = output_path.join(format!(".nexttools-anydoc-{job_id}.staging"));
         fs::create_dir_all(&private_dir).unwrap();
         fs::create_dir(&staging).unwrap();
         fs::write(staging.join("document.md"), b"unknown commit outcome").unwrap();
@@ -4309,7 +4309,7 @@ mod tests {
         let private_dir = data.path().join("jobs").join(job_id);
         let staging = output
             .path()
-            .join(format!(".myagents-anydoc-{job_id}.staging"));
+            .join(format!(".nexttools-anydoc-{job_id}.staging"));
         fs::create_dir_all(&private_dir).unwrap();
         let token = "8".repeat(32);
         fs::write(private_dir.join(PRIVATE_STAGING_TOKEN), &token).unwrap();
@@ -4348,7 +4348,7 @@ mod tests {
         let destination = output.path().join(job_id);
         let staging = output
             .path()
-            .join(format!(".myagents-anydoc-{job_id}.staging"));
+            .join(format!(".nexttools-anydoc-{job_id}.staging"));
         fs::create_dir_all(&private_dir).unwrap();
         fs::create_dir(&destination).unwrap();
         fs::write(destination.join("document.md"), b"not committed").unwrap();
@@ -4390,7 +4390,7 @@ mod tests {
         let input_dir = private_dir.join("input");
         let staging = output
             .path()
-            .join(format!(".myagents-anydoc-{job_id}.staging"));
+            .join(format!(".nexttools-anydoc-{job_id}.staging"));
         fs::create_dir_all(&input_dir).unwrap();
         fs::create_dir(&staging).unwrap();
         let token = "c".repeat(32);
@@ -4411,7 +4411,7 @@ mod tests {
         let private_dir = data.path().join("jobs").join(job_id);
         let staging = output
             .path()
-            .join(format!(".myagents-anydoc-{job_id}.staging"));
+            .join(format!(".nexttools-anydoc-{job_id}.staging"));
         fs::create_dir_all(&private_dir).unwrap();
         fs::create_dir(&staging).unwrap();
         fs::write(private_dir.join(PRIVATE_STAGING_TOKEN), "d".repeat(32)).unwrap();

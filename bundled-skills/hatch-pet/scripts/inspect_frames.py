@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inspect extracted MyAgents/Codex-compatible pet frames before atlas composition."""
+"""Inspect extracted NextTools/Codex-compatible pet frames before atlas composition."""
 
 from __future__ import annotations
 

@@ -232,7 +232,7 @@ function logRefreshOutcome(serverId: string, intent: RefreshIntent, outcome: Ref
   console.log(
     `[mcp-oauth] Refresh outcome: server=${serverId} intent=${intent} outcome=${outcome.kind}`
       + ` revision=${revision ?? '-'} pid=${process.pid}`
-      + ` role=${process.env.MYAGENTS_SIDECAR_ROLE ?? 'unknown'}`
+      + ` role=${process.env.NEXTTOOLS_SIDECAR_ROLE ?? 'unknown'}`
       + ` http=${http} commit=${commit}`
       + ` expiresAt=${token?.expiresAt ?? '-'} lifetimeMs=${token?.lifetimeMs ?? '-'}`,
   );

@@ -62,7 +62,7 @@ const originalConsole = {
 // itself: a failed stderr write turned into uncaughtException, whose
 // handler called console.error, which routed back into this wrapper, which
 // called originalConsole.error again, which raised another EPIPE — fast
-// loop that wrote 50–200 KB to ~/.myagents/logs/crash/<ts>.log per
+// loop that wrote 50–200 KB to ~/.nexttools/logs/crash/<ts>.log per
 // iteration until the disk filled. After the stdio listener in index.ts
 // flips the broken bit, we silently skip the originalConsole.* call and
 // only keep the in-memory ring + SSE broadcast paths alive.

@@ -153,7 +153,7 @@ export async function ensureManagedCodexProviderDevGateDefault(): Promise<void> 
     if (isBrowserDevMode()) {
         let latest: Partial<AppConfig> = {};
         try {
-            const stored = localStorage.getItem('myagents:config');
+            const stored = localStorage.getItem('nexttools:config');
             latest = stored ? JSON.parse(stored) as Partial<AppConfig> : {};
         } catch {
             latest = {};
@@ -162,7 +162,7 @@ export async function ensureManagedCodexProviderDevGateDefault(): Promise<void> 
             return;
         }
         const normalized = normalizeThemeConfigRecord(latest);
-        localStorage.setItem('myagents:config', JSON.stringify({
+        localStorage.setItem('nexttools:config', JSON.stringify({
             ...normalized,
             managedCodexProviderDevGate: true,
         }));
@@ -411,7 +411,7 @@ export async function ensureBundledWorkspace(): Promise<boolean> {
 // ============= Self-Awareness Workspace (Bug Report) =============
 
 /**
- * Ensure ~/.myagents is registered as an internal project. Called on-demand when user triggers bug report.
+ * Ensure ~/.nexttools is registered as an internal project. Called on-demand when user triggers bug report.
  *
  * Accepts ConfigProvider's wrapped actions (addProject/patchProject) so that both disk AND React state
  * are updated. Calling projectService directly would only write to disk, leaving ConfigProvider stale.
@@ -429,9 +429,9 @@ export async function ensureSelfAwarenessWorkspace(
             project = await addProject(dir);
         }
         if (project && !project.internal) {
-            await patchProject(project.id, { internal: true, name: 'MyAgents 诊断' });
+            await patchProject(project.id, { internal: true, name: 'NextTools 诊断' });
             // patchProject updates both disk and React state; use the patched fields locally
-            project = { ...project, internal: true, name: 'MyAgents 诊断' };
+            project = { ...project, internal: true, name: 'NextTools 诊断' };
         }
         return project ?? null;
     } catch (err) {

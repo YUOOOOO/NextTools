@@ -10,7 +10,7 @@ import { validateRuntimeBinary, validateTsxRuntime } from './npm-runtime-validat
 const put = (path, value) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, value); };
 const json = (path, value) => put(path, JSON.stringify(value));
 function fixture(t) {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-npm-cache-test-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-npm-cache-test-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   json(join(root, 'package.json'), { version: '0.4.18', devDependencies: { tsx: '4.21.0' } });
   const lock = { lockfileVersion: 3, packages: {
@@ -146,7 +146,7 @@ test('cache detects additional files and executable permission changes', async t
 });
 
 test('native validation rejects wrong architecture and truncated PE for every supported OS', t => {
-  const root = mkdtempSync(join(tmpdir(), 'myagents-binary-test-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools-binary-test-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const os of ['darwin', 'linux', 'win32']) {
     const bytes = Buffer.alloc(128);
@@ -163,7 +163,7 @@ test('native validation rejects wrong architecture and truncated PE for every su
 
 
 test('tsx host validation loads from a filesystem path with spaces and URL fragments', t => {
-  const root = mkdtempSync(join(tmpdir(), 'myagents runtime #fragment-'));
+  const root = mkdtempSync(join(tmpdir(), 'nexttools runtime #fragment-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const require = createRequire(import.meta.url);
   const platform = `${process.platform}-${process.arch}`;
@@ -173,6 +173,6 @@ test('tsx host validation loads from a filesystem path with spaces and URL fragm
   mkdirSync(dirname(target), { recursive: true });
   cpSync(join(packageRoot, binary), target);
   put(join(root, 'node_modules/tsx/dist/esm/index.mjs'), '// Isolate Node --import path handling from tsx behavior.');
-  json(join(root, 'package.json'), { name: 'myagents-tsx-runtime' });
+  json(join(root, 'package.json'), { name: 'nexttools-tsx-runtime' });
   validateTsxRuntime(root, process.platform, process.arch);
 });

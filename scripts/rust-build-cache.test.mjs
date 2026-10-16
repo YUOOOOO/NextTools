@@ -6,7 +6,7 @@ import test from 'node:test';
 import { inspectRustCache } from './rust-build-cache.mjs';
 
 test('reports logical sizes but counts hardlinked objects only once across directories', async t => {
-  const root = await mkdtemp(join(tmpdir(), 'myagents-rust-cache-'));
+  const root = await mkdtemp(join(tmpdir(), 'nexttools-rust-cache-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await mkdir(join(root, 'debug/deps'), { recursive: true });
   await mkdir(join(root, 'debug/incremental'), { recursive: true });
@@ -19,7 +19,7 @@ test('reports logical sizes but counts hardlinked objects only once across direc
 });
 
 test('does not follow directory symlinks or cycles; a missing cache is empty', async t => {
-  const root = await mkdtemp(join(tmpdir(), 'myagents-rust-cache-'));
+  const root = await mkdtemp(join(tmpdir(), 'nexttools-rust-cache-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await mkdir(join(root, 'target'));
   await writeFile(join(root, 'private'), 'outside');

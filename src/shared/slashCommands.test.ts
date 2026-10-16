@@ -13,7 +13,7 @@ import {
 const invalidPlainScalarFrontmatter = `---
 name: prompt-writer
 description: Methodology for writing prompts. Triggers: "write a prompt", "help me write a prompt". Not for: direct answers.
-author: MyAgents
+author: NextTools
 ---
 
 # Prompt Writer
@@ -27,7 +27,7 @@ describe('slash command frontmatter parsing', () => {
             expect(parseSkillFrontmatter(invalidPlainScalarFrontmatter)).toEqual({
                 name: 'prompt-writer',
                 description: 'Methodology for writing prompts. Triggers: "write a prompt", "help me write a prompt". Not for: direct answers.',
-                author: 'MyAgents',
+                author: 'NextTools',
             });
             expect(warn).not.toHaveBeenCalled();
         } finally {
@@ -41,7 +41,7 @@ describe('slash command frontmatter parsing', () => {
         expect(parsed.frontmatter).toMatchObject({
             name: 'prompt-writer',
             description: 'Methodology for writing prompts. Triggers: "write a prompt", "help me write a prompt". Not for: direct answers.',
-            author: 'MyAgents',
+            author: 'NextTools',
         });
         expect(parsed.body.trim()).toBe('# Prompt Writer\n\nBody text.');
     });
@@ -70,14 +70,14 @@ metadata:
                 version: '1.2',
             },
         });
-        expect(parseSkillFrontmatter(invalidPlainScalarFrontmatter).author).toBe('MyAgents');
+        expect(parseSkillFrontmatter(invalidPlainScalarFrontmatter).author).toBe('NextTools');
     });
 
     it('serializes normalized legacy author as metadata.author and preserves standard metadata', () => {
         const parsed = parseFullSkillContent(`---
 name: legacy-skill
 description: Legacy author
-author: MyAgents
+author: NextTools
 metadata:
   version: 2
 ---
@@ -86,10 +86,10 @@ metadata:
         const serialized = serializeSkillContent(parsed.frontmatter, parsed.body);
 
         expect(serialized).not.toMatch(/^author:/m);
-        expect(serialized).toContain('metadata:\n  version: "2"\n  author: "MyAgents"');
+        expect(serialized).toContain('metadata:\n  version: "2"\n  author: "NextTools"');
         expect(parseFullSkillContent(serialized).frontmatter).toMatchObject({
-            author: 'MyAgents',
-            metadata: { version: '2', author: 'MyAgents' },
+            author: 'NextTools',
+            metadata: { version: '2', author: 'NextTools' },
         });
     });
 

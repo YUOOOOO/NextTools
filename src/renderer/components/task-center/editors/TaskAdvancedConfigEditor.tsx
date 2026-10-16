@@ -141,7 +141,7 @@ export function TaskAdvancedConfigEditor(props: Props) {
 
   // Resolve the workspace's Agent — source of truth for the runtime / model
   // / permission / MCP defaults that the task inherits when the user picks
-  // "跟随 Agent". DSH shares MyAgents Product provider/model/MCP
+  // "跟随 Agent". DSH shares NextTools Product provider/model/MCP
   // configuration; only user-managed CLIs own those fields themselves.
   const workspaceAgent = useMemo(() => {
     if (!workspacePath) return null;
@@ -197,7 +197,7 @@ export function TaskAdvancedConfigEditor(props: Props) {
   //
   // The runtimeConfig scrub now reuses `buildRuntimeChangePatch` so it's in
   // lockstep with the agent-level confirmRuntimeChange / Settings /
-  // Launcher / `myagents agent set runtime` paths.
+  // Launcher / `nexttools agent set runtime` paths.
   //
   // No-op guard compares the complete catalog identity. Codex system CLI and
   // managed provider share a RuntimeType but not model/permission vocabularies,

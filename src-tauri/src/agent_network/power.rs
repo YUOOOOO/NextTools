@@ -23,7 +23,7 @@ mod platform {
         // observer is installed and invoked by AppKit on its main thread.
         #[unsafe(super(NSObject))]
         #[thread_kind = MainThreadOnly]
-        #[name = "MyAgentsNetworkPowerObserver"]
+        #[name = "NextToolsNetworkPowerObserver"]
         #[ivars = Ivars]
         struct Observer;
         unsafe impl NSObjectProtocol for Observer {}

@@ -40,7 +40,7 @@ describe('resolveNpxMcpInvocation', () => {
   let testRoot: string;
 
   beforeEach(() => {
-    testRoot = mkdtempSync(join(tmpdir(), 'myagents-npx-'));
+    testRoot = mkdtempSync(join(tmpdir(), 'nexttools-npx-'));
     runtimeMocks.findExistingPath.mockReset().mockReturnValue(null);
     runtimeMocks.getBundledNodeDir.mockReset().mockReturnValue(null);
     runtimeMocks.getBundledRuntimePath.mockReset().mockReturnValue('node');

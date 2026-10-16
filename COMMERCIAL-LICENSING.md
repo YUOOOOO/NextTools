@@ -1,5 +1,7 @@
 # MyAgents Commercial Licensing / MyAgents 商业许可说明
 
+> **NextTools fork notice / 分叉声明:** This document describes commercial licensing of the upstream MyAgents-owned components only. It does not offer or grant commercial licensing of NextTools modifications. 本文仅说明上游 MyAgents 权利人所属代码的商业授权，不提供或授予 NextTools 修改部分的商业授权。
+
 ## English
 
 MyAgents-owned components are available under `AGPL-3.0-only`. The AGPL permits

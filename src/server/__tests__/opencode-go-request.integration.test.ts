@@ -7,12 +7,12 @@ import { createBridgeHandler } from '../openai-bridge/handler';
 import { opencodeGoConversationId, OPENCODE_GO_USER_AGENT } from '../opencode-go-request';
 import { probeAnthropicProviderDirect } from '../provider-probe';
 
-const scratch = vi.hoisted(() => ({ directory: `/tmp/myagents-go-request-${process.pid}-${Date.now()}` }));
+const scratch = vi.hoisted(() => ({ directory: `/tmp/nexttools-go-request-${process.pid}-${Date.now()}` }));
 vi.mock('../utils/platform', async importOriginal => ({
   ...(await importOriginal<typeof import('../utils/platform')>()),
   getHomeDirOrNull: () => scratch.directory,
 }));
-beforeAll(() => mkdirSync(`${scratch.directory}/.myagents`, { recursive: true }));
+beforeAll(() => mkdirSync(`${scratch.directory}/.nexttools`, { recursive: true }));
 afterAll(() => rmSync(scratch.directory, { recursive: true, force: true }));
 
 describe('OpenCode Go outbound identity', () => {
@@ -36,7 +36,7 @@ describe('OpenCode Go outbound identity', () => {
       apiKey: 'fixture', authType: 'api_key', apiProtocol: 'anthropic',
     }, 'minimax-m3', { conversationId: 'product-session-a' });
     expect(go.ANTHROPIC_CUSTOM_HEADERS).toBe(`X-Trace: keep\nUser-Agent: ${OPENCODE_GO_USER_AGENT}\nx-opencode-session: ${one}`);
-    expect(go.CLAUDE_AGENT_SDK_CLIENT_APP).toBe('myagents');
+    expect(go.CLAUDE_AGENT_SDK_CLIENT_APP).toBe('nexttools');
     expect(process.env.ANTHROPIC_CUSTOM_HEADERS).toContain('stale');
     vi.stubEnv('ANTHROPIC_CUSTOM_HEADERS', undefined);
     const other = buildClaudeSessionEnv({ providerId: 'other', baseUrl: 'https://other.example', apiKey: 'fixture', authType: 'api_key' });

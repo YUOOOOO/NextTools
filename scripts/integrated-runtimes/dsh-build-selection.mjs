@@ -21,7 +21,7 @@ export function dshBuildDefines(repoRoot) {
   const selection = readDshBuildSelection(repoRoot);
   if (!selection) return {};
   return {
-    __MYAGENTS_DSH_BUILD_LOCK__: JSON.stringify(selection.lock),
-    __MYAGENTS_DSH_BUILD_COMPATIBILITY__: JSON.stringify(selection.compatibility),
+    __NEXTTOOLS_DSH_BUILD_LOCK__: JSON.stringify(selection.lock),
+    __NEXTTOOLS_DSH_BUILD_COMPATIBILITY__: JSON.stringify(selection.compatibility),
   };
 }

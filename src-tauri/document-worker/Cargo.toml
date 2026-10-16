@@ -1,5 +1,5 @@
 [package]
-name = "myagents-document-worker"
+name = "nexttools-document-worker"
 version = "0.5.3"
 edition = "2024"
 rust-version = "1.92"

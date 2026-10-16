@@ -331,16 +331,16 @@ export function buildIssueCommandPrompt(args: {
   issueId: string;
 }): string {
   return [
-    `Instruction: 这是一个来自 MyAgents Space「${args.spaceName}」的 Issue。请先通过下方只读命令获取当前上下文（标题、正文、附件元数据和最新评论）；如附件与判断有关，按需下载并读取。读取后，先向用户概括你的理解并提出下一步建议，等待用户确认后再修改代码、执行处理动作或变更 Issue 状态。`,
+    `Instruction: 这是一个来自 NextTools Space「${args.spaceName}」的 Issue。请先通过下方只读命令获取当前上下文（标题、正文、附件元数据和最新评论）；如附件与判断有关，按需下载并读取。读取后，先向用户概括你的理解并提出下一步建议，等待用户确认后再修改代码、执行处理动作或变更 Issue 状态。`,
     "",
     `- Issue ID: ${args.issueId}`,
     `- Space slug: ${args.spaceSlug}`,
     "",
     "阅读 Issue：",
-    `\`myagents space issue view ${args.issueId} --space ${args.spaceSlug} --comments --json\``,
+    `\`nexttools space issue view ${args.issueId} --space ${args.spaceSlug} --comments --json\``,
     "",
     "查看其他可用操作：",
-    "`myagents space issue --help`",
+    "`nexttools space issue --help`",
   ].join("\n");
 }
 

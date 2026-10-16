@@ -65,7 +65,7 @@ pub struct ImportResult {
 
 /// Import base64-encoded files into `<workspace>/<target_dir>/`.
 ///
-/// `target_dir` is workspace-relative (e.g. `"myagents_files"`). Empty string
+/// `target_dir` is workspace-relative (e.g. `"nexttools_files"`). Empty string
 /// means workspace root itself. The directory is created if it does not exist.
 ///
 /// Tauri auto-converts the JS-side camelCase (`targetDir`) to the Rust-side
@@ -319,13 +319,13 @@ mod tests {
         let res = cmd_workspace_import_files_b64(
             ws.to_string_lossy().to_string(),
             payload,
-            Some("myagents_files".to_string()),
+            Some("nexttools_files".to_string()),
         )
         .await
         .unwrap();
-        assert_eq!(res.files, vec!["myagents_files/hello.txt".to_string()]);
+        assert_eq!(res.files, vec!["nexttools_files/hello.txt".to_string()]);
         assert_eq!(
-            fs::read(ws.join("myagents_files").join("hello.txt")).unwrap(),
+            fs::read(ws.join("nexttools_files").join("hello.txt")).unwrap(),
             b"hi"
         );
         let _ = fs::remove_dir_all(&ws);
@@ -358,18 +358,18 @@ mod tests {
         let res = cmd_workspace_import_files_b64(
             ws.to_string_lossy().to_string(),
             payload,
-            Some("myagents_files".to_string()),
+            Some("nexttools_files".to_string()),
         )
         .await
         .unwrap();
         assert!(res.success);
         assert_eq!(res.files.len(), names.len());
         for (relative, name) in res.files.iter().zip(names) {
-            assert_eq!(relative, &format!("myagents_files/{}", name));
+            assert_eq!(relative, &format!("nexttools_files/{}", name));
             assert_eq!(fs::read(ws.join(relative)).unwrap(), b"clipboard bytes");
         }
         assert_eq!(
-            fs::read_dir(ws.join("myagents_files")).unwrap().count(),
+            fs::read_dir(ws.join("nexttools_files")).unwrap().count(),
             res.files.len()
         );
         fs::remove_dir_all(ws).unwrap();

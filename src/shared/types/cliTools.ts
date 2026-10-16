@@ -3,7 +3,7 @@
  *
  * 真相源分层：
  * - `tool.json`（CliToolManifest）随工具目录走，是工具自身的单一真相源；
- * - `~/.myagents/tools/registry.json`（CliToolRegistryFile）只存产品侧状态
+ * - `~/.nexttools/tools/registry.json`（CliToolRegistryFile）只存产品侧状态
  *   （enabled / registeredAt）+ description 缓存，损坏可丢弃重扫。
  *
  * 该文件保持纯净（无 fs / 进程依赖），renderer 与 sidecar 共同消费。
@@ -22,7 +22,7 @@ export interface CliToolManifest {
   /** 入口脚本文件名（相对工具目录），v1 仅支持 Node 单文件 */
   entry: string;
   runtime?: 'node';
-  /** 工具需要的环境变量名（API key 等），值经 `myagents tool env` 存 config.cliToolEnv */
+  /** 工具需要的环境变量名（API key 等），值经 `nexttools tool env` 存 config.cliToolEnv */
   envKeys?: string[];
   /** 依赖的外部二进制（ffmpeg 等），工具启动时自检 */
   deps?: string[];
@@ -37,7 +37,7 @@ export interface CliToolRegistryEntry {
   version?: string;
   envKeys?: string[];
   deps?: string[];
-  /** 工具目录绝对路径（规范位置 ~/.myagents/tools/<name>） */
+  /** 工具目录绝对路径（规范位置 ~/.nexttools/tools/<name>） */
   dir: string;
   /** 入口脚本绝对路径 */
   entryPath: string;
@@ -56,21 +56,21 @@ export interface CliToolRegistryFile {
 /** description 注册时硬上限（写进 tool-creator skill 与校验两处的单一常量） */
 export const CLI_TOOL_DESCRIPTION_MAX_CHARS = 800;
 
-/** 注入 prompt 的工具数保险丝，超出部分降级为一行 `myagents tool list` 指引 */
+/** 注入 prompt 的工具数保险丝，超出部分降级为一行 `nexttools tool list` 指引 */
 export const CLI_TOOL_PROMPT_MAX_TOOLS = 20;
 
 /** kebab-case，3–30 字符 */
 export const CLI_TOOL_NAME_PATTERN = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
 
 /**
- * 保证危险的保留名黑名单。`~/.myagents/bin` 在 PATH 中先于系统路径，
+ * 保证危险的保留名黑名单。`~/.nexttools/bin` 在 PATH 中先于系统路径，
  * 重名工具会在所有 Agent session 与内嵌终端里静默遮蔽系统命令。
  * 这里只收"必然存在/必然灾难"的核心命令；其余安装态命令靠注册时的
  * PATH 碰撞动态检测兜底（server 侧 findPathCollision）。
  */
 export const CLI_TOOL_RESERVED_NAMES: ReadonlySet<string> = new Set([
-  'myagents',
-  // 外部 Runtime 的 CLI：重名工具会被 resolveCommand 解析到（~/.myagents/bin
+  'nexttools',
+  // 外部 Runtime 的 CLI：重名工具会被 resolveCommand 解析到（~/.nexttools/bin
   // 在 fallback PATH 前列），导致 spawn 的是注册工具而不是真 runtime——必然灾难级。
   'claude', 'codex',
   'node', 'npm', 'npx', 'corepack', 'bun', 'uv', 'uvx',
@@ -96,7 +96,7 @@ export function validateCliToolName(name: unknown): CliToolValidationResult {
     return {
       ok: false,
       code: 'NAME_RESERVED',
-      error: `Tool name "${name}" is reserved: ~/.myagents/bin precedes system paths on PATH, so it would silently shadow the system command in every agent session and terminal`,
+      error: `Tool name "${name}" is reserved: ~/.nexttools/bin precedes system paths on PATH, so it would silently shadow the system command in every agent session and terminal`,
       recovery: 'Pick a different name with a domain prefix (e.g. "img-curl" instead of "curl").',
     };
   }
@@ -140,14 +140,14 @@ export function validateCliToolManifest(raw: unknown): CliToolValidationResult {
       recovery: 'Shorten the description; move details into the tool\'s `readme` subcommand output.',
     };
   }
-  // description 会被原文包进 <myagents-user-tools> 段注入 system prompt——
+  // description 会被原文包进 <nexttools-user-tools> 段注入 system prompt——
   // 含该 token 的文本能闭合包裹标签、把后续内容伪装成 prompt 指令。
   // 注册时直接打回（该 token 在工具描述里没有任何合法用途）。
-  if (/myagents-user-tools/i.test(m.description)) {
+  if (/nexttools-user-tools/i.test(m.description)) {
     return {
       ok: false,
       code: 'DESCRIPTION_FORBIDDEN_TOKEN',
-      error: 'description must not contain "myagents-user-tools" — it could break out of the prompt section that wraps tool descriptions',
+      error: 'description must not contain "nexttools-user-tools" — it could break out of the prompt section that wraps tool descriptions',
       recovery: 'Remove that token from the description.',
     };
   }

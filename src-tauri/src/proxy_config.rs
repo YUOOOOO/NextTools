@@ -12,7 +12,7 @@
 //! - System proxy is inherited when not configured (like other normal apps)
 //! - `NO_PROXY` always protects localhost (Bun's `fetch()` honors `HTTP_PROXY`)
 //!
-//! Configuration is read from `~/.myagents/config.json` and can be enabled/disabled
+//! Configuration is read from `~/.nexttools/config.json` and can be enabled/disabled
 //! via Settings > General > Network Proxy.
 
 use serde::{Deserialize, Serialize};
@@ -37,8 +37,8 @@ const DEFAULT_PROXY_PORT: u16 = 7890;
 /// can't be called directly).
 pub const LOCALHOST_NO_PROXY: &str = "localhost,localhost.localdomain,127.0.0.1,127.0.0.0/8,::1";
 
-pub const PROXY_INJECTED_MARKER_ENV: &str = "MYAGENTS_PROXY_INJECTED";
-pub const PROXY_INHERITED_ENV_JSON: &str = "MYAGENTS_PROXY_INHERITED_ENV_JSON";
+pub const PROXY_INJECTED_MARKER_ENV: &str = "NEXTTOOLS_PROXY_INJECTED";
+pub const PROXY_INHERITED_ENV_JSON: &str = "NEXTTOOLS_PROXY_INHERITED_ENV_JSON";
 
 const PROXY_ENV_KEYS: &[&str] = &[
     "HTTP_PROXY",
@@ -51,7 +51,7 @@ const PROXY_ENV_KEYS: &[&str] = &[
     "no_proxy",
 ];
 
-/// Proxy settings from `~/.myagents/config.json`
+/// Proxy settings from `~/.nexttools/config.json`
 ///
 /// # Example JSON
 /// ```json
@@ -111,7 +111,7 @@ struct PartialAppConfig {
 
 fn read_proxy_settings_from_disk() -> Option<ProxySettings> {
     let home = dirs::home_dir()?;
-    let config_path = home.join(".myagents").join("config.json");
+    let config_path = home.join(".nexttools").join("config.json");
 
     // Read config file
     let content = match fs::read_to_string(&config_path) {
@@ -152,14 +152,14 @@ fn read_proxy_settings_from_disk() -> Option<ProxySettings> {
     config.proxy_settings
 }
 
-/// Read raw proxy settings from ~/.myagents/config.json.
+/// Read raw proxy settings from ~/.nexttools/config.json.
 /// Returns settings even when `enabled=false` so callers that propagate config
 /// to sidecars can preserve scope and the disabled state.
 pub fn read_raw_proxy_settings() -> Option<ProxySettings> {
     read_proxy_settings_from_disk()
 }
 
-/// Read proxy settings from ~/.myagents/config.json
+/// Read proxy settings from ~/.nexttools/config.json
 /// Returns Some(ProxySettings) if proxy is enabled, None otherwise
 /// Logs errors for invalid configuration to help users debug
 pub fn read_proxy_settings() -> Option<ProxySettings> {
@@ -262,7 +262,7 @@ pub fn read_proxy_settings_for_provider(provider_id: &str) -> Option<ProxySettin
     read_proxy_settings().filter(|settings| proxy_enabled_for_provider(settings, provider_id))
 }
 
-/// Snapshot proxy env vars before MyAgents overwrites them for a child process.
+/// Snapshot proxy env vars before NextTools overwrites them for a child process.
 /// Node sidecar uses this to restore the real inherited baseline for providers
 /// excluded by a custom proxy scope.
 pub fn inherited_proxy_env_json() -> String {
@@ -275,7 +275,7 @@ pub fn inherited_proxy_env_json() -> String {
     serde_json::to_string(&snapshot).unwrap_or_else(|_| "{}".to_string())
 }
 
-/// Preserve inherited bypass rules while adding MyAgents' mandatory localhost
+/// Preserve inherited bypass rules while adding NextTools' mandatory localhost
 /// exclusions. Lowercase follows the precedence used by Undici/curl when both
 /// casings are present.
 pub fn inherited_no_proxy_with_localhost() -> String {
@@ -315,7 +315,7 @@ fn mark_proxy_injected(cmd: &mut Command) {
     cmd.env(PROXY_INHERITED_ENV_JSON, inherited_proxy_env_json());
 }
 
-/// Apply MyAgents proxy policy to a child process `Command`.
+/// Apply NextTools proxy policy to a child process `Command`.
 ///
 /// This is the **only** approved way to configure proxy env vars for subprocesses.
 /// Using manual `cmd.env("HTTP_PROXY", ...)` or `cmd.env_remove(...)` is forbidden —
@@ -331,7 +331,7 @@ pub fn apply_to_subprocess(cmd: &mut Command) -> bool {
     if let Some(proxy_settings) = read_proxy_settings_for_general_requests() {
         match get_proxy_url(&proxy_settings) {
             Ok(proxy_url) => {
-                ulog_info!("[proxy_config] owner=general path=myagents-proxy");
+                ulog_info!("[proxy_config] owner=general path=nexttools-proxy");
                 cmd.env("HTTP_PROXY", &proxy_url);
                 cmd.env("HTTPS_PROXY", &proxy_url);
                 cmd.env("http_proxy", &proxy_url);
@@ -347,7 +347,7 @@ pub fn apply_to_subprocess(cmd: &mut Command) -> bool {
                 cmd.env_remove("ALL_PROXY");
                 cmd.env_remove("all_proxy");
                 // Flag + pre-injection baseline so TypeScript can distinguish
-                // explicit MyAgents proxy injection from inherited system env.
+                // explicit NextTools proxy injection from inherited system env.
                 mark_proxy_injected(cmd);
                 true
             }
@@ -365,7 +365,7 @@ pub fn apply_to_subprocess(cmd: &mut Command) -> bool {
             }
         }
     } else {
-        // No MyAgents proxy configured: inherit system network behavior.
+        // No NextTools proxy configured: inherit system network behavior.
         // CRITICAL: Still inject NO_PROXY to protect Bun's localhost fetch calls
         // from being routed through any inherited system proxy.
         ulog_debug!("[proxy_config] owner=general path=inherited");
@@ -377,14 +377,14 @@ pub fn apply_to_subprocess(cmd: &mut Command) -> bool {
 }
 
 /// Provider-aware variant for provider-owned subprocesses. It injects the
-/// MyAgents proxy only when the selected provider is in scope; otherwise it
+/// NextTools proxy only when the selected provider is in scope; otherwise it
 /// leaves inherited system proxy behavior intact and only protects localhost.
 pub fn apply_to_subprocess_for_provider(cmd: &mut Command, provider_id: &str) -> bool {
     if let Some(proxy_settings) = read_proxy_settings_for_provider(provider_id) {
         match get_proxy_url(&proxy_settings) {
             Ok(proxy_url) => {
                 ulog_info!(
-                    "[proxy_config] owner=provider providerId={} path=myagents-proxy",
+                    "[proxy_config] owner=provider providerId={} path=nexttools-proxy",
                     provider_id
                 );
                 cmd.env("HTTP_PROXY", &proxy_url);
@@ -401,7 +401,7 @@ pub fn apply_to_subprocess_for_provider(cmd: &mut Command, provider_id: &str) ->
             Err(e) => {
                 ulog_error!(
                     "[proxy_config] Invalid proxy configuration for provider {}: {}. \
-                     Provider subprocess will start without MyAgents proxy.",
+                     Provider subprocess will start without NextTools proxy.",
                     provider_id,
                     e
                 );
@@ -431,7 +431,7 @@ pub fn apply_to_subprocess_for_provider(cmd: &mut Command, provider_id: &str) ->
 pub fn build_client_with_proxy(builder: reqwest::ClientBuilder) -> Result<reqwest::Client, String> {
     let final_builder = if let Some(proxy_settings) = read_proxy_settings_for_general_requests() {
         let proxy_url = get_proxy_url(&proxy_settings)?;
-        ulog_info!("[proxy_config] owner=general path=myagents-proxy");
+        ulog_info!("[proxy_config] owner=general path=nexttools-proxy");
 
         // Configure proxy but exclude localhost and all loopback addresses
         // Comprehensive NO_PROXY list for maximum compatibility:
@@ -465,7 +465,7 @@ pub fn build_client_with_proxy_for_provider(
     {
         let proxy_url = get_proxy_url(&proxy_settings)?;
         ulog_info!(
-            "[proxy_config] owner=provider providerId={} path=myagents-proxy",
+            "[proxy_config] owner=provider providerId={} path=nexttools-proxy",
             provider_id
         );
         let proxy = reqwest::Proxy::all(&proxy_url)
@@ -500,7 +500,7 @@ pub fn build_blocking_client_with_proxy_for_provider(
     {
         let proxy_url = get_proxy_url(&proxy_settings)?;
         ulog_info!(
-            "[proxy_config] owner=provider providerId={} path=myagents-proxy blocking=true",
+            "[proxy_config] owner=provider providerId={} path=nexttools-proxy blocking=true",
             provider_id
         );
         let proxy = reqwest::Proxy::all(&proxy_url)

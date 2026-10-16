@@ -84,7 +84,7 @@ function processExists(pid) {
 
 test("speech quality source lock pins licensed, bounded corpus bytes", () => {
   assert.equal(sourceLock.schemaVersion, 1);
-  assert.equal(sourceLock.corpusVersion, "myagents-speech-quality-v1");
+  assert.equal(sourceLock.corpusVersion, "nexttools-speech-quality-v1");
   assert.match(sourceLock.preparedManifestSha256, /^[0-9a-f]{64}$/);
   assert.deepEqual(sourceLock.tools, {
     python: "3.12",
@@ -143,7 +143,7 @@ test("speech quality source lock pins licensed, bounded corpus bytes", () => {
 
 test("speech long source lock pins the 30 second, 2 hour, and 8 hour corpus", () => {
   assert.equal(longSourceLock.schemaVersion, 1);
-  assert.equal(longSourceLock.corpusVersion, "myagents-speech-long-v1");
+  assert.equal(longSourceLock.corpusVersion, "nexttools-speech-long-v1");
   assert.match(longSourceLock.preparedManifestSha256, /^[0-9a-f]{64}$/);
   assert.notEqual(longSourceLock.preparedManifestSha256, "0".repeat(64));
   assert.equal(longSourceLock.tools.ffmpeg, "8.0.1");
@@ -331,7 +331,7 @@ test("live latency lock matches the production VAD configuration", () => {
     "utf8",
   );
   const nativeSource = readFileSync(
-    join(repoRoot, "src-tauri/media-worker/native/myagents_speech_adapter.cc"),
+    join(repoRoot, "src-tauri/media-worker/native/nexttools_speech_adapter.cc"),
     "utf8",
   );
   const vad = sourceLock.liveLatencyBenchmark.vadParameters;
@@ -504,7 +504,7 @@ test(
   "shared live client measures the triggering ACK before stable final",
   { skip: process.platform === "win32" },
   async () => {
-    const root = mkdtempSync(join(tmpdir(), "myagents-live-client-"));
+    const root = mkdtempSync(join(tmpdir(), "nexttools-live-client-"));
     const worker = join(root, "fixture-worker.mjs");
     writeFileSync(
       worker,
@@ -599,7 +599,7 @@ test(
   "shared live client bounds a SIGTERM-resistant Worker",
   { skip: process.platform === "win32" },
   async () => {
-    const root = mkdtempSync(join(tmpdir(), "myagents-live-timeout-"));
+    const root = mkdtempSync(join(tmpdir(), "nexttools-live-timeout-"));
     const worker = join(root, "stubborn-worker.mjs");
     writeFileSync(
       worker,
@@ -625,7 +625,7 @@ test(
 );
 
 test("quality runner rejects a prepared manifest that self-attests easier cases", () => {
-  const root = mkdtempSync(join(tmpdir(), "myagents-quality-lock-drift-"));
+  const root = mkdtempSync(join(tmpdir(), "nexttools-quality-lock-drift-"));
   const manifest = join(root, "prepared-corpus.json");
   writeFileSync(
     manifest,
@@ -681,7 +681,7 @@ test(
   "shared batch client escalates and bounds a SIGTERM-resistant Worker",
   { skip: process.platform === "win32" },
   async () => {
-    const root = mkdtempSync(join(tmpdir(), "myagents-quality-timeout-"));
+    const root = mkdtempSync(join(tmpdir(), "nexttools-quality-timeout-"));
     const worker = join(root, "stubborn-worker.mjs");
     writeFileSync(
       worker,
@@ -710,7 +710,7 @@ test(
   "shared batch client rejects a response from another workload identity",
   { skip: process.platform === "win32" },
   async () => {
-    const root = mkdtempSync(join(tmpdir(), "myagents-quality-identity-"));
+    const root = mkdtempSync(join(tmpdir(), "nexttools-quality-identity-"));
     const worker = join(root, "wrong-identity-worker.mjs");
     writeFileSync(
       worker,
@@ -746,7 +746,7 @@ test(
   "shared batch client exposes the spawned process and validated responses",
   { skip: process.platform === "win32" },
   async () => {
-    const root = mkdtempSync(join(tmpdir(), "myagents-batch-observer-"));
+    const root = mkdtempSync(join(tmpdir(), "nexttools-batch-observer-"));
     const worker = join(root, "fixture-worker.mjs");
     writeFileSync(
       worker,
@@ -813,7 +813,7 @@ process.stdin.on("end", () => process.exit(0));
 );
 
 test("bounded quality subprocess cleanup settles a resistant descendant tree", async (context) => {
-  const root = mkdtempSync(join(tmpdir(), "myagents-quality-tree-"));
+  const root = mkdtempSync(join(tmpdir(), "nexttools-quality-tree-"));
   const descendantPidPath = join(root, "descendant.pid");
   const parentSource = `
 const { spawn } = require("node:child_process");
@@ -877,7 +877,7 @@ test("quality corpus preparation rejects repository-owned raw output", () => {
 });
 
 test("quality corpus preparation rejects a cache symlink into the repository", () => {
-  const root = mkdtempSync(join(tmpdir(), "myagents-quality-cache-link-"));
+  const root = mkdtempSync(join(tmpdir(), "nexttools-quality-cache-link-"));
   const cacheLink = join(root, "cache-link");
   symlinkSync(
     repoRoot,

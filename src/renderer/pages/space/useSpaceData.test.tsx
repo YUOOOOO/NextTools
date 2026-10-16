@@ -11,7 +11,7 @@ import { useSpaceData } from "./useSpaceData";
 
 function proSession(evaluatedAt: string, expiresAt: string): SpaceSession {
   return {
-    baseUrl: "https://space.myagents.test",
+    baseUrl: "https://space.nexttools.test",
     user: { id: "usr_test", email: "user@example.com" },
     accountPlan: {
       effectiveTier: "pro",
@@ -29,7 +29,7 @@ function proSession(evaluatedAt: string, expiresAt: string): SpaceSession {
     space: {
       id: "space-1",
       slug: "official",
-      name: "MyAgents",
+      name: "NextTools",
       joinPolicy: "open",
     },
     membership: { id: "membership-1", role: "owner" },

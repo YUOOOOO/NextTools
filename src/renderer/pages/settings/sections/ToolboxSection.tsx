@@ -186,13 +186,13 @@ export function ToolboxSection({
                 className="mt-2 truncate font-mono text-xs text-[var(--ink-muted)]"
                 title={
                   isSpeechRecognition
-                    ? 'myagents speech transcribe --file <path>'
-                    : 'myagents vision analyze --image <path>'
+                    ? 'nexttools speech transcribe --file <path>'
+                    : 'nexttools vision analyze --image <path>'
                 }
               >
                 {isSpeechRecognition
-                  ? 'myagents speech transcribe --file <path>'
-                  : 'myagents vision analyze --image <path>'}
+                  ? 'nexttools speech transcribe --file <path>'
+                  : 'nexttools vision analyze --image <path>'}
               </p>
               {isSpeechRecognition && (
                 <SpeechModelResourceControls

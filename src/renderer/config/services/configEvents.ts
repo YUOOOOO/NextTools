@@ -13,7 +13,7 @@ import { isTauriEnvironment } from '@/utils/browserMock';
  * leaving the live Chat sidecar with a stale `currentMcpServers` snapshot
  * (no MINERU_API_KEY) until the user happened to switch tabs.
  */
-export const CONFIG_CHANGED_EVENT = 'myagents:config-changed';
+export const CONFIG_CHANGED_EVENT = 'nexttools:config-changed';
 
 /**
  * Single sanctioned dispatcher for CONFIG_CHANGED_EVENT. Every renderer code

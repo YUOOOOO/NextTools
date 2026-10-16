@@ -1,5 +1,5 @@
 import { useBackgroundRequestFeedback, type BackgroundRequestResult } from '@/hooks/useBackgroundRequestFeedback';
-import { useMyAgentsLogin } from '@/hooks/useMyAgentsLogin';
+import { useNextToolsLogin } from '@/hooks/useNextToolsLogin';
 import { isImeComposingEvent } from '@/utils/imeKeyboard';
 import {
   type KeyboardEvent,
@@ -462,7 +462,7 @@ export default function Space({
   const spaceData = useSpaceData({ isActive });
   const { actions } = spaceData;
   const afterLogin = useCallback(async () => { await actions.ensureBootstrapped({ force: true }); }, [actions]);
-  const { authBusy, authFlow, startLogin } = useMyAgentsLogin(isActive, afterLogin);
+  const { authBusy, authFlow, startLogin } = useNextToolsLogin(isActive, afterLogin);
   const previousModeRef = useRef<ViewMode>("issues");
   const [mode, setMode] = useState<ViewMode>("issues");
   const [issueQ, setIssueQ] = useState("");

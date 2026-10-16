@@ -17,7 +17,7 @@ export function isSubagentContainerTool(name: string): boolean {
 /**
  * Builtin SDK Task/Agent tools are background by default as of current Agent SDK:
  * omitted `run_in_background` means background; only explicit false means sync.
- * Codex `CollabAgent` is a MyAgents-normalized external runtime card and keeps
+ * Codex `CollabAgent` is a NextTools-normalized external runtime card and keeps
  * its own lifecycle semantics, so it is intentionally excluded here.
  */
 export function isBackgroundSubagentTool(

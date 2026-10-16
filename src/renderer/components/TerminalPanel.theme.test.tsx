@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ThemeRegistry, ThemeRuntimeProvider } from '@/theme';
 import { syntheticTheme } from '@/theme/__tests__/syntheticTheme';
-import { myAgentsDefaultTheme } from '@/theme/themes/myagents-default';
+import { nextToolsDefaultTheme } from '@/theme/themes/nexttools-default';
 
 const xtermCapture = vi.hoisted(() => ({
   instances: [] as Array<{
@@ -82,7 +82,7 @@ describe('TerminalPanel Theme adapter', () => {
   });
 
   it('updates xterm in place and defers metric fitting until the width transition settles', () => {
-    const registry = new ThemeRegistry([myAgentsDefaultTheme, syntheticTheme]);
+    const registry = new ThemeRegistry([nextToolsDefaultTheme, syntheticTheme]);
     const view = render(
       <ThemeRuntimeProvider
         registry={registry}
@@ -188,7 +188,7 @@ describe('TerminalPanel Theme adapter', () => {
   });
 
   it('defers first PTY creation until the panel geometry is stable', async () => {
-    const registry = new ThemeRegistry([myAgentsDefaultTheme, syntheticTheme]);
+    const registry = new ThemeRegistry([nextToolsDefaultTheme, syntheticTheme]);
     render(
       <ThemeRuntimeProvider
         registry={registry}

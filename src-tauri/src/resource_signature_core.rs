@@ -8,7 +8,7 @@ use base64::{engine::general_purpose, Engine as _};
 use minisign_verify::{PublicKey, Signature};
 
 // Keep this in sync with `tauri.conf.json > plugins.updater.pubkey`.
-pub(crate) const MYAGENTS_MINISIGN_PUBKEY: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEY3RkQ5QjIzMTE4RTgyRTkKUldUcGdvNFJJNXY5OTB3T2pnUzVUbjFrV203Zk5ZTDg0NVJRdGI0UVRranJzTUsvM0hGcmFlc0IK";
+pub(crate) const NEXTTOOLS_MINISIGN_PUBKEY: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEY3RkQ5QjIzMTE4RTgyRTkKUldUcGdvNFJJNXY5OTB3T2pnUzVUbjFrV203Zk5ZTDg0NVJRdGI0UVRranJzTUsvM0hGcmFlc0IK";
 
 fn decode_base64_text(value: &str, label: &str) -> Result<String, String> {
     let bytes = general_purpose::STANDARD
@@ -18,7 +18,7 @@ fn decode_base64_text(value: &str, label: &str) -> Result<String, String> {
 }
 
 pub(super) fn public_key() -> Result<PublicKey, String> {
-    let decoded = decode_base64_text(MYAGENTS_MINISIGN_PUBKEY, "public key")?;
+    let decoded = decode_base64_text(NEXTTOOLS_MINISIGN_PUBKEY, "public key")?;
     PublicKey::decode(&decoded).map_err(|error| format!("invalid minisign public key: {error}"))
 }
 
@@ -55,6 +55,6 @@ mod tests {
             .and_then(|value| value.get("pubkey"))
             .and_then(|value| value.as_str())
             .expect("updater pubkey");
-        assert_eq!(updater_pubkey, MYAGENTS_MINISIGN_PUBKEY);
+        assert_eq!(updater_pubkey, NEXTTOOLS_MINISIGN_PUBKEY);
     }
 }

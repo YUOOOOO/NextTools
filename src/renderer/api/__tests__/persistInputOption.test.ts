@@ -282,7 +282,7 @@ describe('persistInputOptionChange — disk write fanout', () => {
       workspaceId: 'ws-1',
       agentId: 'agent-1',
       isExternalRuntime: false,
-      currentRuntimeConfig: { envPolicy: { proxy: 'myagents' } },
+      currentRuntimeConfig: { envPolicy: { proxy: 'nexttools' } },
       fields: {
         runtimeBackedProviderSelection: identity,
         permissionMode: 'plan',
