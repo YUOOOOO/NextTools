@@ -83,7 +83,7 @@ type ControlRequest = {
 
 ### 当前移动界面
 
-`apps/client/src/ClientRoot.tsx` 先读取真实 `HostSnapshot.platform`，在 iOS/Android 加载独立移动界面，桌面保留原 Percho 布局；不按屏幕宽度猜测宿主类型。移动端底部固定为“工作台 / Agent / 我的”，提供插件目录、桌面连接说明、账号/设备/同步状态、隐私说明和本机外观偏好。外观沿用 Host 的设备本地 preferences，保存失败显式报错。
+`apps/client/src/ClientRoot.tsx` 先读取真实 `HostSnapshot.platform`，在 iOS/Android 加载独立移动界面，桌面当前沿用既有布局，后续按 [桌面端页面布局](desktop-layout.md) 向官方 WorkBuddy 方向调整；不按屏幕宽度猜测宿主类型。移动端底部固定为“工作台 / Agent / 我的”，提供插件目录、桌面连接说明、账号/设备/同步状态、隐私说明和本机外观偏好。外观沿用 Host 的设备本地 preferences，保存失败显式报错。
 
 账号与远控采用可自托管的 `apps/control-plane`（Fastify、PostgreSQL、oidc-provider）。客户端在设置内发起系统浏览器 OIDC Authorization Code + PKCE，使用应用 URI 回调，不启动本地 HTTP 服务。设备 Ed25519 签名密钥、X25519 交换私钥和 refresh token 只进入系统凭据库；凭据库不可用时拒绝登录，不回退明文文件。
 

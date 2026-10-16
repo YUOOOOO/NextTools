@@ -53,7 +53,7 @@ plugins/pi-agent/
   -> 固定到 NextTools 发布版本
 ```
 
-上游 UI 变化和后端升级分开评估。桌面 UI 维持 Percho 布局，但只能有意识地迁移 React 页面和交互，不能复制 Electron 运行时。
+上游 UI 变化和后端升级分开评估。当前 Agent 页面及整体布局向官方 WorkBuddy 的体验方向实现，不再以维持 Percho 布局为目标，详见 [桌面端页面布局](desktop-layout.md) 与 [UI 规范](UI_SPEC.md)。Percho/Pi 的后端复用、固定版本策略和 Host 权限边界保持不变；不复制 Electron 运行时，也不迁入 Ace 的运行时。Ace 仅作机制参考，不代表官方 WorkBuddy。
 
 ## 当前实现目录
 
@@ -77,6 +77,8 @@ apps/client/src-tauri/src/
 Agent 页面当前由 `apps/client/src/App.tsx` 中的宿主 React 页面实现；尚未拆成单独的 `plugins/pi-agent/ui` 包。不得把尚未存在的目标目录写成已实现事实。
 
 Chat 侧栏按项目展示运行中与持久化会话。智能体模板在宿主本地设置中保存模型、系统指令与 Skill 选择，支持增删改、复制与选择；新建或恢复会话时由 Host 解析所选模板，运行中的会话不随模板选择变化。模板不保存 API Key，且不能绕过全局 Skill 启停或 MCP 宿主审批。
+
+上述为当前实现状态；WorkBuddy 方向的页面改造尚待实施与真实桌面验收。智能体模板不等于子 Agent 调度：Team、任务依赖、并行协作与看板等能力不因本次文档更新而成为已实现功能，后续须先明确契约、权限与验收范围。
 
 ## 进程边界
 
