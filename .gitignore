@@ -6,3 +6,4 @@ target/
 .env.*
 !.env.example
 apps/client/src-tauri/gen/
+apps/control-plane/.postgres-data/

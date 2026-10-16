@@ -10,6 +10,7 @@ NextTools 是一个基于 Tauri 2 的 local-first、多端同步、插件化 Age
 - [插件系统](plugin-system.md)：插件分类、manifest、能力授权与 Agent 工具协议。
 - [Pi Agent / Percho 集成](pi-agent.md)：以桌面 Node sidecar 复用 Percho/Pi 的运行模型。
 - [账号、设备与远程控制](account-remote-control.md)：账号关联、配对、实时控制和移动端边界。
+  - 同页包含自托管服务启动、账号与配对、加密同步/控制、回归命令，以及移动预览和 iOS 真机验证边界。
 - [数据、安全与审计](data-security.md)：同步、密钥、数据存储、审批和审计要求。
 - [实施路线](roadmap.md)：按依赖顺序的交付阶段。
 
@@ -22,7 +23,7 @@ NextTools 是一个基于 Tauri 2 的 local-first、多端同步、插件化 Age
 5. **账号服务不执行本地任务。** 它只处理身份、设备、授权、同步、中继和推送；执行始终发生在已授权的桌面 Host。
 6. **DeepSeek 是独立 API 插件。** 不抓取或嵌入 DeepSeek 网站作为 Agent 运行时。
 7. **桌面端复用 Percho 页面布局。** 右上角在原新建会话操作旁切换“工作台 / Agent”；Agent 保留新建会话，工作台显示当前插件的主操作。
-8. **Percho 上游以固定提交持续跟进。** 通过 Git submodule 保留上游；NextTools 仅维护薄适配层，不追踪 `main` 或运行时自动升级。 
+8. **Percho 上游以固定提交持续跟进。** 通过 Git submodule 保留上游；NextTools 仅维护薄适配层，不追踪 `main` 或运行时自动升级。
 9. **全局快捷键由 Host 管理。** 插件每条命令均可单独分配快捷键，按当前桌面设备持久化并在下次启动时恢复；触发仍经过能力、审批和审计。
 
 ## 术语

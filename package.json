@@ -5,6 +5,7 @@
   "type": "module",
   "workspaces": [
     "apps/client",
+    "apps/control-plane",
     "packages/*",
     "plugins/workspace-files"
   ],
@@ -16,7 +17,12 @@
     "format": "prettier --write apps/client packages plugins/workspace-files package.json tsconfig.json",
     "check:rust": "cargo test --workspace",
     "protocol:generate": "cargo run -p nexttools-protocol --example export",
-    "build:desktop": "npm run tauri:build --workspace @nexttools/client"
+    "build:desktop": "npm run tauri:build --workspace @nexttools/client",
+    "ios:init": "npm run ios:init --workspace @nexttools/client",
+    "ios:dev": "npm run ios:dev --workspace @nexttools/client",
+    "ios:build": "npm run ios:build --workspace @nexttools/client",
+    "dev:server": "npm run dev --workspace @nexttools/control-plane",
+    "build:server": "npm run build --workspace @nexttools/control-plane"
   },
   "devDependencies": {
     "prettier": "^3.6.2",

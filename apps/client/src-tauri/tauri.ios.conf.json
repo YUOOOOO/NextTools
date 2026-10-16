@@ -1,0 +1,23 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.nexttools.mobile",
+  "build": {
+    "beforeDevCommand": "npm run dev -- --host 0.0.0.0",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "NextTools",
+        "width": 390,
+        "height": 844,
+        "decorations": true
+      }
+    ]
+  },
+  "bundle": {
+    "resources": [],
+    "iOS": { "minimumSystemVersion": "15.0" }
+  }
+}

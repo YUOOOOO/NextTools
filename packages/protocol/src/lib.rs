@@ -1,3 +1,44 @@
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+pub struct RemoteSnapshot {
+    pub server: String,
+    pub email: Option<String>,
+    pub device_id: String,
+    pub connected: bool,
+    pub error: Option<String>,
+    pub authorization_url: Option<String>,
+    pub pairing_code: Option<String>,
+    pub devices: Vec<RemoteDevice>,
+    pub pairings: Vec<RemotePairing>,
+    pub workspaces: Vec<RemoteWorkspace>,
+}
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+pub struct RemoteDevice {
+    pub id: String,
+    pub name: String,
+    pub platform: String,
+    pub signing_key: String,
+    pub exchange_key: String,
+    pub revoked: bool,
+}
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, ts_rs::TS)]
+pub struct RemotePairing {
+    pub id: String,
+    pub source: Option<String>,
+    pub target: String,
+    pub status: String,
+    pub workspaces: Vec<String>,
+    pub operations: Vec<String>,
+}
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+pub struct RemoteWorkspace {
+    pub device_id: String,
+    pub id: String,
+    pub name: String,
+    pub sessions: Vec<AgentSessionSummary>,
+}
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 

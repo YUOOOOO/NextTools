@@ -70,6 +70,7 @@ struct Approval {
 #[derive(Clone)]
 struct Session {
     workspace: String,
+    persisted: Option<String>,
     cancelled: Arc<AtomicBool>,
 }
 #[derive(Default)]
@@ -180,6 +181,17 @@ fn runner(app: &tauri::AppHandle) -> Result<Arc<Runner>, String> {
                 }
             } else if value["method"] == "agent.event" {
                 let _ = handle.emit("agent:event", &value["params"]);
+                if let Some(id) = value["params"]["sessionId"].as_str() {
+                    let workspace = handle
+                        .state::<AgentState>()
+                        .sessions
+                        .lock()
+                        .ok()
+                        .and_then(|s| s.get(id).map(|s| s.workspace.clone()));
+                    if let Some(workspace) = workspace {
+                        crate::remote::forward_event(&handle, &workspace, &value["params"]);
+                    }
+                }
             }
         }
         let state = handle.state::<AgentState>();
@@ -275,6 +287,11 @@ fn invoke_tool(app: &tauri::AppHandle, params: &Value) -> Reply {
                 sender: tx,
             },
         );
+        crate::remote::forward_event(
+            app,
+            workspace,
+            &json!({"sessionId":session,"event":{"type":"remote_approval","requestId":request,"toolName":tool}}),
+        );
         let decision = app
             .emit(
                 "agent:approval",
@@ -293,6 +310,11 @@ fn invoke_tool(app: &tauri::AppHandle, params: &Value) -> Reply {
         let _ = app.emit(
             "agent:approval-resolved",
             json!({"requestId":request,"sessionId":session}),
+        );
+        crate::remote::forward_event(
+            app,
+            workspace,
+            &json!({"sessionId":session,"event":{"type":"remote_approval_resolved","requestId":request}}),
         );
         if !decision.unwrap_or(false) {
             with_host(&app.state::<HostState>(), |h| {
@@ -373,14 +395,29 @@ fn open_session(
             session_id.clone(),
             Session {
                 workspace: workspace_id.clone(),
+                persisted: None,
                 cancelled: Arc::new(AtomicBool::new(false)),
             },
         );
     let result = runtime.request(if persisted.is_some() {"session.resume"} else {"session.create"},json!({"sessionId":session_id,"persistedSessionId":persisted,"cwd":workspace.root,"agentDir":directory,"sessionDir":directory.join("sessions").join(&workspace_id),"provider":provider,"model":model,"apiKey":api_key,"resources":resources}));
     match result {
         Ok(value) => {
+            if let Some(live) = app
+                .state::<AgentState>()
+                .sessions
+                .lock()
+                .map_err(|e| e.to_string())?
+                .get_mut(&session_id)
+            {
+                live.persisted = value["persistedSessionId"].as_str().map(str::to_owned);
+            }
             if persisted.is_some() {
                 app.emit("agent:event",json!({"sessionId":session_id,"event":{"type":"session_restored","messages":value["messages"]}})).map_err(|e|e.to_string())?;
+                crate::remote::forward_event(
+                    app,
+                    &workspace_id,
+                    &json!({"sessionId":session_id,"event":{"type":"session_restored","messages":value["messages"]}}),
+                );
             }
             Ok(AgentSessionInfo {
                 session_id,
@@ -587,4 +624,76 @@ pub async fn agent_session_dispose(
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+pub(crate) fn remote_snapshot(
+    app: &tauri::AppHandle,
+    workspace: &str,
+    name: &str,
+    device: &str,
+) -> Result<nexttools_protocol::RemoteWorkspace, String> {
+    let sessions =
+        tauri::async_runtime::block_on(agent_sessions_list(app.clone(), workspace.into()))?;
+    Ok(nexttools_protocol::RemoteWorkspace {
+        device_id: device.into(),
+        id: workspace.into(),
+        name: name.into(),
+        sessions,
+    })
+}
+pub(crate) fn remote_execute(
+    app: &tauri::AppHandle,
+    workspace: &str,
+    operation: &str,
+    input: &Value,
+) -> Reply {
+    with_host(&app.state::<HostState>(), |h| h.authorize_agent(workspace))?;
+    let session = input["sessionId"].as_str().ok_or("缺少会话 ID")?;
+    if operation == "session.view" {
+        let sessions =
+            tauri::async_runtime::block_on(agent_sessions_list(app.clone(), workspace.into()))?;
+        if !sessions.iter().any(|s| s.session_id == session) {
+            return Err("会话不属于授权项目".into());
+        }
+        let existing = app
+            .state::<AgentState>()
+            .sessions
+            .lock()
+            .map_err(|e| e.to_string())?
+            .iter()
+            .find(|(_, live)| {
+                live.workspace == workspace && live.persisted.as_deref() == Some(session)
+            })
+            .map(|(id, _)| id.clone());
+        if let Some(id) = existing {
+            let value = runner(app)?.request("session.snapshot", json!({"sessionId":id}))?;
+            crate::remote::forward_event(
+                app,
+                workspace,
+                &json!({"sessionId":id,"event":{"type":"session_restored","messages":value["messages"]}}),
+            );
+            return serde_json::to_value(AgentSessionInfo {
+                session_id: id,
+                workspace_id: workspace.into(),
+                model: value["model"].as_str().map(str::to_owned),
+            })
+            .map_err(|e| e.to_string());
+        }
+        let info = open_session(app, workspace.into(), Some(session.into()))?;
+        return serde_json::to_value(info).map_err(|e| e.to_string());
+    }
+    let live = authorized_session(app, session)?;
+    if live.workspace != workspace {
+        return Err("会话不属于授权项目".into());
+    }
+    match operation {
+        "session.prompt" => tauri::async_runtime::block_on(agent_prompt(
+            app.clone(),
+            session.into(),
+            input["text"].as_str().ok_or("缺少消息")?.into(),
+        )),
+        "session.stop" => tauri::async_runtime::block_on(agent_abort(app.clone(), session.into()))
+            .map(|_| json!({"stopped":true})),
+        _ => Err("远程操作未获授权".into()),
+    }
 }

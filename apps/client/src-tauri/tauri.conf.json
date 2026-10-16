@@ -3,6 +3,7 @@
   "productName": "NextTools",
   "version": "0.1.0",
   "identifier": "com.nexttools.desktop",
+  "plugins": { "deep-link": { "desktop": { "schemes": ["com.nexttools.client"] }, "mobile": [{ "scheme": ["com.nexttools.mobile"], "appLink": false }] } },
   "build": {
     "beforeDevCommand": "npm --prefix ../../plugins/pi-agent/runner run build && npm run dev",
     "devUrl": "http://127.0.0.1:1420",

@@ -158,6 +158,10 @@ test(
           message.content.some((item) => item.text === "Restored fixture"),
       ),
     );
+    const viewed = await rpc("session.snapshot", { sessionId: restored.sessionId });
+    assert.deepEqual(viewed.messages, restored.messages);
+    assert.equal((await rpc("runner.health")).sessions.length, 1);
+    await assert.rejects(rpc("session.snapshot", { sessionId: randomUUID() }));
     assert.equal(
       (await rpc("session.dispose", { sessionId: restored.sessionId }))
         .disposed,

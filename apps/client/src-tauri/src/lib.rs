@@ -13,6 +13,8 @@ mod agent_settings;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 #[path = "agent_settings_mobile.rs"]
 mod agent_settings;
+mod remote;
+mod remote_crypto;
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 use agent_settings::SettingsState;
 use host_core::Host;
@@ -401,7 +403,9 @@ async fn shortcut_set(
 }
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = tauri::Builder::default();
+    let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_deep_link::init());
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     let builder = builder.plugin(tauri_plugin_global_shortcut::Builder::new().build());
     builder
@@ -423,6 +427,27 @@ pub fn run() {
             }
             #[cfg(not(any(target_os = "android", target_os = "ios")))]
             app.manage(agent::AgentState::default());
+            remote::initialize(app.handle()).map_err(std::io::Error::other)?;
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                let handle = app.handle().clone();
+                app.deep_link().on_open_url(move |event| {
+                    for url in event.urls() {
+                        let handle = handle.clone();
+                        tauri::async_runtime::spawn(async move {
+                            if let Err(error) = remote::remote_action(
+                                handle.clone(),
+                                "callback".into(),
+                                serde_json::json!({"url":url.to_string()}),
+                            )
+                            .await
+                            {
+                                let _ = handle.emit("host:error", error);
+                            }
+                        });
+                    }
+                });
+            }
             let handle = app.handle().clone();
             tauri::async_runtime::spawn_blocking(move || {
                 let state = handle.state::<HostState>();
@@ -437,6 +462,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             host_snapshot,
+            remote::remote_action,
             preferences_update,
             workspace_choose,
             files_list,

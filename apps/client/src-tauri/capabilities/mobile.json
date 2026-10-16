@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "mobile",
+  "description": "Only the bundled mobile UI receives core access. No desktop window controls, filesystem, shell or global shortcuts.",
+  "windows": ["main"],
+  "platforms": ["iOS", "android"],
+  "permissions": ["core:default"]
+}

@@ -41,6 +41,7 @@ import { AgentExplorer, AgentFilePreview } from "./agent-explorer";
 import { GitPanel } from "./git-panel";
 import { ProjectNavigation } from "./project-navigation";
 import { AgentProfiles } from "./agent-profiles";
+import { AccountPane } from "./remote";
 
 import {
   asRecord,
@@ -1381,6 +1382,7 @@ function SettingsContent({
             "NextTools",
             [
               ["general", "通用"],
+              ["account", "账号与连接"],
               ["appearance", "外观"],
             ],
           ],
@@ -1415,7 +1417,7 @@ function SettingsContent({
         ))}
       </nav>
       <div className="settings-body">
-        {tab === "general" ? (
+        {tab === "account" ? <AccountPane workspaces={snapshot.workspaces} /> : tab === "general" ? (
           <section className="settings-section">
             <header>
               <h2>通用</h2>

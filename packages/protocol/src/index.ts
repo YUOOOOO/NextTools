@@ -1,4 +1,8 @@
 // Rust definitions are the only protocol schema. Regenerate with npm run protocol:generate.
+export type { RemoteSnapshot } from "./generated/RemoteSnapshot";
+export type { RemoteDevice } from "./generated/RemoteDevice";
+export type { RemotePairing } from "./generated/RemotePairing";
+export type { RemoteWorkspace } from "./generated/RemoteWorkspace";
 export type { HostSnapshot } from "./generated/HostSnapshot";
 export type { Workspace } from "./generated/Workspace";
 export type { Preferences } from "./generated/Preferences";

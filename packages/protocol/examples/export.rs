@@ -14,5 +14,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     AgentSessionSummary::export_all_to(dir)?;
     AgentSettingsSnapshot::export_all_to(dir)?;
     McpServerConfig::export_all_to(dir)?;
+    RemoteSnapshot::export_all_to(dir)?;
     Ok(())
 }

@@ -255,6 +255,12 @@ async function handleRequest(message) {
   const liveId = String(params.sessionId || "");
   const record = sessions.get(liveId);
   if (!record) throw new Error(`Unknown agent session: ${liveId}`);
+  if (message.method === "session.snapshot") {
+    return {
+      model: record.session.model?.id ?? null,
+      messages: await percho.messages(record.persistedId),
+    };
+  }
   if (message.method === "session.rename") {
     const title = String(params.title || "").trim();
     if (!title || title.length > 200)

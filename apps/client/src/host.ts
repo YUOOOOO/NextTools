@@ -1,6 +1,9 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import type { HostClient } from "@nexttools/plugin-sdk";
 export const nativeHostAvailable = isTauri();
+export function remoteRequest<T>(action: string, input: Record<string, unknown> = {}): Promise<T> {
+  return invoke("remote_action", { action, input });
+}
 export const host: HostClient = {
   snapshot: () => invoke("host_snapshot"),
   chooseWorkspace: () => invoke("workspace_choose"),

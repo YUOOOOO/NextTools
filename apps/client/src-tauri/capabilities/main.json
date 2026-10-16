@@ -3,6 +3,7 @@
   "identifier": "main",
   "description": "Only the trusted bundled application window receives core window and event access. No filesystem, shell, or global-shortcut frontend access.",
   "windows": ["main"],
+  "platforms": ["windows", "macOS", "linux"],
   "permissions": [
     "core:default",
     "core:window:allow-close",
