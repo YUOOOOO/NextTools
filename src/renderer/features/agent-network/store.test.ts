@@ -1,0 +1,124 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { NetworkSnapshot, NetworkRegistry } from "@/api/agentNetwork";
+const mocks = vi.hoisted(() => ({ read: vi.fn(), listen: vi.fn() }));
+vi.mock("@/api/agentNetwork", () => ({
+  networkConnections: mocks.read,
+  setNetworkReadScope: vi.fn(),
+}));
+vi.mock("@/utils/tauriListen", () => ({ listenWithCleanup: mocks.listen }));
+import {
+  startAgentNetworkStore,
+  currentNetworkGeneration,
+  descriptionDraftKey,
+  setDescriptionDraft,
+  getDescriptionDraft,
+  acceptNetworkRegistry,
+} from "./store";
+const base: NetworkSnapshot = {
+  state: "ready",
+  principalId: "account",
+  networkId: "network",
+  error: null,
+  revision: 1,
+  authGeneration: 1,
+  connectionId: "official",
+};
+function registry(
+  snapshots: NetworkSnapshot[],
+  selected = "official",
+): NetworkRegistry {
+  return {
+    selected,
+    connections: snapshots.map((s) => ({
+      id: s.connectionId!,
+      name: s.connectionId!,
+      official: s.connectionId === "official",
+      url: null,
+      removing: false,
+      snapshot: s,
+    })),
+  };
+}
+let stop: (() => void) | undefined;
+afterEach(() => {
+  stop?.();
+  stop = undefined;
+  vi.clearAllMocks();
+});
+const flush = async () => {
+  for (let i = 0; i < 6; i++) await Promise.resolve();
+};
+describe("App network projection", () => {
+  it("subscribes to both streams before reading, then fences a late old snapshot per connection", async () => {
+    let resolve!: (v: NetworkRegistry) => void;
+    let event!: (e: { payload: NetworkSnapshot }) => void;
+    mocks.listen.mockImplementation(async (name, handler) => {
+      if (name === "agent-network:changed") event = handler;
+      return { isRegistered: () => true };
+    });
+    mocks.read.mockImplementation(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    );
+    stop = startAgentNetworkStore();
+    expect(mocks.read).not.toHaveBeenCalled();
+    await flush();
+    expect(mocks.listen).toHaveBeenCalledTimes(2);
+    event({ payload: { ...base, authGeneration: 2, revision: 3 } });
+    resolve(registry([base]));
+    await flush();
+    expect(currentNetworkGeneration()).toBe(2);
+  });
+  it("selection never changes generations; one network boundary clears only its drafts", async () => {
+    let event!: (e: { payload: NetworkSnapshot }) => void;
+    mocks.listen.mockImplementation(async (name, handler) => {
+      if (name === "agent-network:changed") event = handler;
+      return { isRegistered: () => true };
+    });
+    const second = {
+      ...base,
+      connectionId: "self",
+      principalId: "self-account",
+      networkId: "self-network",
+    };
+    mocks.read.mockResolvedValue(registry([base, second]));
+    stop = startAgentNetworkStore();
+    await flush();
+    const firstDraft = descriptionDraftKey("account", "network", "mount"),
+      secondDraft = descriptionDraftKey(
+        "self-account",
+        "self-network",
+        "mount",
+      );
+    setDescriptionDraft(firstDraft, "official text");
+    setDescriptionDraft(secondDraft, "self text");
+    acceptNetworkRegistry(registry([base, second], "self"));
+    expect(currentNetworkGeneration("official")).toBe(1);
+    expect(currentNetworkGeneration("self")).toBe(1);
+    event({
+      payload: { ...base, state: "signedOut", authGeneration: 2, revision: 3 },
+    });
+    expect(getDescriptionDraft(firstDraft)).toBeUndefined();
+    expect(getDescriptionDraft(secondDraft)).toBe("self text");
+    event({ payload: { ...second, revision: 2 } });
+    expect(getDescriptionDraft(secondDraft)).toBe("self text");
+    acceptNetworkRegistry(registry([{ ...base, authGeneration: 2 }]));
+    expect(getDescriptionDraft(secondDraft)).toBeUndefined();
+  });
+  it("does not read when teardown wins registration", async () => {
+    let resolve!: (v: { isRegistered: () => boolean }) => void;
+    mocks.listen.mockImplementation(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    );
+    stop = startAgentNetworkStore();
+    stop();
+    resolve({ isRegistered: () => false });
+    await flush();
+    expect(mocks.read).not.toHaveBeenCalled();
+  });
+});

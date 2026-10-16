@@ -1,0 +1,313 @@
+import type { AgentConfig } from '../../shared/types/agent';
+import {
+  buildRuntimeChangePatch,
+  coerceModelForRuntime,
+  getMaxPermissionForRuntime,
+  resolveEffectiveRuntime,
+  projectPermissionModeForRuntime,
+  type RuntimeSource,
+  type RuntimeType,
+} from '../../shared/types/runtime';
+import { coerceReasoningEffortSettingForRuntime } from '../../shared/reasoningEffort';
+import type { SessionMetadata } from '../types/session';
+import { CODEX_SUBSCRIPTION_PROVIDER_ID } from '../../shared/config-types';
+import { createConcreteProviderRoute, type ProviderRoute } from '../../shared/providerRoute';
+import {
+  agentUsesManagedCodexProvider,
+  createRuntimeBackedProviderIdentity,
+  managedCodexProviderPermissionToRuntimePermission,
+} from '../../shared/providerExecution';
+import { createDshBinding } from '../../shared/integrated-runtimes/identity';
+
+/** Complete Product Session execution snapshots. Desktop, Task and IM share
+ * the owned snapshot compiler; IM changes only its birth permission policy.
+ * Registered cloud Agents retain their independent live-follow lifecycle.
+ * configSnapshotAt is stamped by the Session writer, never by Rust templates.
+ */
+export type OwnedSessionSnapshot = Pick<
+  SessionMetadata,
+  | 'runtime'
+  | 'runtimeSource'
+  | 'runtimeBinding'
+  | 'runtimeBindingCompatibility'
+  | 'model'
+  | 'reasoningEffort'
+  | 'permissionMode'
+  | 'mcpEnabledServers'
+  | 'enabledPluginIds'
+  | 'enabledOfficialToolIds'
+  | 'providerId'
+  | 'providerRoute'
+  | 'providerExecutionIdentity'
+  | 'providerEnvJson'
+>;
+
+/** Clone the frozen execution identity owned by an existing Session branch source. */
+export function snapshotForForkedSession(
+  source: SessionMetadata,
+  legacyFallback?: OwnedSessionSnapshot & Pick<SessionMetadata, 'configSnapshotAt'>,
+): OwnedSessionSnapshot & Pick<SessionMetadata, 'configSnapshotAt'> {
+  const fallback = source.configSnapshotAt ? undefined : legacyFallback;
+  const runtimeIdentity = source.runtimeBinding
+    ? { runtimeBinding: source.runtimeBinding }
+    : source.runtimeBindingCompatibility
+      ? { runtimeBindingCompatibility: source.runtimeBindingCompatibility }
+      : fallback?.runtimeBinding
+        ? { runtimeBinding: fallback.runtimeBinding }
+        : fallback?.runtimeBindingCompatibility
+          ? { runtimeBindingCompatibility: fallback.runtimeBindingCompatibility }
+          : {};
+  return {
+    runtime: source.runtime ?? fallback?.runtime ?? 'builtin',
+    runtimeSource: source.runtimeSource ?? fallback?.runtimeSource,
+    ...runtimeIdentity,
+    model: source.model ?? fallback?.model,
+    reasoningEffort: source.reasoningEffort ?? fallback?.reasoningEffort,
+    permissionMode: source.permissionMode ?? fallback?.permissionMode,
+    mcpEnabledServers: source.mcpEnabledServers
+      ? [...source.mcpEnabledServers]
+      : fallback?.mcpEnabledServers ? [...fallback.mcpEnabledServers] : undefined,
+    enabledPluginIds: source.enabledPluginIds
+      ? [...source.enabledPluginIds]
+      : fallback?.enabledPluginIds ? [...fallback.enabledPluginIds] : undefined,
+    enabledOfficialToolIds: source.enabledOfficialToolIds
+      ? [...source.enabledOfficialToolIds]
+      : fallback?.enabledOfficialToolIds ? [...fallback.enabledOfficialToolIds] : undefined,
+    providerId: source.providerId ?? fallback?.providerId,
+    providerRoute: source.providerRoute ?? fallback?.providerRoute,
+    providerExecutionIdentity: source.providerExecutionIdentity ?? fallback?.providerExecutionIdentity,
+    providerEnvJson: source.providerEnvJson ?? fallback?.providerEnvJson,
+    // A fork is always an owned Session. Legacy sources followed Agent config,
+    // so their caller supplies the effective owned snapshot at the fork boundary.
+    configSnapshotAt: source.configSnapshotAt ?? fallback?.configSnapshotAt ?? new Date().toISOString(),
+  };
+}
+/** Caller-resolved execution identity and Agent-template birth policy. */
+interface SessionSnapshotRuntimeOptions {
+  /** Agent-template births need the same distribution/gate policy as desktop. */
+  runtimePolicy?: { defaultIntegratedRuntime?: unknown };
+  /**
+   * Runtime the session is being materialized for. Used when a caller creates a
+   * session as part of a runtime switch before the AgentConfig patch is written.
+   */
+  runtimeOverride?: RuntimeType;
+  /**
+   * Source half of the runtime identity. `codex/system-cli` and
+   * `codex/managed-provider` are different owners.
+   */
+  runtimeSourceOverride?: RuntimeSource;
+  /**
+   * Caller-owned readiness decision for provider-backed Managed Codex. Snapshot
+   * helpers stay pure and do not read config.json themselves.
+   */
+  managedCodexProviderReady?: boolean;
+}
+
+function dshPlatformTarget(): string {
+  const target = `${process.platform}-${process.arch}`;
+  if (target !== 'darwin-arm64' && target !== 'win32-x64' && target !== 'linux-x64') {
+    throw new Error(`DSH Session binding has no accepted platform target for ${target}`);
+  }
+  return target;
+}
+
+export function snapshotRuntimeIdentity(
+  runtime: RuntimeType,
+  runtimeSource?: RuntimeSource,
+): Pick<SessionMetadata, 'runtime' | 'runtimeSource' | 'runtimeBinding'> {
+  if (runtime === 'dsh') {
+    return {
+      runtime,
+      runtimeSource: 'integrated',
+      runtimeBinding: createDshBinding(dshPlatformTarget()),
+    };
+  }
+  return {
+    runtime,
+    runtimeSource: runtime === 'builtin'
+      ? undefined
+      : (runtimeSource ?? 'system-cli'),
+  };
+}
+
+function agentForSnapshotRuntime(
+  agent: AgentConfig,
+  options?: SessionSnapshotRuntimeOptions,
+): AgentConfig {
+  const currentRuntime = agent.runtime ?? 'builtin';
+  const targetRuntime = options?.runtimeOverride ?? currentRuntime;
+  if (targetRuntime === currentRuntime) return agent;
+
+  const runtimePatch = buildRuntimeChangePatch(agent.runtimeConfig, targetRuntime);
+  return {
+    ...agent,
+    runtime: runtimePatch.runtime,
+    runtimeConfig: runtimePatch.runtimeConfig,
+  };
+}
+
+function shouldSnapshotManagedCodexProvider(
+  agent: AgentConfig,
+  options?: SessionSnapshotRuntimeOptions,
+): agent is AgentConfig & {
+  providerId: typeof CODEX_SUBSCRIPTION_PROVIDER_ID;
+  model: string;
+} {
+  // runtimeOverride alone is an explicit runtime operation (runtime switch,
+  // prepared runtime birth, etc.). Do not let a stale Agent.providerId=codex-sub
+  // turn that operation back into a provider-owned managed Codex session. When
+  // runtimeSourceOverride is also managed-provider, the caller supplied the full
+  // runtime identity and the provider-backed owner should be preserved.
+  const isImplicitAgentRuntime = options?.runtimeOverride === undefined;
+  const isExplicitManagedCodexRuntime =
+    options?.runtimeOverride === 'codex'
+    && options?.runtimeSourceOverride === 'managed-provider';
+  const managedProviderSelected = isExplicitManagedCodexRuntime
+    || agentUsesManagedCodexProvider(agent);
+  return (isImplicitAgentRuntime || isExplicitManagedCodexRuntime)
+    && managedProviderSelected
+    && options?.managedCodexProviderReady === true
+    && agent.providerId === CODEX_SUBSCRIPTION_PROVIDER_ID
+    && typeof agent.model === 'string'
+    && agent.model.trim().length > 0;
+}
+
+/** Cloud registered Agents retain Runtime-only identity and their own live-follow policy. */
+export function snapshotForRegisteredAgentSession(
+  agent: AgentConfig,
+  options?: SessionSnapshotRuntimeOptions,
+): Partial<SessionMetadata> {
+  if (shouldSnapshotManagedCodexProvider(agent, options)) {
+    return {
+      runtime: 'codex',
+      runtimeSource: 'managed-provider',
+    };
+  }
+  const snapshotAgent = agentForSnapshotRuntime(agent, options);
+  const runtime = snapshotAgent.runtime ?? 'builtin';
+  return {
+    ...snapshotRuntimeIdentity(
+      runtime,
+      options?.runtimeSourceOverride ?? snapshotAgent.runtimeConfig?.source,
+    ),
+  };
+}
+
+/** IM uses the same complete snapshot as desktop, with unattended birth permissions. */
+export function snapshotForImSession(
+  agent: AgentConfig,
+  options?: SessionSnapshotRuntimeOptions,
+): OwnedSessionSnapshot & Pick<SessionMetadata, 'configSnapshotAt'> {
+  let birthOptions = options;
+  if (options?.runtimePolicy && options.runtimeOverride === undefined) {
+    const preferred = resolveEffectiveRuntime(agent.runtime, agent.runtimePreference, agent.runtimeConfig?.source, agent.providerId, undefined,
+      options.runtimePolicy.defaultIntegratedRuntime);
+    const managed = preferred === 'builtin' && agentUsesManagedCodexProvider(agent);
+    if (managed && options.managedCodexProviderReady !== true) {
+      throw new Error('Managed Codex is not ready for IM Session birth');
+    }
+    birthOptions = { ...options, runtimeOverride: managed ? 'codex' : preferred,
+      runtimeSourceOverride: managed ? 'managed-provider' : undefined };
+  }
+  const snapshot = snapshotForOwnedSession(agent, birthOptions);
+  return {
+    ...snapshot,
+    permissionMode: getMaxPermissionForRuntime(snapshot.runtime ?? 'builtin'),
+  };
+}
+
+/**
+ * Desktop Tab / Cron owner — full-snapshot policy (D2, D3, D9).
+ *
+ * Desktop sessions own their config: once created, the session is self-contained
+ * and is not affected by later changes to AgentConfig (D1). Cron `new_task`
+ * tick creates a fresh snapshot each run (every tick reads current Agent);
+ * Cron `current_session` freezes at first creation and reuses forever.
+ *
+ * Return shape = `OwnedSessionSnapshot` payload + the writer-stamped
+ * `configSnapshotAt` marker. For the desktop-creation path, "writer" =
+ * this function (we stamp `now` here). For the runtime-change freeze path,
+ * the writers (`/api/session/freeze` endpoint and Rust file-lock fallback)
+ * stamp `configSnapshotAt` themselves so the marker reflects when the
+ * write actually committed — those callers should pass `OwnedSessionSnapshot`
+ * by itself, not the return of this function.
+ *
+ * **Runtime-aware model/permission capture (issue #224).** `SessionMetadata.model`
+ * is overloaded — for builtin runtime it holds the SDK / provider model
+ * (`agent.model`), for external runtimes it holds the CLI's model id
+ * (`agent.runtimeConfig.model`). The interactive write path in
+ * `renderer/api/persistInputOption.ts::buildSnapshotPatch` already encodes
+ * this dispatch. Snapshot creation must match: previously this helper
+ * blindly captured `agent.model` even for external runtimes, leaking a
+ * Claude/builtin model name into a Codex session snapshot. The cron
+ * `followAgent` resolution path then promoted that into
+ * `runtimeConfig.model`, which Codex CLI rejects (issue #224).
+ */
+export function snapshotForOwnedSession(
+  agent: AgentConfig,
+  options?: SessionSnapshotRuntimeOptions,
+): OwnedSessionSnapshot & Pick<SessionMetadata, 'configSnapshotAt'> {
+  if (shouldSnapshotManagedCodexProvider(agent, options)) {
+    const providerExecutionIdentity = createRuntimeBackedProviderIdentity({
+      providerId: CODEX_SUBSCRIPTION_PROVIDER_ID,
+      model: agent.model,
+    });
+    return {
+      runtime: providerExecutionIdentity.runtime,
+      runtimeSource: providerExecutionIdentity.runtimeSource,
+      model: providerExecutionIdentity.model,
+      reasoningEffort: coerceReasoningEffortSettingForRuntime(
+        agent.runtimeConfig?.reasoningEffort,
+        providerExecutionIdentity.runtime,
+      ),
+      permissionMode: managedCodexProviderPermissionToRuntimePermission(agent.permissionMode)
+        ?? 'auto-edit',
+      mcpEnabledServers: agent.mcpEnabledServers ? [...agent.mcpEnabledServers] : undefined,
+      enabledPluginIds: agent.enabledPluginIds ? [...agent.enabledPluginIds] : undefined,
+      enabledOfficialToolIds: agent.enabledOfficialToolIds ? [...agent.enabledOfficialToolIds] : undefined,
+      providerId: providerExecutionIdentity.providerId,
+      providerRoute: undefined,
+      providerExecutionIdentity,
+      providerEnvJson: undefined,
+      configSnapshotAt: new Date().toISOString(),
+    };
+  }
+  const snapshotAgent = agentForSnapshotRuntime(agent, options);
+  const runtime = snapshotAgent.runtime ?? 'builtin';
+  const isDsh = runtime === 'dsh';
+  const isExternal = runtime !== 'builtin' && !isDsh;
+  const hasStaleManagedProviderId = snapshotAgent.providerId === CODEX_SUBSCRIPTION_PROVIDER_ID;
+  const builtinProviderId = !isExternal && !hasStaleManagedProviderId
+    ? snapshotAgent.providerId
+    : undefined;
+  const model = isExternal
+    ? coerceModelForRuntime(snapshotAgent.runtimeConfig?.model, runtime)
+    : (hasStaleManagedProviderId ? undefined : snapshotAgent.model);
+  const providerRoute: ProviderRoute | undefined = builtinProviderId && model
+    ? createConcreteProviderRoute(builtinProviderId, model)
+    : undefined;
+  return {
+    ...snapshotRuntimeIdentity(
+      runtime,
+      options?.runtimeSourceOverride ?? snapshotAgent.runtimeConfig?.source,
+    ),
+    model,
+    // #324 — same runtime-aware dispatch as model (issue #224 rationale).
+    reasoningEffort: isExternal
+      ? coerceReasoningEffortSettingForRuntime(snapshotAgent.runtimeConfig?.reasoningEffort, runtime)
+      : snapshotAgent.reasoningEffort,
+    permissionMode: isExternal
+      ? projectPermissionModeForRuntime(snapshotAgent.runtimeConfig?.permissionMode, runtime)
+      : snapshotAgent.permissionMode,
+    mcpEnabledServers: snapshotAgent.mcpEnabledServers ? [...snapshotAgent.mcpEnabledServers] : undefined,
+    enabledPluginIds: snapshotAgent.enabledPluginIds ? [...snapshotAgent.enabledPluginIds] : undefined,
+    enabledOfficialToolIds: snapshotAgent.enabledOfficialToolIds ? [...snapshotAgent.enabledOfficialToolIds] : undefined,
+    providerId: builtinProviderId,
+    providerRoute,
+    providerExecutionIdentity: undefined,
+    providerEnvJson: isExternal || providerRoute || hasStaleManagedProviderId
+      ? undefined
+      : snapshotAgent.providerEnvJson,
+    configSnapshotAt: new Date().toISOString(),
+  };
+}

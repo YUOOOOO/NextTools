@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "controls": {
+    "policyRevision": 2,
+    "providerMode": "enabled",
+    "revokedVersions": [],
+    "revokedArtifacts": []
+  },
+  "releases": [
+    {
+      "version": "8.0.13",
+      "tag": "v8.0.13",
+      "commit": "d7914afdedca7af95ee974a42453dc49fc1388ce",
+      "compatibility": {
+        "minAppVersion": "0.4.17",
+        "revision": 1,
+        "credentialCompatibleVersions": [
+          "7.2.158"
+        ]
+      },
+      "artifacts": {
+        "darwin-arm64": {
+          "url": "https://download.myagents.io/runtimes/cliproxy/8.0.13-darwin-arm64-32aafe8b694dff17d4430989ded701e79747460f18567fee49816c7f5e5597c3.zip",
+          "size": 21196678,
+          "sha256": "32aafe8b694dff17d4430989ded701e79747460f18567fee49816c7f5e5597c3",
+          "sourceSha256": "652a192e3e38520253e330c4a094fa8916728370c3f213f127dbc56e35be7938",
+          "files": {
+            "cli-proxy-api": "449504a3dac27b2dbe0327c7ad371de162dd862f945b066c7681680c2c25bb78",
+            "LICENSE": "879792e89cf1bdd6a8d446033ec87e30496f97dcafc4656dc53f641509b346a6"
+          },
+          "executable": "cli-proxy-api"
+        },
+        "darwin-x64": {
+          "url": "https://download.myagents.io/runtimes/cliproxy/8.0.13-darwin-x64-bccb0733d386aa9e82602c59596c5537715d1b027f635ff4dd179893a0395b63.zip",
+          "size": 23687900,
+          "sha256": "bccb0733d386aa9e82602c59596c5537715d1b027f635ff4dd179893a0395b63",
+          "sourceSha256": "8c47459190b997828be246973d18fbb681799540cebb867c3b7368d189559785",
+          "files": {
+            "cli-proxy-api": "e00770287c3e8bb0cc07f05c0fc16a32be08784df0723976626e8a53ccd6cf19",
+            "LICENSE": "879792e89cf1bdd6a8d446033ec87e30496f97dcafc4656dc53f641509b346a6"
+          },
+          "executable": "cli-proxy-api"
+        },
+        "win32-x64": {
+          "url": "https://download.myagents.io/runtimes/cliproxy/8.0.13-win32-x64-4dfd99a1761a26e1a048f76277949da4108ba9a15cbcb14962375c65a52af136.zip",
+          "size": 23533707,
+          "sha256": "4dfd99a1761a26e1a048f76277949da4108ba9a15cbcb14962375c65a52af136",
+          "sourceSha256": "7064ec8150511d0ece145a492968b476aa5abae3e1c7ef385852631918086bdd",
+          "files": {
+            "cli-proxy-api.exe": "5c3f35c5b2bd8e205379e6fe38d8c541b991bebdabdea8bb6b891ad7c630b6b6",
+            "LICENSE": "93df585e5fa07ead6d47a3ab2dbdf0255782a39fe830022c0274a70394223cc8"
+          },
+          "executable": "cli-proxy-api.exe"
+        }
+      }
+    }
+  ]
+}

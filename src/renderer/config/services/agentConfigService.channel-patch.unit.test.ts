@@ -1,0 +1,202 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { AppConfig } from '../types';
+import type { ChannelConfig } from '../../../shared/types/agent';
+
+const configState = vi.hoisted(() => ({ current: undefined as unknown }));
+
+vi.mock('./appConfigService', () => ({
+  atomicModifyConfig: vi.fn(async (modify: (config: AppConfig) => AppConfig) => {
+    configState.current = modify(configState.current as AppConfig);
+    return configState.current;
+  }),
+  loadAppConfig: vi.fn(async () => configState.current),
+}));
+
+import {
+  applyAgentChannelCredentialProvisioning,
+  modifyAgentChannelConfig,
+  patchAgentChannelConfig,
+  patchAgentChannelOpenClawConfig,
+} from './agentConfigService';
+
+function initialConfig(): AppConfig {
+  return {
+    defaultPermissionMode: 'auto',
+    themeId: 'myagents-default',
+    appearanceMode: 'system',
+    minimizeToTray: true,
+    showDevTools: false,
+    autoStart: false,
+    osNotifications: true,
+    notificationSound: true,
+    agents: [{
+      id: 'agent-1',
+      name: 'Agent',
+      enabled: true,
+      permissionMode: 'auto',
+      channels: [{
+        id: 'channel-1',
+        name: 'Lark',
+        type: 'openclaw:openclaw-lark',
+        enabled: true,
+        setupCompleted: true,
+        openclawPluginConfig: { timeout: 30, streaming: true },
+      }],
+    }],
+  };
+}
+
+describe('disk-latest Agent channel patches', () => {
+  beforeEach(() => {
+    configState.current = initialConfig();
+  });
+
+  it('preserves a scalar deletion when another channel control writes next', async () => {
+    await patchAgentChannelOpenClawConfig(
+      'agent-1',
+      'channel-1',
+      { type: 'delete', key: 'timeout' },
+    );
+    await patchAgentChannelConfig(
+      'agent-1',
+      'channel-1',
+      { groupActivation: 'always' },
+    );
+
+    expect((configState.current as AppConfig).agents?.[0].channels?.[0]).toMatchObject({
+      groupActivation: 'always',
+      openclawPluginConfig: { streaming: true },
+    });
+  });
+
+  it('adds one Channel without restoring a sibling deleted since the wizard snapshot', async () => {
+    (configState.current as AppConfig).agents![0].channels = [];
+    const initialChannel: ChannelConfig = {
+      id: 'channel-new', type: 'telegram', enabled: false, botToken: 'new-token',
+    };
+    await modifyAgentChannelConfig('agent-1', 'channel-new', () => initialChannel, initialChannel);
+    expect((configState.current as AppConfig).agents?.[0].channels).toEqual([
+      expect.objectContaining({ id: 'channel-new' }),
+    ]);
+  });
+
+  it('does not recreate a channel deleted after its wizard first saved it', async () => {
+    const initialChannel: ChannelConfig = {
+      id: 'channel-new', type: 'telegram', enabled: false, botToken: 'new-token',
+    };
+    await modifyAgentChannelConfig('agent-1', 'channel-new', () => initialChannel, initialChannel);
+    (configState.current as AppConfig).agents![0].channels = [];
+
+    await expect(modifyAgentChannelConfig('agent-1', 'channel-new', () => initialChannel))
+      .rejects.toThrow('Agent channel not found');
+    expect((configState.current as AppConfig).agents?.[0].channels).toEqual([]);
+  });
+
+  it('does not write a QR provisioning result after its wizard was cancelled', async () => {
+    const initialChannel: ChannelConfig = {
+      id: 'channel-new', type: 'openclaw:openclaw-lark', enabled: true,
+      openclawPluginId: 'openclaw-lark',
+    };
+    await expect(applyAgentChannelCredentialProvisioning(
+      'agent-1', 'channel-new', { appId: 'cli_app' }, undefined, initialChannel, () => false,
+    )).rejects.toThrow('Channel setup was cancelled');
+    expect((configState.current as AppConfig).agents?.[0].channels).toEqual([
+      expect.objectContaining({ id: 'channel-1' }),
+    ]);
+  });
+
+  it('atomically merges provisioned credentials and the scanning user into disk-latest state', async () => {
+    (configState.current as AppConfig).agents![0].channels![0] = {
+      ...(configState.current as AppConfig).agents![0].channels![0],
+      openclawPluginConfig: { streaming: true, preserved: 'yes' },
+      allowedUsers: ['ou_existing'],
+    };
+
+    const updated = await applyAgentChannelCredentialProvisioning(
+      'agent-1',
+      'channel-1',
+      { appId: 'cli_app', appSecret: 'secret', domain: 'lark' },
+      'ou_scanner',
+    );
+
+    expect(updated.openclawPluginConfig).toEqual({
+      streaming: true,
+      preserved: 'yes',
+      appId: 'cli_app',
+      appSecret: 'secret',
+      domain: 'lark',
+    });
+    expect(updated.allowedUsers).toEqual(['ou_existing', 'ou_scanner']);
+  });
+
+  it('atomically creates a provisioned channel without replacing concurrently persisted channels', async () => {
+    (configState.current as AppConfig).agents![0].channels!.push({
+      id: 'channel-concurrent',
+      name: 'Concurrent Channel',
+      type: 'telegram',
+      enabled: false,
+      botToken: 'preserve-me',
+    });
+    const initialChannel = {
+      id: 'channel-new',
+      name: 'Feishu',
+      type: 'openclaw:openclaw-lark',
+      enabled: true,
+      setupCompleted: true,
+      openclawPluginConfig: { streaming: true },
+      allowedUsers: [],
+    } satisfies ChannelConfig;
+
+    const updated = await applyAgentChannelCredentialProvisioning(
+      'agent-1',
+      'channel-new',
+      { appId: 'cli_app', appSecret: 'secret', domain: 'feishu' },
+      'ou_scanner',
+      initialChannel,
+    );
+
+    expect(updated).toMatchObject({
+      id: 'channel-new',
+      openclawPluginConfig: {
+        streaming: true,
+        appId: 'cli_app',
+        appSecret: 'secret',
+        domain: 'feishu',
+      },
+      allowedUsers: ['ou_scanner'],
+    });
+    expect((configState.current as AppConfig).agents?.[0].channels).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'channel-1' }),
+      expect.objectContaining({ id: 'channel-concurrent', botToken: 'preserve-me' }),
+      expect.objectContaining({ id: 'channel-new' }),
+    ]));
+  });
+
+  it('keeps system Runtime execution permissions owned by the Agent or Session', async () => {
+    (configState.current as AppConfig).agents![0].runtime = 'codex';
+    for (const permissionMode of ['fullAgency', '', 'full-auto']) {
+      await expect(patchAgentChannelConfig('agent-1', 'channel-1', {
+        overrides: { permissionMode },
+      })).rejects.toThrow("Channel execution override 'permissionMode' is no longer supported");
+    }
+  });
+
+  it('keeps managed Provider execution permissions owned by the Agent or Session', async () => {
+    (configState.current as AppConfig).agents![0].providerId = 'codex-sub';
+    for (const permissionMode of ['full-auto', 'fullAgency']) {
+      await expect(patchAgentChannelConfig('agent-1', 'channel-1', {
+        overrides: { permissionMode },
+      })).rejects.toThrow("Channel execution override 'permissionMode' is no longer supported");
+    }
+  });
+
+  it('rejects a Channel model override without changing persisted execution settings', async () => {
+    (configState.current as AppConfig).agents![0].providerId = 'codex-sub';
+    const before = structuredClone(configState.current);
+    await expect(patchAgentChannelConfig('agent-1', 'channel-1', {
+      overrides: { model: 'gpt-new' },
+    })).rejects.toThrow("Channel execution override 'model' is no longer supported");
+    expect(configState.current).toEqual(before);
+  });
+});

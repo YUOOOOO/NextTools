@@ -1,0 +1,214 @@
+# macOS 应用分发方案
+
+## 概述
+
+将 Tauri 应用分发给其他用户安装，需要完成以下步骤：
+1. **代码签名** - 使用 Apple Developer ID 签名应用
+2. **公证 (Notarization)** - Apple 验证应用安全性
+3. **打包** - 生成 .dmg 或 .pkg 安装包
+
+> [!IMPORTANT]
+> macOS Catalina (10.15) 及以后版本要求所有分发的应用必须经过代码签名和公证，否则 Gatekeeper 会阻止运行。
+
+---
+
+## 前置条件
+
+- [x] Apple Developer 账号（付费版，$99/年）
+- [ ] macOS 电脑（用于生成证书）
+- [ ] Xcode 26+ 已安装（当前 apple-metal 原生依赖需要对应 SDK）
+- [ ] Tauri 项目可正常构建
+
+---
+
+## 第一步：创建证书签名请求 (CSR)
+
+1. 打开 **钥匙串访问** (Keychain Access)
+2. 菜单栏：钥匙串访问 → 证书助理 → 从证书颁发机构请求证书
+3. 填写：
+   - 用户电子邮件：你的 Apple ID
+   - 常用名称：你的名字
+   - 选择「存储到磁盘」
+4. 保存 `.certSigningRequest` 文件
+
+---
+
+## 第二步：在 Apple Developer 创建证书
+
+1. 登录 [Apple Developer](https://developer.apple.com/account)
+2. 进入 **Certificates, Identifiers & Profiles**
+3. 点击 **Certificates** → **+** 创建新证书
+4. 选择 **Developer ID Application**（App Store 外分发必选）
+5. 上传第一步创建的 CSR 文件
+6. 下载生成的 `.cer` 证书文件
+7. 双击安装到钥匙串
+
+### 验证证书安装
+
+```bash
+security find-identity -v -p codesigning
+```
+
+应该看到类似输出：
+```
+1) XXXXXXXX "Developer ID Application: Your Name (TEAM_ID)"
+```
+
+---
+
+## 第三步：创建 App Store Connect API 密钥
+
+用于自动化公证流程：
+
+1. 登录 [App Store Connect](https://appstoreconnect.apple.com)
+2. 用户和访问 → 集成 → 团队密钥
+3. 点击 **+** 生成新密钥
+4. 名称：`Notarization Key`
+5. 权限：`Developer`（最小权限原则）
+6. 下载 `.p8` 私钥文件（**只能下载一次！**）
+7. 记录：
+   - **Issuer ID**: 页面顶部显示
+   - **Key ID**: 密钥列表中显示
+
+---
+
+## 第四步：配置环境变量
+
+在 `~/.zshrc` 或项目 `.env` 文件中添加：
+
+```bash
+# 签名身份（从 security find-identity 输出获取）
+export APPLE_SIGNING_IDENTITY="Developer ID Application: Your Name (TEAM_ID)"
+
+# Team ID（在 Apple Developer 会员页面查看）
+export APPLE_TEAM_ID="XXXXXXXXXX"
+
+# API 密钥认证（推荐方式）
+export APPLE_API_ISSUER="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+export APPLE_API_KEY="XXXXXXXXXX"
+export APPLE_API_KEY_PATH="/path/to/AuthKey_XXXXXXXXXX.p8"
+```
+
+刷新环境：
+```bash
+source ~/.zshrc
+```
+
+---
+
+## 第五步：更新 Tauri 配置
+
+编辑 `src-tauri/tauri.conf.json`：
+
+```json
+{
+  "bundle": {
+    "macOS": {
+      "signingIdentity": null,
+      "minimumSystemVersion": "13.0",
+      "entitlements": "Entitlements.plist",
+      "exceptionDomain": null
+    }
+  }
+}
+```
+
+> `signingIdentity: null` 表示使用环境变量 `APPLE_SIGNING_IDENTITY`。录音能力要求 `Entitlements.plist` 保留 `com.apple.security.device.audio-input = true`；修改 entitlement 后必须重新构建并启动新的 `.app`，前端热重载不会更新已有进程的签名。构建后应检查实际签名产物，而不只检查源码配置。
+
+---
+
+## 第六步：构建签名并公证的应用
+
+```bash
+# 从 .env 加载签名配置，选择 Apple Silicon、Intel 或分别构建两种架构
+./build_macos.sh
+```
+
+环境变量配置正确后，构建脚本与 Tauri 依次完成：
+1. ✅ 构建脚本按目标准备资源，为 DSH 内嵌的 Mach-O 可执行文件、`.node` 与动态库签名
+2. ✅ Tauri 使用 Developer ID 签名应用并提交到 Apple 公证
+3. ✅ 等待公证完成（通常 2-5 分钟）
+4. ✅ Staple 公证票据到应用
+
+---
+
+## 第七步：验证签名和公证
+
+```bash
+# 验证签名
+codesign --verify --deep --strict --verbose=2 \
+  src-tauri/target/universal-apple-darwin/release/bundle/macos/MyAgents.app
+
+# 验证公证
+spctl --assess --type exec --verbose=2 \
+  src-tauri/target/universal-apple-darwin/release/bundle/macos/MyAgents.app
+
+# 查看公证状态
+xcrun stapler validate \
+  src-tauri/target/universal-apple-darwin/release/bundle/macos/MyAgents.app
+```
+
+---
+
+## 分发方式
+
+### 方式一：.dmg 安装包（推荐）
+
+Tauri 默认会生成 `.dmg` 文件，位于：
+```
+src-tauri/target/universal-apple-darwin/release/bundle/dmg/
+```
+
+### 方式二：直接分发 .app
+
+压缩 `.app` 文件夹为 `.zip` 分发。
+
+---
+
+## 常见问题
+
+### Q: 编译成功，但打包报 `failed to remove extra attributes from app bundle: failed to run xattr`
+
+Tauri CLI 2.11.4 在签名前对 `.app` 执行 `xattr -crs`，简略错误会隐藏具体文件路径。可对失败的构建副本执行同一命令查看底层错误：
+
+```bash
+/usr/bin/xattr -crs src-tauri/target/debug/bundle/macos/MyAgents.app
+```
+
+2026-09-06 的 DSH 集成故障由 3 个平台 evidence JSON 的 `0400` 权限引起：导入时保留只读权限，复制进 App 后 `xattr` 返回 `Permission denied`。`ingest:dsh-runtime` 已在临时副本中统一资源权限，保持文件内容和原始交付物不变，并在原子替换前重新校验完整交付包。已有 staging 需用锁定交付物重新运行导入，再运行 `./build_dev.sh`；不要对源交付包递归 chmod，也不要用 `sudo`、跳过签名或忽略 `xattr` 失败来绕过问题。具体权限和校验边界见 [DSH 集成指南](../tech_docs/myagents_dsh_integrated_runtime.md#7-generated-protocol-and-artifact-consumption)。
+
+### Q: 公证失败怎么办？
+
+查看详细错误：
+```bash
+xcrun notarytool log <submission-id> --keychain-profile "notarytool-profile"
+```
+
+### Q: 用户打开时仍显示「无法验证开发者」
+
+可能原因：
+1. 公证未完成 - 等待几分钟后重试
+2. 需要 staple - 运行 `xcrun stapler staple Your.app`
+3. 用户离线 - 首次运行需要联网验证
+
+### Q: CI/CD 中如何配置？
+
+在 GitHub Actions 中设置 secrets：
+- `APPLE_CERTIFICATE`: base64 编码的 .p12 文件
+- `APPLE_CERTIFICATE_PASSWORD`: 导出密码
+- `APPLE_SIGNING_IDENTITY`
+- `APPLE_API_ISSUER`, `APPLE_API_KEY`, `APPLE_API_KEY_PATH`
+
+---
+
+## 检查清单
+
+- [ ] 创建 CSR 文件
+- [ ] 创建 Developer ID Application 证书
+- [ ] 安装证书到钥匙串
+- [ ] 创建 App Store Connect API 密钥
+- [ ] 配置环境变量
+- [ ] 运行带签名的构建
+- [ ] 用 `codesign -d --entitlements :- MyAgents.app` 确认录音 entitlement 已进入签名产物
+- [ ] 验证签名和公证
+- [ ] 测试在新 Mac 上安装

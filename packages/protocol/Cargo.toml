@@ -1,8 +1,0 @@
-[package]
-name = "nexttools-protocol"
-version.workspace = true
-edition.workspace = true
-
-[dependencies]
-serde.workspace = true
-ts-rs = { version = "11", features = ["serde-compat"] }
