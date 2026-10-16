@@ -22,6 +22,10 @@ struct StoredConfig {
     provider: String,
     model: String,
     skills: Vec<StoredSkill>,
+    #[serde(default)]
+    profiles: Vec<nexttools_protocol::AgentProfile>,
+    #[serde(default)]
+    active_profile_id: Option<String>,
 }
 #[derive(Default)]
 pub struct SettingsState {
@@ -71,20 +75,30 @@ fn credential(provider: &str) -> Result<String, String> {
 pub fn configuration(app: &AppHandle) -> Result<(String, String, String), String> {
     let state = app.state::<SettingsState>();
     let config = state.config.lock().map_err(|e| e.to_string())?.clone();
-    if config.provider.is_empty() || config.model.is_empty() {
+    let profile = config
+        .active_profile_id
+        .as_ref()
+        .and_then(|id| config.profiles.iter().find(|p| &p.id == id));
+    let (provider, model) = profile
+        .map(|p| (&p.provider, &p.model))
+        .unwrap_or((&config.provider, &config.model));
+    if provider.is_empty() || model.is_empty() {
         return Err("请先配置 Provider 和模型".into());
     }
-    Ok((
-        config.provider.clone(),
-        config.model.clone(),
-        credential(&config.provider)?,
-    ))
+    Ok((provider.clone(), model.clone(), credential(provider)?))
 }
 pub fn resources(app: &AppHandle) -> Result<Value, String> {
     let state = app.state::<SettingsState>();
-    let skills = state.config.lock().map_err(|e| e.to_string())?.skills.iter().filter(|s| s.enabled).map(|s| json!({"id":s.id,"name":s.name,"description":s.description,"filePath":s.file_path,"baseDir":Path::new(&s.file_path).parent().and_then(Path::to_str).unwrap_or("")})).collect::<Vec<_>>();
+    let config = state.config.lock().map_err(|e| e.to_string())?;
+    let profile = config
+        .active_profile_id
+        .as_ref()
+        .and_then(|id| config.profiles.iter().find(|p| &p.id == id));
+    let skills = config.skills.iter().filter(|s| s.enabled && profile.is_none_or(|p| p.skill_ids.contains(&s.id))).map(|s| json!({"id":s.id,"name":s.name,"description":s.description,"filePath":s.file_path,"baseDir":Path::new(&s.file_path).parent().and_then(Path::to_str).unwrap_or("")})).collect::<Vec<_>>();
+    let prompt = profile.map(|p| p.system_prompt.clone()).unwrap_or_default();
+    drop(config);
     let mcp = crate::agent_mcp::resources(app)?;
-    Ok(json!({"skills": skills, "mcpTools": mcp}))
+    Ok(json!({"skills": skills, "mcpTools": mcp, "systemPrompt": prompt}))
 }
 pub fn read_skill(app: &AppHandle, input: &Value) -> Result<Value, String> {
     use std::io::Read;
@@ -271,6 +285,8 @@ pub fn agent_settings_snapshot(app: AppHandle) -> Result<AgentSettingsSnapshot, 
         models,
         skills,
         mcp_servers,
+        profiles: config.profiles,
+        active_profile_id: config.active_profile_id,
     })
 }
 #[tauri::command]
@@ -305,6 +321,74 @@ pub fn agent_configure(
     let mut config = state.config.lock().map_err(|e| e.to_string())?;
     config.provider = provider.into();
     config.model = model.into();
+    drop(config);
+    save(&app, &state)
+}
+
+#[tauri::command]
+pub fn agent_profile_save(
+    app: AppHandle,
+    mut profile: nexttools_protocol::AgentProfile,
+) -> Result<(), String> {
+    profile.name = profile.name.trim().to_owned();
+    if profile.name.is_empty()
+        || profile.name.len() > 120
+        || profile.description.len() > 2000
+        || profile.system_prompt.len() > 65536
+    {
+        return Err("智能体名称、描述或指令长度无效".into());
+    }
+    if !crate::agent::model_catalog(&app)?
+        .iter()
+        .any(|m| m.provider == profile.provider && m.id == profile.model)
+    {
+        return Err("请选择有效模型".into());
+    }
+    let state = app.state::<SettingsState>();
+    let mut config = state.config.lock().map_err(|e| e.to_string())?;
+    if profile
+        .skill_ids
+        .iter()
+        .any(|id| !config.skills.iter().any(|s| &s.id == id))
+    {
+        return Err("Skill 已被移除，请刷新".into());
+    }
+    if profile.id.is_empty() {
+        profile.id = uuid::Uuid::new_v4().to_string();
+        config.profiles.push(profile);
+    } else if let Some(existing) = config.profiles.iter_mut().find(|p| p.id == profile.id) {
+        *existing = profile;
+    } else {
+        return Err("智能体不存在".into());
+    }
+    drop(config);
+    save(&app, &state)
+}
+#[tauri::command]
+pub fn agent_profile_select(app: AppHandle, id: Option<String>) -> Result<(), String> {
+    let state = app.state::<SettingsState>();
+    let mut config = state.config.lock().map_err(|e| e.to_string())?;
+    if id
+        .as_ref()
+        .is_some_and(|id| !config.profiles.iter().any(|p| &p.id == id))
+    {
+        return Err("智能体不存在".into());
+    }
+    config.active_profile_id = id;
+    drop(config);
+    save(&app, &state)
+}
+#[tauri::command]
+pub fn agent_profile_remove(app: AppHandle, id: String) -> Result<(), String> {
+    let state = app.state::<SettingsState>();
+    let mut config = state.config.lock().map_err(|e| e.to_string())?;
+    if !config.profiles.iter().any(|p| p.id == id) {
+        return Err("智能体不存在".into());
+    }
+    config.profiles.retain(|p| p.id != id);
+    if config.active_profile_id.as_ref() == Some(&id) {
+        config.active_profile_id = None;
+    }
     drop(config);
     save(&app, &state)
 }

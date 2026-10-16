@@ -285,7 +285,9 @@ textarea:focus-visible {
   padding: 0;
   margin: 0;
 }
-.explorer-tree .explorer-tree { padding-left: 14px; }
+.explorer-tree .explorer-tree {
+  padding-left: 14px;
+}
 .explorer-entry {
   display: flex;
   align-items: center;
@@ -299,17 +301,35 @@ textarea:focus-visible {
   text-align: left;
   font-size: 12px;
 }
-.explorer-entry svg { flex-shrink: 0; }
-.explorer-entry span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.explorer-entry:hover, .explorer-entry.selected { background: var(--hover); }
-.explorer-entry .is-expanded { transform: rotate(90deg); }
-.agent-file-preview { height: 100%; display: flex; flex-direction: column; }
+.explorer-entry svg {
+  flex-shrink: 0;
+}
+.explorer-entry span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.explorer-entry:hover,
+.explorer-entry.selected {
+  background: var(--hover);
+}
+.explorer-entry .is-expanded {
+  transform: rotate(90deg);
+}
+.agent-file-preview {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
 .agent-file-preview > header {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
   overflow-wrap: anywhere;
 }
-.agent-file-preview .file-preview { flex: 1; min-height: 0; }
+.agent-file-preview .file-preview {
+  flex: 1;
+  min-height: 0;
+}
 .sidebar {
   width: 240px;
   flex: 0 0 240px;
@@ -703,6 +723,59 @@ textarea:focus-visible {
   tab-size: 2;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+.file-edit-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  height: 100%;
+  padding: 16px;
+}
+.file-preview-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.file-preview-header > span,
+.file-preview-header > input {
+  flex: 1;
+  min-width: 120px;
+  overflow-wrap: anywhere;
+}
+.file-editor {
+  flex: 1;
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font:
+    12px/1.7 Consolas,
+    monospace;
+  tab-size: 2;
+}
+.file-change-review {
+  max-height: 55%;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-raised);
+}
+.file-change-review pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.file-change-review button + button {
+  margin-left: 8px;
+}
+.file-editor-error {
+  color: var(--danger);
 }
 .settings-dialog {
   width: min(760px, calc(100vw - 32px));
@@ -1400,5 +1473,294 @@ textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .spin {
     animation: none;
+  }
+}
+.code-editor-shell {
+  flex: 1;
+  min-height: 140px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.code-editor-mount {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 5px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+.editor-toolbar span {
+  margin-left: auto;
+  color: var(--muted);
+}
+.project-row {
+  margin-top: 8px;
+}
+.project-heading {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.project-heading > button:first-child {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+.project-heading span,
+.project-sessions span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-heading .expanded {
+  transform: rotate(90deg);
+}
+.project-sessions {
+  margin-left: 18px;
+  font-size: 12px;
+}
+.project-sessions > button {
+  width: 100%;
+}
+.project-sessions > p {
+  padding: 0 8px;
+  color: var(--muted);
+}
+.git-panel {
+  overflow-y: auto;
+  padding-bottom: 12px;
+}
+.git-panel > header {
+  flex-shrink: 0;
+}
+.git-panel fieldset {
+  padding: 10px 12px;
+}
+.git-panel section {
+  margin-top: 12px;
+}
+.git-panel h3 {
+  margin: 6px 0;
+  font-size: 12px;
+}
+.git-panel label {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+}
+.git-panel input,
+.git-panel textarea {
+  width: 100%;
+  min-height: 32px;
+  margin-top: 4px;
+  padding: 5px 7px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.git-file-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 7px 0;
+}
+.git-file-name {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  background: transparent;
+  border: 0;
+}
+.git-file-actions,
+.git-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.git-output {
+  padding: 8px 14px;
+}
+.git-approval {
+  margin: 12px;
+  padding: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.git-approval pre {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.git-approval button + button {
+  margin-left: 6px;
+}
+.agent-profiles-dialog {
+  width: min(900px, 92vw);
+  max-height: 85vh;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--ink);
+  background: var(--surface);
+  overflow: auto;
+}
+.agent-profiles-dialog::backdrop {
+  background: #0006;
+}
+.agent-profiles-dialog > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.agent-profiles-dialog h2 {
+  margin: 0;
+}
+.agent-profile-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(0, 1.5fr);
+  gap: 22px;
+}
+.agent-profile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.agent-profile-list article {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.agent-profile-list article p {
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+.agent-profile-list article div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+.agent-profile-layout fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.agent-profile-layout label:not(.skill-choice) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+.agent-profile-layout input:not([type="checkbox"]),
+.agent-profile-layout textarea,
+.agent-profile-layout select {
+  width: 100%;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--canvas);
+  color: var(--ink);
+}
+.agent-prompt-editor {
+  min-height: 180px;
+  resize: vertical;
+}
+.skill-choice {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+.agent-profiles-dialog,
+.git-panel {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.agent-profiles-dialog button,
+.git-panel button:not(.git-file-name),
+.editor-toolbar button {
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-raised);
+  font-size: 12px;
+}
+.agent-profiles-dialog button:hover:not(:disabled),
+.git-panel button:hover:not(:disabled),
+.editor-toolbar button:hover:not(:disabled) {
+  background: var(--hover);
+}
+.agent-profiles-dialog button[aria-pressed="true"],
+.editor-toolbar button[aria-pressed="true"] {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.agent-profiles-dialog .muted {
+  line-height: 1.6;
+}
+.agent-profile-layout form > fieldset > div:last-child {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.git-panel fieldset {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+}
+.git-output {
+  flex-shrink: 0;
+}
+.git-output pre {
+  max-height: 300px;
+  overflow: auto;
+  font-size: 11px;
+}
+.git-changes {
+  padding: 8px 12px;
+}
+.git-changes article {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+.git-file-name code {
+  color: var(--accent);
+  white-space: pre;
+}
+.git-operation-state {
+  margin: 8px 12px;
+  padding: 10px;
+  background: var(--accent-soft);
+  border-radius: 6px;
+}
+.git-operation-state p {
+  margin: 6px 0;
+}
+.git-conflict {
+  border-left: 2px solid var(--danger);
+  padding-left: 8px !important;
+}
+@media (max-width: 640px) {
+  .agent-profile-layout {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

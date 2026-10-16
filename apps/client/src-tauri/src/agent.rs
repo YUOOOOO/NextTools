@@ -118,6 +118,10 @@ fn runner(app: &tauri::AppHandle) -> Result<Arc<Runner>, String> {
             resources.join("runner.mjs"),
         )
     };
+    #[cfg(target_os = "windows")]
+    let node = strip_windows_verbatim_prefix(node);
+    #[cfg(target_os = "windows")]
+    let entry = strip_windows_verbatim_prefix(entry);
     let mut command = Command::new(node);
     command
         .arg(entry)
@@ -223,6 +227,15 @@ fn runner(app: &tauri::AppHandle) -> Result<Arc<Runner>, String> {
         return Err(error);
     }
     Ok(runner)
+}
+
+#[cfg(target_os = "windows")]
+fn strip_windows_verbatim_prefix(path: PathBuf) -> PathBuf {
+    let value = path.to_string_lossy();
+    value
+        .strip_prefix(r"\\?\")
+        .map(PathBuf::from)
+        .unwrap_or(path)
 }
 fn invoke_tool(app: &tauri::AppHandle, params: &Value) -> Reply {
     let session = params["sessionId"]
@@ -423,7 +436,7 @@ pub async fn agent_prompt(
     app: tauri::AppHandle,
     session_id: String,
     text: String,
-) -> Result<(), String> {
+) -> Result<Value, String> {
     if text.trim().is_empty() {
         return Err("消息不能为空".into());
     }
@@ -440,12 +453,10 @@ pub async fn agent_prompt(
             h.authorize_agent(&live.workspace)
         })?;
         live.cancelled.store(false, Ordering::Release);
-        runner(&app)?
-            .request(
-                "session.prompt",
-                json!({"sessionId":session_id,"text":text}),
-            )
-            .map(|_| ())
+        runner(&app)?.request(
+            "session.prompt",
+            json!({"sessionId":session_id,"text":text}),
+        )
     })
     .await
     .map_err(|e| e.to_string())?
@@ -497,4 +508,83 @@ pub fn agent_approval_respond(
         .sender
         .send(approved)
         .map_err(|_| "审批已取消".into())
+}
+
+fn authorized_session(app: &tauri::AppHandle, session_id: &str) -> Result<Session, String> {
+    let live = app
+        .state::<AgentState>()
+        .sessions
+        .lock()
+        .map_err(|e| e.to_string())?
+        .get(session_id)
+        .cloned()
+        .ok_or("未知会话")?;
+    with_host(&app.state::<HostState>(), |h| {
+        h.authorize_agent(&live.workspace)
+    })?;
+    Ok(live)
+}
+#[tauri::command]
+pub async fn agent_session_rename(
+    app: tauri::AppHandle,
+    session_id: String,
+    title: String,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        authorized_session(&app, &session_id)?;
+        runner(&app)?
+            .request(
+                "session.rename",
+                json!({"sessionId":session_id,"title":title}),
+            )
+            .map(|_| ())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+pub async fn agent_session_thinking(
+    app: tauri::AppHandle,
+    session_id: String,
+    level: String,
+) -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        authorized_session(&app, &session_id)?;
+        runner(&app)?.request(
+            "session.thinking",
+            json!({"sessionId":session_id,"level":level}),
+        )
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+pub async fn agent_session_dispose(
+    app: tauri::AppHandle,
+    session_id: String,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AgentState>();
+        let live = authorized_session(&app, &session_id)?;
+        live.cancelled.store(true, Ordering::Release);
+        let cancelled: Vec<_> = state
+            .approvals
+            .lock()
+            .map_err(|e| e.to_string())?
+            .extract_if(|_, approval| approval.session == session_id)
+            .map(|(_, approval)| approval)
+            .collect();
+        for approval in cancelled {
+            let _ = approval.sender.send(false);
+        }
+        runner(&app)?.request("session.dispose", json!({"sessionId":session_id}))?;
+        state
+            .sessions
+            .lock()
+            .map_err(|e| e.to_string())?
+            .remove(&session_id);
+        Ok(())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }

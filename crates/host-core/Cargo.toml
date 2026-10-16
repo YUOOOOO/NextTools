@@ -10,3 +10,12 @@ local-store.workspace = true
 capability-broker.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+
+uuid.workspace = true
+sha2 = "0.10"
+similar = "2.7"
+cap-std = "4"
+
+[dev-dependencies]
+rusqlite = { version = "0.37", features = ["bundled"] }
+tempfile = "3"

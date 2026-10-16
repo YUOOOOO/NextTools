@@ -91,6 +91,7 @@ pub struct GitChange {
     pub index_status: String,
     pub worktree_status: String,
     pub path: String,
+    pub original_path: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
@@ -98,6 +99,48 @@ pub struct GitChange {
 pub struct GitStatus {
     pub branch: String,
     pub changes: Vec<GitChange>,
+    pub state: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
+pub enum GitQuery {
+    Diff { path: String, staged: bool },
+    Log,
+    Branches,
+    Stashes,
+    Compare { left: String, right: String },
+    Show { commit: String },
+    Outgoing,
+}
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
+pub enum GitAction {
+    Stage { paths: Vec<String> },
+    Unstage { paths: Vec<String> },
+    Discard { paths: Vec<String> },
+    Commit { message: String },
+    Switch { branch: String },
+    CreateBranch { branch: String },
+    Fetch,
+    Pull,
+    Push { remote: Option<String> },
+    StashSave { message: String },
+    StashApply { reference: String },
+    StashDrop { reference: String },
+    SwitchRemote { branch: String },
+    Merge { branch: String },
+    MergeContinue,
+    Abort,
+    Reset { commit: String, hard: bool },
+    ResolveConflict { path: String, theirs: bool },
+}
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct GitApproval {
+    pub request_id: String,
+    pub action: GitAction,
+    pub expires_in_seconds: u32,
 }
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -111,6 +154,30 @@ pub struct FileEntry {
 pub struct FileContent {
     pub path: String,
     pub content: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum FileChangeKind {
+    Write,
+    Create,
+    Delete,
+}
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct FileChange {
+    pub kind: FileChangeKind,
+    pub path: String,
+    pub content: Option<String>,
+    pub expected_content: Option<String>,
+}
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct FileChangeApproval {
+    pub request_id: String,
+    pub change: FileChange,
+    pub diff: String,
+    pub expires_in_seconds: u32,
 }
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -180,6 +247,18 @@ pub struct McpServerConfig {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AgentProfile {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub provider: String,
+    pub model: String,
+    pub system_prompt: String,
+    pub skill_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct AgentSettingsSnapshot {
     pub provider: String,
@@ -188,4 +267,6 @@ pub struct AgentSettingsSnapshot {
     pub models: Vec<AgentModelInfo>,
     pub skills: Vec<AgentSkillConfig>,
     pub mcp_servers: Vec<McpServerConfig>,
+    pub profiles: Vec<AgentProfile>,
+    pub active_profile_id: Option<String>,
 }

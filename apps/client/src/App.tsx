@@ -38,16 +38,33 @@ import {
 } from "lucide-react";
 import { host, nativeHostAvailable } from "./host";
 import { AgentExplorer, AgentFilePreview } from "./agent-explorer";
+import { GitPanel } from "./git-panel";
+import { ProjectNavigation } from "./project-navigation";
+import { AgentProfiles } from "./agent-profiles";
 
-import { asRecord, stringField, displayJson, createLiveSession, reduceAgentEvent, type LiveAgentSession, type AgentTimelineItem, type AgentApproval } from "./agent-sessions";
+import {
+  asRecord,
+  stringField,
+  displayJson,
+  createLiveSession,
+  reduceAgentEvent,
+  type LiveAgentSession,
+  type AgentTimelineItem,
+  type AgentApproval,
+} from "./agent-sessions";
 
 export function App() {
   const [snapshot, setSnapshot] = useState<HostSnapshot | null>(null);
   const [error, setError] = useState("");
   const [settings, setSettings] = useState(false);
   const [revision, setRevision] = useState(0);
-  const [agentPanel, setAgentPanel] = useState<"explorer" | "chat" | "git">("chat");
-  const [fileSelection, setFileSelection] = useState<{ workspaceId: string; path: string } | null>(null);
+  const [agentPanel, setAgentPanel] = useState<"explorer" | "chat" | "git">(
+    "chat",
+  );
+  const [fileSelection, setFileSelection] = useState<{
+    workspaceId: string;
+    path: string;
+  } | null>(null);
   const gitRequestVersion = useRef(0);
   const [gitStatus, setGitStatus] = useState<GitStatus | null>(null);
   const [gitLoading, setGitLoading] = useState(false);
@@ -55,25 +72,39 @@ export function App() {
   const [pendingAgentCommand, setPendingAgentCommand] = useState<
     "new" | "continue" | null
   >(null);
-  const [agentSessions, setAgentSessions] = useState<AgentSessionSummary[]>([]);
+  const [agentSessions, setAgentSessions] = useState<
+    Record<string, AgentSessionSummary[]>
+  >({});
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [liveSessions, setLiveSessions] = useState<LiveAgentSession[]>([]);
   const liveSessionsRef = useRef(liveSessions);
-  const [activeSessions, setActiveSessions] = useState<Record<string, string>>({});
+  const [activeSessions, setActiveSessions] = useState<Record<string, string>>(
+    {},
+  );
   const selectionVersions = useRef(new Map<string, number>());
-  const [creatingWorkspaces, setCreatingWorkspaces] = useState<Set<string>>(() => new Set());
+  const [creatingWorkspaces, setCreatingWorkspaces] = useState<Set<string>>(
+    () => new Set(),
+  );
   const openingSessions = useRef(new Map<string, Promise<void>>());
   const initializedWorkspaces = useRef(new Set<string>());
   const pendingEvents = useRef(new Map<string, unknown[]>());
   const closedSessions = useRef(new Set<string>());
-  const changeSessions = useCallback((change: (items: LiveAgentSession[]) => LiveAgentSession[]) => {
-    const next = change(liveSessionsRef.current);
-    liveSessionsRef.current = next;
-    setLiveSessions(next);
-  }, []);
-  const changeSession = useCallback((id: string, change: (session: LiveAgentSession) => LiveAgentSession) => {
-    changeSessions((items) => items.map((item) => item.info.sessionId === id ? change(item) : item));
-  }, [changeSessions]);
+  const changeSessions = useCallback(
+    (change: (items: LiveAgentSession[]) => LiveAgentSession[]) => {
+      const next = change(liveSessionsRef.current);
+      liveSessionsRef.current = next;
+      setLiveSessions(next);
+    },
+    [],
+  );
+  const changeSession = useCallback(
+    (id: string, change: (session: LiveAgentSession) => LiveAgentSession) => {
+      changeSessions((items) =>
+        items.map((item) => (item.info.sessionId === id ? change(item) : item)),
+      );
+    },
+    [changeSessions],
+  );
   const currentWorkspaceId = useRef("");
   const sessionsRequestVersion = useRef(0);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -97,19 +128,31 @@ export function App() {
     },
     [refresh],
   );
-  const consumeAgentEvent = useCallback((sessionId: string, event: unknown) => {
-    const session = liveSessionsRef.current.find((item) => item.info.sessionId === sessionId);
-    if (!session) {
-      if (!closedSessions.current.has(sessionId) && openingSessions.current.size) {
-        pendingEvents.current.set(sessionId, [...(pendingEvents.current.get(sessionId) ?? []), event]);
+  const consumeAgentEvent = useCallback(
+    (sessionId: string, event: unknown) => {
+      const session = liveSessionsRef.current.find(
+        (item) => item.info.sessionId === sessionId,
+      );
+      if (!session) {
+        if (
+          !closedSessions.current.has(sessionId) &&
+          openingSessions.current.size
+        ) {
+          pendingEvents.current.set(sessionId, [
+            ...(pendingEvents.current.get(sessionId) ?? []),
+            event,
+          ]);
+        }
+        return;
       }
-      return;
-    }
-    if (session.unavailable) return;
-    changeSession(sessionId, (item) => reduceAgentEvent(item, event));
-    const type = stringField(asRecord(event), "type");
-    if (type === "agent_end" || type === "agent_settled") loadAgentSessionsRef.current(session.info.workspaceId);
-  }, [changeSession]);
+      if (session.unavailable) return;
+      changeSession(sessionId, (item) => reduceAgentEvent(item, event));
+      const type = stringField(asRecord(event), "type");
+      if (type === "agent_end" || type === "agent_settled")
+        loadAgentSessionsRef.current(session.info.workspaceId);
+    },
+    [changeSession],
+  );
   useEffect(() => {
     if (nativeHostAvailable) void refresh().catch((e) => setError(String(e)));
   }, [refresh]);
@@ -171,13 +214,18 @@ export function App() {
         const sessionId = stringField(request, "sessionId");
         const toolName = stringField(request, "toolName");
         if (!requestId || !sessionId) return;
-        consumeAgentEvent(sessionId, { ...request, type: "approval", toolName });
+        consumeAgentEvent(sessionId, {
+          ...request,
+          type: "approval",
+          toolName,
+        });
       }),
       listen<unknown>("agent:error", ({ payload }) => {
         const value = asRecord(payload);
         const detail = value?.error ?? payload;
         const sessionId = stringField(value, "sessionId");
-        if (sessionId) consumeAgentEvent(sessionId, { type: "error", error: detail });
+        if (sessionId)
+          consumeAgentEvent(sessionId, { type: "error", error: detail });
         else setError(displayJson(detail));
       }),
       listen<unknown>("agent:approval-resolved", ({ payload }) => {
@@ -222,14 +270,21 @@ export function App() {
       (item) => item.id === preferences?.activeWorkspaceId,
     ) ?? null;
   currentWorkspaceId.current = workspace?.id ?? "";
-  const selectedFile = fileSelection?.workspaceId === workspace?.id ? fileSelection?.path ?? null : null;
+  const selectedFile =
+    fileSelection?.workspaceId === workspace?.id
+      ? (fileSelection?.path ?? null)
+      : null;
   const filePlugin = snapshot?.plugins.find(
     (plugin) => plugin.manifest.id === "com.nexttools.workspace-files",
   );
-  const workspaceSessions = liveSessions.filter((item) => item.info.workspaceId === workspace?.id);
-  const activeSession = workspaceSessions.find((item) => item.info.sessionId === activeSessions[workspace?.id ?? ""]);
+  const workspaceSessions = liveSessions.filter(
+    (item) => item.info.workspaceId === workspace?.id,
+  );
+  const activeSession = workspaceSessions.find(
+    (item) => item.info.sessionId === activeSessions[workspace?.id ?? ""],
+  );
   const agentSession = activeSession?.info ?? null;
-  const activePersistedSessionId = agentSession?.persistedSessionId ?? null;
+  const [agentsOpen, setAgentsOpen] = useState(false);
   const agentMessages = activeSession?.messages ?? [];
   const agentInput = activeSession?.input ?? "";
   const agentRunning = activeSession?.running ?? false;
@@ -238,8 +293,14 @@ export function App() {
   const agentError = activeSession?.error ?? "";
   const agentApprovals = activeSession?.approvals ?? [];
   const resolvingApprovals = activeSession?.resolving ?? new Set<string>();
-  const setAgentInput = (input: string) => { if (agentSession) changeSession(agentSession.sessionId, (item) => ({ ...item, input })); };
-  const setAgentError = (error: string) => { if (agentSession) changeSession(agentSession.sessionId, (item) => ({ ...item, error })); };
+  const setAgentInput = (input: string) => {
+    if (agentSession)
+      changeSession(agentSession.sessionId, (item) => ({ ...item, input }));
+  };
+  const setAgentError = (error: string) => {
+    if (agentSession)
+      changeSession(agentSession.sessionId, (item) => ({ ...item, error }));
+  };
   const loadAgentSessions = useCallback(async (workspaceId: string) => {
     if (currentWorkspaceId.current !== workspaceId) return;
     const version = ++sessionsRequestVersion.current;
@@ -250,14 +311,14 @@ export function App() {
         version === sessionsRequestVersion.current &&
         currentWorkspaceId.current === workspaceId
       ) {
-        setAgentSessions(sessions);
+        setAgentSessions((items) => ({ ...items, [workspaceId]: sessions }));
       }
     } catch (cause) {
       if (
         version === sessionsRequestVersion.current &&
         currentWorkspaceId.current === workspaceId
       ) {
-        setAgentSessions([]);
+        setAgentSessions((items) => ({ ...items, [workspaceId]: [] }));
         setError(String(cause));
       }
     } finally {
@@ -272,9 +333,16 @@ export function App() {
     setGitError("");
     try {
       const status = await host.gitStatus(workspaceId);
-      if (version === gitRequestVersion.current && currentWorkspaceId.current === workspaceId) setGitStatus(status);
+      if (
+        version === gitRequestVersion.current &&
+        currentWorkspaceId.current === workspaceId
+      )
+        setGitStatus(status);
     } catch (cause) {
-      if (version === gitRequestVersion.current && currentWorkspaceId.current === workspaceId)
+      if (
+        version === gitRequestVersion.current &&
+        currentWorkspaceId.current === workspaceId
+      )
         setGitError(String(cause));
     } finally {
       if (version === gitRequestVersion.current) setGitLoading(false);
@@ -284,59 +352,118 @@ export function App() {
     setGitStatus(null);
     setGitError("");
     setGitLoading(false);
-    if (mode === "agent" && agentPanel === "git" && workspace) void loadGit(workspace.id);
-    return () => { gitRequestVersion.current += 1; };
+    if (mode === "agent" && agentPanel === "git" && workspace)
+      void loadGit(workspace.id);
+    return () => {
+      gitRequestVersion.current += 1;
+    };
   }, [mode, agentPanel, loadGit, workspace?.id]);
-  const openSession = useCallback((workspaceId: string, persistedSessionId?: string): Promise<void> => {
-    const existing = persistedSessionId && liveSessionsRef.current.find((item) => item.info.workspaceId === workspaceId && item.info.persistedSessionId === persistedSessionId);
-    if (existing) {
-      selectionVersions.current.set(workspaceId, (selectionVersions.current.get(workspaceId) ?? 0) + 1);
-      setActiveSessions((items) => ({ ...items, [workspaceId]: existing.info.sessionId }));
-      return Promise.resolve();
-    }
-    const opening = openingSessions.current.get(workspaceId);
-    if (opening) return opening;
-    const selectionVersion = selectionVersions.current.get(workspaceId) ?? 0;
-    initializedWorkspaces.current.add(workspaceId);
-    setCreatingWorkspaces((items) => new Set(items).add(workspaceId));
-    const task = Promise.resolve().then(async () => {
-      try {
-        const info = persistedSessionId ? await host.resumeAgentSession(workspaceId, persistedSessionId) : await host.agentSessionCreate(workspaceId);
-        let session = createLiveSession(info);
-        for (const event of pendingEvents.current.get(info.sessionId) ?? []) session = reduceAgentEvent(session, event);
-        pendingEvents.current.delete(info.sessionId);
-        changeSessions((items) => [...items, session]);
-        if ((selectionVersions.current.get(workspaceId) ?? 0) === selectionVersion)
-          setActiveSessions((items) => ({ ...items, [workspaceId]: info.sessionId }));
-        void loadAgentSessions(workspaceId);
-      } catch (cause) {
-        setError(String(cause));
-      } finally {
-        openingSessions.current.delete(workspaceId);
-        if (!openingSessions.current.size) pendingEvents.current.clear();
-        setCreatingWorkspaces((items) => { const next = new Set(items); next.delete(workspaceId); return next; });
+  const openSession = useCallback(
+    (workspaceId: string, persistedSessionId?: string): Promise<void> => {
+      const existing =
+        persistedSessionId &&
+        liveSessionsRef.current.find(
+          (item) =>
+            item.info.workspaceId === workspaceId &&
+            item.info.persistedSessionId === persistedSessionId,
+        );
+      if (existing) {
+        selectionVersions.current.set(
+          workspaceId,
+          (selectionVersions.current.get(workspaceId) ?? 0) + 1,
+        );
+        setActiveSessions((items) => ({
+          ...items,
+          [workspaceId]: existing.info.sessionId,
+        }));
+        return Promise.resolve();
       }
-    });
-    openingSessions.current.set(workspaceId, task);
-    return task;
-  }, [changeSessions, loadAgentSessions]);
-  const beginAgentSession = useCallback((workspaceId: string) => openSession(workspaceId), [openSession]);
-  const resumeAgentSession = useCallback((workspaceId: string, persistedSessionId: string) => openSession(workspaceId, persistedSessionId), [openSession]);
+      const opening = openingSessions.current.get(workspaceId);
+      if (opening) return opening;
+      const selectionVersion = selectionVersions.current.get(workspaceId) ?? 0;
+      initializedWorkspaces.current.add(workspaceId);
+      setCreatingWorkspaces((items) => new Set(items).add(workspaceId));
+      const task = Promise.resolve().then(async () => {
+        try {
+          const info = persistedSessionId
+            ? await host.resumeAgentSession(workspaceId, persistedSessionId)
+            : await host.agentSessionCreate(workspaceId);
+          let session = createLiveSession(info);
+          for (const event of pendingEvents.current.get(info.sessionId) ?? [])
+            session = reduceAgentEvent(session, event);
+          pendingEvents.current.delete(info.sessionId);
+          changeSessions((items) => [...items, session]);
+          if (
+            (selectionVersions.current.get(workspaceId) ?? 0) ===
+            selectionVersion
+          )
+            setActiveSessions((items) => ({
+              ...items,
+              [workspaceId]: info.sessionId,
+            }));
+          void loadAgentSessions(workspaceId);
+        } catch (cause) {
+          setError(String(cause));
+        } finally {
+          openingSessions.current.delete(workspaceId);
+          if (!openingSessions.current.size) pendingEvents.current.clear();
+          setCreatingWorkspaces((items) => {
+            const next = new Set(items);
+            next.delete(workspaceId);
+            return next;
+          });
+        }
+      });
+      openingSessions.current.set(workspaceId, task);
+      return task;
+    },
+    [changeSessions, loadAgentSessions],
+  );
+  const beginAgentSession = useCallback(
+    (workspaceId: string) => openSession(workspaceId),
+    [openSession],
+  );
+  const resumeAgentSession = useCallback(
+    (workspaceId: string, persistedSessionId: string) =>
+      openSession(workspaceId, persistedSessionId),
+    [openSession],
+  );
   const closeAgentSession = async (session: LiveAgentSession) => {
     const { sessionId, workspaceId } = session.info;
     if (session.closing) return;
     changeSession(sessionId, (item) => ({ ...item, closing: true, error: "" }));
     try {
       if (!session.unavailable) await host.agentSessionDispose(sessionId);
-      const siblings = liveSessionsRef.current.filter((item) => item.info.workspaceId === workspaceId);
-      const index = siblings.findIndex((item) => item.info.sessionId === sessionId);
+      const siblings = liveSessionsRef.current.filter(
+        (item) => item.info.workspaceId === workspaceId,
+      );
+      const index = siblings.findIndex(
+        (item) => item.info.sessionId === sessionId,
+      );
       const next = siblings[index + 1] ?? siblings[index - 1];
-      selectionVersions.current.set(workspaceId, (selectionVersions.current.get(workspaceId) ?? 0) + 1);
+      selectionVersions.current.set(
+        workspaceId,
+        (selectionVersions.current.get(workspaceId) ?? 0) + 1,
+      );
       closedSessions.current.add(sessionId);
-      changeSessions((items) => items.filter((item) => item.info.sessionId !== sessionId));
-      setActiveSessions((items) => items[workspaceId] === sessionId ? { ...items, [workspaceId]: next?.info.sessionId ?? "" } : items);
+      changeSessions((items) =>
+        items.filter((item) => item.info.sessionId !== sessionId),
+      );
+      setActiveSessions((items) =>
+        items[workspaceId] === sessionId
+          ? { ...items, [workspaceId]: next?.info.sessionId ?? "" }
+          : items,
+      );
     } catch (cause) {
-      changeSession(sessionId, (item) => ({ ...item, closing: false, unavailable: true, running: false, stopping: false, approvals: [], error: `关闭失败，会话已停用。可再次关闭标签并从历史恢复：${String(cause)}` }));
+      changeSession(sessionId, (item) => ({
+        ...item,
+        closing: false,
+        unavailable: true,
+        running: false,
+        stopping: false,
+        approvals: [],
+        error: `关闭失败，会话已停用。可再次关闭标签并从历史恢复：${String(cause)}`,
+      }));
     }
   };
   useEffect(() => {
@@ -357,7 +484,7 @@ export function App() {
             b.updatedAt.localeCompare(a.updatedAt),
           )[0];
           if (latest) void resumeAgentSession(workspaceId, latest.sessionId);
-          else setError("此工作区没有可继续的会话，请新建会话。");
+          else setError("此项目没有可继续的会话，请新建会话。");
         })
         .catch((cause) => setError(String(cause)));
     }
@@ -373,48 +500,128 @@ export function App() {
     if (mode !== "agent" || !workspace) {
       sessionsRequestVersion.current += 1;
       setSessionsLoading(false);
-      setAgentSessions([]);
+      setAgentSessions({});
       return;
     }
     void loadAgentSessions(workspace.id);
   }, [loadAgentSessions, mode, workspace]);
   useEffect(() => {
-    if (!nativeHostAvailable || mode !== "agent" || pendingAgentCommand || !workspace || initializedWorkspaces.current.has(workspace.id)) return;
+    if (
+      !nativeHostAvailable ||
+      mode !== "agent" ||
+      pendingAgentCommand ||
+      !workspace ||
+      initializedWorkspaces.current.has(workspace.id)
+    )
+      return;
     void beginAgentSession(workspace.id);
   }, [beginAgentSession, mode, workspace?.id, pendingAgentCommand]);
   const sendAgentPrompt = async () => {
-    if (!activeSession || activeSession.running || activeSession.closing || activeSession.unavailable || !agentInput.trim()) return;
+    if (
+      !activeSession ||
+      activeSession.running ||
+      activeSession.closing ||
+      activeSession.unavailable ||
+      !agentInput.trim()
+    )
+      return;
     const id = activeSession.info.sessionId;
     const text = agentInput.trim();
-    changeSession(id, (item) => ({ ...item, input: "", error: "", running: true, messages: [...item.messages, { id: `local-user-${Date.now()}`, kind: "user", title: "你", text, status: "done" }] }));
+    changeSession(id, (item) => ({
+      ...item,
+      input: "",
+      error: "",
+      running: true,
+      messages: [
+        ...item.messages,
+        {
+          id: `local-user-${Date.now()}`,
+          kind: "user",
+          title: "你",
+          text,
+          status: "done",
+        },
+      ],
+    }));
     try {
       const response = await host.agentPrompt(id, text);
       if (response.exportText !== undefined) {
-        const url = URL.createObjectURL(new Blob([response.exportText], { type: "text/plain;charset=utf-8" }));
-        const link = document.createElement("a"); link.href = url; link.download = "agent-session.jsonl"; link.click(); URL.revokeObjectURL(url);
+        const url = URL.createObjectURL(
+          new Blob([response.exportText], { type: "text/plain;charset=utf-8" }),
+        );
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "agent-session.jsonl";
+        link.click();
+        URL.revokeObjectURL(url);
       }
-      changeSession(id, (item) => ({ ...item, running: false, stopping: false }));
+      if (response.exportText !== undefined)
+        changeSession(id, (item) => ({
+          ...item,
+          running: false,
+          stopping: false,
+        }));
     } catch (cause) {
-      changeSession(id, (item) => reduceAgentEvent(item, { type: "error", error: String(cause) }));
+      changeSession(id, (item) =>
+        reduceAgentEvent(item, { type: "error", error: String(cause) }),
+      );
     }
   };
   const stopAgent = async () => {
-    if (!activeSession || !activeSession.running || activeSession.stopping || activeSession.closing || activeSession.unavailable) return;
+    if (
+      !activeSession ||
+      !activeSession.running ||
+      activeSession.stopping ||
+      activeSession.closing ||
+      activeSession.unavailable
+    )
+      return;
     const id = activeSession.info.sessionId;
     changeSession(id, (item) => ({ ...item, stopping: true, error: "" }));
-    try { await host.agentAbort(id); }
-    catch (cause) { changeSession(id, (item) => ({ ...item, stopping: false, error: String(cause) })); }
+    try {
+      await host.agentAbort(id);
+    } catch (cause) {
+      changeSession(id, (item) => ({
+        ...item,
+        stopping: false,
+        error: String(cause),
+      }));
+    }
   };
   const resolveAgentApproval = async (requestId: string, approved: boolean) => {
-    const session = liveSessionsRef.current.find((item) => item.approvals.some((approval) => approval.requestId === requestId));
-    if (!session || session.closing || session.unavailable || session.resolving.has(requestId)) return;
+    const session = liveSessionsRef.current.find((item) =>
+      item.approvals.some((approval) => approval.requestId === requestId),
+    );
+    if (
+      !session ||
+      session.closing ||
+      session.unavailable ||
+      session.resolving.has(requestId)
+    )
+      return;
     const id = session.info.sessionId;
-    changeSession(id, (item) => ({ ...item, error: "", resolving: new Set(item.resolving).add(requestId) }));
+    changeSession(id, (item) => ({
+      ...item,
+      error: "",
+      resolving: new Set(item.resolving).add(requestId),
+    }));
     try {
       await host.agentApprovalRespond(requestId, approved);
-      changeSession(id, (item) => ({ ...item, approvals: item.approvals.filter((approval) => approval.requestId !== requestId) }));
-    } catch (cause) { changeSession(id, (item) => ({ ...item, error: String(cause) })); }
-    finally { changeSession(id, (item) => { const resolving = new Set(item.resolving); resolving.delete(requestId); return { ...item, resolving }; }); }
+      changeSession(id, (item) => ({
+        ...item,
+        approvals: item.approvals.filter(
+          (approval) => approval.requestId !== requestId,
+        ),
+      }));
+    } catch (cause) {
+      changeSession(id, (item) => ({ ...item, error: String(cause) }));
+    } finally {
+      changeSession(id, (item) => {
+        const resolving = new Set(item.resolving);
+        resolving.delete(requestId);
+        return { ...item, resolving };
+      });
+    }
   };
   const update = (patch: Partial<Preferences>) =>
     run(async () => {
@@ -438,9 +645,27 @@ export function App() {
       <div className="app-sidebar">
         {mode === "agent" && (
           <nav className="agent-activity-bar" aria-label="Agent 工具">
-            <IconButton label="资源管理器" className={agentPanel === "explorer" ? "active" : ""} onClick={() => openAgentPanel("explorer")}><Files size={20} /></IconButton>
-            <IconButton label="Chat" className={agentPanel === "chat" ? "active" : ""} onClick={() => openAgentPanel("chat")}><Bot size={20} /></IconButton>
-            <IconButton label="Git" className={agentPanel === "git" ? "active" : ""} onClick={() => openAgentPanel("git")}><GitBranch size={20} /></IconButton>
+            <IconButton
+              label="资源管理器"
+              className={agentPanel === "explorer" ? "active" : ""}
+              onClick={() => openAgentPanel("explorer")}
+            >
+              <Files size={20} />
+            </IconButton>
+            <IconButton
+              label="Chat"
+              className={agentPanel === "chat" ? "active" : ""}
+              onClick={() => openAgentPanel("chat")}
+            >
+              <Bot size={20} />
+            </IconButton>
+            <IconButton
+              label="Git"
+              className={agentPanel === "git" ? "active" : ""}
+              onClick={() => openAgentPanel("git")}
+            >
+              <GitBranch size={20} />
+            </IconButton>
           </nav>
         )}
         <aside
@@ -468,18 +693,72 @@ export function App() {
                     <Home size={16} />
                     首页
                   </button>
-                  {snapshot?.plugins.filter((plugin) => plugin.enabled).flatMap((plugin) => plugin.manifest.contributes.commands.filter((command) => command.execution === "foreground" && command.viewId && plugin.manifest.contributes.views.includes(command.viewId)).map((command) => (
-                    <button key={plugin.manifest.id + "/" + command.id} className={"sidebar-button " + (view === command.viewId ? "selected" : "")} disabled={!workspace} onClick={() => void run(() => host.executeCommand(plugin.manifest.id, command.id))}>
-                      {plugin.manifest.kind === "agent-runtime" ? <Bot size={16} /> : <Files size={16} />}
-                      <span>{command.title}</span>
-                    </button>
-                  )))}
+                  {snapshot?.plugins
+                    .filter((plugin) => plugin.enabled)
+                    .flatMap((plugin) =>
+                      plugin.manifest.contributes.commands
+                        .filter(
+                          (command) =>
+                            command.execution === "foreground" &&
+                            command.viewId &&
+                            plugin.manifest.contributes.views.includes(
+                              command.viewId,
+                            ),
+                        )
+                        .map((command) => (
+                          <button
+                            key={plugin.manifest.id + "/" + command.id}
+                            className={
+                              "sidebar-button " +
+                              (view === command.viewId ? "selected" : "")
+                            }
+                            disabled={!workspace}
+                            onClick={() =>
+                              void run(() =>
+                                host.executeCommand(
+                                  plugin.manifest.id,
+                                  command.id,
+                                ),
+                              )
+                            }
+                          >
+                            {plugin.manifest.kind === "agent-runtime" ? (
+                              <Bot size={16} />
+                            ) : (
+                              <Files size={16} />
+                            )}
+                            <span>{command.title}</span>
+                          </button>
+                        )),
+                    )}
                 </div>
               </>
             ) : agentPanel === "explorer" ? (
-              <AgentExplorer workspace={workspace} selected={selectedFile} onSelect={(path) => { if (workspace) setFileSelection({ workspaceId: workspace.id, path }); }} />
+              <AgentExplorer
+                workspace={workspace}
+                selected={selectedFile}
+                onSelect={(path) => {
+                  if (workspace)
+                    setFileSelection({ workspaceId: workspace.id, path });
+                }}
+              />
             ) : agentPanel === "git" ? (
-              workspace ? <GitOverlay status={gitStatus} loading={gitLoading} error={gitError} onClose={() => setAgentPanel("chat")} onRefresh={() => void loadGit(workspace.id)} /> : <p className="sidebar-empty">请先在 Chat 中选择工作区。</p>
+              workspace ? (
+                <GitPanel
+                  key={workspace.id}
+                  workspaceId={workspace.id}
+                  status={gitStatus}
+                  loading={gitLoading}
+                  error={gitError}
+                  onClose={() => setAgentPanel("chat")}
+                  onRefresh={() => loadGit(workspace.id)}
+                  onOpen={(path) =>
+                    setFileSelection({ workspaceId: workspace.id, path })
+                  }
+                />
+              ) : (
+                <p className="sidebar-empty">请先在 Chat 中选择项目。</p>
+              )
             ) : (
               <>
                 <div className="sidebar-heading">
@@ -488,83 +767,44 @@ export function App() {
                 </div>
                 <button
                   className="sidebar-button"
-                  disabled={!workspace || agentCreating}
-                  onClick={() =>
-                    workspace && void beginAgentSession(workspace.id)
-                  }
+                  onClick={() => setAgentsOpen(true)}
                 >
-                  <Plus size={16} />
-                  新建会话
+                  <Bot size={16} />
+                  智能体
                 </button>
+                {agentsOpen && (
+                  <AgentProfiles onClose={() => setAgentsOpen(false)} />
+                )}
                 <div className="sidebar-scroll">
-                  <div className="sidebar-section-row">
-                    <div className="sidebar-section">工作区</div>
-                    <IconButton
-                      className="workspace-add"
-                      label="打开工作区"
-                      disabled={!snapshot}
-                      onClick={() => void run(() => host.chooseWorkspace())}
-                    >
-                      <Plus size={15} />
-                    </IconButton>
-                  </div>
-                  {snapshot?.workspaces.map((item) => (
-                    <button
-                      key={item.id}
-                      className={
-                        "sidebar-button " +
-                        (workspace?.id === item.id ? "selected" : "")
-                      }
-                      onClick={() =>
-                        void update({ activeWorkspaceId: item.id })
-                      }
-                    >
-                      <ChevronRight size={14} />
-                      <span>{item.name}</span>
-                    </button>
-                  ))}
-                  {!snapshot?.workspaces.length && (
-                    <p className="sidebar-empty">尚未选择工作区</p>
-                  )}
-                  <div className="sidebar-section">会话</div>
-                  {agentSession && !activePersistedSessionId && (
-                    <button className="sidebar-button selected" disabled>
-                      <Bot size={15} />
-                      <span>新会话</span>
-                    </button>
-                  )}
-                  {agentSessions.map((item) => {
-                    const selected =
-                      activePersistedSessionId === item.sessionId;
-                    return (
-                      <button
-                        key={item.sessionId}
-                        className={
-                          "sidebar-button session-button " +
-                          (selected ? "selected" : "")
-                        }
-                        aria-current={selected ? "page" : undefined}
-                        disabled={agentCreating || selected}
-                        onClick={() =>
-                          workspace &&
-                          void resumeAgentSession(workspace.id, item.sessionId)
-                        }
-                      >
-                        <Bot size={15} />
-                        <span>{item.title || "未命名会话"}</span>
-                      </button>
-                    );
-                  })}
-                  {sessionsLoading && (
-                    <p className="sidebar-empty">正在读取会话…</p>
-                  )}
-                  {!sessionsLoading &&
-                    !agentSession &&
-                    agentSessions.length === 0 && (
-                      <p className="sidebar-empty">
-                        {agentCreating ? "正在创建会话…" : "选择工作区以开始"}
-                      </p>
-                    )}
+                  <ProjectNavigation
+                    projects={snapshot?.workspaces ?? []}
+                    activeId={workspace?.id ?? ""}
+                    history={agentSessions[workspace?.id ?? ""] ?? []}
+                    loading={sessionsLoading}
+                    sessions={liveSessions}
+                    activeSessions={activeSessions}
+                    creating={creatingWorkspaces}
+                    onChoose={() => void run(() => host.chooseWorkspace())}
+                    onSelect={(id) => {
+                      if (id !== workspace?.id)
+                        void update({ activeWorkspaceId: id });
+                    }}
+                    onNew={(id) => void beginAgentSession(id)}
+                    onResume={(id, persisted) =>
+                      void resumeAgentSession(id, persisted)
+                    }
+                    onLive={(session) => {
+                      const id = session.info.workspaceId;
+                      selectionVersions.current.set(
+                        id,
+                        (selectionVersions.current.get(id) ?? 0) + 1,
+                      );
+                      setActiveSessions((items) => ({
+                        ...items,
+                        [id]: session.info.sessionId,
+                      }));
+                    }}
+                  />
                 </div>
               </>
             )}
@@ -578,217 +818,282 @@ export function App() {
             </div>
           </div>
         </aside>
-        </div>
-        <div className="app-main">
-      <header className="titlebar" data-tauri-drag-region>
-        <IconButton
-          className={
-            "titlebar-button " + (preferences?.sidebarCollapsed ? "" : "active")
-          }
-          label={preferences?.sidebarCollapsed ? "展开菜单栏" : "收起菜单栏"}
-          disabled={!snapshot}
-          onClick={() =>
-            void update({ sidebarCollapsed: !preferences?.sidebarCollapsed })
-          }
-        >
-          <PanelLeft size={17} />
-        </IconButton>
-        {mode === "agent" && (
-          <div className="agent-session-tabs" role="tablist" aria-label="已打开会话">
-            {workspaceSessions.map((session) => (
-              <div key={session.info.sessionId} className={"agent-session-tab " + (agentSession?.sessionId === session.info.sessionId ? "selected" : "")}>
-                <button role="tab" aria-selected={agentSession?.sessionId === session.info.sessionId} title={session.info.title || "新会话"} onClick={() => { selectionVersions.current.set(session.info.workspaceId, (selectionVersions.current.get(session.info.workspaceId) ?? 0) + 1); setActiveSessions((items) => ({ ...items, [session.info.workspaceId]: session.info.sessionId })); setAgentPanel("chat"); }}>
-                  {session.running ? <LoaderCircle size={13} className="spin" /> : <Bot size={13} />}
-                  <span>{session.info.title || "新会话"}</span>
-                  {session.approvals.length > 0 && <small aria-label="待审批">{session.approvals.length}</small>}
-                  {session.error && <CircleAlert size={13} aria-label="会话错误" />}
-                </button>
-                <button className="session-tab-close" aria-label={"关闭会话 " + (session.info.title || "新会话")} disabled={session.closing} onClick={() => void closeAgentSession(session)}>{session.closing ? <LoaderCircle size={12} className="spin" /> : <X size={12} />}</button>
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="titlebar-drag" data-tauri-drag-region>
-          <span data-tauri-drag-region>NextTools</span>
-        </div>
-        <div className="titlebar-actions">
-          <div className="mode-switch" aria-label="页面模式">
-            <button
-              aria-pressed={mode === "workbench"}
-              disabled={!snapshot}
-              onClick={() => void update({ mode: "workbench" })}
+      </div>
+      <div className="app-main">
+        <header className="titlebar" data-tauri-drag-region>
+          <IconButton
+            className={
+              "titlebar-button " +
+              (preferences?.sidebarCollapsed ? "" : "active")
+            }
+            label={preferences?.sidebarCollapsed ? "展开菜单栏" : "收起菜单栏"}
+            disabled={!snapshot}
+            onClick={() =>
+              void update({ sidebarCollapsed: !preferences?.sidebarCollapsed })
+            }
+          >
+            <PanelLeft size={17} />
+          </IconButton>
+          {mode === "agent" && (
+            <div
+              className="agent-session-tabs"
+              role="tablist"
+              aria-label="已打开会话"
             >
-              工作台
-            </button>
-            <button
-              aria-pressed={mode === "agent"}
-              disabled={!snapshot}
-              onClick={() => void update({ mode: "agent" })}
-            >
-              Agent
-            </button>
-          </div>
-          {mode === "agent" ? (
-            <>
-              <IconButton
-                label="新建会话"
-                disabled={!workspace || agentCreating}
-                onClick={() => {
-                  openAgentPanel("chat");
-                  if (workspace) void beginAgentSession(workspace.id);
-                }}
-              >
-                <Plus size={18} />
-              </IconButton>
-            </>
-          ) : view === "files" && filePlugin?.enabled ? (
-            <IconButton
-              label="刷新文件列表"
-              onClick={() =>
-                void run(() =>
-                  host.executeCommand(filePlugin.manifest.id, "refresh"),
-                )
-              }
-            >
-              <RefreshCw size={17} />
-            </IconButton>
-          ) : null}
-        </div>
-        {nativeHostAvailable && (
-          <div className="window-controls">
-            <IconButton label="最小化" onClick={minimizeWindow}>
-              <Minus size={16} />
-            </IconButton>
-            <IconButton label="最大化或还原" onClick={toggleMaximizeWindow}>
-              <Square size={13} />
-            </IconButton>
-            <IconButton
-              className="window-close"
-              label="关闭"
-              onClick={closeWindow}
-            >
-              <X size={17} />
-            </IconButton>
-          </div>
-        )}
-      </header>
-        <div className="app-body">
-        <div className="content">
-          {error && (
-            <div role="alert" className="app-error">
-              {error}
-              <button aria-label="关闭错误" onClick={() => setError("")}>
-                ×
-              </button>
-            </div>
-          )}
-          <main className="main-container">
-            <div className="mode-page" hidden={mode !== "workbench"}>
-              {!nativeHostAvailable ? (
-                <div className="empty-state">
-                  <h1>NextTools</h1>
-                  <p>请在 Tauri 桌面应用中使用本地工作区。</p>
-                  <small>浏览器预览不提供文件访问或模拟 Host。</small>
-                </div>
-              ) : !snapshot ? (
-                <div className="empty-state">
-                  <p>{error ? "宿主加载失败" : "正在连接本地宿主…"}</p>
-                  <button onClick={() => void run(refresh)}>重新连接</button>
-                </div>
-              ) : view === "files" && filePlugin?.enabled ? (
-                <FilesView
-                  host={host}
-                  workspace={workspace}
-                  revision={revision}
-                />
-              ) : (
-                <div className="workbench-home">
-                  <div className="wordmark">NextTools</div>
-                  <p className="home-caption">
-                    工作台 · {workspace?.name ?? "选择工作区以开始"}
-                  </p>
-                  <div className="home-plugins">
-                    {snapshot.plugins
-                      .filter((plugin) => plugin.enabled)
-                      .map((plugin) => (
-                        <section
-                          className="plugin-card"
-                          key={plugin.manifest.id}
-                        >
-                          {plugin.manifest.kind === "agent-runtime" ? (
-                            <Bot size={21} />
-                          ) : (
-                            <Files size={21} />
-                          )}
-                          <h2>{plugin.manifest.name}</h2>
-                          <p>
-                            {plugin.manifest.kind} ·{" "}
-                            {plugin.manifest.contributes.commands.length} 条命令
-                          </p>
-                          <div className="plugin-card-actions">
-                            {plugin.manifest.contributes.commands.map(
-                              (command) => (
-                                <button
-                                  key={command.id}
-                                  disabled={!workspace}
-                                  onClick={() =>
-                                    void run(() =>
-                                      host.executeCommand(
-                                        plugin.manifest.id,
-                                        command.id,
-                                      ),
-                                    )
-                                  }
-                                >
-                                  {command.title} <ChevronRight size={14} />
-                                </button>
-                              ),
-                            )}
-                          </div>
-                        </section>
-                      ))}
-                  </div>
+              {workspaceSessions.map((session) => (
+                <div
+                  key={session.info.sessionId}
+                  className={
+                    "agent-session-tab " +
+                    (agentSession?.sessionId === session.info.sessionId
+                      ? "selected"
+                      : "")
+                  }
+                >
                   <button
-                    className="text-button"
-                    onClick={() => setSettings(true)}
+                    role="tab"
+                    aria-selected={
+                      agentSession?.sessionId === session.info.sessionId
+                    }
+                    title={session.title || "新会话"}
+                    onClick={() => {
+                      selectionVersions.current.set(
+                        session.info.workspaceId,
+                        (selectionVersions.current.get(
+                          session.info.workspaceId,
+                        ) ?? 0) + 1,
+                      );
+                      setActiveSessions((items) => ({
+                        ...items,
+                        [session.info.workspaceId]: session.info.sessionId,
+                      }));
+                      setAgentPanel("chat");
+                    }}
                   >
-                    管理插件与快捷键
+                    {session.running ? (
+                      <LoaderCircle size={13} className="spin" />
+                    ) : (
+                      <Bot size={13} />
+                    )}
+                    <span>{session.title || "新会话"}</span>
+                    {session.approvals.length > 0 && (
+                      <small aria-label="待审批">
+                        {session.approvals.length}
+                      </small>
+                    )}
+                    {session.error && (
+                      <CircleAlert size={13} aria-label="会话错误" />
+                    )}
+                  </button>
+                  <button
+                    className="session-tab-close"
+                    aria-label={"关闭会话 " + (session.title || "新会话")}
+                    disabled={session.closing}
+                    onClick={() => void closeAgentSession(session)}
+                  >
+                    {session.closing ? (
+                      <LoaderCircle size={12} className="spin" />
+                    ) : (
+                      <X size={12} />
+                    )}
                   </button>
                 </div>
-              )}
+              ))}
             </div>
-            <div className="mode-page" hidden={mode !== "agent"}>
-              <div className="mode-page" hidden={agentPanel !== "explorer"}>
-                {agentPanel === "explorer" && <AgentFilePreview workspaceId={workspace?.id ?? null} path={selectedFile} />}
-              </div>
-              <div className="mode-page" hidden={agentPanel === "explorer"}>
-              <AgentPage
-                workspaceName={workspace?.name ?? null}
-                session={agentSession}
-                unavailable={activeSession?.unavailable || activeSession?.closing || false}
-                messages={agentMessages}
-                input={agentInput}
-                running={agentRunning}
-                creating={agentCreating}
-                stopping={agentStopping}
-                error={agentError}
-                approvals={agentApprovals}
-                resolvingApprovals={resolvingApprovals}
-                onInput={setAgentInput}
-                onSend={() => void sendAgentPrompt()}
-                onStop={() => void stopAgent()}
-                onRetry={() => { if (workspace) void beginAgentSession(workspace.id); }}
-                onOpenWorkspace={() => void run(() => host.chooseWorkspace())}
-                onDismissError={() => setAgentError("")}
-                onResolveApproval={(requestId, approved) =>
-                  void resolveAgentApproval(requestId, approved)
+          )}
+          <div className="titlebar-drag" data-tauri-drag-region></div>
+          <div className="titlebar-actions">
+            <div className="mode-switch" aria-label="页面模式">
+              <button
+                aria-pressed={mode === "workbench"}
+                disabled={!snapshot}
+                onClick={() => void update({ mode: "workbench" })}
+              >
+                工作台
+              </button>
+              <button
+                aria-pressed={mode === "agent"}
+                disabled={!snapshot}
+                onClick={() => void update({ mode: "agent" })}
+              >
+                Agent
+              </button>
+            </div>
+            {mode === "agent" ? (
+              <>
+                <IconButton
+                  label="新建会话"
+                  disabled={!workspace || agentCreating}
+                  onClick={() => {
+                    openAgentPanel("chat");
+                    if (workspace) void beginAgentSession(workspace.id);
+                  }}
+                >
+                  <Plus size={18} />
+                </IconButton>
+              </>
+            ) : view === "files" && filePlugin?.enabled ? (
+              <IconButton
+                label="刷新文件列表"
+                onClick={() =>
+                  void run(() =>
+                    host.executeCommand(filePlugin.manifest.id, "refresh"),
+                  )
                 }
-              />
-              </div>
+              >
+                <RefreshCw size={17} />
+              </IconButton>
+            ) : null}
+          </div>
+          {nativeHostAvailable && (
+            <div className="window-controls">
+              <IconButton label="最小化" onClick={minimizeWindow}>
+                <Minus size={16} />
+              </IconButton>
+              <IconButton label="最大化或还原" onClick={toggleMaximizeWindow}>
+                <Square size={13} />
+              </IconButton>
+              <IconButton
+                className="window-close"
+                label="关闭"
+                onClick={closeWindow}
+              >
+                <X size={17} />
+              </IconButton>
             </div>
-          </main>
+          )}
+        </header>
+        <div className="app-body">
+          <div className="content">
+            {error && (
+              <div role="alert" className="app-error">
+                {error}
+                <button aria-label="关闭错误" onClick={() => setError("")}>
+                  ×
+                </button>
+              </div>
+            )}
+            <main className="main-container">
+              <div className="mode-page" hidden={mode !== "workbench"}>
+                {!nativeHostAvailable ? (
+                  <div className="empty-state">
+                    <h1>NextTools</h1>
+                    <p>请在 Tauri 桌面应用中使用本地工作区。</p>
+                    <small>浏览器预览不提供文件访问或模拟 Host。</small>
+                  </div>
+                ) : !snapshot ? (
+                  <div className="empty-state">
+                    <p>{error ? "宿主加载失败" : "正在连接本地宿主…"}</p>
+                    <button onClick={() => void run(refresh)}>重新连接</button>
+                  </div>
+                ) : view === "files" && filePlugin?.enabled ? (
+                  <FilesView
+                    host={host}
+                    workspace={workspace}
+                    revision={revision}
+                  />
+                ) : (
+                  <div className="workbench-home">
+                    <div className="wordmark">NextTools</div>
+                    <p className="home-caption">
+                      工作台 · {workspace?.name ?? "选择工作区以开始"}
+                    </p>
+                    <div className="home-plugins">
+                      {snapshot.plugins
+                        .filter((plugin) => plugin.enabled)
+                        .map((plugin) => (
+                          <section
+                            className="plugin-card"
+                            key={plugin.manifest.id}
+                          >
+                            {plugin.manifest.kind === "agent-runtime" ? (
+                              <Bot size={21} />
+                            ) : (
+                              <Files size={21} />
+                            )}
+                            <h2>{plugin.manifest.name}</h2>
+                            <p>
+                              {plugin.manifest.kind} ·{" "}
+                              {plugin.manifest.contributes.commands.length}{" "}
+                              条命令
+                            </p>
+                            <div className="plugin-card-actions">
+                              {plugin.manifest.contributes.commands.map(
+                                (command) => (
+                                  <button
+                                    key={command.id}
+                                    disabled={!workspace}
+                                    onClick={() =>
+                                      void run(() =>
+                                        host.executeCommand(
+                                          plugin.manifest.id,
+                                          command.id,
+                                        ),
+                                      )
+                                    }
+                                  >
+                                    {command.title} <ChevronRight size={14} />
+                                  </button>
+                                ),
+                              )}
+                            </div>
+                          </section>
+                        ))}
+                    </div>
+                    <button
+                      className="text-button"
+                      onClick={() => setSettings(true)}
+                    >
+                      管理插件与快捷键
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="mode-page" hidden={mode !== "agent"}>
+                <div className="mode-page" hidden={agentPanel !== "explorer"}>
+                  {agentPanel === "explorer" && (
+                    <AgentFilePreview
+                      workspaceId={workspace?.id ?? null}
+                      path={selectedFile}
+                    />
+                  )}
+                </div>
+                <div className="mode-page" hidden={agentPanel === "explorer"}>
+                  <AgentPage
+                    workspaceName={workspace?.name ?? null}
+                    session={agentSession}
+                    unavailable={
+                      activeSession?.unavailable ||
+                      activeSession?.closing ||
+                      false
+                    }
+                    messages={agentMessages}
+                    input={agentInput}
+                    running={agentRunning}
+                    creating={agentCreating}
+                    stopping={agentStopping}
+                    error={agentError}
+                    approvals={agentApprovals}
+                    resolvingApprovals={resolvingApprovals}
+                    onInput={setAgentInput}
+                    onSend={() => void sendAgentPrompt()}
+                    onStop={() => void stopAgent()}
+                    onRetry={() => {
+                      if (workspace) void beginAgentSession(workspace.id);
+                    }}
+                    onOpenWorkspace={() =>
+                      void run(() => host.chooseWorkspace())
+                    }
+                    onDismissError={() => setAgentError("")}
+                    onResolveApproval={(requestId, approved) =>
+                      void resolveAgentApproval(requestId, approved)
+                    }
+                  />
+                </div>
+              </div>
+            </main>
+          </div>
         </div>
-      </div>
       </div>
       <dialog
         ref={dialog}
@@ -809,67 +1114,6 @@ export function App() {
         )}
       </dialog>
     </div>
-  );
-}
-
-function GitOverlay({
-  status,
-  loading,
-  error,
-  onClose,
-  onRefresh,
-}: {
-  status: GitStatus | null;
-  loading: boolean;
-  error: string;
-  onClose: () => void;
-  onRefresh: () => void;
-}) {
-  return (
-    <aside className="git-overlay" aria-label="Git 状态">
-      <header>
-        <div>
-          <GitBranch size={16} />
-          <strong>{status?.branch || "Git 状态"}</strong>
-        </div>
-        <div>
-          <IconButton
-            label="刷新 Git 状态"
-            disabled={loading}
-            onClick={onRefresh}
-          >
-            <RefreshCw className={loading ? "spin" : ""} size={15} />
-          </IconButton>
-          <IconButton label="关闭 Git 状态" onClick={onClose}>
-            <X size={16} />
-          </IconButton>
-        </div>
-      </header>
-      {error ? (
-        <p className="git-overlay-error" role="alert">
-          {error}
-        </p>
-      ) : loading && !status ? (
-        <p className="git-overlay-empty">正在读取仓库状态…</p>
-      ) : status?.changes.length ? (
-        <div className="git-change-list">
-          {status.changes.map((change) => (
-            <div
-              className="git-change"
-              key={`${change.path}-${change.indexStatus}-${change.worktreeStatus}`}
-            >
-              <code>
-                {change.indexStatus}
-                {change.worktreeStatus}
-              </code>
-              <span title={change.path}>{change.path}</span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="git-overlay-empty">工作区没有未提交变更。</p>
-      )}
-    </aside>
   );
 }
 
@@ -938,7 +1182,11 @@ function AgentPage({
           <CircleAlert size={26} />
         )}
         <h2>{creating ? "正在启动 Pi Agent" : "尚未打开会话"}</h2>
-        <p>{creating ? `正在连接 ${workspaceName}…` : "新建会话或从左侧继续历史会话。"}</p>
+        <p>
+          {creating
+            ? `正在连接 ${workspaceName}…`
+            : "新建会话或从左侧继续历史会话。"}
+        </p>
         {!creating && <button onClick={onRetry}>新建会话</button>}
       </div>
     );

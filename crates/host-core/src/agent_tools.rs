@@ -31,7 +31,7 @@ fn string<'a>(input: &'a Value, name: &str) -> Result<&'a str, HostError> {
         .filter(|s| !s.is_empty())
         .ok_or_else(|| HostError::Invalid(format!("缺少参数：{name}")))
 }
-fn output(mut command: Command, cancelled: &AtomicBool) -> Result<Value, HostError> {
+pub(super) fn output(mut command: Command, cancelled: &AtomicBool) -> Result<Value, HostError> {
     command
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

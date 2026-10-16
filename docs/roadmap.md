@@ -6,9 +6,10 @@
 
 ## 当前落地状态
 
-- 已有：Tauri/React/Rust workspace、SQLite 迁移、工作区选择与只读浏览、插件清单与启停、设备本地全局快捷键、Rust capability broker 和本地审计。
+- 已有：Tauri/React/Rust workspace、SQLite 迁移、工作区选择与文件浏览、插件清单与启停、设备本地全局快捷键、Rust capability broker 和本地审计。
 - 已有：固定 Percho submodule、可打包 Node runtime、Host↔Runner 协议、模型目录与系统凭据、会话创建/列出/恢复、流式事件、取消、工作区/Git/Shell 工具审批、Skills 和显式连接的 stdio/HTTP MCP。
-- 尚未达到阶段一完成标准：通用 `workspace-files` 写入/创建/删除/diff 用户路径与对应审批尚未完成。
+- 已补齐：通用 `workspace-files` 创建、写入、删除和 unified diff；工作台文件页与 Agent 文件预览共用编辑器。仅允许工作区内 1 MiB 以内的 UTF-8 普通文件，写入先预览再单次审批，120 秒过期；执行时重新校验权限和原内容，并记录参数摘要及审批/执行审计。真实 Tauri 已验证创建、拒绝、批准写入和删除；Rust 回归覆盖冲突、过期、重放、插件撤销及跨工作区拒绝。
+- 已补齐：Agent 项目展开与所属会话导航、本机智能体模板、CodeMirror 代码编辑器，以及受审批控制的 Git 暂存、提交、分支、远端、比较、Stash、重置和冲突处理。Git 回归覆盖本地远端发布/fetch/pull、分支检出、Stash 引用变化、合并冲突和审批拒绝/过期/重放/撤销/跨工作区绑定；真实桌面已验证 diff、暂存、拒绝和撤销暂存。
 - 尚未达到阶段二完成标准：项目可信任、Pi extensions、subagents、完整 diff/待办体验，以及一次使用真实 provider 的端到端本地开发任务仍待验证。
 - 阶段三和阶段四的账号、设备、远控、同步、DeepSeek 与签名第三方插件尚未实现。
 

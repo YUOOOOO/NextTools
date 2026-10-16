@@ -99,66 +99,74 @@ fn files_read(
     with_host(&state, |h| h.read_file(&workspace_id, &path))
 }
 #[tauri::command]
-fn files_write(
+fn files_prepare_change(
     state: State<'_, HostState>,
     workspace_id: String,
-    path: String,
-    content: String,
-    expected_content: String,
-) -> Result<(), String> {
-    with_host(&state, |h| h.write_file(&workspace_id, &path, &content, &expected_content))
+    change: FileChange,
+) -> Result<FileChangeApproval, String> {
+    with_host(&state, |h| h.prepare_file_change(&workspace_id, change))
 }
 #[tauri::command]
-fn git_status(state: State<'_, HostState>, workspace_id: String) -> Result<GitStatus, String> {
-    #[cfg(not(any(target_os = "android", target_os = "ios")))]
-    {
-        let snapshot = with_host(&state, |h| h.snapshot())?;
-        let workspace = snapshot
-            .workspaces
-            .iter()
-            .find(|workspace| workspace.id == workspace_id)
-            .ok_or("未知工作区")?;
-        let output = std::process::Command::new("git")
-            .args([
-                "-C",
-                workspace.root.as_str(),
-                "status",
-                "--short",
-                "--branch",
-                "--untracked-files=all",
-            ])
-            .output()
-            .map_err(|error| format!("无法启动 Git：{error}"))?;
-        if !output.status.success() {
-            let message = String::from_utf8_lossy(&output.stderr);
-            return Err(message.trim().to_owned());
-        }
-        let text = String::from_utf8_lossy(&output.stdout);
-        let mut lines = text.lines();
-        let branch = lines
-            .next()
-            .and_then(|line| line.strip_prefix("## "))
-            .unwrap_or("未知分支")
-            .to_owned();
-        let changes = lines
-            .filter_map(|line| {
-                if line.len() < 3 {
-                    return None;
-                }
-                Some(GitChange {
-                    index_status: line[0..1].to_owned(),
-                    worktree_status: line[1..2].to_owned(),
-                    path: line[3..].to_owned(),
-                })
-            })
-            .collect();
-        Ok(GitStatus { branch, changes })
-    }
-    #[cfg(any(target_os = "android", target_os = "ios"))]
-    {
-        let _ = (state, workspace_id);
-        Err("Git 状态仅支持桌面端".into())
-    }
+fn files_resolve_change(
+    state: State<'_, HostState>,
+    workspace_id: String,
+    request_id: String,
+    approved: bool,
+) -> Result<(), String> {
+    with_host(&state, |h| {
+        h.resolve_file_change(&workspace_id, &request_id, approved)
+    })
+}
+#[tauri::command]
+async fn git_status(app: tauri::AppHandle, workspace_id: String) -> Result<GitStatus, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        with_host(&app.state::<HostState>(), |h| h.git_status(&workspace_id))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn git_query(
+    app: tauri::AppHandle,
+    workspace_id: String,
+    query: GitQuery,
+) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        with_host(&app.state::<HostState>(), |h| {
+            h.git_query(&workspace_id, query)
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn git_prepare(
+    app: tauri::AppHandle,
+    workspace_id: String,
+    action: GitAction,
+) -> Result<GitApproval, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        with_host(&app.state::<HostState>(), |h| {
+            h.prepare_git_action(&workspace_id, action)
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn git_resolve(
+    app: tauri::AppHandle,
+    workspace_id: String,
+    request_id: String,
+    approved: bool,
+) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        with_host(&app.state::<HostState>(), |h| {
+            h.resolve_git_action(&workspace_id, &request_id, approved)
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 fn dispatch(app: &tauri::AppHandle, plugin: &str, command: &str) -> Result<CommandEvent, String> {
     let event = with_host(&app.state::<HostState>(), |h| h.command(plugin, command))?;
@@ -433,8 +441,12 @@ pub fn run() {
             workspace_choose,
             files_list,
             files_read,
-            files_write,
+            files_prepare_change,
+            files_resolve_change,
             git_status,
+            git_query,
+            git_prepare,
+            git_resolve,
             command_execute,
             plugin_set_enabled,
             shortcut_set,
@@ -447,10 +459,11 @@ pub fn run() {
             agent::agent_session_rename,
             agent::agent_session_thinking,
             agent::agent_session_dispose,
-            agent::agent_files,
-            agent::agent_diff,
             agent_settings::agent_settings_snapshot,
             agent_settings::agent_configure,
+            agent_settings::agent_profile_save,
+            agent_settings::agent_profile_select,
+            agent_settings::agent_profile_remove,
             agent_settings::agent_skill_import,
             agent_settings::agent_skill_toggle,
             agent_settings::agent_skill_remove,

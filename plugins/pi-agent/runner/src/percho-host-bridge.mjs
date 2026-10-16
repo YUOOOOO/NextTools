@@ -23,14 +23,27 @@ export class PerchoHostBridge {
 
   attach(liveId, session, cwd) {
     const persistedId = session.sessionId;
-    if (this.liveByPersisted.has(persistedId)) throw new Error(`Session already attached: ${persistedId}`);
+    if (this.liveByPersisted.has(persistedId))
+      throw new Error(`Session already attached: ${persistedId}`);
     const gate = new PermissionGate(() => {});
     gate.bindSession(persistedId);
-    const dialogs = new ExtensionDialogHost({ onRequest() {}, onResolved() {} });
+    const dialogs = new ExtensionDialogHost({
+      onRequest() {},
+      onResolved() {},
+    });
     dialogs.bind(persistedId);
     const modeRef = { current: "default" };
-    const unsubscribe = session.subscribe((event) => this.backend.emitEvent(persistedId, event));
-    this.backend.registry.add({ session, unsubscribe, cwd, gate, dialogs, modeRef });
+    const unsubscribe = session.subscribe((event) =>
+      this.backend.emitEvent(persistedId, event),
+    );
+    this.backend.registry.add({
+      session,
+      unsubscribe,
+      cwd,
+      gate,
+      dialogs,
+      modeRef,
+    });
     this.liveByPersisted.set(persistedId, liveId);
     return persistedId;
   }
@@ -43,11 +56,32 @@ export class PerchoHostBridge {
     return this.backend.abort(persistedId);
   }
 
+  async rename(persistedId, title) {
+    return this.backend.setSessionName(persistedId, title);
+  }
+
+  async thinking(persistedId, level) {
+    return this.backend.setThinkingLevel(persistedId, level);
+  }
+
+  async export(persistedId) {
+    const entry = this.backend.registry.get(persistedId);
+    if (!entry) throw new Error(`Session not found: ${persistedId}`);
+    const manager = entry.session.sessionManager;
+    const header = manager.getHeader();
+    if (!header) throw new Error(`Session header missing: ${persistedId}`);
+    // The pinned SDK's exportToJsonl writes a file and returns its path.
+    // Return data only; the caller owns saving through the approved UI path.
+    return `${[header, ...manager.getEntries()].map((item) => JSON.stringify(item)).join("\n")}\n`;
+  }
+
   async messages(persistedId) {
     await this.backend.getSessionMessages(persistedId);
     const entry = this.backend.registry.get(persistedId);
     if (!entry) throw new Error(`Session not found: ${persistedId}`);
-    return entry.session.sessionManager.getBranch().flatMap((item) => item.type === "message" ? [item.message] : []);
+    return entry.session.sessionManager
+      .getBranch()
+      .flatMap((item) => (item.type === "message" ? [item.message] : []));
   }
 
   async close(persistedId) {

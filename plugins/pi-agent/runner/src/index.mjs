@@ -6,9 +6,16 @@ import {
   SessionManager,
   SettingsManager,
 } from "@earendil-works/pi-coding-agent";
-import { InMemoryCredentialStore } from "@earendil-works/pi-ai";
+import {
+  InMemoryCredentialStore,
+  getSupportedThinkingLevels,
+} from "@earendil-works/pi-ai";
 import readline from "node:readline";
-import { createHostTools, createMcpTools, createSkillTool } from "./host-tools.mjs";
+import {
+  createHostTools,
+  createMcpTools,
+  createSkillTool,
+} from "./host-tools.mjs";
 import { PerchoHostBridge } from "./percho-host-bridge.mjs";
 
 const VERSION = 1;
@@ -58,24 +65,44 @@ function hostCall(method, params, signal) {
 }
 
 async function createRuntime(provider, modelId, apiKey) {
-  if (!provider || !modelId || !apiKey) throw new Error("provider, model and apiKey are required");
+  if (!provider || !modelId || !apiKey)
+    throw new Error("provider, model and apiKey are required");
   const credentials = new InMemoryCredentialStore();
-  await credentials.modify(provider, async () => ({ type: "api_key", key: apiKey }));
-  const runtime = await ModelRuntime.create({ credentials, modelsPath: null, refreshOnCreate: false });
+  await credentials.modify(provider, async () => ({
+    type: "api_key",
+    key: apiKey,
+  }));
+  const runtime = await ModelRuntime.create({
+    credentials,
+    modelsPath: null,
+    refreshOnCreate: false,
+  });
   const model = runtime.getModel(provider, modelId);
   if (!model) throw new Error(`Unknown model: ${provider}/${modelId}`);
   return { runtime, model };
 }
 
-async function makeResourceLoader(cwd, agentDir, settingsManager, resources = {}) {
-  const skills = (Array.isArray(resources.skills) ? resources.skills : []).map((skill) => ({
-    name: skill.name,
-    description: skill.description,
-    filePath: skill.filePath,
-    baseDir: skill.baseDir,
-    disableModelInvocation: false,
-    sourceInfo: { source: "local", scope: "user", path: skill.filePath, baseDir: skill.baseDir },
-  }));
+async function makeResourceLoader(
+  cwd,
+  agentDir,
+  settingsManager,
+  resources = {},
+) {
+  const skills = (Array.isArray(resources.skills) ? resources.skills : []).map(
+    (skill) => ({
+      name: skill.name,
+      description: skill.description,
+      filePath: skill.filePath,
+      baseDir: skill.baseDir,
+      disableModelInvocation: false,
+      sourceInfo: {
+        source: "local",
+        scope: "user",
+        path: skill.filePath,
+        baseDir: skill.baseDir,
+      },
+    }),
+  );
   const loader = new DefaultResourceLoader({
     cwd,
     agentDir: agentDir || cwd,
@@ -86,7 +113,10 @@ async function makeResourceLoader(cwd, agentDir, settingsManager, resources = {}
     noThemes: true,
     noContextFiles: true,
     disabledBuiltinExtensions: ["mcp"],
-    appendSystemPrompt: skills.length ? [formatSkillsForPrompt(skills, "indirect"), "Use skill_read with a listed filePath to load Skill instructions on demand. Never execute Skill files directly."] : [],
+    appendSystemPrompt: [
+      ...(typeof resources.systemPrompt === "string" && resources.systemPrompt ? [resources.systemPrompt] : []),
+      ...(skills.length ? [formatSkillsForPrompt(skills, "indirect"), "Use skill_read with a listed filePath to load Skill instructions on demand. Never execute Skill files directly."] : []),
+    ],
     skillsOverride: () => ({
       skills,
       diagnostics: [],
@@ -104,16 +134,25 @@ const percho = new PerchoHostBridge(eventFor);
 async function createOrResume(params, resume) {
   const liveId = String(params.sessionId || "");
   if (!liveId) throw new Error("sessionId is required");
-  if (sessions.has(liveId)) return { sessionId: liveId, model: sessions.get(liveId).session.model?.id ?? null };
+  if (sessions.has(liveId))
+    return {
+      sessionId: liveId,
+      model: sessions.get(liveId).session.model?.id ?? null,
+    };
   const cwd = String(params.cwd || process.cwd());
   const sessionDir = String(params.sessionDir || "");
   if (!sessionDir) throw new Error("sessionDir is required");
   const settingsManager = SettingsManager.inMemory();
-  const { runtime, model } = await createRuntime(params.provider, params.model, params.apiKey);
+  const { runtime, model } = await createRuntime(
+    params.provider,
+    params.model,
+    params.apiKey,
+  );
   let manager;
   if (resume) {
     const persistedId = String(params.persistedSessionId || "");
-    if (!/^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/.test(persistedId)) throw new Error("Invalid persistedSessionId");
+    if (!/^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/.test(persistedId))
+      throw new Error("Invalid persistedSessionId");
     const file = SessionManager.findById(cwd, persistedId, sessionDir);
     if (!file) throw new Error(`Persisted session not found: ${persistedId}`);
     manager = SessionManager.open(file, sessionDir, cwd);
@@ -121,9 +160,20 @@ async function createOrResume(params, resume) {
     manager = SessionManager.create(cwd, sessionDir, { id: liveId });
   }
   const resources = params.resources || {};
-  const resourceLoader = await makeResourceLoader(cwd, params.agentDir, settingsManager, resources);
-  const tools = [...createHostTools(liveId, hostCall), ...(Array.isArray(resources.mcpTools) ? createMcpTools(liveId, hostCall, resources.mcpTools) : [])];
-  if (Array.isArray(resources.skills) && resources.skills.length) tools.push(createSkillTool(liveId, hostCall));
+  const resourceLoader = await makeResourceLoader(
+    cwd,
+    params.agentDir,
+    settingsManager,
+    resources,
+  );
+  const tools = [
+    ...createHostTools(liveId, hostCall),
+    ...(Array.isArray(resources.mcpTools)
+      ? createMcpTools(liveId, hostCall, resources.mcpTools)
+      : []),
+  ];
+  if (Array.isArray(resources.skills) && resources.skills.length)
+    tools.push(createSkillTool(liveId, hostCall));
   const result = await createAgentSession({
     cwd,
     modelRuntime: runtime,
@@ -137,9 +187,24 @@ async function createOrResume(params, resume) {
   });
   const session = result.session;
   const persistedId = percho.attach(liveId, session, cwd);
-  sessions.set(liveId, { session, runtime, persistedId, resources, prompt: Promise.resolve() });
-  eventFor(liveId, { type: "session_ready", sessionId: liveId, model: session.model?.id ?? null });
-  const output = { sessionId: liveId, model: session.model?.id ?? null };
+  sessions.set(liveId, {
+    session,
+    runtime,
+    persistedId,
+    resources,
+    prompt: Promise.resolve(),
+  });
+  eventFor(liveId, {
+    type: "session_ready",
+    sessionId: liveId,
+    persistedSessionId: persistedId,
+    model: session.model?.id ?? null,
+  });
+  const output = {
+    sessionId: liveId,
+    persistedSessionId: persistedId,
+    model: session.model?.id ?? null,
+  };
   if (resume) output.messages = await percho.messages(persistedId);
   return output;
 }
@@ -165,10 +230,24 @@ async function disposeSession(liveId) {
 
 async function handleRequest(message) {
   const params = message.params || {};
-  if (message.method === "runner.health") return { version: VERSION, sessions: [...sessions.keys()] };
+  if (message.method === "runner.health")
+    return { version: VERSION, sessions: [...sessions.keys()] };
   if (message.method === "models.list") {
-    const runtime = await ModelRuntime.create({ credentials: new InMemoryCredentialStore(), modelsPath: null, refreshOnCreate: false });
-    return runtime.getModels().map((model) => ({ provider: model.provider, id: model.id, name: model.name, contextWindow: model.contextWindow, maxTokens: model.maxTokens, reasoning: model.reasoning }));
+    const runtime = await ModelRuntime.create({
+      credentials: new InMemoryCredentialStore(),
+      modelsPath: null,
+      refreshOnCreate: false,
+    });
+    return runtime
+      .getModels()
+      .map((model) => ({
+        provider: model.provider,
+        id: model.id,
+        name: model.name,
+        contextWindow: model.contextWindow,
+        maxTokens: model.maxTokens,
+        reasoning: model.reasoning,
+      }));
   }
   if (message.method === "session.list") return listSessions(params);
   if (message.method === "session.create") return createOrResume(params, false);
@@ -176,19 +255,49 @@ async function handleRequest(message) {
   const liveId = String(params.sessionId || "");
   const record = sessions.get(liveId);
   if (!record) throw new Error(`Unknown agent session: ${liveId}`);
+  if (message.method === "session.rename") {
+    const title = String(params.title || "").trim();
+    if (!title || title.length > 200)
+      throw new Error("Session title must contain 1–200 characters");
+    await percho.rename(record.persistedId, title);
+    return { renamed: true };
+  }
+  if (message.method === "session.thinking") {
+    const levels = getSupportedThinkingLevels(record.session.model);
+    const level = String(params.level || "");
+    if (!levels.includes(level))
+      throw new Error(`Unsupported thinking level: ${level}`);
+    await percho.thinking(record.persistedId, level);
+    return {
+      thinkingLevel: record.session.thinkingLevel,
+      supportedThinkingLevels: levels,
+    };
+  }
   if (message.method === "session.prompt") {
     let text = String(params.text || "");
-    const skillCommand = /^\/skill:([a-z0-9-]+)(?:\s+([\s\S]*))?$/.exec(text.trim());
+    if (text.trim() === "/export")
+      return {
+        accepted: true,
+        exportText: await percho.export(record.persistedId),
+      };
+    const skillCommand = /^\/skill:([a-z0-9-]+)(?:\s+([\s\S]*))?$/.exec(
+      text.trim(),
+    );
     if (skillCommand) {
-      const skill = record.resources.skills?.find((value) => value.name === skillCommand[1]);
+      const skill = record.resources.skills?.find(
+        (value) => value.name === skillCommand[1],
+      );
       if (!skill) throw new Error(`Unknown enabled skill: ${skillCommand[1]}`);
-      const result = await hostCall("tool.invoke", { sessionId: liveId, toolName: "skill_read", input: { filePath: skill.filePath } });
+      const result = await hostCall("tool.invoke", {
+        sessionId: liveId,
+        toolName: "skill_read",
+        input: { filePath: skill.filePath },
+      });
       text = `<skill name="${skill.name}">\nBase directory: ${skill.baseDir}\n${result.content}\n</skill>\n${skillCommand[2] || ""}`;
     }
     if (!text.trim()) throw new Error("Prompt must not be empty");
-    record.prompt = percho.prompt(record.persistedId, text).catch((error) => {
-      eventFor(liveId, { type: "error", message: rpcError(error) });
-    });
+    // Percho acknowledges preflight; completion is delivered by agent_settled.
+    await percho.prompt(record.persistedId, text);
     return { accepted: true };
   }
   if (message.method === "session.abort") {
@@ -199,11 +308,16 @@ async function handleRequest(message) {
   throw new Error(`Unknown runner method: ${message.method}`);
 }
 
-const input = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
+const input = readline.createInterface({
+  input: process.stdin,
+  crlfDelay: Infinity,
+});
 input.on("line", async (line) => {
   if (!line.trim()) return;
   let message;
-  try { message = JSON.parse(line); } catch (error) {
+  try {
+    message = JSON.parse(line);
+  } catch (error) {
     send({ method: "runner.error", params: { error: rpcError(error) } });
     return;
   }
@@ -213,14 +327,24 @@ input.on("line", async (line) => {
     pendingHost.delete(String(message.id));
     if (Object.prototype.hasOwnProperty.call(message, "error")) {
       const error = message.error;
-      pending.reject(new Error(typeof error === "string" ? error : error?.message || "Host request failed"));
-    } else if (Object.prototype.hasOwnProperty.call(message, "result")) pending.resolve(message.result);
+      pending.reject(
+        new Error(
+          typeof error === "string"
+            ? error
+            : error?.message || "Host request failed",
+        ),
+      );
+    } else if (Object.prototype.hasOwnProperty.call(message, "result"))
+      pending.resolve(message.result);
     else pending.reject(new Error("Invalid Host response"));
     return;
   }
   if (message.id === undefined) return;
-  try { response(message.id, await handleRequest(message)); }
-  catch (error) { response(message.id, undefined, error); }
+  try {
+    response(message.id, await handleRequest(message));
+  } catch (error) {
+    response(message.id, undefined, error);
+  }
 });
 
 input.on("close", () => percho.dispose());

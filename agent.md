@@ -17,13 +17,13 @@ NextTools 是基于 Tauri 2 的跨平台、local-first、插件化 Agent 工作�
 - provider API key、SSH key 与设备私钥只能留在当前设备 Keychain/Keystore，绝不写入同步数据、日志或服务端。
 - 服务端不执行 Agent、Shell、Git 或插件业务逻辑。
 - 不下载或执行未签名 native/Rust/Node 插件。
-- 桌面端 Agent 页面必须保持 Percho 的布局骨架；不得添加全局竖栏、额外顶栏、常驻检查器或独立仪表盘。
+- 桌面端 Agent 页面保留 Percho 会话布局骨架；Agent 侧栏内可提供资源管理器、Chat、Git 工具切换，不得增加跨模式全局竖栏、额外顶栏、常驻检查器或独立仪表盘。详见 `docs/desktop-layout.md` 的布局决策调整。
 - `工作台 / Agent` 模式切换固定在 Percho 右上角新建会话操作旁。Agent 模式显示原新建会话操作；工作台模式由当前插件贡献该位置的主操作。
 - 模式切换必须保留会话和运行中的 Agent；工作台与 Agent 的页面状态分别在当前设备恢复。
 - 设置按钮属于宿主共用框架，在工作台与 Agent 模式始终可见；两边打开同一个设置弹窗并使用同一配置来源。插件主操作隐藏不影响设置入口，打开/关闭设置不得切换模式、重置页面状态或停止 Agent。
 - 工作台首版只将 Percho 的会话主内容容器替换为 `WorkbenchHome`；有页面插件在该容器运行，无页面插件不得占用该容器或创建新的全局布局。
-- 工作区选择与列表只放在 Agent 侧栏；`工作区`标题右侧的加号图标打开目录授权。工作台侧栏只提供首页和插件导航，工作插件复用已授权的当前工作区，不维护第二套工作区选择。
-- Git 更改图标及其按需面板只属于 Agent 顶部操作区；工作台不得显示或打开该入口，Git 状态仍只可经 Rust Host 读取。
+- 工作区选择与列表只放在 Agent Chat 侧栏，界面标题为`项目`；标题右侧加号打开目录授权，各项目展开所属会话。工作台侧栏只提供首页和插件导航，工作插件复用已授权的当前工作区，不维护第二套工作区选择。
+- Git 入口及其按需侧栏面板只属于 Agent 工具区；工作台不得显示或打开该入口，Git 操作仍只可经 Rust Host 校验、审批和审计。
 - 全局快捷键只在 Windows/macOS/Linux 由 Rust Host 注册。沿用 `contributes.commands` 与 `contributes.views`，每条命令都可单独绑定；插件不得自行注册、监听、覆盖全局快捷键或绕过 command dispatcher、capability broker、审批和审计。
 
 ## 工程约定
@@ -48,4 +48,4 @@ NextTools 是基于 Tauri 2 的跨平台、local-first、插件化 Agent 工作�
 
 ## 当前状态
 
-仓库已初始化 Tauri 2、React/TypeScript、Rust workspace、SQLite、工作区只读文件插件、桌面快捷键和桌面 Pi Runner。Runner 复用固定的 Percho/Pi 依赖，通过 stdin/stdout JSON-RPC 接入 Rust Host；移动端仅保留远程控制边界。
+仓库已初始化 Tauri 2、React/TypeScript、Rust workspace、SQLite、带审批的工作区文件插件、桌面快捷键和桌面 Pi Runner，并提供项目会话导航、本机智能体模板、代码编辑器和受控 Git 管理。Runner 复用固定的 Percho/Pi 依赖，通过 stdin/stdout JSON-RPC 接入 Rust Host；移动端仅保留远程控制边界。真实 Provider 开发任务仍待配置凭据后验证。

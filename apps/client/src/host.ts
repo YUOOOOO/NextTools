@@ -14,9 +14,16 @@ export const host: HostClient = {
     invoke("command_execute", { pluginId, commandId }),
   listFiles: (workspaceId, path) => invoke("files_list", { workspaceId, path }),
   readFile: (workspaceId, path) => invoke("files_read", { workspaceId, path }),
-  writeFile: (workspaceId, path, content, expectedContent) =>
-    invoke("files_write", { workspaceId, path, content, expectedContent }),
+  prepareFileChange: (workspaceId, change) =>
+    invoke("files_prepare_change", { workspaceId, change }),
+  resolveFileChange: (workspaceId, requestId, approved) =>
+    invoke("files_resolve_change", { workspaceId, requestId, approved }),
   gitStatus: (workspaceId) => invoke("git_status", { workspaceId }),
+  gitQuery: (workspaceId, query) => invoke("git_query", { workspaceId, query }),
+  prepareGitAction: (workspaceId, action) =>
+    invoke("git_prepare", { workspaceId, action }),
+  resolveGitAction: (workspaceId, requestId, approved) =>
+    invoke("git_resolve", { workspaceId, requestId, approved }),
   agentSessionCreate: (workspaceId) =>
     invoke("agent_session_create", { workspaceId }),
   listAgentSessions: (workspaceId) =>
@@ -25,16 +32,20 @@ export const host: HostClient = {
     invoke("agent_session_resume", { workspaceId, persistedSessionId }),
   agentPrompt: (sessionId, text) => invoke("agent_prompt", { sessionId, text }),
   agentAbort: (sessionId) => invoke("agent_abort", { sessionId }),
-  agentSessionRename: (sessionId, title) => invoke("agent_session_rename", { sessionId, title }),
-  agentSessionThinking: (sessionId, level) => invoke("agent_session_thinking", { sessionId, level }),
-  agentSessionDispose: (sessionId) => invoke("agent_session_dispose", { sessionId }),
-  agentFiles: (sessionId, query) => invoke("agent_files", { sessionId, query }),
-  agentDiff: (sessionId, turnId, path) => invoke("agent_diff", { sessionId, turnId, path }),
+  agentSessionRename: (sessionId, title) =>
+    invoke("agent_session_rename", { sessionId, title }),
+  agentSessionThinking: (sessionId, level) =>
+    invoke("agent_session_thinking", { sessionId, level }),
+  agentSessionDispose: (sessionId) =>
+    invoke("agent_session_dispose", { sessionId }),
   agentApprovalRespond: (requestId, approved, scope) =>
     invoke("agent_approval_respond", { requestId, approved, scope }),
   agentConfigure: (provider, model, apiKey, options) =>
     invoke("agent_configure", { provider, model, apiKey, options }),
   agentSettingsSnapshot: () => invoke("agent_settings_snapshot"),
+  agentProfileSave: (profile) => invoke("agent_profile_save", { profile }),
+  agentProfileSelect: (id) => invoke("agent_profile_select", { id }),
+  agentProfileRemove: (id) => invoke("agent_profile_remove", { id }),
   agentSkillImport: () => invoke("agent_skill_import"),
   agentSkillSetEnabled: (id, enabled) =>
     invoke("agent_skill_toggle", { id, enabled }),

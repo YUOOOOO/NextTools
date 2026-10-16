@@ -3,10 +3,14 @@ import type {
   AgentSessionSummary,
   AgentSettingsSnapshot,
   AgentSkillConfig,
+  AgentProfile,
   CommandEvent,
   FileContent,
   FileEntry,
+  FileChange,
+  FileChangeApproval,
   GitStatus,
+  GitQuery, GitAction, GitApproval,
   HostSnapshot,
   Preferences,
   McpServerConfig,
@@ -26,34 +30,57 @@ export interface HostClient {
   executeCommand(pluginId: string, commandId: string): Promise<CommandEvent>;
   listFiles(workspaceId: string, path: string): Promise<FileEntry[]>;
   readFile(workspaceId: string, path: string): Promise<FileContent>;
-  writeFile(
+  prepareFileChange(
     workspaceId: string,
-    path: string,
-    content: string,
-    expectedContent: string,
+    change: FileChange,
+  ): Promise<FileChangeApproval>;
+  resolveFileChange(
+    workspaceId: string,
+    requestId: string,
+    approved: boolean,
   ): Promise<void>;
   gitStatus(workspaceId: string): Promise<GitStatus>;
+  gitQuery(workspaceId: string, query: GitQuery): Promise<string>;
+  prepareGitAction(workspaceId: string, action: GitAction): Promise<GitApproval>;
+  resolveGitAction(workspaceId: string, requestId: string, approved: boolean): Promise<string>;
   agentSessionCreate(workspaceId: string): Promise<AgentSessionInfo>;
   listAgentSessions(workspaceId: string): Promise<AgentSessionSummary[]>;
   resumeAgentSession(
     workspaceId: string,
     persistedSessionId: string,
   ): Promise<AgentSessionInfo>;
-  agentPrompt(sessionId: string, text: string): Promise<{ accepted: boolean; exportText?: string }>;
+  agentPrompt(
+    sessionId: string,
+    text: string,
+  ): Promise<{ accepted: boolean; exportText?: string }>;
   agentAbort(sessionId: string): Promise<void>;
   agentSessionRename(sessionId: string, title: string): Promise<void>;
-  agentSessionThinking(sessionId: string, level: string): Promise<{ thinkingLevel: string; supportedThinkingLevels: string[] }>;
+  agentSessionThinking(
+    sessionId: string,
+    level: string,
+  ): Promise<{ thinkingLevel: string; supportedThinkingLevels: string[] }>;
   agentSessionDispose(sessionId: string): Promise<void>;
-  agentFiles(sessionId: string, query: string): Promise<{ path: string; isDirectory: boolean }[]>;
-  agentDiff(sessionId: string, turnId: string, path: string): Promise<string>;
-  agentApprovalRespond(requestId: string, approved: boolean, scope?: "once" | "always" | "directory"): Promise<void>;
+  agentApprovalRespond(
+    requestId: string,
+    approved: boolean,
+    scope?: "once" | "always" | "directory",
+  ): Promise<void>;
   agentConfigure(
     provider: string,
     model: string,
     apiKey: string,
-    options?: { baseUrl?: string; api?: string; reasoning?: boolean; contextWindow?: number; maxTokens?: number },
+    options?: {
+      baseUrl?: string;
+      api?: string;
+      reasoning?: boolean;
+      contextWindow?: number;
+      maxTokens?: number;
+    },
   ): Promise<void>;
   agentSettingsSnapshot(): Promise<AgentSettingsSnapshot>;
+  agentProfileSave(profile: AgentProfile): Promise<void>;
+  agentProfileSelect(id: string | null): Promise<void>;
+  agentProfileRemove(id: string): Promise<void>;
   agentSkillImport(): Promise<AgentSkillConfig | null>;
   agentSkillSetEnabled(id: string, enabled: boolean): Promise<void>;
   agentSkillRemove(id: string): Promise<void>;

@@ -20,12 +20,17 @@ impl Store {
         conn.busy_timeout(std::time::Duration::from_secs(5))?;
         conn.execute_batch("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;")?;
         let version: u32 = conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
-        if version > 1 {
+        if version > 2 {
             return Err(StoreError::NewerSchema);
         }
         if version == 0 {
             let tx = conn.transaction()?;
             tx.execute_batch(include_str!("../migrations/001_initial.sql"))?;
+            tx.commit()?;
+        }
+        if version < 2 {
+            let tx = conn.transaction()?;
+            tx.execute_batch(include_str!("../migrations/002_file_approvals.sql"))?;
             tx.commit()?;
         }
         Ok(Self { conn })
@@ -133,6 +138,34 @@ impl Store {
         self.conn.execute(
             "INSERT INTO audit_events(workspace_id,plugin_id,action,decision) VALUES (?1,?2,?3,?4)",
             params![workspace, plugin, action, decision],
+        )?;
+        Ok(())
+    }
+    pub fn audit_file(
+        &self,
+        workspace: &str,
+        action: &str,
+        decision: &str,
+        request_id: &str,
+        parameter_digest: &str,
+    ) -> Result<(), StoreError> {
+        self.conn.execute(
+            "INSERT INTO audit_events(workspace_id,plugin_id,action,decision,request_id,parameter_digest) VALUES (?1,'com.nexttools.workspace-files',?2,?3,?4,?5)",
+            params![workspace, action, decision, request_id, parameter_digest],
+        )?;
+        Ok(())
+    }
+    pub fn audit_git(
+        &self,
+        workspace: &str,
+        action: &str,
+        decision: &str,
+        request_id: &str,
+        parameter_digest: &str,
+    ) -> Result<(), StoreError> {
+        self.conn.execute(
+            "INSERT INTO audit_events(workspace_id,plugin_id,action,decision,request_id,parameter_digest) VALUES (?1,'com.nexttools.pi-agent',?2,?3,?4,?5)",
+            params![workspace, action, decision, request_id, parameter_digest],
         )?;
         Ok(())
     }

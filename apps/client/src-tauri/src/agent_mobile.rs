@@ -21,7 +21,7 @@ pub fn agent_sessions_list(workspace_id: String) -> Result<Vec<AgentSessionSumma
     Err(DESKTOP_ONLY.into())
 }
 #[tauri::command]
-pub fn agent_prompt(session_id: String, text: String) -> Result<(), String> {
+pub fn agent_prompt(session_id: String, text: String) -> Result<serde_json::Value, String> {
     let _ = (session_id, text);
     Err(DESKTOP_ONLY.into())
 }
@@ -38,5 +38,24 @@ pub fn agent_approval_respond(request_id: String, approved: bool) -> Result<(), 
 #[tauri::command]
 pub fn agent_configure(provider: String, model: String, api_key: String) -> Result<(), String> {
     let _ = (provider, model, api_key);
+    Err(DESKTOP_ONLY.into())
+}
+
+#[tauri::command]
+pub fn agent_session_rename(session_id: String, title: String) -> Result<(), String> {
+    let _ = (session_id, title);
+    Err(DESKTOP_ONLY.into())
+}
+#[tauri::command]
+pub fn agent_session_thinking(
+    session_id: String,
+    level: String,
+) -> Result<serde_json::Value, String> {
+    let _ = (session_id, level);
+    Err(DESKTOP_ONLY.into())
+}
+#[tauri::command]
+pub fn agent_session_dispose(session_id: String) -> Result<(), String> {
+    let _ = session_id;
     Err(DESKTOP_ONLY.into())
 }

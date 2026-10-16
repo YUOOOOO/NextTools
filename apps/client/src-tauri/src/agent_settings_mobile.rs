@@ -40,3 +40,18 @@ pub fn agent_skill_remove(_app: AppHandle, id: String) -> Result<(), String> {
 pub fn resources(_app: &AppHandle) -> Result<Value, String> {
     Err(DESKTOP_ONLY.into())
 }
+#[tauri::command]
+pub fn agent_profile_save(profile: nexttools_protocol::AgentProfile) -> Result<(), String> {
+    let _ = profile;
+    Err(DESKTOP_ONLY.into())
+}
+#[tauri::command]
+pub fn agent_profile_select(id: Option<String>) -> Result<(), String> {
+    let _ = id;
+    Err(DESKTOP_ONLY.into())
+}
+#[tauri::command]
+pub fn agent_profile_remove(id: String) -> Result<(), String> {
+    let _ = id;
+    Err(DESKTOP_ONLY.into())
+}

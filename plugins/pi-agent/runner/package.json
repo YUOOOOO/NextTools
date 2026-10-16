@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "test": "npm run build && node --test test/*.test.mjs",
     "package:runtime": "node scripts/package-runtime.mjs"
   },
   "dependencies": {

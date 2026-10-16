@@ -70,11 +70,13 @@ plugins/pi-agent/
     licenses/
 apps/client/src-tauri/src/
   agent.rs                        # Runner 生命周期、审批、事件与工具调度
-  agent_settings.rs               # 模型、系统凭据与 Skills
+  agent_settings.rs               # 模型、系统凭据、Skills 与本机智能体模板
   agent_mcp.rs                    # stdio/HTTP MCP 生命周期
 ```
 
 Agent 页面当前由 `apps/client/src/App.tsx` 中的宿主 React 页面实现；尚未拆成单独的 `plugins/pi-agent/ui` 包。不得把尚未存在的目标目录写成已实现事实。
+
+Chat 侧栏按项目展示运行中与持久化会话。智能体模板在宿主本地设置中保存模型、系统指令与 Skill 选择，支持增删改、复制与选择；新建或恢复会话时由 Host 解析所选模板，运行中的会话不随模板选择变化。模板不保存 API Key，且不能绕过全局 Skill 启停或 MCP 宿主审批。
 
 ## 进程边界
 
@@ -91,7 +93,7 @@ flowchart LR
 当前 Pi Runner 的职责：
 
 - 运行固定版本的 Node.js、Percho backend 与 Pi SDK。
-- 创建、列出、恢复、提示、取消和持久化会话，并将 Percho 事件投影为 NextTools `agent:event`。
+- 创建、列出、恢复、重命名、设置思考等级、提示、取消、导出和关闭会话，并将 Percho 事件投影为 NextTools `agent:event`；恢复时返回持久化消息供界面重建时间线。
 - 使用 Host 提供的模型凭据、Skill 元数据和 MCP 工具定义组装每个会话。
 - 将所有工作区、Git、Shell、Skill 和 MCP 调用通过 `tool.invoke` 交回 Host。
 
@@ -108,6 +110,8 @@ type HostToRunner =
   | { method: "session.list"; params: ListSessions }
   | { method: "session.create"; params: OpenSession }
   | { method: "session.resume"; params: OpenSession }
+  | { method: "session.rename"; params: { sessionId: string; title: string } }
+  | { method: "session.thinking"; params: { sessionId: string; level: string } }
   | { method: "session.prompt"; params: PromptSession }
   | { method: "session.abort"; params: { sessionId: string } }
   | { method: "session.dispose"; params: { sessionId: string } };
@@ -118,6 +122,8 @@ type RunnerToHost =
 ```
 
 Host 生成 live session ID，并把工作区、会话目录、provider、model、内存中的 API key 及受控资源定义发送给 Runner。Runner 回调工具时必须携带 live session ID；Host 由该 ID 重新取得工作区，不能信任 Runner 自报路径或权限。Runner 请求、Host 工具请求和审批均有超时；Runner 异常退出时 Host 清空 live session 与未完成审批，持久化会话仍可重新恢复。
+
+会话标题限制为 1–200 字符；思考等级必须属于当前模型支持的集合。`session.prompt` 收到 `/export` 时只返回 JSONL，不调用 provider。未发送首条消息的空会话按上游行为暂不落盘；关闭后不出现在持久化会话列表中。
 
 ## Pi Extension UI
 
