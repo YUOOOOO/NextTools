@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **独立 AgentHub 验收**：修正 smoke 客户端 DPoP 公钥序列化，避免 WebCrypto 附加字段导致认证失败；通过真实 HTTPS/WSS、TLS 1.3 mTLS 加密中转、permit、断线恢复与重启持久化验收。
+
+---
+
 ## [0.5.3] - 2026-10-14
 
 ### Added

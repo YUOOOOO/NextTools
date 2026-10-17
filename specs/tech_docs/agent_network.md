@@ -2,6 +2,14 @@
 
 客户端实现位于 `src-tauri/src/agent_network/`、`src/server/agent-network/` 和 `src/renderer/features/agent-network/`。独立自部署服务端位于 `services/agenthub`，使用 Node.js 24 + TypeScript + SQLite + HTTPS/WSS；它不属于桌面 Sidecar。通用协议产物来自固定 AgentNet 版本，当前 wire branding 为 `nexttools-agent-peer` 与 `nexttools-agent-network.v1`。npm/Cargo 包名保留上游 `myagents` 依赖标识，仅用于依赖溯源。官方部署、账号和 Space 集成仍由原服务体系负责；本文件说明当前代码边界，不代表云端已部署或跨设备验收已完成。
 
+## 独立 AgentHub 运行验收
+
+在 `services/agenthub` 中运行 `npm ci`、`npm run typecheck` 和 `npm run smoke`。Smoke 使用临时数据目录、随机 loopback 端口及独立 HTTPS CA，运行真实服务进程与两个设备端；不关闭证书校验，也不使用用户凭据或数据。
+
+2026-10-17 本机验收通过：HTTPS/WSS、设备身份签发与 PoP/DPoP 重放拒绝、目录/CAS/receipt、可调用元数据、TLS 1.3 mTLS 双向加密中转、字节 credit、permit、断线 route resume/rebind/close，以及重启持久化。DPoP header 的公钥限定为 `kty/crv/x/y`，不直接携带 WebCrypto 导出的 `ext/key_ops`。
+
+这仅证明 Node 服务与两个协议端在 loopback 上的运行结果，不等同于两台真实桌面客户端或公网部署验收。Docker 构建与容器启动仍需在具备 Docker 的环境验证；本次机器未安装 Docker。
+
 ## Owner 与状态
 
 | 事实                                                     | 权威入口                                                               |

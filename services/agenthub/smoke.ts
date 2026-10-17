@@ -77,7 +77,11 @@ class Device {
   constructor(readonly name: string) {}
   async initialize() {
     this.keys = await crypto.subtle.generateKey(algorithm, true, ['sign', 'verify']) as CryptoKeyPair;
-    this.jwk = await crypto.subtle.exportKey('jwk', this.keys.publicKey);
+    const exported = await crypto.subtle.exportKey('jwk', this.keys.publicKey);
+    // DPoP proof headers deliberately carry only the public EC key members.
+    // WebCrypto may add `ext`/`key_ops`, which the protocol rejects as ambiguity.
+    const { kty, crv, x, y } = exported;
+    this.jwk = { kty, crv, x, y };
     this.fingerprint = hash(Buffer.from(await crypto.subtle.exportKey('spki', this.keys.publicKey)));
     const der = Buffer.from(await crypto.subtle.exportKey('pkcs8', this.keys.privateKey));
     this.key = `-----BEGIN PRIVATE KEY-----\n${der.toString('base64').match(/.{1,64}/g)!.join('\n')}\n-----END PRIVATE KEY-----\n`;
