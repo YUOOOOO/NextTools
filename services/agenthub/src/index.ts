@@ -10,6 +10,8 @@ import { createIdentity } from './identity.js';
 import { createMetadata } from './metadata.js';
 import { createRelay } from './relay.js';
 import { HubError, type HubConfig } from './types.js';
+import { createNexo, readCredentialEncryptionKey } from './nexo.js';
+import { stopNexoWorkers } from './nexo-worker.js';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const dataDir = process.env.AGENTHUB_DATA_DIR ?? join(root, 'data');
@@ -29,6 +31,7 @@ if (saved.serviceId && saved.serviceId !== config.serviceId) throw new Error('In
 writeFileSync(settingsPath, JSON.stringify(config), { mode: 0o600 });
 const db = new DatabaseSync(join(dataDir, 'accounts.sqlite'));
 db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
+const credentialEncryptionKey = readCredentialEncryptionKey(process.env.AGENTHUB_CREDENTIAL_ENCRYPTION_KEY);
 const accounts = createAccounts(db, process.env.AGENTHUB_REGISTRATION_ENABLED !== 'false');
 
 // Existing protocol owners are single-principal. Give each local account its own
@@ -41,7 +44,8 @@ async function openHub(accountId: string) {
     const identity = await createIdentity(scoped, accountDb, request => accounts.authorizeEnrollment(request, accountId));
     const metadata = createMetadata(scoped, accountDb, identity);
     const relay = createRelay(scoped, identity, metadata);
-    return { identity, metadata, relay, db: accountDb };
+    const nexo = createNexo(accountDb, accountId, credentialEncryptionKey);
+    return { identity, metadata, relay, nexo, db: accountDb };
   } catch (error) { accountDb.close(); throw error; }
 }
 const hubs = new Map<string, ReturnType<typeof openHub>>();
@@ -60,6 +64,24 @@ function json(res: ServerResponse, status: number, value: unknown, requestId: st
   const body = JSON.stringify(value);
   res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store', 'content-length': Buffer.byteLength(body), 'x-request-id': requestId });
   res.end(body);
+}
+function serveWeb(request: IncomingMessage, response: ServerResponse, pathname: string): boolean {
+  if (request.method !== 'GET') return false;
+  const asset = pathname === '/' ? ['index.html', 'text/html; charset=utf-8']
+    : pathname === '/app.js' ? ['app.js', 'text/javascript; charset=utf-8']
+      : pathname === '/app.css' ? ['app.css', 'text/css; charset=utf-8'] : null;
+  if (!asset) return false;
+  const content = readFileSync(join(root, 'web', asset[0]));
+  response.writeHead(200, {
+    'content-type': asset[1],
+    'content-length': content.byteLength,
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'no-referrer',
+    'content-security-policy': "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'",
+  });
+  response.end(content);
+  return true;
 }
 async function body(request: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
@@ -84,10 +106,18 @@ async function handler(request: IncomingMessage, response: ServerResponse): Prom
   let networkRequest = false;
   try {
     const url = new URL(request.url ?? '/', config.issuer);
+    if (serveWeb(request, response, url.pathname)) return;
     networkRequest = url.pathname.startsWith('/v1/');
     const input = request.method === 'GET' ? undefined : await body(request);
     if (url.pathname.startsWith('/api/auth/')) {
       return json(response, 200, { success: true, data: await accounts.handle(request, url.pathname, input) }, requestId);
+    }
+    if (url.pathname.startsWith('/api/nexo/')) {
+      const account = accounts.session(request).account;
+      if (account.id !== accounts.scope(request)) throw new HubError('ACCOUNT_SCOPE_MISMATCH', 403);
+      const hub = await hubFor(request);
+      if (accounts.session(request).account.id !== account.id) throw new HubError('ACCOUNT_AUTH_REQUIRED', 401);
+      return json(response, 200, { success: true, data: await hub.nexo.handle(request, url, input) }, requestId);
     }
     if (url.pathname.startsWith('/api/agent-network/') || url.pathname.startsWith('/v1/')) {
       const hub = await hubFor(request);
@@ -136,9 +166,14 @@ const shutdown = async () => {
   try {
     for (const pending of hubs.values()) {
       const hub = await pending;
-      await hub.relay.close(); hub.db.close();
+      await hub.relay.close();
     }
+    await stopNexoWorkers();
     await drained;
+    for (const pending of hubs.values()) {
+      const hub = await pending;
+      hub.db.close();
+    }
   } finally { clearTimeout(deadline); db.close(); }
 };
 process.once('SIGINT', shutdown); process.once('SIGTERM', shutdown);

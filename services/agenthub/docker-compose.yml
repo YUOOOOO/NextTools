@@ -1,9 +1,35 @@
 services:
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:0.3.0
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+      IMAGES: 1
+      VOLUMES: 1
+      POST: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    expose:
+      - "2375"
+
+  nexo-worker-image:
+    build:
+      context: ../..
+      dockerfile: services/agenthub/worker/Dockerfile
+    image: nexttools/nexo-worker:1.0.0
+    entrypoint: ["/bin/true"]
+    restart: "no"
+
   agenthub:
     build:
       context: ../..
       dockerfile: services/agenthub/Dockerfile
     restart: unless-stopped
+    depends_on:
+      docker-proxy:
+        condition: service_started
+      nexo-worker-image:
+        condition: service_completed_successfully
     ports:
       - "8443:8443"
     environment:
@@ -11,9 +37,12 @@ services:
       AGENTHUB_NAME: NextTools AgentHub
       AGENTHUB_ENVIRONMENT: production
       AGENTHUB_REGISTRATION_ENABLED: ${AGENTHUB_REGISTRATION_ENABLED:-true}
+      AGENTHUB_CREDENTIAL_ENCRYPTION_KEY: ${AGENTHUB_CREDENTIAL_ENCRYPTION_KEY:?Set a base64url-encoded 32-byte encryption key}
       AGENTHUB_DATA_DIR: /var/lib/agenthub
       AGENTHUB_TLS_CERT: /etc/agenthub/certs/fullchain.pem
       AGENTHUB_TLS_KEY: /etc/agenthub/certs/privkey.pem
+      AGENTHUB_NEXO_WORKER_IMAGE: nexttools/nexo-worker:1.0.0
+      DOCKER_HOST: tcp://docker-proxy:2375
     volumes:
       - agenthub-data:/var/lib/agenthub
       - ./certs:/etc/agenthub/certs:ro

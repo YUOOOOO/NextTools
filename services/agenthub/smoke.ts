@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { createHash, randomUUID, webcrypto, X509Certificate as NodeCertificate } from 'node:crypto';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { createHash, randomBytes, randomUUID, webcrypto, X509Certificate as NodeCertificate } from 'node:crypto';
+import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,6 +15,8 @@ import { SignJWT, decodeJwt } from 'jose';
 import * as x509 from '@peculiar/x509';
 import { NETWORK_SUBPROTOCOL, NETWORK_BUDGETS, clientControlSchema, serverControlSchema, encodeTlsFrame, decodeTlsFrame } from '@myagents/agent-network-protocol';
 
+import { DatabaseSync } from 'node:sqlite';
+import { createNexo } from './src/nexo.js';
 // 每次使用独立 CA、数据库与随机端口；绝不关闭证书校验。
 const crypto = webcrypto as unknown as Crypto;
 x509.cryptoProvider.set(crypto);
@@ -34,6 +36,7 @@ let origin = '';
 let serverCa = '';
 let accountId = '';
 let accountAccessToken = '';
+const credentialEncryptionKey = randomBytes(32).toString('base64url');
 
 async function json(method: string, path: string, body?: unknown, device?: Device, override?: string): Promise<Data> {
   const headers: Record<string, string> = { 'content-type': 'application/json' };
@@ -57,6 +60,17 @@ async function json(method: string, path: string, body?: unknown, device?: Devic
   }), `${method} ${path}`);
 }
 
+async function web(path: string): Promise<{ status: number | undefined; headers: import('node:http').IncomingHttpHeaders; body: string }> {
+  return deadline(new Promise((resolve, reject) => {
+    const req = request(new URL(path, origin), { ca: serverCa, minVersion: 'TLSv1.3' }, res => {
+      const buffers: Buffer[] = [];
+      res.on('data', chunk => buffers.push(Buffer.from(chunk)));
+      res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(buffers).toString('utf8') }));
+    });
+    req.on('error', reject); req.end();
+  }), `GET ${path}`);
+}
+
 async function api(method: string, path: string, body?: unknown, device?: Device): Promise<Data> {
   const result = await json(method, path, body, device);
   assert.equal(path.startsWith('/v1/') ? result.ok : result.success, true, `${method} ${path}: ${JSON.stringify(result)}`);
@@ -65,6 +79,7 @@ async function api(method: string, path: string, body?: unknown, device?: Device
 async function start(registrationEnabled = 'true'): Promise<void> {
   child = spawn(process.execPath, ['--import', 'tsx/esm', 'src/index.ts'], { cwd: root, env: { ...process.env,
     AGENTHUB_DATA_DIR: join(temporary, 'data'), AGENTHUB_REGISTRATION_ENABLED: registrationEnabled, AGENTHUB_ISSUER: origin,
+    AGENTHUB_CREDENTIAL_ENCRYPTION_KEY: credentialEncryptionKey,
     AGENTHUB_TLS_KEY: join(temporary, 'https.key'), AGENTHUB_TLS_CERT: join(temporary, 'https.pem'),
     HOST: '127.0.0.1', PORT: new URL(origin).port }, stdio: ['ignore', 'pipe', 'pipe'] });
   let output = '';
@@ -197,6 +212,13 @@ try {
   await writeFile(join(temporary, 'https.key'), `-----BEGIN PRIVATE KEY-----\n${key.toString('base64').match(/.{1,64}/g)!.join('\n')}\n-----END PRIVATE KEY-----\n`, { mode: 0o600 });
   await writeFile(join(temporary, 'https.pem'), serverCa);
   await start();
+  const home = await web('/');
+  assert.equal(home.status, 200);
+  assert.match(String(home.headers['content-security-policy'] ?? ''), /script-src 'self'/);
+  assert.equal(home.headers['x-content-type-options'], 'nosniff');
+  assert.match(home.body, /Nexo · AgentHub/);
+  assert.match((await web('/app.js')).body, /api\/nexo\/threads/);
+  assert.match((await web('/app.css')).body, /max-width: 700px/);
   const credentials = { identifier: 'smoke@example.test', password: 'smoke-password-123' };
   assert.equal((await json('POST', '/api/auth/register', { ...credentials, password: 'short' })).code, 'ACCOUNT_PASSWORD_WEAK');
   const account = await api('POST', '/api/auth/register', credentials);
@@ -317,10 +339,38 @@ try {
   accountId = account.accountId; accountAccessToken = account.accessToken;
   assert.equal((await api('GET', `/api/agent-network/identity/state?deviceId=${a.id}`)).keyFingerprint, a.fingerprint);
   assert.ok((await api('GET', '/v1/devices', undefined, a)).items.some((entry: Data) => entry.deviceId === b.id));
+  const providerKey = `sk-ant-smoke-${randomUUID()}`;
+  assert.deepEqual(await api('PUT', '/api/nexo/credential', { apiKey: providerKey }), { configured: true });
+  const credentialStatus = await api('GET', '/api/nexo/credential');
+  assert.equal(credentialStatus.configured, true);
+  assert.ok(Number.isFinite(Date.parse(credentialStatus.updatedAt)));
+  const thread = await api('POST', '/api/nexo/threads', { title: 'Cross-device chat' });
+  assert.equal((await api('GET', `/api/nexo/threads/${thread.id}`)).title, 'Cross-device chat');
+  const scopedDb = new DatabaseSync(join(temporary, 'data', `account-${account.accountId}.sqlite`));
+  const scopedNexo = createNexo(scopedDb, account.accountId, Buffer.from(credentialEncryptionKey, 'base64url'));
+  scopedNexo.persistTurn(thread.id, 'first question', 'first answer', 'smoke-session');
+  scopedNexo.persistTurn(thread.id, 'second question', 'second answer', 'smoke-session');
+  scopedDb.close();
+  assert.deepEqual((await api('GET', `/api/nexo/threads/${thread.id}`)).messages.map((message: Data) => message.content),
+    ['first question', 'first answer', 'second question', 'second answer']);
+  accountId = other.accountId;
+  accountAccessToken = (await api('POST', '/api/auth/login', otherCredentials)).accessToken;
+  assert.deepEqual(await api('GET', '/api/nexo/credential'), { configured: false, updatedAt: null });
+  assert.equal((await json('GET', `/api/nexo/threads/${thread.id}`)).code, 'NEXO_THREAD_NOT_FOUND');
+  assert.equal((await json('DELETE', `/api/nexo/threads/${thread.id}`)).code, 'NEXO_THREAD_NOT_FOUND');
+  assert.deepEqual((await api('GET', '/api/nexo/threads')).items, []);
+  accountId = account.accountId; accountAccessToken = account.accessToken;
   await stop(); await start('false');
+  accountAccessToken = (await api('POST', '/api/auth/login', credentials)).accessToken;
+  assert.equal((await api('GET', '/api/nexo/credential')).configured, true);
+  assert.equal((await api('GET', `/api/nexo/threads/${thread.id}`)).title, 'Cross-device chat');
+  const accountDatabase = await readFile(join(temporary, 'data', `account-${account.accountId}.sqlite`));
+  assert.equal(accountDatabase.includes(Buffer.from(providerKey)), false);
+  assert.deepEqual((await api('GET', `/api/nexo/threads/${thread.id}`)).messages.map((message: Data) => message.content),
+    ['first question', 'first answer', 'second question', 'second answer']);
   assert.equal((await json('POST', '/api/auth/register', { identifier: 'blocked@example.test', password: 'smoke-password-123' })).code, 'ACCOUNT_REGISTRATION_DISABLED');
   assert.equal((await api('POST', '/api/auth/login', credentials)).accountId, account.accountId);
-  console.log('AgentHub smoke PASS: verified registration/login/refresh/logout, two isolated accounts with shared physical device IDs, account-scoped REST/WSS/CA/JWKS/catalog/CAS/receipts, enrollment authorization, PoP/DPoP replay rejection, TLS1.3 mTLS encrypted bidirectional relay, credit, permits, route recovery/rebind/close, scoped revoke/reenrollment, restart persistence, registration disabled.');
+  console.log('AgentHub smoke PASS: verified CSP-protected Nexo web assets, registration/login/refresh/logout, two isolated accounts with shared physical device IDs, account-scoped REST/WSS/CA/JWKS/catalog/CAS/receipts, enrollment authorization, PoP/DPoP replay rejection, TLS1.3 mTLS encrypted bidirectional relay, credit, permits, route recovery/rebind/close, scoped revoke/reenrollment, encrypted credential storage, ordered Nexo turn persistence and account isolation, restart persistence, registration disabled.');
 } finally {
   for (const socket of tlsSockets) socket.destroy();
   for (const socket of sockets) socket.terminate();

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#111827" />
+    <title>Nexo · AgentHub</title>
+    <link rel="stylesheet" href="/app.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <main id="app" class="shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Nexo home"
+          ><span class="brand-mark">N</span><span>Nexo</span></a
+        >
+        <span id="account-label" class="account-label"></span>
+        <button id="logout" class="quiet-button hidden" type="button">
+          Sign out
+        </button>
+      </header>
+      <section id="auth-view" class="auth-view">
+        <div class="auth-card">
+          <p class="eyebrow">YOUR PRIVATE CLOUD ASSISTANT</p>
+          <h1>Pick up where you left off.</h1>
+          <p class="muted">
+            Sign in to access your Nexo chats and encrypted provider settings
+            from any device.
+          </p>
+          <form id="auth-form" class="stack">
+            <label
+              >Email or username<input
+                name="identifier"
+                autocomplete="username"
+                required
+                minlength="3"
+                maxlength="254"
+            /></label>
+            <label
+              >Password<input
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+                minlength="1"
+                maxlength="1024"
+            /></label>
+            <button id="auth-submit" class="primary-button" type="submit">
+              Sign in
+            </button>
+          </form>
+          <button id="auth-mode" class="link-button" type="button">
+            Create an account
+          </button>
+          <p id="auth-error" class="error" role="alert"></p>
+        </div>
+      </section>
+      <section id="workspace" class="workspace hidden">
+        <aside class="sidebar">
+          <button id="new-thread" class="primary-button" type="button">
+            ＋ New chat
+          </button>
+          <h2>Recent chats</h2>
+          <nav
+            id="thread-list"
+            class="thread-list"
+            aria-label="Recent chats"
+          ></nav>
+          <div class="credential-card">
+            <h2>Provider key</h2>
+            <p id="credential-state" class="muted">Checking…</p>
+            <form id="credential-form" class="stack">
+              <label
+                >Anthropic API key<input
+                  name="apiKey"
+                  type="password"
+                  autocomplete="off"
+                  required
+                  maxlength="4096"
+                  placeholder="sk-ant-…"
+              /></label>
+              <button class="secondary-button" type="submit">
+                Save encrypted key
+              </button>
+            </form>
+            <button id="remove-key" class="link-button hidden" type="button">
+              Remove key
+            </button>
+          </div>
+        </aside>
+        <section class="conversation" aria-label="Nexo conversation">
+          <div id="messages" class="messages">
+            <div class="empty-state">
+              <span class="brand-mark large">N</span>
+              <h1>What can Nexo help with?</h1>
+              <p>
+                Your chats and workspace persist with your AgentHub account.
+              </p>
+            </div>
+          </div>
+          <form id="composer" class="composer">
+            <label class="visually-hidden" for="prompt">Message Nexo</label>
+            <textarea
+              id="prompt"
+              name="prompt"
+              rows="2"
+              maxlength="200000"
+              required
+              placeholder="Message Nexo…"
+            ></textarea>
+            <button id="send" class="primary-button" type="submit">Send</button>
+          </form>
+          <p id="status" class="status" role="status" aria-live="polite"></p>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>
