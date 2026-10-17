@@ -184,9 +184,11 @@ Record 的物理音轨与媒体时钟由 RecordingManager 持有；Media Worker 
 
 ### Agent 网络与跨仓库协议
 
-NextTools 只包含客户端实现；`src/server/agent-network/` 是本机 Node Sidecar 适配层。Cloudflare 通用中转、网络设置和自部署身份属于 `MyAgents-Agenthub`；私有 `MyAgents_AgentNet` 固定版本组合官方服务，官方账号与签发仍属于 `MyAgents_space`。Rust App 的连接 registry 持有所有网络连接，页面选中项只决定展示；各连接复用原 actor，共享一个 App 字节预算。共享协议只定义通信契约，不拥有连接、登录状态或任务执行。
+NextTools 的客户端实现位于 `src-tauri/src/agent_network/`；本仓库同时提供独立可部署的 `services/agenthub`，作为 Node.js 24 + TypeScript + SQLite + HTTPS/WSS 服务端。它不是桌面 Sidecar，负责自部署身份签发、设备/Agent 目录、CAS 设置、permit 控制与加密字节中转；中转不解密内层业务正文，也不提供离线任务队列或自动重放。
 
-协议源码由 `MyAgents-Agenthub/packages/agent-network-protocol/` 维护，客户端只提交 `vendor/agent-network-protocol/` 中的固定版本包与来源清单。TypeScript 通过锁定 npm 依赖消费；Rust 在构建时校验同一包的 SHA-256，将 Schema/fixtures 投影到 Cargo `OUT_DIR`，不保留第二份可编辑协议。普通安装、测试和构建不访问私有服务端仓库或平级 checkout。源码归属与产物更新见 [Agent 网络：公共协议与仓库分发](./tech_docs/agent_network.md#公共协议与仓库分发)。
+协议源码由固定的 AgentNet 产物维护，客户端与 AgentHub 都只消费 `vendor/agent-network-protocol/` 中锁定版本。当前 wire branding 使用 `nexttools-agent-peer` 与 `nexttools-agent-network.v1`；npm/Cargo 包名保留上游 `myagents` 依赖标识，仅用于来源溯源，不代表网络 audience 或 subprotocol。Rust 在构建时校验同一包的 SHA-256，将 Schema/fixtures 投影到 Cargo `OUT_DIR`，不保留第二份可编辑协议。普通安装、测试和构建不访问私有服务端仓库或平级 checkout。
+
+自部署实例要求 HTTPS origin、显式 enrollment secret 与持久化 data directory；生产容器配置见 `services/agenthub/docker-compose.yml`。跨设备交互必须由真实证书链、DPoP/PoP、内层 TLS 1.3 与 permit/return 协议共同验证，不能以类型检查替代协议验收。
 
 ## 模块地图
 

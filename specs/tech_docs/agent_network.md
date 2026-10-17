@@ -1,6 +1,6 @@
 # Agent 网络
 
-客户端实现位于 `src-tauri/src/agent_network/`、`src/server/agent-network/` 和 `src/renderer/features/agent-network/`。通用云端核心、协议源码及自部署属于 `hAcKlyc/MyAgents-Agenthub`（Apache-2.0）；官方部署由私有 `hAcKlyc/MyAgents_AgentNet` 固定产物组合，官方账号扩展仍属于 `MyAgents_space`。本文件说明当前代码边界，不代表云端已部署或跨设备验收已完成。
+客户端实现位于 `src-tauri/src/agent_network/`、`src/server/agent-network/` 和 `src/renderer/features/agent-network/`。独立自部署服务端位于 `services/agenthub`，使用 Node.js 24 + TypeScript + SQLite + HTTPS/WSS；它不属于桌面 Sidecar。通用协议产物来自固定 AgentNet 版本，当前 wire branding 为 `nexttools-agent-peer` 与 `nexttools-agent-network.v1`。npm/Cargo 包名保留上游 `myagents` 依赖标识，仅用于依赖溯源。官方部署、账号和 Space 集成仍由原服务体系负责；本文件说明当前代码边界，不代表云端已部署或跨设备验收已完成。
 
 ## Owner 与状态
 

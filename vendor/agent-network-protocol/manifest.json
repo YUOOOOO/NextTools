@@ -1,8 +1,8 @@
 {
   "package": "@myagents/agent-network-protocol",
   "version": "1.2.0",
-  "file": "myagents-agent-network-protocol-1.2.0-240dc3b654ab221d.tgz",
-  "sha256": "240dc3b654ab221db2904ba41dcf68d61d04492d6b3a10c370c59609c926720a",
+  "file": "myagents-agent-network-protocol-1.2.0-ea229dfc6d244cbf.tgz",
+  "sha256": "ea229dfc6d244cbfaa19a8ce3a4b3521fde01560da38f853e21093997266fbfd",
   "license": "Apache-2.0",
   "authority": "hAcKlyc/MyAgents-Agenthub/packages/agent-network-protocol",
   "sourceCommit": "eb6e2954b1b556766a616c67bb271335ae0d75e0"

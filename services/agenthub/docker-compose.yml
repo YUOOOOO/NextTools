@@ -1,0 +1,22 @@
+services:
+  agenthub:
+    build:
+      context: ../..
+      dockerfile: services/agenthub/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8443:8443"
+    environment:
+      AGENTHUB_ISSUER: ${AGENTHUB_ISSUER:?Set the public HTTPS origin}
+      AGENTHUB_NAME: NextTools AgentHub
+      AGENTHUB_ENVIRONMENT: production
+      AGENTHUB_ENROLLMENT_KEY: ${AGENTHUB_ENROLLMENT_KEY:?Set a random enrollment secret of at least 24 characters}
+      AGENTHUB_DATA_DIR: /var/lib/agenthub
+      AGENTHUB_TLS_CERT: /etc/agenthub/certs/fullchain.pem
+      AGENTHUB_TLS_KEY: /etc/agenthub/certs/privkey.pem
+    volumes:
+      - agenthub-data:/var/lib/agenthub
+      - ./certs:/etc/agenthub/certs:ro
+
+volumes:
+  agenthub-data:

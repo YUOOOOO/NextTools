@@ -1,0 +1,21 @@
+{
+  "name": "@nexttools/agenthub",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24.14.0" },
+  "scripts": {
+    "start": "node --import tsx/esm src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "smoke": "node --import tsx/esm smoke.ts"
+  },
+  "dependencies": {
+    "@myagents/agent-network-protocol": "file:../../vendor/agent-network-protocol/myagents-agent-network-protocol-1.2.0-ea229dfc6d244cbf.tgz",
+    "@peculiar/x509": "^1.14.3",
+    "jose": "^6.1.0",
+    "tsx": "4.23.15",
+    "ws": "^8.18.3",
+    "zod": "4.1.12"
+  },
+  "devDependencies": { "@types/node": "^24.10.1", "@types/ws": "^8.18.1", "typescript": "^5.9.3" }
+}
