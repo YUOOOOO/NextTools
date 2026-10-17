@@ -1319,9 +1319,8 @@
       "step3Title": "照常对话",
       "step3Body": "告诉当前 Agent 要做什么；需要时它会联络另一台设备上的 Agent，或用 @ 指定。"
     },
-    "connectOfficial": "连接 NextTools 官方网络",
-    "joiningOfficial": "正在连接官方网络…",
-    "officialHint": "使用 NextTools 官方 AgentHub 账号。密码仅用于本次登录，不会保存在本机。",
+    "login": "登录NextTools",
+    "loggingIn": "正在登录…",
     "join": "加入网络",
     "leave": "退出网络",
     "saving": "保存中",

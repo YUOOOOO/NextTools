@@ -10,7 +10,6 @@ import { metadataSchemas } from "@myagents/agent-network-protocol";
 import {
   allDeviceAgents,
   allNetworkDevices,
-  joinOfficialNetworkConnection,
   networkErrorKey,
   networkRequest as requestNetwork,
   type NetworkRequest,
@@ -27,9 +26,8 @@ import { DeviceCard } from "@/features/agent-network/DeviceCard";
 import { DeviceDetails } from "@/features/agent-network/DeviceDetails";
 import { DeviceRenameDialog } from "@/features/agent-network/DeviceRenameDialog";
 import type { DeviceCatalog } from "@/features/agent-network/deviceDisplay";
-import { JoinNetworkDialog } from "@/features/agent-network/JoinNetworkDialog";
+import { OfficialNetworkLoginDialog } from "@/features/agent-network/OfficialNetworkLoginDialog";
 import {
-  acceptNetworkRegistry,
   currentNetworkGeneration as networkGeneration,
   useAgentNetworkRegistry,
   useAgentNetworkSnapshot,
@@ -326,25 +324,27 @@ function AgentNetworkContent({
     );
   if (official && snapshot.state === "signedOut") {
     return (
-      <NetworkPage selector={selector} gated>
-        <div className="flex h-full items-center justify-center">
-          <button type="button" className="rounded-lg bg-[var(--ink)] px-5 py-3 text-sm text-[var(--paper)]" onClick={() => setLoginOpen(true)}>
-            {t("agentNetwork.connectOfficial")}
-          </button>
+      <NetworkPage selector={selector} showStats={false}>
+        <div className="flex min-h-full flex-col">
+          <section className="mb-6" aria-labelledby="agent-network-intro-title">
+            <img src={agentNetworkBanner} width={1980} height={396} alt="" className="mb-6 block h-auto w-full rounded-xl" />
+            <h2 id="agent-network-intro-title" className="text-xl font-semibold">
+              {t("agentNetwork.infoTitle")}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-[var(--ink-secondary)]">{t("agentNetwork.infoIntro")}</p>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-[var(--ink-muted)]">
+              <li>{t("agentNetwork.infoRelay")}</li>
+              <li>{t("agentNetwork.infoLocal")}</li>
+            </ul>
+          </section>
+          <SetupGuide />
+          <div className="mt-auto flex justify-center border-t border-[var(--line-subtle)] pt-6">
+            <button type="button" className="rounded-lg bg-[var(--ink)] px-8 py-3 text-sm text-[var(--paper)]" onClick={() => setLoginOpen(true)}>
+              {t("agentNetwork.login")}
+            </button>
+          </div>
         </div>
-        {loginOpen && (
-          <JoinNetworkDialog
-            official
-            onCancel={() => setLoginOpen(false)}
-            onConfirm={async (_url, identifier, password, register) => {
-              try {
-                acceptNetworkRegistry(await joinOfficialNetworkConnection(identifier, password, register));
-              } catch (failure) {
-                throw new Error(t(`agentNetwork.errors.${networkErrorKey(failure)}`));
-              }
-            }}
-          />
-        )}
+        {loginOpen && <OfficialNetworkLoginDialog onClose={() => setLoginOpen(false)} />}
       </NetworkPage>
     );
   }
@@ -596,24 +596,27 @@ function NetworkPage({
   gated = false,
   deviceCount = null,
   agentCount = null,
+  showStats = true,
 }: {
   selector: ReactNode;
   children: ReactNode;
   gated?: boolean;
   deviceCount?: number | null;
   agentCount?: number | null;
+  showStats?: boolean;
 }) {
   return (
-    <main className="h-full overflow-y-auto bg-[var(--paper)] text-[var(--ink)]">
+    <main className="flex h-full flex-col overflow-y-auto bg-[var(--paper)] text-[var(--ink)]">
       <div
-        className={`mx-auto flex w-full max-w-5xl flex-col px-8 pb-12 pt-8 ${gated ? "h-full" : "min-h-full"}`}
+        className={`mx-auto flex w-full max-w-5xl flex-1 flex-col px-8 pb-12 pt-8 ${gated ? "h-full" : "min-h-full"}`}
       >
         <NetworkHeader
           selector={selector}
           deviceCount={deviceCount}
           agentCount={agentCount}
+          showStats={showStats}
         />
-        <div className={gated ? "min-h-0 flex-1" : undefined}>{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       </div>
     </main>
   );

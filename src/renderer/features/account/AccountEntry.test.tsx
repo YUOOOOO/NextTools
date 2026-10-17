@@ -2,7 +2,6 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SpaceSession, SpaceSessionView } from '@/api/spaceCloud';
-
 const mocks = vi.hoisted(() => ({
   snapshot: {
     scope: 'production', enabled: true, generation: 1, loadState: 'ready',
@@ -18,6 +17,9 @@ vi.mock('./accountStore', () => ({
   accountActions: { refresh: mocks.refresh, updateProfile: mocks.updateProfile, loadAvatarPresets: mocks.loadAvatarPresets, logout: mocks.logout },
 }));
 vi.mock('@/components/Toast', () => ({ useToast: () => mocks.toast }));
+vi.mock('@/features/agent-network/OfficialNetworkLoginDialog', () => ({
+  OfficialNetworkLoginDialog: ({ onClose }: { onClose: () => void }) => <div role="dialog" aria-label="NextTools login"><button onClick={onClose}>Close login</button></div>,
+}));
 import AccountEntry from './AccountEntry';
 import { i18n } from '@/i18n';
 
@@ -27,7 +29,7 @@ const session: SpaceSession = {
   space: { id: 'official', slug: 'official', name: 'Official', joinPolicy: 'open' },
   membership: { id: 'm-1', role: 'member' }, updatedAt: '2026-10-04T00:00:00Z',
 };
-const props = () => ({ expanded: true, available: true, environment: 'production', onOpenSpace: vi.fn() });
+const props = () => ({ expanded: true, available: true, environment: 'production' });
 function signIn(value = session) { mocks.snapshot.view = { state: 'authenticated', session: value }; }
 
 describe('global account entry', () => {
@@ -36,17 +38,16 @@ describe('global account entry', () => {
     mocks.snapshot.view = null; mocks.snapshot.loadState = 'ready'; mocks.snapshot.generation = 1; mocks.snapshot.error = null;
     mocks.refresh.mockResolvedValue(undefined); mocks.updateProfile.mockResolvedValue(undefined); mocks.logout.mockResolvedValue(undefined);
   });
-  it('uses the existing Space navigation without starting a browser sign-in', () => {
-    const callbacks = props(); render(<AccountEntry {...callbacks} />);
+  it('opens the official AgentNet login dialog for unsigned and reauth-required users', () => {
+    render(<AccountEntry {...props()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Sign in to NextTools' }));
-    expect(callbacks.onOpenSpace).toHaveBeenCalledOnce();
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'NextTools login' })).toBeInTheDocument();
   });
-  it('treats reauth as unsigned and uses the same navigation', () => {
+  it('opens official AgentNet login when account session requires reauthentication', () => {
     mocks.snapshot.view = { state: 'reauth_required', account: session, invalidatedSessionBindingId: 'binding-1' };
-    const callbacks = props(); render(<AccountEntry {...callbacks} />);
+    render(<AccountEntry {...props()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Sign in to NextTools' }));
-    expect(callbacks.onOpenSpace).toHaveBeenCalledOnce();
+    expect(screen.getByRole('dialog', { name: 'NextTools login' })).toBeInTheDocument();
     expect(screen.queryByText('Alice')).not.toBeInTheDocument();
   });
   it('opens account details without changing Tab and removes the old Settings action', async () => {
@@ -58,7 +59,6 @@ describe('global account entry', () => {
     expect(screen.getByText('FREE')).toBeInTheDocument();
     expect(screen.queryByText('Free account')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Settings' })).not.toBeInTheDocument();
-    expect(callbacks.onOpenSpace).not.toHaveBeenCalled();
     fireEvent.mouseDown(document.body);
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
@@ -72,7 +72,6 @@ describe('global account entry', () => {
     await user.clear(screen.getByLabelText('Nickname')); await user.type(screen.getByLabelText('Nickname'), 'New Alice');
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(mocks.updateProfile).toHaveBeenCalledWith({ name: 'New Alice', avatarFilePath: null, avatarPresetId: null, nameChanged: true }));
-    expect(callbacks.onOpenSpace).not.toHaveBeenCalled();
     expect(mocks.toast.success).toHaveBeenCalled();
   });
   it('supports keyboard menu opening, editing selection, and Escape focus return', async () => {
@@ -150,7 +149,7 @@ describe('global account entry', () => {
   });
   it('localizes the global entry and account edit action in Chinese', async () => {
     await i18n.changeLanguage('zh-CN'); const callbacks = props(); const { rerender } = render(<AccountEntry {...callbacks} />);
-    expect(screen.getByRole('button', { name: '登录 NextTools' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '登录NextTools' })).toBeInTheDocument();
     signIn(); rerender(<AccountEntry {...callbacks} />); fireEvent.click(screen.getByRole('button', { name: /Alice/ }));
     expect(screen.getByRole('button', { name: '编辑账号资料' })).toBeInTheDocument();
     expect(screen.getByText('FREE')).toBeInTheDocument();

@@ -8,10 +8,12 @@ export function NetworkHeader({
   selector,
   deviceCount = null,
   agentCount = null,
+  showStats = true,
 }: {
   selector: ReactNode;
   deviceCount?: number | null;
   agentCount?: number | null;
+  showStats?: boolean;
 }) {
   const { t } = useTranslation("app");
   const infoButton = useRef<HTMLButtonElement>(null);
@@ -51,24 +53,26 @@ export function NetworkHeader({
         </Popover>
       </div>
 
-      <dl className="flex shrink-0 gap-6">
-        <div>
-          <dd className="text-xl font-semibold leading-tight">
-            {deviceCount ?? "—"}
-          </dd>
-          <dt className="text-xs text-[var(--ink-muted)]">
-            {t("agentNetwork.statDevices")}
-          </dt>
-        </div>
-        <div>
-          <dd className="text-xl font-semibold leading-tight">
-            {agentCount ?? "—"}
-          </dd>
-          <dt className="text-xs text-[var(--ink-muted)]">
-            {t("agentNetwork.statAgents")}
-          </dt>
-        </div>
-      </dl>
+      {showStats && (
+        <dl className="flex shrink-0 gap-6">
+          <div>
+            <dd className="text-xl font-semibold leading-tight">
+              {deviceCount ?? "—"}
+            </dd>
+            <dt className="text-xs text-[var(--ink-muted)]">
+              {t("agentNetwork.statDevices")}
+            </dt>
+          </div>
+          <div>
+            <dd className="text-xl font-semibold leading-tight">
+              {agentCount ?? "—"}
+            </dd>
+            <dt className="text-xs text-[var(--ink-muted)]">
+              {t("agentNetwork.statAgents")}
+            </dt>
+          </div>
+        </dl>
+      )}
     </header>
   );
 }

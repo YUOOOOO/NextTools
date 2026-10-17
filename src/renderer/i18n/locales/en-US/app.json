@@ -1320,9 +1320,8 @@
       "step3Title": "Just keep chatting",
       "step3Body": "Tell your Agent what you need. It reaches Agents on other devices when needed, or use @ to pick one."
     },
-    "connectOfficial": "Connect to the NextTools official network",
-    "joiningOfficial": "Connecting to the official network…",
-    "officialHint": "Use your NextTools AgentHub account. Your password is used only for this login and is not saved locally.",
+    "login": "Sign in to NextTools",
+    "loggingIn": "Signing in…",
     "join": "Join network",
     "leave": "Leave network",
     "saving": "Saving",

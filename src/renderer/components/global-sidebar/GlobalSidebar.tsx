@@ -174,7 +174,6 @@ interface GlobalSidebarProps {
   onNewTab: () => void;
   onOpenTaskCenter: () => void;
   onCreateTask: () => void;
-  onOpenSpace: () => void;
   onOpenAgentNetwork?: () => void;
   onOpenAppRoute?: (route: AppRoute) => Promise<boolean> | boolean;
   onOpenCapabilities: (section?: CapabilitySection) => void;
@@ -411,9 +410,8 @@ export default memo(function GlobalSidebar({
   onNewTab,
   onOpenTaskCenter,
   onCreateTask,
-  onOpenSpace,
-  onOpenAgentNetwork,
   onOpenAppRoute,
+  onOpenAgentNetwork,
   onOpenCapabilities,
   onOpenSettings,
   onOpenWorkspace,
@@ -1255,7 +1253,7 @@ export default memo(function GlobalSidebar({
           />
           <div className="global-sidebar-account-row grid grid-cols-[minmax(0,1fr)_var(--global-sidebar-action-size)]" data-global-sidebar-account-row>
             <AccountEntry expanded={expanded} available={teamSpaceAvailable}
-              environment={config.spaceEnvironment ?? 'production'} onOpenSpace={onOpenSpace} />
+              environment={config.spaceEnvironment ?? 'production'} />
             <span className="global-sidebar-notification-slot">
               <button
                 ref={notificationTriggerRef}

@@ -55,6 +55,9 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
+vi.mock('@/features/agent-network/OfficialNetworkLoginDialog', () => ({
+  OfficialNetworkLoginDialog: ({ onClose }: { onClose: () => void }) => <div role="dialog" aria-label="NextTools login"><button onClick={onClose}>Close login</button></div>,
+}));
 vi.mock('@/features/account/useNextToolsAccount', () => ({
   useNextToolsAccount: () => ({
     scope: 'production', enabled: false, generation: 0, loadState: 'ready',
@@ -185,7 +188,6 @@ function sidebar(overrides: Partial<SidebarProps> = {}) {
       onNewTab={vi.fn()}
       onOpenTaskCenter={vi.fn()}
       onCreateTask={vi.fn()}
-      onOpenSpace={vi.fn()}
       onOpenAgentNetwork={vi.fn()}
       onOpenCapabilities={vi.fn()}
       onOpenSettings={vi.fn()}
@@ -249,11 +251,10 @@ describe('GlobalSidebar rail flyout', () => {
 
   it('keeps settings above independent account and notification controls without a helper entry', () => {
     mocks.forcedRail = false;
-    const onOpenSpace = vi.fn();
-    renderSidebar({ onOpenSpace });
+    renderSidebar();
     const footer = document.querySelector('[data-global-sidebar-footer-actions]')!;
     const row = document.querySelector('[data-global-sidebar-account-row]')!;
-    const account = screen.getByRole('button', { name: '登录' });
+    const account = screen.getByRole('button', { name: '登录NextTools' });
     const notification = screen.getByRole('button', { name: String(i18n.t('app:notificationCenter.bell')) });
     expect(footer.lastElementChild).toBe(row);
     expect(row.contains(account)).toBe(true);
@@ -261,10 +262,9 @@ describe('GlobalSidebar rail flyout', () => {
     expect(row.contains(screen.getByRole('button', { name: '设置' }))).toBe(false);
     expect(screen.queryByRole('button', { name: '小助理' })).not.toBeInTheDocument();
     fireEvent.click(account);
-    expect(onOpenSpace).toHaveBeenCalledOnce();
+    expect(screen.getByRole('dialog', { name: 'NextTools login' })).toBeInTheDocument();
     expect(mocks.notificationRefresh).not.toHaveBeenCalled();
     fireEvent.click(notification);
-    expect(onOpenSpace).toHaveBeenCalledOnce();
     expect(mocks.notificationRefresh).toHaveBeenCalledOnce();
   });
 
@@ -1451,12 +1451,10 @@ describe('GlobalSidebar rail flyout', () => {
   });
 
   it('hides the Team Space navigation entry when the feature is unavailable', () => {
-    const onOpenSpace = vi.fn();
-    renderSidebar({ teamSpaceAvailable: false, onOpenSpace });
+    renderSidebar({ teamSpaceAvailable: false });
 
     expect(screen.queryByRole('button', { name: String(i18n.t('app:globalSidebar.team')) }))
       .not.toBeInTheDocument();
-    expect(onOpenSpace).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: String(i18n.t('app:globalSidebar.more')) })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: String(i18n.t('app:globalSidebar.agentNetwork')) })).toBeEnabled();
   });

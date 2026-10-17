@@ -12,32 +12,32 @@ import SpaceProfileSettingsDialog from '@/pages/space/SpaceProfileSettingsDialog
 import { spaceErrorMessage } from '@/api/spaceCloud';
 import { accountActions, getAccountSnapshot, type AccountSnapshot } from './accountStore';
 import { useNextToolsAccount } from './useNextToolsAccount';
+import { OfficialNetworkLoginDialog } from '@/features/agent-network/OfficialNetworkLoginDialog';
 
-export default function AccountEntry({ expanded, available, environment, onOpenSpace }: {
+export default function AccountEntry({ expanded, available, environment }: {
   expanded: boolean;
   available: boolean;
   environment: string;
-  onOpenSpace: () => void;
 }) {
   const account = useNextToolsAccount(environment, available);
   return (
     <AccountControls
       key={`${environment}:${account.generation}:${expanded}`}
-      account={account} expanded={expanded} onOpenSpace={onOpenSpace}
+      account={account} expanded={expanded}
     />
   );
 }
 
-function AccountControls({ account, expanded, onOpenSpace }: {
+function AccountControls({ account, expanded }: {
   account: AccountSnapshot;
   expanded: boolean;
-  onOpenSpace: () => void;
 }) {
   const { t } = useTranslation('app');
   const toast = useToast();
   const session = account.view?.state === 'authenticated' ? account.view.session : null;
-  const displayName = session ? spaceDisplayName(session.user) : t('account.signIn');
+  const displayName = session ? spaceDisplayName(session.user) : t('agentNetwork.login');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [viewedAt, setViewedAt] = useState(Date.now);
@@ -92,7 +92,7 @@ function AccountControls({ account, expanded, onOpenSpace }: {
         if (current.error) { toast.error(current.error); return; }
         if (current.view?.state === 'authenticated') { setMenuOpen(true); return; }
       }
-      onOpenSpace();
+      setLoginOpen(true);
       return;
     }
     setMenuOpen(!menuOpen);
@@ -127,8 +127,8 @@ function AccountControls({ account, expanded, onOpenSpace }: {
       <button
         ref={triggerRef} type="button" disabled={initialLoading}
         onClick={() => void clickAccount()}
-        aria-haspopup={session ? 'dialog' : undefined}
-        aria-expanded={session ? menuOpen : undefined}
+        aria-haspopup="dialog"
+        aria-expanded={session ? menuOpen : loginOpen}
         className="global-sidebar-row relative flex h-8 min-w-0 items-center text-left text-sm font-medium text-[var(--ink-muted)] transition-colors hover:bg-[var(--hover-bg)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-wait"
         data-global-account-trigger
       >
@@ -139,6 +139,7 @@ function AccountControls({ account, expanded, onOpenSpace }: {
         </span>
         <span className="global-sidebar-label min-w-0 flex-1 truncate pl-10 pr-3">{initialLoading ? t('common.loading') : displayName}</span>
       </button>
+      {loginOpen && <OfficialNetworkLoginDialog onClose={() => { setLoginOpen(false); triggerRef.current?.focus(); }} />}
       <Popover
         open={menuOpen && !!session} onClose={closeMenu} anchorRef={triggerRef}
         placement="top-start" offset={8} zIndex={200}

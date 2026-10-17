@@ -312,7 +312,7 @@ describe("Agent network account and device management", () => {
     };
     mocks.session.mockResolvedValue(null);
     view.rerender(<AgentNetwork />);
-    await screen.findByRole("button", { name: "连接 NextTools 官方网络" });
+    await screen.findByRole("button", { name: "登录NextTools" });
     await act(async () => {
       finish({
         networkId: device.networkId,
@@ -433,12 +433,14 @@ describe("Agent network account and device management", () => {
   it("uses AgentHub credentials without a service URL or Space login while signed out", async () => {
     mocks.snapshot = { ...mocks.snapshot, state: "signedOut" };
     render(<AgentNetwork />);
-    fireEvent.click(await screen.findByRole("button", { name: "连接 NextTools 官方网络" }));
+    fireEvent.click(await screen.findByRole("button", { name: "登录NextTools" }));
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).queryByLabelText("服务 URL")).not.toBeInTheDocument();
+    expect(within(dialog).queryByLabelText("创建账号" )).not.toBeInTheDocument();
+    expect(within(dialog).queryByText(/使用 NextTools AgentHub 账号/)).not.toBeInTheDocument();
     fireEvent.change(within(dialog).getByLabelText("邮箱或账号"), { target: { value: "official@example.test" } });
     fireEvent.change(within(dialog).getByLabelText("密码"), { target: { value: "test-password-123" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "加入网络" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "登录NextTools" }));
     await waitFor(() => expect(mocks.joinOfficial).toHaveBeenCalledWith("official@example.test", "test-password-123", false));
     await waitFor(() => expect(mocks.acceptRegistry).toHaveBeenCalled());
     expect(mocks.session).not.toHaveBeenCalled();
@@ -565,7 +567,7 @@ describe("Agent network account and device management", () => {
     };
     mocks.session.mockResolvedValue(null);
     view.rerender(<AgentNetwork />);
-    await screen.findByRole("button", { name: "连接 NextTools 官方网络" });
+    await screen.findByRole("button", { name: "登录NextTools" });
     await act(async () => {
       finish({ ...membership, joined: false });
     });
@@ -775,15 +777,16 @@ describe("Network header across asynchronous boundaries", () => {
     expectHeader("0", "0");
   });
 
-  it("retains the same header in signed-out and account-error states", async () => {
+  it("shows the signed-out introduction and preserves the header on account error", async () => {
     mocks.snapshot = { ...mocks.snapshot, state: "signedOut" };
     const view = render(<AgentNetwork />);
-    await screen.findByRole("button", { name: "连接 NextTools 官方网络" });
-    expectHeader("—", "—");
+    expect(await screen.findByRole("heading", { name: "端到端加密的私有网络" })).toBeInTheDocument();
+    expect(screen.queryByText("台设备在网络中")).not.toBeInTheDocument();
+    expect(screen.queryByText("个 Agent 可协作")).not.toBeInTheDocument();
     mocks.preloadDevice.mockRejectedValue(new Error("device unavailable"));
     mocks.snapshot = { ...mocks.snapshot, authGeneration: 2 };
     view.rerender(<AgentNetwork />);
     await screen.findByRole("alert");
-    expectHeader("—", "—");
+    expect(screen.getByRole("button", { name: "选择网络" })).toBeInTheDocument();
   });
 });

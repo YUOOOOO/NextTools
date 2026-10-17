@@ -4937,7 +4937,6 @@ export default function App() {
             onNewTab={handleSidebarNewChat}
             onOpenTaskCenter={handleOpenTaskCenter}
             onCreateTask={handleSidebarCreateTask}
-            onOpenSpace={handleOpenSpace}
             onOpenAgentNetwork={handleOpenAgentNetwork}
             onOpenAppRoute={handleOpenAppRoute}
             onOpenCapabilities={handleOpenCapabilities}

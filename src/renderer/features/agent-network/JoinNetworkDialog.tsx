@@ -37,7 +37,7 @@ export function JoinNetworkDialog({
     setBusy(true);
     setError(null);
     try {
-      await onConfirm(url.trim(), identifier.trim(), password, register);
+      await onConfirm(url.trim(), identifier.trim(), password, !official && register);
       setPassword("");
       onCancel();
     } catch (failure) {
@@ -73,7 +73,7 @@ export function JoinNetworkDialog({
         >
           <div className="mb-4 flex items-center justify-between gap-3">
             <h2 id="join-network-title" className="text-lg font-semibold">
-              {t(official ? "agentNetwork.connectOfficial" : "agentNetwork.joinSelfhost")}
+              {t(official ? "agentNetwork.login" : "agentNetwork.joinSelfhost")}
             </h2>
             <button
               type="button"
@@ -134,13 +134,17 @@ export function JoinNetworkDialog({
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
             />
-            <label className="mt-3 flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={register} disabled={busy} onChange={(e) => setRegister(e.target.checked)} />
-              {t("agentNetwork.createAccount")}
-            </label>
-            <p className="mt-3 text-xs leading-relaxed text-[var(--ink-muted)]">
-              {t(official ? "agentNetwork.officialHint" : "agentNetwork.selfhostHint")}
-            </p>
+            {!official && (
+              <>
+                <label className="mt-3 flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={register} disabled={busy} onChange={(e) => setRegister(e.target.checked)} />
+                  {t("agentNetwork.createAccount")}
+                </label>
+                <p className="mt-3 text-xs leading-relaxed text-[var(--ink-muted)]">
+                  {t("agentNetwork.selfhostHint")}
+                </p>
+              </>
+            )}
             {error && (
               <p role="alert" className="mt-3 text-sm text-[var(--error)]">{error}</p>
             )}
@@ -150,7 +154,7 @@ export function JoinNetworkDialog({
               </button>
               <button type="submit" disabled={busy || (!official && !url.trim()) || !identifier.trim() || !password} className="flex items-center gap-2 rounded-lg bg-[var(--ink)] px-4 py-2 text-sm text-[var(--paper)] disabled:opacity-50">
                 {busy && <LoaderIcon className="h-4 w-4 animate-spin" />}
-                {t(busy ? (official ? "agentNetwork.joiningOfficial" : "agentNetwork.joiningSelfhost") : "agentNetwork.join")}
+                {t(busy ? (official ? "agentNetwork.loggingIn" : "agentNetwork.joiningSelfhost") : (official ? "agentNetwork.login" : "agentNetwork.join"))}
               </button>
             </div>
           </form>
