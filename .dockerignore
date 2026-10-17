@@ -1,0 +1,16 @@
+.git
+.env
+.env.*
+**/.env
+**/.env.*
+node_modules
+**/node_modules
+.dev-agenthub-data
+data
+target-check
+src-tauri/target
+src-tauri/resources
+services/agenthub/data
+services/agenthub/certs
+services/agenthub/*.sqlite*
+*.log
