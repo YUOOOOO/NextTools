@@ -32,11 +32,18 @@ const sockets = new Set<WebSocket>();
 const tlsSockets = new Set<TLSSocket>();
 let origin = '';
 let serverCa = '';
-const enrollmentKey = randomUUID();
+let accountId = '';
+let accountAccessToken = '';
 
 async function json(method: string, path: string, body?: unknown, device?: Device, override?: string): Promise<Data> {
-  const headers: Record<string, string> = { 'content-type': 'application/json', 'x-agenthub-key': enrollmentKey };
-  if (device) { headers.authorization = `Bearer ${device.identity.accessToken}`; headers.dpop = override ?? await device.dpop(method, path); }
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  if (accountId) headers['x-agenthub-account'] = accountId;
+  if (device) {
+    headers.authorization = `Bearer ${device.identity.accessToken}`;
+    headers.dpop = override ?? await device.dpop(method, path);
+  } else if (accountAccessToken) {
+    headers.authorization = `Bearer ${accountAccessToken}`;
+  }
   const encoded = body === undefined ? undefined : JSON.stringify(body);
   return deadline(new Promise((resolve, reject) => {
     const req = request(new URL(path, origin), { method, headers, ca: serverCa, minVersion: 'TLSv1.3' }, res => {
@@ -49,14 +56,15 @@ async function json(method: string, path: string, body?: unknown, device?: Devic
     req.on('error', reject); req.end(encoded);
   }), `${method} ${path}`);
 }
+
 async function api(method: string, path: string, body?: unknown, device?: Device): Promise<Data> {
   const result = await json(method, path, body, device);
-  assert.equal(result.success, true, `${method} ${path}: ${JSON.stringify(result)}`);
+  assert.equal(path.startsWith('/v1/') ? result.ok : result.success, true, `${method} ${path}: ${JSON.stringify(result)}`);
   return result.data;
 }
-async function start(): Promise<void> {
+async function start(registrationEnabled = 'true'): Promise<void> {
   child = spawn(process.execPath, ['--import', 'tsx/esm', 'src/index.ts'], { cwd: root, env: { ...process.env,
-    AGENTHUB_DATA_DIR: join(temporary, 'data'), AGENTHUB_ISSUER: origin, AGENTHUB_ENROLLMENT_KEY: enrollmentKey,
+    AGENTHUB_DATA_DIR: join(temporary, 'data'), AGENTHUB_REGISTRATION_ENABLED: registrationEnabled, AGENTHUB_ISSUER: origin,
     AGENTHUB_TLS_KEY: join(temporary, 'https.key'), AGENTHUB_TLS_CERT: join(temporary, 'https.pem'),
     HOST: '127.0.0.1', PORT: new URL(origin).port }, stdio: ['ignore', 'pipe', 'pipe'] });
   let output = '';
@@ -75,7 +83,7 @@ async function stop(): Promise<void> {
 class Device {
   id = randomUUID(); identity: Data = {}; keys!: CryptoKeyPair; jwk!: JsonWebKey; csr = ''; key = ''; fingerprint = '';
   constructor(readonly name: string) {}
-  async initialize() {
+  async initialize(expectedKeyGeneration: number | null = null) {
     this.keys = await crypto.subtle.generateKey(algorithm, true, ['sign', 'verify']) as CryptoKeyPair;
     const exported = await crypto.subtle.exportKey('jwk', this.keys.publicKey);
     // DPoP proof headers deliberately carry only the public EC key members.
@@ -86,7 +94,7 @@ class Device {
     const der = Buffer.from(await crypto.subtle.exportKey('pkcs8', this.keys.privateKey));
     this.key = `-----BEGIN PRIVATE KEY-----\n${der.toString('base64').match(/.{1,64}/g)!.join('\n')}\n-----END PRIVATE KEY-----\n`;
     this.csr = (await x509.Pkcs10CertificateRequestGenerator.create({ name: `CN=${this.name}`, keys: this.keys, signingAlgorithm: algorithm })).toString('pem');
-    this.identity = await api('POST', '/api/agent-network/identity', { deviceId: this.id, csr: this.csr, expectedKeyGeneration: null,
+    this.identity = await api('POST', '/api/agent-network/identity', { deviceId: this.id, csr: this.csr, expectedKeyGeneration,
       deviceInfo: { deviceName: this.name, platform: 'smoke', osVersion: process.platform, appVersion: '1.2' } });
   }
   async dpop(method: string, path: string) {
@@ -107,7 +115,7 @@ class Peer {
   constructor(readonly device: Device) {}
   async open(previousConnection?: Data) {
     this.ws = new WebSocket(origin.replace('https:', 'wss:') + '/v1/ws', NETWORK_SUBPROTOCOL, {
-      ca: serverCa, minVersion: 'TLSv1.3', headers: { authorization: `Bearer ${this.device.identity.accessToken}`, dpop: await this.device.dpop('GET', '/v1/ws') } });
+      ca: serverCa, minVersion: 'TLSv1.3', headers: { 'x-agenthub-account': accountId, authorization: `Bearer ${this.device.identity.accessToken}`, dpop: await this.device.dpop('GET', '/v1/ws') } });
     sockets.add(this.ws);
     this.ws.on('message', (raw, binary) => {
       const bytes = Buffer.from(raw as Buffer);
@@ -125,7 +133,7 @@ class Peer {
       items: [{ localAgentId: 'smoke-agent', localWorkspaceId: 'smoke-workspace', name: this.device.name, path: '/private/smoke', lifecycle: 'active', exposureRevision: 1, icon: null }] }, this.device);
     this.send('ready', { catalogSeq: 1 }); await this.wait('ready.result');
   }
-  send(type: string, fields: Data = {}) {
+  send(type: string, fields: Data = {}): string {
     const scope = type === 'hello' ? {} : { serviceId: this.hello.serviceId, networkId: this.hello.networkId, bootEpoch: this.hello.bootEpoch, connectionEpoch: this.hello.connectionEpoch };
     const control = clientControlSchema.parse({ version: 1, controlId: randomUUID(), ...scope, type, ...fields });
     this.ws.send(JSON.stringify(control)); return control.controlId;
@@ -189,28 +197,90 @@ try {
   await writeFile(join(temporary, 'https.key'), `-----BEGIN PRIVATE KEY-----\n${key.toString('base64').match(/.{1,64}/g)!.join('\n')}\n-----END PRIVATE KEY-----\n`, { mode: 0o600 });
   await writeFile(join(temporary, 'https.pem'), serverCa);
   await start();
+  const credentials = { identifier: 'smoke@example.test', password: 'smoke-password-123' };
+  assert.equal((await json('POST', '/api/auth/register', { ...credentials, password: 'short' })).code, 'ACCOUNT_PASSWORD_WEAK');
+  const account = await api('POST', '/api/auth/register', credentials);
+  accountId = account.accountId; accountAccessToken = account.accessToken;
+  assert.equal((await api('GET', '/api/auth/me')).identifier, 'smoke@example.test');
+  assert.equal((await json('POST', '/api/auth/register', credentials)).code, 'ACCOUNT_EXISTS');
+  assert.equal((await json('POST', '/api/auth/login', { ...credentials, password: 'incorrect-password' })).code, 'ACCOUNT_CREDENTIALS_INVALID');
+  const login = await api('POST', '/api/auth/login', { ...credentials, identifier: ' SMOKE@EXAMPLE.TEST ' });
+  assert.equal(login.accountId, accountId);
+  const refreshed = await api('POST', '/api/auth/refresh', { refreshToken: login.refreshToken });
+  assert.equal(refreshed.accountId, accountId);
+  assert.notEqual(refreshed.accessToken, login.accessToken);
+  assert.notEqual(refreshed.refreshToken, login.refreshToken);
+  assert.equal((await json('POST', '/api/auth/refresh', { refreshToken: login.refreshToken })).code, 'ACCOUNT_AUTH_REQUIRED');
+  accountAccessToken = login.accessToken;
+  assert.equal((await json('GET', '/api/auth/me')).code, 'ACCOUNT_AUTH_REQUIRED');
+  accountAccessToken = refreshed.accessToken;
+  await api('POST', '/api/auth/logout');
+  assert.equal((await json('GET', '/api/auth/me')).code, 'ACCOUNT_AUTH_REQUIRED');
+  assert.equal((await json('POST', '/api/auth/refresh', { refreshToken: refreshed.refreshToken })).code, 'ACCOUNT_AUTH_REQUIRED');
+  accountAccessToken = account.accessToken;
   const descriptor = await api('GET', '/api/agent-network/descriptor');
   await assert.rejects(new Promise((resolve, reject) => { const req = request(origin + '/api/agent-network/descriptor', resolve); req.on('error', reject); req.end(); }), /certificate|self.signed/i);
   const a = new Device('smoke-A'), b = new Device('smoke-B'); await a.initialize(); await b.initialize();
   const proof = { ...await a.proof('recover-query'), keyFingerprint: a.fingerprint };
   a.identity = await api('POST', '/api/agent-network/identity/current', proof);
   assert.equal((await json('POST', '/api/agent-network/identity/current', proof)).code, 'NETWORK_PROOF_INVALID');
-  const replay = await a.dpop('GET', '/v1/devices'); const firstReplayResponse = await json('GET', '/v1/devices', undefined, a, replay); assert.equal(firstReplayResponse.success, true, JSON.stringify(firstReplayResponse));
-  assert.equal((await json('GET', '/v1/devices', undefined, a, replay)).code, 'NETWORK_DPOP_INVALID');
-  assert.equal((await json('GET', '/v1/devices', undefined, a, 'invalid')).code, 'NETWORK_DPOP_INVALID');
+  const replay = await a.dpop('GET', '/v1/devices'); const firstReplayResponse = await json('GET', '/v1/devices', undefined, a, replay); assert.equal(firstReplayResponse.ok, true, JSON.stringify(firstReplayResponse));
+  assert.equal((await json('GET', '/v1/devices', undefined, a, replay)).error.code, 'NETWORK_DPOP_INVALID');
+  assert.equal((await json('GET', '/v1/devices', undefined, a, 'invalid')).error.code, 'NETWORK_DPOP_INVALID');
   let pa = new Peer(a); const pb = new Peer(b); await pa.open(); await pb.open();
+  const otherCredentials = { identifier: 'other@example.test', password: 'other-password-123' };
+  const other = await api('POST', '/api/auth/register', otherCredentials);
+  accountId = other.accountId;
+  const otherDescriptor = await api('GET', '/api/agent-network/descriptor');
+  assert.equal(otherDescriptor.serviceId, descriptor.serviceId);
+  assert.notEqual(otherDescriptor.principalId, descriptor.principalId);
+  assert.notEqual(otherDescriptor.networkId, descriptor.networkId);
+  assert.notEqual(otherDescriptor.rootCertificate, descriptor.rootCertificate);
+  assert.notDeepEqual(otherDescriptor.jwks, descriptor.jwks);
+  const enrollmentInput = { deviceId: randomUUID(), csr: a.csr, expectedKeyGeneration: null,
+    deviceInfo: { deviceName: 'unauthorized', platform: 'smoke', osVersion: process.platform, appVersion: '1.2' } };
+  assert.equal((await json('POST', '/api/agent-network/identity', enrollmentInput)).code, 'ACCOUNT_SCOPE_MISMATCH');
+  accountAccessToken = '';
+  assert.equal((await json('POST', '/api/agent-network/identity', enrollmentInput)).code, 'ACCOUNT_AUTH_REQUIRED');
+  accountAccessToken = other.accessToken;
+  // A physical desktop retains its stable device ID when signing into another account.
+  const c = new Device('smoke-other'); c.id = a.id; await c.initialize();
+  const pc = new Peer(c); await pc.open();
+  const crossRest = await json('GET', '/v1/devices', undefined, a);
+  assert.equal(crossRest.status, 401); assert.equal(crossRest.ok, false);
+  await assert.rejects(new Peer(a).open(), /401/);
+  const otherRoster = (await api('GET', '/v1/devices', undefined, c)).items;
+  assert.deepEqual(otherRoster.map((entry: Data) => entry.deviceId), [c.id]);
+  assert.equal(otherRoster[0].name, 'smoke-other');
+  pc.send('channel.open', { channelId: randomUUID(), targetDeviceId: b.id, targetKeyGeneration: b.identity.keyGeneration,
+    targetConnectionEpoch: pb.hello.connectionEpoch, targetBinding: b.identity.signedBinding });
+  assert.equal((await pc.wait('error')).code, 'TARGET_OFFLINE');
+  await api('POST', '/api/auth/logout'); accountAccessToken = '';
+  c.identity = await api('POST', '/api/agent-network/identity/current', { ...await c.proof('recover-query'), keyFingerprint: c.fingerprint });
+  await pc.close();
+  accountId = account.accountId; accountAccessToken = account.accessToken;
   const network = `/v1/networks/${descriptor.networkId}`;
   const joinInput = { expectedMembershipRevision: 0, mutationId: randomUUID() };
   const joined = await api('POST', `${network}/devices/${b.id}/join`, joinInput, a);
   assert.deepEqual(await api('POST', `${network}/devices/${b.id}/join`, joinInput, a), joined);
   assert.deepEqual(await api('GET', `/v1/mutations/${joinInput.mutationId}`, undefined, a), joined);
-  assert.equal((await json('POST', `${network}/devices/${b.id}/join`, { ...joinInput, mutationId: randomUUID() }, a)).code, 'MEMBERSHIP_REVISION_CONFLICT');
+  assert.equal((await json('POST', `${network}/devices/${b.id}/join`, { ...joinInput, mutationId: randomUUID() }, a)).error.code, 'MEMBERSHIP_REVISION_CONFLICT');
   const mount = (await api('GET', `/v1/devices/${b.id}/agents`, undefined, a)).items[0]; assert.ok(mount);
   const enabled = await api('PATCH', `${network}/mounts/${mount.mountId}`, { enabled: true, expectedEnableRevision: mount.enableRevision, expectedMembershipRevision: joined.membershipRevision, mutationId: randomUUID() }, a);
   await api('PATCH', `${network}/mounts/${mount.mountId}`, { description: 'smoke persistent description', expectedDescriptionRevision: 0, expectedMembershipRevision: joined.membershipRevision, mutationId: randomUUID() }, a);
   await api('PATCH', `${network}/devices/${b.id}/name`, { name: 'smoke-renamed', expectedName: 'smoke-B', mutationId: randomUUID() }, a);
-  const callable = await api('GET', `${network}/callable-agents/${mount.mountId}`, undefined, a); assert.equal(callable.deviceName, 'smoke-renamed'); assert.equal(callable.path, undefined);
   assert.ok((await api('GET', `${network}/callable-agents`, undefined, a)).items.some((entry: Data) => entry.mountId === mount.mountId));
+  accountId = other.accountId;
+  const otherNetwork = `/v1/networks/${otherDescriptor.networkId}`;
+  assert.equal((await json('GET', `${network}/callable-agents`, undefined, c)).error.code, 'NETWORK_SCOPE_MISMATCH');
+  assert.deepEqual((await api('GET', `${otherNetwork}/callable-agents`, undefined, c)).items, []);
+  assert.equal((await json('GET', `/v1/mutations/${joinInput.mutationId}`, undefined, c)).error.code, 'MUTATION_NOT_FOUND');
+  assert.equal((await json('PATCH', `${otherNetwork}/mounts/${mount.mountId}`, { enabled: false, expectedEnableRevision: enabled.enableRevision,
+    expectedMembershipRevision: 0, mutationId: randomUUID() }, c)).status, 404);
+  const otherJoined = await api('POST', `${otherNetwork}/devices/${c.id}/join`, joinInput, c);
+  assert.equal(otherJoined.joined, true);
+  accountId = account.accountId;
+  assert.deepEqual(await api('GET', `/v1/mutations/${joinInput.mutationId}`, undefined, a), joined);
   const channelId = await channel(pa, pb, descriptor.rootCertificate);
   const opId = randomUUID(); pa.send('op.prepare', { channelId, opId, targetMountId: mount.mountId }); await pa.wait('op.prepared');
   pb.send('permit.acquire', { opId, attemptId: randomUUID(), targetMountId: mount.mountId, expectedMembershipRevision: 0, expectedEnableRevision: enabled.enableRevision });
@@ -231,7 +301,26 @@ try {
   const persisted = (await api('GET', `/v1/devices/${b.id}/agents`, undefined, a)).items[0]; assert.equal(persisted.enabled, true); assert.equal(persisted.description, 'smoke persistent description');
   assert.equal((await api('GET', '/v1/devices', undefined, a)).items.find((entry: Data) => entry.deviceId === b.id).joined, true);
   assert.deepEqual(await api('GET', `/v1/mutations/${joinInput.mutationId}`, undefined, a), joined);
-  console.log('AgentHub smoke PASS: verified HTTPS/WSS, two identities, PoP/DPoP replay rejection, catalog/CAS/receipts, callable metadata, TLS1.3 mTLS encrypted bidirectional relay, credit, permits, route recovery/rebind/close, restart persistence.');
+  assert.deepEqual(await api('GET', '/api/agent-network/descriptor'), descriptor);
+  accountId = other.accountId; accountAccessToken = '';
+  assert.deepEqual(await api('GET', '/api/agent-network/descriptor'), otherDescriptor);
+  assert.deepEqual(await api('GET', `/v1/mutations/${joinInput.mutationId}`, undefined, c), otherJoined);
+  // Removing an account-scoped device leaves the same physical device in the other account intact.
+  const retiredGeneration = c.identity.keyGeneration;
+  await api('POST', '/api/agent-network/revoke', { ...await c.proof('revoke'), keyFingerprint: c.fingerprint });
+  assert.equal((await json('GET', '/v1/devices', undefined, c)).status, 401);
+  assert.equal((await json('POST', '/api/agent-network/identity', { ...enrollmentInput, deviceId: c.id, csr: c.csr,
+    expectedKeyGeneration: retiredGeneration })).code, 'ACCOUNT_AUTH_REQUIRED');
+  accountAccessToken = (await api('POST', '/api/auth/login', otherCredentials)).accessToken;
+  await c.initialize(retiredGeneration);
+  assert.equal(c.identity.keyGeneration, retiredGeneration + 1);
+  accountId = account.accountId; accountAccessToken = account.accessToken;
+  assert.equal((await api('GET', `/api/agent-network/identity/state?deviceId=${a.id}`)).keyFingerprint, a.fingerprint);
+  assert.ok((await api('GET', '/v1/devices', undefined, a)).items.some((entry: Data) => entry.deviceId === b.id));
+  await stop(); await start('false');
+  assert.equal((await json('POST', '/api/auth/register', { identifier: 'blocked@example.test', password: 'smoke-password-123' })).code, 'ACCOUNT_REGISTRATION_DISABLED');
+  assert.equal((await api('POST', '/api/auth/login', credentials)).accountId, account.accountId);
+  console.log('AgentHub smoke PASS: verified registration/login/refresh/logout, two isolated accounts with shared physical device IDs, account-scoped REST/WSS/CA/JWKS/catalog/CAS/receipts, enrollment authorization, PoP/DPoP replay rejection, TLS1.3 mTLS encrypted bidirectional relay, credit, permits, route recovery/rebind/close, scoped revoke/reenrollment, restart persistence, registration disabled.');
 } finally {
   for (const socket of tlsSockets) socket.destroy();
   for (const socket of sockets) socket.terminate();

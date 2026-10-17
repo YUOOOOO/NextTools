@@ -4,11 +4,11 @@
 
 ## 独立 AgentHub 运行验收
 
-在 `services/agenthub` 中运行 `npm ci`、`npm run typecheck` 和 `npm run smoke`。Smoke 使用临时数据目录、随机 loopback 端口及独立 HTTPS CA，运行真实服务进程与两个设备端；不关闭证书校验，也不使用用户凭据或数据。
+在 `services/agenthub` 中运行 `npm ci`、`npm run typecheck` 和 `npm run smoke`。Smoke 使用临时数据目录、随机 loopback 端口及独立 HTTPS CA，运行真实服务进程、两个账号与多个设备端；不关闭证书校验，也不使用用户凭据或数据。
 
-2026-10-17 本机验收通过：HTTPS/WSS、设备身份签发与 PoP/DPoP 重放拒绝、目录/CAS/receipt、可调用元数据、TLS 1.3 mTLS 双向加密中转、字节 credit、permit、断线 route resume/rebind/close，以及重启持久化。DPoP header 的公钥限定为 `kty/crv/x/y`，不直接携带 WebCrypto 导出的 `ext/key_ops`。
+2026-10-17 本机验收通过：注册/登录/刷新/登出、关闭注册、同一物理设备 ID 跨账号隔离、账号独立 CA/JWKS/目录/CAS/receipt、登记授权、HTTPS/WSS、设备身份签发与 PoP/DPoP 重放拒绝、TLS 1.3 mTLS 双向加密中转、字节 credit、permit、断线 route resume/rebind/close、按账号撤销/重新登记，以及重启持久化。DPoP header 的公钥限定为 `kty/crv/x/y`，不直接携带 WebCrypto 导出的 `ext/key_ops`。
 
-这仅证明 Node 服务与两个协议端在 loopback 上的运行结果，不等同于两台真实桌面客户端或公网部署验收。Docker 构建与容器启动仍需在具备 Docker 的环境验证；本次机器未安装 Docker。
+这仅证明 Node 服务与协议端在 loopback 上的运行结果，不等同于两台真实桌面客户端或公网部署验收。浏览器另行验证了加入表单的账号/密码字段、注册切换、提交参数、失败反馈与关闭行为；Rust 网络回归 93 项通过、1 项显式 OS 凭据集成测试跳过，前端网络回归 41 项通过。Windows 测试 EXE 需 Common Controls v6 清单，本次仅对生成产物嵌入清单后执行；不代表原始 `cargo test` 启动已修复。Docker 构建与容器启动仍需在具备 Docker 的环境验证；本次机器未安装 Docker。
 
 ## Owner 与状态
 
@@ -34,9 +34,11 @@
 
 设置 → 开发者模式的「AgentNet 多网络（实验性）」由原 `config.json` 的 `agentNetworkSelfhostDevGate` 控制，缺省/非 `true` 均关闭。`NetworkRegistry` 在既有 mutation 锁内读取最新配置，裁决有效连接并通过本地 `selfhostEnabled` 投影 UI；不是网络协议字段。关闭只保留官方 actor 与官方页面，停止自部署 actor、阻止自部署加入/选择/移除及直接调用，保留已加入配置、原查看选择与 OS 凭据，不执行远端撤销。开启重建非 removing 连接并恢复原选择；重建代次必须高于停用前的 actor（包括电源 boundary），使迟到交接失效。官方登录、连接与管理保持原行为。
 
-`registry.rs` 是 App 连接 owner：官方入口恒在，自部署连接/查看选择写入原 `config.json` 的 `agentNetworkConnections` / `agentNetworkSelectedConnection`，锁内重新读盘合并。所有已加入网络同时维持连接；标题下拉只选择展示。`account.rs` 分流原官方登录 adapter 与自部署 pinned descriptor，不改变 Space 登录/成员关系。每个自部署实例是一共同信任域；同一本地 Agent 与 Session/history 跨网络保持原实体，只逐网络配置开放。
+`registry.rs` 是 App 连接 owner：官方入口恒在，自部署连接/查看选择写入原 `config.json` 的 `agentNetworkConnections` / `agentNetworkSelectedConnection`，锁内重新读盘合并。所有已加入网络同时维持连接；标题下拉只选择展示。`account.rs` 分流原官方登录 adapter 与自部署 pinned descriptor，不改变 Space 登录/成员关系。自部署以账号为共同信任域，同账号设备互信，不同账号的网络、CA、签名密钥、设备目录及中继状态隔离；同一本地 Agent 与 Session/history 跨网络保持原实体，只逐网络配置开放。
 
-加入时读取 HTTPS origin 的 descriptor，校验并固定 service/environment/principal/network/root/JWKS；身份兑换与 bootstrap 也必须匹配该信任。重定向不携带密钥，实例/信任变化明确拒绝。设备 key 只参与首次登记，不写 config、不保存在 Node/Renderer；私钥沿原 OS KeyScope 存储。已有活跃身份不能凭新 key 覆盖；被管理员撤销后可用新 key 递增设备代次重入。丢私钥须先撤销；官方凭据行为保留。
+加入时先在 HTTPS origin 登录或注册，再读取账号 descriptor，校验并固定 service/environment/principal/network/root/JWKS；身份兑换与 bootstrap 也必须匹配该信任。短期账号 access token 只授权登记，不把密码、access/refresh token 写入 config 或 OS 凭据；重连、续证与移除沿设备私钥证明，不依赖账号会话。重定向不携带密钥，实例/信任变化明确拒绝。私钥沿原 OS KeyScope 存储，不保存在 Node/Renderer；已有活跃身份不能凭新 key 覆盖，被撤销后须重新登录授权并以新 key 递增设备代次重入，丢私钥须先撤销。官方凭据行为保留。
+
+自部署账号 API 为 `/api/auth/register|login|refresh|logout` 和 `GET /api/auth/me`；标识裁剪并转小写，注册密码至少 12 字符，数据库保存加盐 scrypt hash 与 token hash。access token 有效期 5 分钟、refresh token 30 天，刷新替换原会话，登出只撤销账号会话，不移除已登记设备。`x-agenthub-account` 只用于选择账号 scope，不是认证：新设备登记须同账号 bearer，设备恢复与中继仍须该账号设备私钥证明。`AGENTHUB_REGISTRATION_ENABLED=false` 关闭注册但不阻止已有账号登录。部署使用公开 HTTPS origin、可信 TLS 证书和持久数据卷；Compose 默认允许注册，开放公网前应明确决定是否关闭。
 
 移除先持久化 `removing` 并停止该 actor，通过原私钥证明撤销/受限结果查询。未知保留人工重试且重启不连接。确认撤销后先把非秘密 `revokedScope` 保存进同一连接状态，再删 OS 凭据与连接配置；本地清理失败可继续，删除凭据后不再依赖远端证明。没有后台撤销队列。移除恢复使用同一连接记录的 `revokedScope`（已确认撤销的 generation）和 `reenrolling` 阶段；重新登记前先持久化该阶段。新 generation 已提交而 ACK/配置写入失败时，重试加入仅凭新 generation 私钥证明恢复；重试移除必须重新核实并撤销当前 generation，不能把旧 generation 的 checkpoint 当成整体已撤销。未尝试重新登记的已确认移除仍可离线重试本地清理。已接纳的本地执行与其他连接独立。
 

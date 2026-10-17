@@ -14,6 +14,7 @@ export interface SettingsOpenIntent {
 
 export interface SettingsRenderBinding extends SettingsUpdaterBinding {
   onNavigationConsumed: (tabId: string, generation: number) => void;
+  onOpenAgentNetwork?: () => void;
 }
 
 const SettingsTabRenderer = memo(function SettingsTabRenderer({

@@ -331,6 +331,7 @@ function isSubscriptionLoginActiveStatus(
 export default function Settings({
   mode = 'settings',
   onOpenToolMarket,
+  onOpenAgentNetwork,
   initialSection,
   navigationNonce,
   initialMcpId,
@@ -4913,6 +4914,7 @@ export default function Settings({
           developerUnlocked={devSectionVisible}
           floatingBallDevGate={linuxDesktop ? false : config.floatingBallDevGate}
           onShowLogs={() => setShowLogs(true)}
+          onOpenAgentNetwork={onOpenAgentNetwork}
         />
       )}
 

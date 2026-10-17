@@ -8,7 +8,7 @@ use super::crypto::{
 };
 use super::jwt::{AccessClaims, AccountVerifier, VerifiedPeer};
 use super::NetworkError;
-use crate::space_cloud::agent_network::AccountOperation;
+use super::account_protocol::AccountOperation;
 use myagents_agent_network_protocol::{budget, IdentityState};
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -201,9 +201,7 @@ impl NetworkIdentity {
             device_id: device.device_id.clone(),
             key_generation: state.key_generation.unwrap_or(1),
         };
-        let replacement = if account.is_selfhost()
-            && account.has_enrollment_key()
-            && state.key_generation.is_some()
+        let replacement = if account.has_enrollment_token() && state.key_generation.is_some()
         {
             match account.request(AccountOperation::Challenge,Some(json!({"deviceId":scope.device_id,"operation":"recover-query","targetFingerprint":state.key_fingerprint,"expectedKeyGeneration":scope.key_generation}))).await {
                 Err(error) if error.code=="DEVICE_REVOKED"=>true,
@@ -224,7 +222,7 @@ impl NetworkIdentity {
             state.key_generation,
             current_key.is_some(),
             replacement,
-            account.is_selfhost(),
+            true,
             retired_generation,
         )?;
         scope.key_generation = generation;
@@ -297,11 +295,7 @@ impl NetworkIdentity {
         {
             return Err(NetworkError::new("IDENTITY_SCOPE_MISMATCH"));
         }
-        if let NetworkAccountSession::Selfhost(instance) = &account {
-            instance
-                .descriptor
-                .ensure_bootstrap(&bootstrap.root_certificate, &bootstrap.network_url)?;
-        }
+        account.0.descriptor.ensure_bootstrap(&bootstrap.root_certificate, &bootstrap.network_url)?;
         let peer = validate_peer(
             &scope,
             key.clone(),

@@ -1,10 +1,8 @@
-//! Identity issuer context: official login or a pinned standalone instance.
-//! Credentials and validity remain App-owned; no selected UI state controls this context.
+//! Pinned AgentHub issuer context, shared by official and self-hosted deployments.
+//! Credentials and validity remain App-owned, independent of UI selection.
 use super::NetworkError;
 use crate::network_diagnostics::RequestDiagnostic;
-use crate::space_cloud::agent_network::{
-    read_account_response_body, AccountOperation, OfficialAccountSession,
-};
+use super::account_protocol::{read_account_response_body, AccountOperation};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::{
@@ -82,63 +80,34 @@ pub(crate) struct SelfhostAccount {
     pub connection_id: String,
     pub descriptor: SelfhostDescriptor,
     pub active: Arc<AtomicBool>,
-    pub enrollment_key: Option<Zeroizing<String>>,
+    pub enrollment_token: Option<Zeroizing<String>>,
 }
 #[derive(Clone)]
-pub(crate) enum NetworkAccountSession {
-    Official(OfficialAccountSession),
-    Selfhost(Arc<SelfhostAccount>),
-}
+pub(crate) struct NetworkAccountSession(pub(crate) Arc<SelfhostAccount>);
 impl NetworkAccountSession {
-    pub(crate) fn capture() -> Result<Self, NetworkError> {
-        OfficialAccountSession::capture().map(Self::Official)
-    }
     pub(crate) fn binding_id(&self) -> &str {
-        match self {
-            Self::Official(a) => a.binding_id(),
-            Self::Selfhost(a) => &a.connection_id,
-        }
+        &self.0.connection_id
     }
     pub(crate) fn issuer(&self) -> &str {
-        match self {
-            Self::Official(a) => a.issuer(),
-            Self::Selfhost(a) => &a.descriptor.issuer,
-        }
+        &self.0.descriptor.issuer
     }
     pub(crate) fn principal_id(&self) -> Result<&str, NetworkError> {
-        match self {
-            Self::Official(a) => a.principal_id(),
-            Self::Selfhost(a) => Ok(&a.descriptor.principal_id),
-        }
+        Ok(&self.0.descriptor.principal_id)
     }
     pub(crate) fn environment(&self) -> &str {
-        match self {
-            Self::Official(a) => a.environment(),
-            Self::Selfhost(a) => &a.descriptor.environment,
-        }
+        &self.0.descriptor.environment
     }
     pub(crate) fn service_id(&self) -> Result<&str, NetworkError> {
-        match self {
-            Self::Official(a) => a.service_id(),
-            Self::Selfhost(a) => Ok(&a.descriptor.service_id),
-        }
+        Ok(&self.0.descriptor.service_id)
     }
-    pub(crate) fn is_selfhost(&self) -> bool {
-        matches!(self, Self::Selfhost(_))
-    }
-    pub(crate) fn has_enrollment_key(&self) -> bool {
-        matches!(self,Self::Selfhost(a) if a.enrollment_key.is_some())
+    pub(crate) fn has_enrollment_token(&self) -> bool {
+        self.0.enrollment_token.is_some()
     }
     pub(crate) fn ensure_current(&self) -> Result<(), NetworkError> {
-        match self {
-            Self::Official(a) => a.ensure_current(),
-            Self::Selfhost(a) => {
-                if a.active.load(Ordering::Acquire) {
-                    Ok(())
-                } else {
-                    Err(NetworkError::new("ACCOUNT_BINDING_CHANGED"))
-                }
-            }
+        if self.0.active.load(Ordering::Acquire) {
+            Ok(())
+        } else {
+            Err(NetworkError::new("ACCOUNT_BINDING_CHANGED"))
         }
     }
     pub(crate) async fn request(
@@ -147,31 +116,26 @@ impl NetworkAccountSession {
         body: Option<Value>,
     ) -> Result<Value, NetworkError> {
         self.ensure_current()?;
-        match self {
-            Self::Official(a) => a.request(operation, body).await,
-            Self::Selfhost(a) => {
-                let (method, path, _) = operation.request()?;
-                let key = if matches!(operation, AccountOperation::Identity) {
-                    a.enrollment_key.as_deref().map(|s| s.as_str())
-                } else {
-                    None
-                };
-                let value = request_json(&a.descriptor.issuer, method, &path, body, key).await?;
-                if matches!(operation, AccountOperation::Jwks) && value != a.descriptor.jwks {
-                    return Err(NetworkError::new("NETWORK_TRUST_CHANGED"));
-                }
-                self.ensure_current()?;
-                Ok(value)
-            }
+        let a = &self.0;
+        let (method, path, _) = operation.request()?;
+        let token = if matches!(operation, AccountOperation::Identity) {
+            a.enrollment_token.as_deref().map(|s| s.as_str())
+        } else {
+            None
+        };
+        let value = request_json(&a.descriptor.issuer, method, &path, body, Some(&a.descriptor.principal_id), token).await?;
+        if matches!(operation, AccountOperation::Jwks) && value != a.descriptor.jwks {
+            return Err(NetworkError::new("NETWORK_TRUST_CHANGED"));
         }
+        self.ensure_current()?;
+        Ok(value)
     }
     pub(crate) async fn validate_instance(&self) -> Result<(), NetworkError> {
-        if let Self::Selfhost(a) = self {
-            let current = descriptor(&a.descriptor.issuer).await?;
-            // Presentation name may change; stable instance and pinned trust may not.
-            a.descriptor.ensure_same_trust(&current)?;
-        }
-        Ok(())
+        self.ensure_current()?;
+        let a = &self.0;
+        let current = descriptor(&a.descriptor.issuer, &a.descriptor.principal_id, None).await?;
+        a.descriptor.ensure_same_trust(&current)?;
+        self.ensure_current()
     }
 }
 pub(crate) fn origin(value: &str) -> Result<String, NetworkError> {
@@ -187,19 +151,59 @@ pub(crate) fn origin(value: &str) -> Result<String, NetworkError> {
     }
     Ok(u.origin().ascii_serialization())
 }
-pub(crate) async fn descriptor(value: &str) -> Result<SelfhostDescriptor, NetworkError> {
+
+pub(crate) fn official_origin() -> Result<String, NetworkError> {
+    option_env!("NEXTTOOLS_AGENTHUB_URL")
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| NetworkError::new("NETWORK_SERVICE_UNCONFIGURED"))
+        .and_then(origin)
+}
+/// Login is only a short-lived enrollment capability. No password or account
+/// token is persisted; reconnect and removal use the device private key.
+pub(crate) async fn login(
+    origin: &str,
+    identifier: String,
+    password: Zeroizing<String>,
+    register: bool,
+) -> Result<(String, Zeroizing<String>), NetworkError> {
+    let value = request_json(
+        origin,
+        reqwest::Method::POST,
+        if register { "/api/auth/register" } else { "/api/auth/login" },
+        Some(serde_json::json!({ "identifier": identifier, "password": password.as_str() })),
+        None,
+        None,
+    )
+    .await?;
+    let account = value["accountId"]
+        .as_str()
+        .filter(|s| uuid::Uuid::parse_str(s).is_ok())
+        .ok_or_else(|| NetworkError::new("NETWORK_ACCOUNT_RESPONSE_INVALID"))?
+        .to_owned();
+    let token = value["accessToken"]
+        .as_str()
+        .filter(|s| !s.is_empty() && s.len() <= 256)
+        .ok_or_else(|| NetworkError::new("NETWORK_ACCOUNT_RESPONSE_INVALID"))?
+        .to_owned();
+    Ok((account, Zeroizing::new(token)))
+}
+pub(crate) async fn descriptor(value: &str, account: &str, token: Option<&str>) -> Result<SelfhostDescriptor, NetworkError> {
     let origin = origin(value)?;
     let value = request_json(
         &origin,
         reqwest::Method::GET,
         "/api/agent-network/descriptor",
         None,
-        None,
+        Some(account),
+        token,
     )
     .await?;
     let d: SelfhostDescriptor = serde_json::from_value(value)
         .map_err(|_| NetworkError::new("NETWORK_DESCRIPTOR_INVALID"))?;
     d.validate(&origin)?;
+    if d.principal_id != account {
+        return Err(NetworkError::new("ACCOUNT_SCOPE_MISMATCH"));
+    }
     Ok(d)
 }
 pub(crate) async fn request_json(
@@ -207,7 +211,8 @@ pub(crate) async fn request_json(
     method: reqwest::Method,
     path: &str,
     body: Option<Value>,
-    key: Option<&str>,
+    account: Option<&str>,
+    token: Option<&str>,
 ) -> Result<Value, NetworkError> {
     #[allow(clippy::disallowed_methods)]
     let builder = reqwest::Client::builder()
@@ -217,8 +222,11 @@ pub(crate) async fn request_json(
         .map_err(|_| NetworkError::new("NETWORK_PROXY_INVALID"))?;
     let diagnostic = RequestDiagnostic::new("network-account", &method, path);
     let mut request = client.request(method, format!("{origin}{path}"));
-    if let Some(key) = key {
-        request = request.header("x-agenthub-key", key);
+    if let Some(account) = account {
+        request = request.header("x-agenthub-account", account);
+    }
+    if let Some(token) = token {
+        request = request.bearer_auth(token);
     }
     if let Some(body) = body {
         request = request.json(&body);
@@ -230,8 +238,7 @@ pub(crate) async fn request_json(
     let status = response.status();
     let retry_after = super::reconnect::retry_after(&response);
     let bytes = read_account_response_body(&mut response, &diagnostic).await?;
-    let value: Value = serde_json::from_slice(&bytes)
-        .map_err(|_| NetworkError::cloud("NETWORK_ACCOUNT_UNAVAILABLE", status.as_u16()))?;
+    let value = super::account_protocol::decode_account_response(status, &bytes, retry_after)?;
     if !status.is_success() || value["success"] != true {
         let mut error = NetworkError::cloud(
             value["code"]

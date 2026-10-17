@@ -8,21 +8,15 @@ import {
 import { useTranslation } from "react-i18next";
 import { metadataSchemas } from "@myagents/agent-network-protocol";
 import {
-  spaceGetSession,
-  spaceLogout,
-  type SpaceSessionView,
-} from "@/api/spaceCloud";
-import {
   allDeviceAgents,
   allNetworkDevices,
+  joinOfficialNetworkConnection,
   networkErrorKey,
   networkRequest as requestNetwork,
   type NetworkRequest,
   type NetworkDevice,
   type NetworkSnapshot,
 } from "@/api/agentNetwork";
-import { useNextToolsLogin } from "@/hooks/useNextToolsLogin";
-import { SpaceLogin } from "@/pages/space/SpaceChrome";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { getDeviceId, preloadDeviceId } from "@/identity/deviceIdentity";
 import { useToastOptional } from "@/components/Toast";
@@ -33,12 +27,13 @@ import { DeviceCard } from "@/features/agent-network/DeviceCard";
 import { DeviceDetails } from "@/features/agent-network/DeviceDetails";
 import { DeviceRenameDialog } from "@/features/agent-network/DeviceRenameDialog";
 import type { DeviceCatalog } from "@/features/agent-network/deviceDisplay";
+import { JoinNetworkDialog } from "@/features/agent-network/JoinNetworkDialog";
 import {
+  acceptNetworkRegistry,
   currentNetworkGeneration as networkGeneration,
   useAgentNetworkRegistry,
   useAgentNetworkSnapshot,
 } from "@/features/agent-network/store";
-
 import { NetworkHeader } from "@/features/agent-network/NetworkHeader";
 import { NetworkSelector } from "@/features/agent-network/NetworkSelector";
 
@@ -84,11 +79,11 @@ function AgentNetworkContent({
     (request: NetworkRequest) => requestNetwork(request, connectionId),
     [connectionId],
   );
-  const [session, setSession] = useState<SpaceSessionView | null>(null),
-    [authLoading, setAuthLoading] = useState(true);
-  const [accountError, setAccountError] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [loginOpen, setLoginOpen] = useState(false);
   const [devices, setDevices] = useState<NetworkDevice[]>([]),
     [loading, setLoading] = useState(true);
+  const [accountError, setAccountError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null),
     [complete, setComplete] = useState(true);
   const [refresh, setRefresh] = useState(0),
@@ -117,39 +112,23 @@ function AgentNetworkContent({
   );
   const reloadAccount = useCallback(async () => {
     const generation = networkGeneration(connectionId);
-    if (!official) {
-      await preloadDeviceId();
-      setAuthLoading(false);
-      return;
-    }
     setAuthLoading(true);
     setAccountError(null);
     try {
-      const result = await spaceGetSession();
-      if (generation !== networkGeneration(connectionId)) return;
-      setSession(result);
       await preloadDeviceId();
-    } catch (failure) {
-      if (generation === networkGeneration(connectionId))
-        setAccountError(t(`agentNetwork.errors.${networkErrorKey(failure)}`));
-    } finally {
       if (generation === networkGeneration(connectionId)) setAuthLoading(false);
+    } catch (failure) {
+      if (generation === networkGeneration(connectionId)) {
+        setAccountError(t(`agentNetwork.errors.${networkErrorKey(failure)}`));
+        setAuthLoading(false);
+      }
     }
-  }, [t, connectionId, official]);
-  const { authBusy, authFlow, startLogin } = useNextToolsLogin(
-    isActive,
-    reloadAccount,
-  );
+  }, [t, connectionId]);
   useEffect(() => {
     void reloadAccount();
   }, [reloadAccount, snapshot.authGeneration]);
   useEffect(() => {
-    if (
-      !isActive ||
-      snapshot.state !== "ready" ||
-      (official && session?.state !== "authenticated")
-    )
-      return;
+    if (!isActive || snapshot.state !== "ready") return;
     let cancelled = false;
     const generation = networkGeneration(connectionId);
     const current = () =>
@@ -196,11 +175,9 @@ function AgentNetworkContent({
     isActive,
     snapshot.state,
     snapshot.revision,
-    session?.state,
     refresh,
     readCatalog,
     t,
-    official,
     connectionId,
     networkRequest,
   ]);
@@ -347,25 +324,27 @@ function AgentNetworkContent({
         </div>
       </NetworkPage>
     );
-  if (official && (!session || session.state === "reauth_required")) {
-    const accountName =
-      session?.state === "reauth_required"
-        ? (session.account.user.name ?? session.account.user.email)
-        : null;
+  if (official && snapshot.state === "signedOut") {
     return (
       <NetworkPage selector={selector} gated>
-        <SpaceLogin
-          authBusy={authBusy}
-          authFlow={authFlow}
-          onLogin={() => {
-            void startLogin();
-          }}
-          reauthRequired={session?.state === "reauth_required"}
-          accountName={accountName}
-          onForgetAccount={() => {
-            void spaceLogout().then(reloadAccount);
-          }}
-        />
+        <div className="flex h-full items-center justify-center">
+          <button type="button" className="rounded-lg bg-[var(--ink)] px-5 py-3 text-sm text-[var(--paper)]" onClick={() => setLoginOpen(true)}>
+            {t("agentNetwork.connectOfficial")}
+          </button>
+        </div>
+        {loginOpen && (
+          <JoinNetworkDialog
+            official
+            onCancel={() => setLoginOpen(false)}
+            onConfirm={async (_url, identifier, password, register) => {
+              try {
+                acceptNetworkRegistry(await joinOfficialNetworkConnection(identifier, password, register));
+              } catch (failure) {
+                throw new Error(t(`agentNetwork.errors.${networkErrorKey(failure)}`));
+              }
+            }}
+          />
+        )}
       </NetworkPage>
     );
   }

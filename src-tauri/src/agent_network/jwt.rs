@@ -3,7 +3,7 @@
 use super::account::NetworkAccountSession;
 use super::crypto::{certificate_chain, certificate_fingerprint};
 use super::NetworkError;
-use crate::space_cloud::agent_network::AccountOperation;
+use super::account_protocol::AccountOperation;
 use jsonwebtoken::jwk::JwkSet;
 use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation};
 use myagents_agent_network_protocol::{budget, PeerBinding};

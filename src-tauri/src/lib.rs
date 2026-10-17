@@ -840,6 +840,7 @@ pub fn run() {
             agent_network::commands::cmd_agent_network_connections,
             agent_network::commands::cmd_agent_network_select,
             agent_network::commands::cmd_agent_network_join,
+            agent_network::commands::cmd_agent_network_join_official,
             agent_network::commands::cmd_agent_network_remove,
             agent_network::commands::cmd_agent_discovery,
             agent_network::commands::cmd_agent_network_request,

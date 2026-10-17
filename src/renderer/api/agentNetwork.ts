@@ -245,8 +245,12 @@ export function networkErrorKey(
   )
     return "conflict";
   if (code === "NETWORK_URL_INVALID") return "urlInvalid";
-  if (/^ENROLLMENT_KEY_|^KEY_(EXPIRED|REVOKED|BOUND)/.test(code))
-    return "keyInvalid";
+  if (code === "NETWORK_OFFICIAL_ID_CONFLICT") return "officialConflict";
+  if (code === "ACCOUNT_CREDENTIALS_INVALID" || code === "ACCOUNT_AUTH_REQUIRED") return "accountInvalid";
+  if (code === "ACCOUNT_EXISTS") return "accountExists";
+  if (code === "ACCOUNT_PASSWORD_WEAK") return "passwordWeak";
+  if (code === "ACCOUNT_REGISTRATION_DISABLED") return "registrationDisabled";
+  if (code === "ACCOUNT_RATE_LIMIT" || code === "ACCOUNT_SESSION_LIMIT") return "accountRateLimit";
   if (code === "NETWORK_TRUST_CHANGED") return "trustChanged";
   if (code === "NETWORK_REMOVAL_UNCONFIRMED") return "removalPending";
   if (code === "NETWORK_PRIVATE_KEY_MISSING" || code === "DEVICE_REVOKED")
@@ -292,8 +296,16 @@ export const selectNetworkConnection = (
   invoke("cmd_agent_network_select", { connectionId });
 export const joinNetworkConnection = (
   url: string,
-  key: string,
-): Promise<NetworkRegistry> => invoke("cmd_agent_network_join", { url, key });
+  identifier: string,
+  password: string,
+  register: boolean,
+): Promise<NetworkRegistry> => invoke("cmd_agent_network_join", { url, identifier, password, register });
+export const joinOfficialNetworkConnection = (
+  identifier: string,
+  password: string,
+  register: boolean,
+): Promise<NetworkRegistry> =>
+  invoke("cmd_agent_network_join_official", { identifier, password, register });
 export const removeNetworkConnection = (
   connectionId: string,
 ): Promise<NetworkRegistry> =>

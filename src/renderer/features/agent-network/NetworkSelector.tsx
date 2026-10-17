@@ -15,12 +15,7 @@ import {
 import { acceptNetworkRegistry } from "./store";
 import { JoinNetworkDialog } from "./JoinNetworkDialog";
 export function NetworkSelector({ registry }: { registry: NetworkRegistry }) {
-  const { t } = useTranslation("app");
-  return registry.selfhostEnabled === true ? (
-    <NetworkSwitcher registry={registry} />
-  ) : (
-    <h1 className="min-w-0 text-2xl font-semibold">{t("agentNetwork.networkName")}</h1>
-  );
+  return <NetworkSwitcher registry={registry} />;
 }
 function NetworkSwitcher({ registry }: { registry: NetworkRegistry }) {
   const { t } = useTranslation("app");
@@ -110,7 +105,9 @@ function NetworkSwitcher({ registry }: { registry: NetworkRegistry }) {
                       ? "agentNetwork.online"
                       : c.snapshot.state === "connecting"
                         ? "agentNetwork.connecting"
-                        : "agentNetwork.offline",
+                        : c.snapshot.state === "signedOut"
+                          ? "agentNetwork.signedOut"
+                          : "agentNetwork.offline",
                 )}
               </span>
             </button>
@@ -127,7 +124,7 @@ function NetworkSwitcher({ registry }: { registry: NetworkRegistry }) {
             <PlusIcon className="h-4 w-4" />
             {t("agentNetwork.joinSelfhost")}
           </button>
-          {current && !current.official && (
+          {current && (!current.official || current.url) && (
             <button
               role="menuitem"
               className="w-full rounded-md px-3 py-2.5 text-left text-sm text-[var(--error)] hover:bg-[var(--hover-bg)]"
@@ -148,9 +145,9 @@ function NetworkSwitcher({ registry }: { registry: NetworkRegistry }) {
       {join && (
         <JoinNetworkDialog
           onCancel={() => setJoin(false)}
-          onConfirm={async (url, key) => {
+          onConfirm={async (url, identifier, password, register) => {
             try {
-              acceptNetworkRegistry(await joinNetworkConnection(url, key));
+              acceptNetworkRegistry(await joinNetworkConnection(url, identifier, password, register));
             } catch (failure) {
               throw Error(error(failure));
             }

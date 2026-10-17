@@ -9,7 +9,6 @@ export interface HubConfig {
   serviceId: string;
   principalId: string;
   networkId: string;
-  enrollmentKey: string;
   dataDir: string;
 }
 export interface AuthContext {

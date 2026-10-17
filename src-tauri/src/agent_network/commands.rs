@@ -286,7 +286,9 @@ pub(crate) async fn cmd_agent_network_join(
     state: tauri::State<'_, super::actor::ManagedAgentNetwork>,
     manager: tauri::State<'_, crate::sidecar::ManagedSidecarManager>,
     url: String,
-    key: String,
+    identifier: String,
+    password: String,
+    register: bool,
 ) -> Result<super::registry::RegistryView, NetworkError> {
     state
         .inner()
@@ -294,7 +296,30 @@ pub(crate) async fn cmd_agent_network_join(
             app,
             manager.inner().clone(),
             url,
-            zeroize::Zeroizing::new(key),
+            identifier,
+            zeroize::Zeroizing::new(password),
+            register,
+        )
+        .await
+}
+#[tauri::command]
+pub(crate) async fn cmd_agent_network_join_official(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, super::actor::ManagedAgentNetwork>,
+    manager: tauri::State<'_, crate::sidecar::ManagedSidecarManager>,
+    identifier: String,
+    password: String,
+    register: bool,
+) -> Result<super::registry::RegistryView, NetworkError> {
+    state
+        .inner()
+        .join(
+            app,
+            manager.inner().clone(),
+            super::account::official_origin()?,
+            identifier,
+            zeroize::Zeroizing::new(password),
+            register,
         )
         .await
 }

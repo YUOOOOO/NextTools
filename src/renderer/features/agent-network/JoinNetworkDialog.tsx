@@ -8,14 +8,18 @@ import { isImeComposingEvent } from "@/utils/imeKeyboard";
 export function JoinNetworkDialog({
   onConfirm,
   onCancel,
+  official = false,
 }: {
-  onConfirm: (url: string, key: string) => Promise<void>;
+  onConfirm: (url: string, identifier: string, password: string, register: boolean) => Promise<void>;
   onCancel: () => void;
+  official?: boolean;
 }) {
   const { t } = useTranslation("app"),
     { t: common } = useTranslation("common");
   const [url, setUrl] = useState(""),
-    [key, setKey] = useState(""),
+    [identifier, setIdentifier] = useState(""),
+    [password, setPassword] = useState(""),
+    [register, setRegister] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null),
@@ -23,29 +27,23 @@ export function JoinNetworkDialog({
   const { refs, context } = useFloating({ open: true });
   const close = () => {
     if (!flight.current) {
-      setKey("");
+      setPassword("");
       onCancel();
     }
   };
-  useCloseLayer(() => {
-    close();
-    return true;
-  }, 260);
   async function submit() {
-    if (flight.current || !url.trim() || !key.trim()) return;
+    if (flight.current || (!official && !url.trim()) || !identifier.trim() || !password) return;
     flight.current = true;
     setBusy(true);
     setError(null);
     try {
-      await onConfirm(url.trim(), key.trim());
-      setKey("");
+      await onConfirm(url.trim(), identifier.trim(), password, register);
+      setPassword("");
       onCancel();
     } catch (failure) {
-      setKey("");
+      setPassword("");
       setError(
-        failure instanceof Error
-          ? failure.message
-          : t("agentNetwork.errors.failed"),
+        failure instanceof Error ? failure.message : t("agentNetwork.errors.failed"),
       );
       setBusy(false);
     } finally {
@@ -75,7 +73,7 @@ export function JoinNetworkDialog({
         >
           <div className="mb-4 flex items-center justify-between gap-3">
             <h2 id="join-network-title" className="text-lg font-semibold">
-              {t("agentNetwork.joinSelfhost")}
+              {t(official ? "agentNetwork.connectOfficial" : "agentNetwork.joinSelfhost")}
             </h2>
             <button
               type="button"
@@ -93,63 +91,66 @@ export function JoinNetworkDialog({
               void submit();
             }}
           >
-            <label
-              htmlFor="network-url"
-              className="mb-2 block text-sm font-medium"
-            >
-              {t("agentNetwork.serviceUrl")}
+            {!official && (
+              <>
+                <label htmlFor="network-url" className="mb-2 block text-sm font-medium">
+                  {t("agentNetwork.serviceUrl")}
+                </label>
+                <input
+                  ref={input}
+                  id="network-url"
+                  type="url"
+                  autoComplete="off"
+                  placeholder="https://your-network.workers.dev"
+                  value={url}
+                  disabled={busy}
+                  onChange={(e) => setUrl(e.target.value)}
+                  className="mb-4 w-full rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+                />
+              </>
+            )}
+            <label htmlFor="network-account" className="mb-2 block text-sm font-medium">
+              {t("agentNetwork.accountIdentifier")}
             </label>
             <input
-              ref={input}
-              id="network-url"
-              type="url"
-              autoComplete="off"
-              placeholder="https://your-network.workers.dev"
-              value={url}
+              ref={official ? input : undefined}
+              id="network-account"
+              type="text"
+              autoComplete="username"
+              value={identifier}
               disabled={busy}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => setIdentifier(e.target.value)}
               className="mb-4 w-full rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
             />
-            <label
-              htmlFor="network-key"
-              className="mb-2 block text-sm font-medium"
-            >
-              {t("agentNetwork.deviceKey")}
+            <label htmlFor="network-password" className="mb-2 block text-sm font-medium">
+              {t("agentNetwork.accountPassword")}
             </label>
             <input
-              id="network-key"
+              id="network-password"
               type="password"
-              autoComplete="off"
-              maxLength={256}
-              value={key}
+              autoComplete={register ? "new-password" : "current-password"}
+              value={password}
               disabled={busy}
-              onChange={(e) => setKey(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
             />
+            <label className="mt-3 flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={register} disabled={busy} onChange={(e) => setRegister(e.target.checked)} />
+              {t("agentNetwork.createAccount")}
+            </label>
             <p className="mt-3 text-xs leading-relaxed text-[var(--ink-muted)]">
-              {t("agentNetwork.selfhostHint")}
+              {t(official ? "agentNetwork.officialHint" : "agentNetwork.selfhostHint")}
             </p>
             {error && (
-              <p role="alert" className="mt-3 text-sm text-[var(--error)]">
-                {error}
-              </p>
+              <p role="alert" className="mt-3 text-sm text-[var(--error)]">{error}</p>
             )}
             <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={close}
-                disabled={busy}
-                className="rounded-lg px-4 py-2 text-sm hover:bg-[var(--paper-inset)]"
-              >
+              <button type="button" onClick={close} disabled={busy} className="rounded-lg px-4 py-2 text-sm hover:bg-[var(--paper-inset)]">
                 {common("actions.cancel")}
               </button>
-              <button
-                type="submit"
-                disabled={busy || !url.trim() || !key.trim()}
-                className="flex items-center gap-2 rounded-lg bg-[var(--ink)] px-4 py-2 text-sm text-[var(--paper)] disabled:opacity-50"
-              >
+              <button type="submit" disabled={busy || (!official && !url.trim()) || !identifier.trim() || !password} className="flex items-center gap-2 rounded-lg bg-[var(--ink)] px-4 py-2 text-sm text-[var(--paper)] disabled:opacity-50">
                 {busy && <LoaderIcon className="h-4 w-4 animate-spin" />}
-                {t(busy ? "agentNetwork.joiningSelfhost" : "agentNetwork.join")}
+                {t(busy ? (official ? "agentNetwork.joiningOfficial" : "agentNetwork.joiningSelfhost") : "agentNetwork.join")}
               </button>
             </div>
           </form>

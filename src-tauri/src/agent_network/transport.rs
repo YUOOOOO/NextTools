@@ -25,6 +25,7 @@ pub(crate) struct NetworkTransport {
     origin: url::Url,
     client: reqwest::Client,
     key: Arc<DevicePrivateKey>,
+    account_id: Option<String>,
     nonce: Mutex<Option<String>>,
 }
 impl NetworkTransport {
@@ -32,11 +33,15 @@ impl NetworkTransport {
         origin: &str,
         key: Arc<DevicePrivateKey>,
         memory: super::memory::MemoryBudget,
+        account_id: Option<&str>,
     ) -> Result<Self, NetworkError> {
         let endpoint =
             url::Url::parse(origin).map_err(|_| NetworkError::new("NETWORK_ENDPOINT_INVALID"))?;
         if endpoint.scheme() != "https" || endpoint.origin().ascii_serialization() != origin {
             return Err(NetworkError::new("NETWORK_ENDPOINT_INVALID"));
+        }
+        if account_id.is_some_and(|id| uuid::Uuid::parse_str(id).map(|value| value.to_string()).as_deref() != Ok(id)) {
+            return Err(NetworkError::new("ACCOUNT_SCOPE_MISMATCH"));
         }
         // External HTTPS endpoint with standard public platform verification.
         // The inner device CA is intentionally absent from this trust store.
@@ -54,6 +59,7 @@ impl NetworkTransport {
             origin: endpoint,
             client,
             key,
+            account_id: account_id.map(str::to_owned),
             nonce: Mutex::new(None),
         })
     }
@@ -65,6 +71,11 @@ impl NetworkTransport {
         token: &str,
         diagnostic: &RequestDiagnostic,
     ) -> Result<reqwest::Response, NetworkError> {
+        let request = if let Some(account) = &self.account_id {
+            request.header("x-agenthub-account", account)
+        } else {
+            request
+        };
         for attempt in 0..2 {
             let nonce = self
                 .nonce

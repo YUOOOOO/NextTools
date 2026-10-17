@@ -17,7 +17,6 @@ use crate::network_diagnostics::{error_category, response_request_id, RequestDia
 use crate::workspace_files::path_safety::open_regular_file_no_follow;
 use crate::{ulog_info, ulog_warn};
 
-pub(crate) mod agent_network;
 pub(crate) mod attachments;
 pub(crate) mod cli;
 pub(crate) mod delivery;
@@ -2555,7 +2554,6 @@ mod tests;
 /// owner. Every account projection clears synchronously before remote refresh.
 pub(crate) fn account_auth_boundary_changed<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     let _ = app.emit("space-account:changed", "auth");
-    crate::agent_network::actor::auth_boundary_changed(app);
     if let Some(center) = app.try_state::<notifications::ManagedNotificationCenter>() {
         notifications::auth_boundary_changed(app, center.inner());
     }

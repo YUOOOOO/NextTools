@@ -4742,6 +4742,11 @@ export default function App() {
   ]);
 
   useEffect(() => startAgentNetworkStore(), []);
+  const handleOpenAgentNetwork = useCallback(() => {
+    tabWorkspaceController.open('agentnetwork', {
+      title: t('tabs.agentNetwork'),
+    });
+  }, [t, tabWorkspaceController]);
   const activeWorkspacePath = resolveGlobalSidebarWorkspace(activeTab);
   const launcherBinding = useMemo<BuiltinTabBindings['launcher']>(
     () => ({
@@ -4848,8 +4853,9 @@ export default function App() {
     () => ({
       ...settingsUpdaterBinding,
       onNavigationConsumed: handleSettingsSectionChange,
+      onOpenAgentNetwork: handleOpenAgentNetwork,
     }),
-    [handleSettingsSectionChange, settingsUpdaterBinding],
+    [handleSettingsSectionChange, handleOpenAgentNetwork, settingsUpdaterBinding],
   );
   const capabilitiesBinding = useMemo<BuiltinTabBindings['capabilities']>(
     () => ({
@@ -4932,6 +4938,7 @@ export default function App() {
             onOpenTaskCenter={handleOpenTaskCenter}
             onCreateTask={handleSidebarCreateTask}
             onOpenSpace={handleOpenSpace}
+            onOpenAgentNetwork={handleOpenAgentNetwork}
             onOpenAppRoute={handleOpenAppRoute}
             onOpenCapabilities={handleOpenCapabilities}
             onOpenSettings={handleOpenSettings}

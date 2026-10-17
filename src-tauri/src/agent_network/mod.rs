@@ -1,5 +1,6 @@
 //! App-owned network identity, transport and admission adapters.
 mod account;
+mod account_protocol;
 pub(crate) mod actor;
 mod calls;
 mod catalog;

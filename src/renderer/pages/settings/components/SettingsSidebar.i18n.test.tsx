@@ -1,12 +1,12 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { i18n } from '@/i18n';
 import type { SettingsSection } from '../settingsSections';
 import { SettingsSidebar } from './SettingsSidebar';
 
-function SidebarProbe({ developerUnlocked = false }: { developerUnlocked?: boolean }) {
+function SidebarProbe({ developerUnlocked = false, onOpenAgentNetwork = () => {} }: { developerUnlocked?: boolean; onOpenAgentNetwork?: () => void }) {
   const [section, setSection] = useState<SettingsSection>('general');
   return (
     <SettingsSidebar
@@ -15,6 +15,7 @@ function SidebarProbe({ developerUnlocked = false }: { developerUnlocked?: boole
       showDevTools
       developerUnlocked={developerUnlocked}
       onShowLogs={() => {}}
+      onOpenAgentNetwork={onOpenAgentNetwork}
     />
   );
 }
@@ -56,6 +57,7 @@ describe('SettingsSidebar i18n', () => {
       'Network Proxy',
       'External Calls',
       'Shortcuts',
+      'AgentNet Local Network',
     ]);
   });
 
@@ -65,6 +67,13 @@ describe('SettingsSidebar i18n', () => {
     const labels = within(screen.getByRole('navigation'))
       .getAllByRole('button')
       .map(button => button.textContent);
-    expect(labels.slice(-2)).toEqual(['Shortcuts', 'Developer']);
+    expect(labels.slice(-3)).toEqual(['Shortcuts', 'Developer', 'AgentNet Local Network']);
+  });
+
+  it('opens AgentNet through its shared navigation action', () => {
+    const onOpenAgentNetwork = vi.fn();
+    render(<SidebarProbe onOpenAgentNetwork={onOpenAgentNetwork} />);
+    fireEvent.click(screen.getByRole('button', { name: 'AgentNet Local Network' }));
+    expect(onOpenAgentNetwork).toHaveBeenCalledOnce();
   });
 });

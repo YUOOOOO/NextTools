@@ -101,7 +101,7 @@ struct Boundary {
 }
 pub(crate) struct AgentNetwork {
     pub(crate) connection_id: String,
-    account: Option<NetworkAccountSession>,
+    pub(super) account: Option<NetworkAccountSession>,
     memory: MemoryBudget,
     snapshot: Mutex<NetworkSnapshot>,
     boundary: watch::Sender<Boundary>,
@@ -182,31 +182,6 @@ impl AgentNetwork {
         }
         let _ = app.emit("agent-network:changed", snapshot);
     }
-    pub(crate) fn auth_boundary<R: tauri::Runtime>(&self, app: &tauri::AppHandle<R>) {
-        let snapshot = {
-            let mut current = self
-                .snapshot
-                .lock()
-                .unwrap_or_else(|error| error.into_inner());
-            self.boundary.send_modify(|value| {
-                value.generation = value.generation.saturating_add(1);
-                value.auth_generation = value.auth_generation.saturating_add(1);
-            });
-            let snapshot = NetworkSnapshot {
-                state: "signedOut",
-                principal_id: None,
-                network_id: None,
-                device_name: None,
-                error: None,
-                revision: current.revision.saturating_add(1),
-                auth_generation: self.boundary.borrow().auth_generation,
-                connection_id: self.connection_id.clone(),
-            };
-            *current = snapshot.clone();
-            snapshot
-        };
-        let _ = app.emit("agent-network:changed", snapshot);
-    }
     pub(crate) fn power_boundary(&self, app: &tauri::AppHandle, suspended: bool) {
         let snapshot = {
             let mut current = self
@@ -226,8 +201,8 @@ impl AgentNetwork {
         let _ = app.emit("agent-network:changed", snapshot);
     }
     pub(crate) fn deactivate(&self) {
-        if let Some(NetworkAccountSession::Selfhost(account)) = &self.account {
-            account.active.store(false, Ordering::Release);
+        if let Some(account) = &self.account {
+            account.0.active.store(false, Ordering::Release);
         }
         self.stop();
     }
@@ -409,11 +384,6 @@ impl AgentNetwork {
             })
     }
 }
-pub(crate) fn auth_boundary_changed<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
-    if let Some(owner) = app.try_state::<ManagedAgentNetwork>() {
-        owner.auth_boundary(app);
-    }
-}
 /// Logical return state belongs to this App identity, across socket attempts.
 struct ReturnState {
     source: SourceReturns,
@@ -503,8 +473,7 @@ pub(crate) fn start(
             match owner
                 .account
                 .clone()
-                .map(Ok)
-                .unwrap_or_else(NetworkAccountSession::capture)
+                .ok_or_else(|| NetworkError::new("NETWORK_ACCOUNT_REQUIRED"))
             {
                 Ok(account) => {
                     let principal = account.principal_id().ok().map(str::to_owned);
@@ -607,7 +576,7 @@ pub(crate) fn start(
                         &app,
                         phase.generation,
                         NetworkSnapshot {
-                            state: if error.code == "SPACE_REAUTH_REQUIRED" {
+                            state: if error.code == "NETWORK_ACCOUNT_REQUIRED" {
                                 "signedOut"
                             } else {
                                 "unavailable"
@@ -851,6 +820,7 @@ async fn connect(
             &identity.network_url,
             identity.device_key(),
             owner.memory.clone(),
+            Some(identity.account.principal_id()?),
         )?);
         let metadata = transport
             .json(NetworkRoute::Network, &identity.token, None)

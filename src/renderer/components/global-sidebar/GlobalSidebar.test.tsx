@@ -186,6 +186,7 @@ function sidebar(overrides: Partial<SidebarProps> = {}) {
       onOpenTaskCenter={vi.fn()}
       onCreateTask={vi.fn()}
       onOpenSpace={vi.fn()}
+      onOpenAgentNetwork={vi.fn()}
       onOpenCapabilities={vi.fn()}
       onOpenSettings={vi.fn()}
       onOpenWorkspace={vi.fn(async () => true)}
@@ -1457,7 +1458,7 @@ describe('GlobalSidebar rail flyout', () => {
       .not.toBeInTheDocument();
     expect(onOpenSpace).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: String(i18n.t('app:globalSidebar.more')) })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: String(i18n.t('app:globalSidebar.agentNetwork')) })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: String(i18n.t('app:globalSidebar.agentNetwork')) })).toBeEnabled();
   });
 
   it('does not let an old Session completion close a newly reopened search overlay', async () => {
@@ -1760,18 +1761,21 @@ describe('GlobalSidebar rail flyout', () => {
 
 describe('Simplified sidebar navigation', () => {
   beforeEach(() => { vi.useRealTimers(); vi.clearAllMocks(); mocks.projects = []; window.localStorage.clear(); });
-  it.each([true, false])('hides secondary entries with Space available=%s while preserving Settings', available => {
+  it.each([true, false])('keeps AgentNet and Settings available with Space available=%s', available => {
     const onOpenSettings = vi.fn();
+    const onOpenAgentNetwork = vi.fn();
     const settingsTab: Tab = { id: 'settings-tab', view: 'settings', title: 'Settings' };
-    renderSidebar({ teamSpaceAvailable: available, onOpenSettings, activeTab: settingsTab });
+    renderSidebar({ teamSpaceAvailable: available, onOpenSettings, onOpenAgentNetwork, activeTab: settingsTab });
     const labels = screen.getAllByRole('button')
       .filter(button => button.hasAttribute('data-global-sidebar-nav-button'))
       .map(button => button.getAttribute('aria-label'));
-    expect(labels).toEqual(['新对话', '自动化任务', '技能与工具', '设置']);
+    expect(labels).toEqual(['新对话', '自动化任务', '技能与工具', 'AgentNet 局域网络', '设置']);
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     const settings = screen.getByRole('button', { name: '设置' });
     expect(settings).toHaveAttribute('aria-current', 'page');
     fireEvent.click(settings);
     expect(onOpenSettings).toHaveBeenCalledWith('general');
+    fireEvent.click(screen.getByRole('button', { name: 'AgentNet 局域网络' }));
+    expect(onOpenAgentNetwork).toHaveBeenCalledOnce();
   });
 });

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **AgentHub 账号与设备隔离**：独立自部署服务支持账号注册、登录、刷新与登出；同账号设备互信，不同账号的证书、网络目录和中继隔离。桌面加入网络支持账号/密码与注册选项，密码和账号令牌不持久化；已有设备沿私钥重连，重新登记需再次登录授权。部署可关闭新账号注册。
+
 ### Fixed
 
 - **独立 AgentHub 验收**：修正 smoke 客户端 DPoP 公钥序列化，避免 WebCrypto 附加字段导致认证失败；通过真实 HTTPS/WSS、TLS 1.3 mTLS 加密中转、permit、断线恢复与重启持久化验收。

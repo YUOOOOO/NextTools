@@ -10,6 +10,7 @@ interface SettingsSidebarProps {
   developerUnlocked?: boolean;
   floatingBallDevGate?: boolean;
   onShowLogs: () => void;
+  onOpenAgentNetwork?: () => void;
 }
 
 const NAV_ITEMS: Array<{ section: SettingsSection; labelKey: string }> = [
@@ -31,8 +32,9 @@ export function SettingsSidebar({
   developerUnlocked,
   floatingBallDevGate,
   onShowLogs,
+  onOpenAgentNetwork,
 }: SettingsSidebarProps) {
-  const { t } = useTranslation('settings');
+  const { t } = useTranslation(['settings', 'app']);
 
   return (
     <div className="settings-sidebar w-52 shrink-0 p-6">
@@ -68,6 +70,14 @@ export function SettingsSidebar({
             </button>
           );
         })}
+        <button
+          type="button"
+          onClick={onOpenAgentNetwork}
+          disabled={!onOpenAgentNetwork}
+          className="w-full rounded-lg px-3 py-2.5 text-left text-base font-medium text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-45"
+        >
+          {t('app:globalSidebar.agentNetwork')}
+        </button>
       </nav>
     </div>
   );

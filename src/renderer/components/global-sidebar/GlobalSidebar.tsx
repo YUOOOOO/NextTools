@@ -60,6 +60,7 @@ import {
   SidebarIcon,
   TasksIcon,
   FolderIcon,
+  RadioIcon,
 } from '@/components/icons';
 import UnreadNotificationIndicator from '@/components/UnreadNotificationIndicator';
 import { useToast } from '@/components/Toast';
@@ -174,6 +175,7 @@ interface GlobalSidebarProps {
   onOpenTaskCenter: () => void;
   onCreateTask: () => void;
   onOpenSpace: () => void;
+  onOpenAgentNetwork?: () => void;
   onOpenAppRoute?: (route: AppRoute) => Promise<boolean> | boolean;
   onOpenCapabilities: (section?: CapabilitySection) => void;
   onOpenSettings: (section: 'general' | 'agent') => void;
@@ -410,6 +412,7 @@ export default memo(function GlobalSidebar({
   onOpenTaskCenter,
   onCreateTask,
   onOpenSpace,
+  onOpenAgentNetwork,
   onOpenAppRoute,
   onOpenCapabilities,
   onOpenSettings,
@@ -1162,6 +1165,14 @@ export default memo(function GlobalSidebar({
             icon={<CapabilitiesIcon className="h-4 w-4" />}
             label={t('globalSidebar.capabilities')}
             onClick={() => onOpenCapabilities()}
+          />
+          <SidebarNavButton
+            expanded={expanded}
+            active={activeView === 'agentnetwork'}
+            disabled={!onOpenAgentNetwork}
+            icon={<RadioIcon className="h-4 w-4" />}
+            label={t('globalSidebar.agentNetwork')}
+            onClick={() => onOpenAgentNetwork?.()}
           />
         </nav>
 

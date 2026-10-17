@@ -1,4 +1,4 @@
-import { createHash, createPublicKey, randomBytes, randomUUID, timingSafeEqual, verify as verifySignature, webcrypto } from 'node:crypto';
+import { createHash, createPublicKey, randomBytes, randomUUID, verify as verifySignature, webcrypto } from 'node:crypto';
 import type { IncomingMessage } from 'node:http';
 import type { DatabaseSync } from 'node:sqlite';
 import { SignJWT, calculateJwkThumbprint, decodeProtectedHeader, importJWK, jwtVerify, compactVerify, type JWK, type JWTPayload } from 'jose';
@@ -30,10 +30,9 @@ interface ChallengeRecord { id: string; device: string; generation: number; oper
 interface Secrets { issuer: string; serviceId: string; principalId: string; networkId: string; environment: string; caPrivate: JWK; caCertificate: string; intermediatePrivate: JWK; intermediateCertificate: string; issuerPrivate: JWK; kid: string }
 function parse<T>(schema: z.ZodType<T>, value: unknown): T { const parsed = schema.safeParse(value); if (!parsed.success) throw new HubError('IDENTITY_REQUEST_INVALID'); return parsed.data; }
 function fail(code = 'NETWORK_SIGNED_IDENTITY_INVALID'): never { throw new HubError(code, 401); }
-function secretEqual(a: string, b: string): boolean { return timingSafeEqual(createHash('sha256').update(a).digest(), createHash('sha256').update(b).digest()); }
 
 /** 私钥只在服务端数据库中保存；客户端提交的 CSR 永远不能控制证书用途或 SAN。 */
-export async function createIdentity(config: HubConfig, db: DatabaseSync): Promise<IdentityApi> {
+export async function createIdentity(config: HubConfig, db: DatabaseSync, authorizeEnrollment: (request: IncomingMessage) => void): Promise<IdentityApi> {
   db.exec(`CREATE TABLE IF NOT EXISTS identity_secrets (id INTEGER PRIMARY KEY CHECK(id=1), value TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS identity_devices (device TEXT PRIMARY KEY, value TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS identity_retired (device TEXT NOT NULL, generation INTEGER NOT NULL, value TEXT NOT NULL, PRIMARY KEY(device,generation));
@@ -215,8 +214,7 @@ export async function createIdentity(config: HubConfig, db: DatabaseSync): Promi
       }
       if (path === '/api/agent-network/identity') {
         const input = parse(enrollSchema, body);
-        const key = request.headers['x-agenthub-key'];
-        if (typeof key !== 'string' || !secretEqual(key, config.enrollmentKey)) fail('NETWORK_ENROLLMENT_KEY_INVALID');
+        authorizeEnrollment(request);
         const publicKey = await csr(input.csr);
         return exclusive(input.deviceId, async () => {
           const previous = load(input.deviceId);
@@ -240,7 +238,7 @@ export async function createIdentity(config: HubConfig, db: DatabaseSync): Promi
         return exclusive(input.deviceId, async () => { const device = consume(input, 'renew', publicKey.fingerprint); if (publicKey.fingerprint !== device.fingerprint) fail('IDENTITY_KEY_MISMATCH'); await issueCertificate(device); persist(device); return peer(device); });
       }
       if (path === '/api/agent-network/identity/rotate') {
-        // Selfhost 没有独立账户 recovery 凭据，不能把 recovery:true 当作身份认证。
+        // Key rotation still requires the enrolled private key, not an account session.
         const input = parse(rotateSchema, body), publicKey = await csr(input.csr);
         return exclusive(input.deviceId, async () => {
           const previous = consume(input, 'rotate', publicKey.fingerprint);

@@ -3,6 +3,7 @@ const invoke = vi.hoisted(() => vi.fn());
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));
 import {
   networkErrorKey,
+  joinNetworkConnection,
   networkRequest,
   setNetworkReadScope,
   type NetworkRequest,
@@ -270,4 +271,23 @@ it("keeps uncertain mutation receipt queries on their original network", async (
     connectionId: "self-a",
     request: { kind: "receipt", mutationId: "same-id" },
   });
+});
+
+it("passes self-hosted credentials to the Rust enrollment owner without device keys", async () => {
+  invoke.mockResolvedValue({ selected: "self-a", connections: [] });
+  await joinNetworkConnection("https://hub.example.test", "account", "secret", false);
+  expect(invoke).toHaveBeenCalledExactlyOnceWith("cmd_agent_network_join", {
+    url: "https://hub.example.test", identifier: "account", password: "secret", register: false,
+  });
+});
+
+it.each([
+  ["ACCOUNT_CREDENTIALS_INVALID", "accountInvalid"],
+  ["ACCOUNT_AUTH_REQUIRED", "accountInvalid"],
+  ["ACCOUNT_EXISTS", "accountExists"],
+  ["ACCOUNT_PASSWORD_WEAK", "passwordWeak"],
+  ["ACCOUNT_REGISTRATION_DISABLED", "registrationDisabled"],
+  ["ACCOUNT_RATE_LIMIT", "accountRateLimit"],
+])("explains self-hosted login failure %s", (code, key) => {
+  expect(networkErrorKey({ code })).toBe(key);
 });

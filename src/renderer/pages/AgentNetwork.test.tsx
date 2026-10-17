@@ -15,6 +15,9 @@ const mocks = vi.hoisted(() => ({
   devices: vi.fn(),
   agents: vi.fn(),
   login: vi.fn(),
+  joinOfficial: vi.fn(),
+  acceptRegistry: vi.fn(),
+  preloadDevice: vi.fn(),
   openExternal: vi.fn(),
   selected: "official",
   snapshot: {
@@ -36,6 +39,7 @@ vi.mock("@/api/agentNetwork", async (original) => ({
   networkRequest: mocks.request,
   allNetworkDevices: mocks.devices,
   allDeviceAgents: mocks.agents,
+  joinOfficialNetworkConnection: mocks.joinOfficial,
 }));
 vi.mock("@/hooks/useNextToolsLogin", () => ({
   useNextToolsLogin: () => ({
@@ -47,6 +51,7 @@ vi.mock("@/hooks/useNextToolsLogin", () => ({
 vi.mock("@/features/agent-network/store", async (original) => ({
   ...(await original<typeof import("@/features/agent-network/store")>()),
   useAgentNetworkSnapshot: () => mocks.snapshot,
+  acceptNetworkRegistry: mocks.acceptRegistry,
   useAgentNetworkRegistry: () => ({
     selected: mocks.selected,
     selfhostEnabled: true,
@@ -65,7 +70,7 @@ vi.mock("@/features/agent-network/store", async (original) => ({
 }));
 vi.mock("@/identity/deviceIdentity", () => ({
   getDeviceId: () => "22222222-2222-4222-8222-222222222222",
-  preloadDeviceId: async () => undefined,
+  preloadDeviceId: mocks.preloadDevice,
 }));
 vi.mock("@/utils/openExternal", () => ({
   openExternal: mocks.openExternal,
@@ -99,6 +104,8 @@ const membership = {
 };
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.preloadDevice.mockResolvedValue(undefined);
+  mocks.joinOfficial.mockResolvedValue({ selected: "official", connections: [] });
   mocks.selected = "official";
   mocks.snapshot = {
     state: "ready",
@@ -305,7 +312,7 @@ describe("Agent network account and device management", () => {
     };
     mocks.session.mockResolvedValue(null);
     view.rerender(<AgentNetwork />);
-    await screen.findByRole("button", { name: "继续使用 Google" });
+    await screen.findByRole("button", { name: "连接 NextTools 官方网络" });
     await act(async () => {
       finish({
         networkId: device.networkId,
@@ -423,16 +430,19 @@ describe("Agent network account and device management", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "重试" }));
     await waitFor(() => expect(mocks.agents).toHaveBeenCalledTimes(2));
   });
-  it("uses the shared account login screen without querying network metadata while signed out", async () => {
+  it("uses AgentHub credentials without a service URL or Space login while signed out", async () => {
     mocks.snapshot = { ...mocks.snapshot, state: "signedOut" };
-    mocks.session.mockResolvedValue(null);
     render(<AgentNetwork />);
-    const login = await screen.findByRole("button", {
-      name: "继续使用 Google",
-    });
-    expect(login).toHaveClass("h-10");
-    fireEvent.click(login);
-    expect(mocks.login).toHaveBeenCalledOnce();
+    fireEvent.click(await screen.findByRole("button", { name: "连接 NextTools 官方网络" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).queryByLabelText("服务 URL")).not.toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText("邮箱或账号"), { target: { value: "official@example.test" } });
+    fireEvent.change(within(dialog).getByLabelText("密码"), { target: { value: "test-password-123" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "加入网络" }));
+    await waitFor(() => expect(mocks.joinOfficial).toHaveBeenCalledWith("official@example.test", "test-password-123", false));
+    await waitFor(() => expect(mocks.acceptRegistry).toHaveBeenCalled());
+    expect(mocks.session).not.toHaveBeenCalled();
+    expect(mocks.login).not.toHaveBeenCalled();
     expect(mocks.devices).not.toHaveBeenCalled();
     expect(mocks.request).not.toHaveBeenCalled();
   });
@@ -555,7 +565,7 @@ describe("Agent network account and device management", () => {
     };
     mocks.session.mockResolvedValue(null);
     view.rerender(<AgentNetwork />);
-    await screen.findByRole("button", { name: "继续使用 Google" });
+    await screen.findByRole("button", { name: "连接 NextTools 官方网络" });
     await act(async () => {
       finish({ ...membership, joined: false });
     });
@@ -718,7 +728,7 @@ describe("Network header across asynchronous boundaries", () => {
 
   it("retains header controls and unknown statistics while authenticating", async () => {
     let finish!: (value: unknown) => void;
-    mocks.session.mockImplementation(
+    mocks.preloadDevice.mockImplementation(
       () =>
         new Promise((resolve) => {
           finish = resolve;
@@ -729,7 +739,7 @@ describe("Network header across asynchronous boundaries", () => {
     const selector = screen.getByRole("button", { name: "选择网络" });
     const info = screen.getByRole("button", { name: "网络说明" });
     await act(async () => {
-      finish({ state: "authenticated", session: { user: { id: "account" } } });
+      finish(undefined);
     });
     await screen.findByRole("button", { name: "查看 Fixture Mac 的设备详情" });
     expectHeader("0", "0");
@@ -766,11 +776,11 @@ describe("Network header across asynchronous boundaries", () => {
   });
 
   it("retains the same header in signed-out and account-error states", async () => {
-    mocks.session.mockResolvedValue(null);
+    mocks.snapshot = { ...mocks.snapshot, state: "signedOut" };
     const view = render(<AgentNetwork />);
-    await screen.findByRole("button", { name: "继续使用 Google" });
+    await screen.findByRole("button", { name: "连接 NextTools 官方网络" });
     expectHeader("—", "—");
-    mocks.session.mockRejectedValue(new Error("account unavailable"));
+    mocks.preloadDevice.mockRejectedValue(new Error("device unavailable"));
     mocks.snapshot = { ...mocks.snapshot, authGeneration: 2 };
     view.rerender(<AgentNetwork />);
     await screen.findByRole("alert");
