@@ -137,6 +137,7 @@ Sherpa 的附加宏通过 `CMAKE_CXX_FLAGS_INIT` 传入，不能覆盖 `CMAKE_CX
 |------|------|
 | `-SkipTypeCheck` | 跳过 TypeScript 类型检查 |
 | `-SkipPortable` | 跳过便携版 ZIP 生成 |
+| `-KeepRunningApps` | 保持当前 NextTools 实例运行；仅在运行实例不占用本次 Release 输出（例如 Debug 实例）时使用。 |
 
 **构建流程**（7 步）：
 

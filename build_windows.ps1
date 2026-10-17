@@ -5,7 +5,8 @@
 
 param(
     [switch]$SkipTypeCheck,
-    [switch]$SkipPortable
+    [switch]$SkipPortable,
+    [switch]$KeepRunningApps
 )
 
 $ErrorActionPreference = "Stop"
@@ -352,7 +353,7 @@ try {
     Write-Host "[准备] 清理旧构建..." -ForegroundColor Blue
 
     # 杀死残留进程（避免文件锁定）
-    $appProcesses = Get-Process | Where-Object { $_.ProcessName -eq "NextTools" }
+    $appProcesses = if ($KeepRunningApps) { @() } else { Get-Process | Where-Object { $_.ProcessName -eq "NextTools" } }
 
     if ($appProcesses) {
         $appProcesses | Stop-Process -Force -ErrorAction SilentlyContinue
@@ -362,7 +363,7 @@ try {
     # 验证进程清理完成（最多等待 2 秒）
     $maxWait = 20  # 20 * 100ms = 2s
     $waited = 0
-    while ($waited -lt $maxWait) {
+    while ($waited -lt $maxWait -and -not $KeepRunningApps) {
         $remainingApp = Get-Process -Name "NextTools" -ErrorAction SilentlyContinue
         if (-not $remainingApp) {
             break
