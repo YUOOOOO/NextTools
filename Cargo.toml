@@ -1,19 +1,8 @@
 [workspace]
+members = ["crates/host-core"]
 resolver = "2"
-members = ["apps/client/src-tauri", "packages/protocol", "crates/workspace-core", "crates/local-store", "crates/capability-broker", "crates/host-core"]
 
 [workspace.package]
-version = "0.1.0"
 edition = "2021"
-rust-version = "1.90"
-
-[workspace.dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-thiserror = "2"
-uuid = { version = "1", features = ["v4"] }
-nexttools-protocol = { path = "packages/protocol" }
-workspace-core = { path = "crates/workspace-core" }
-local-store = { path = "crates/local-store" }
-capability-broker = { path = "crates/capability-broker" }
-host-core = { path = "crates/host-core" }
+license = "LGPL-3.0-or-later"
+version = "0.21.0-beta.4"
