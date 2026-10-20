@@ -1,5 +1,7 @@
 # 06. 设置信息架构
 
+> 工作台分叉目标：见[阶段 1](../../../project/pi-workbench/phases.md#phase-1-desktop-activity-bar-and-destination-shell)。设置页旁保留 Activity Bar，设置分类导航继续独立，返回时恢复之前页面。本文后续内容仍描述当前 PI 设置行为。
+
 > **翻译说明：** 本页是与 [英文源规格](/spec/04-ux/06-settings-ia) 一一对应的机器辅助翻译。代码、协议字段和标识符保持原文；如翻译与英文源事实有歧义，以英文版本为准。
 
 

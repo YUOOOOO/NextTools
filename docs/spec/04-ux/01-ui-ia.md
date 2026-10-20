@@ -1,5 +1,7 @@
 # 01. UI Information Architecture
 
+> Planned fork shell: [Phase 1](../../project/pi-workbench/phases.md#phase-1-desktop-activity-bar-and-destination-shell) adds Agent, Workbench, Scheduled Tasks and Extensions in a fixed left Activity Bar; Notifications and Settings are pinned below; Agent remains the default. No embedded Workbench Agent assistant is planned. The layout below remains the current PI baseline until implementation.
+
 > Language: English (per ADR 0009). This describes the shipped Codex-aligned
 > shell (D034+). Component detail: [08-component-spec](08-component-spec.md);
 > visual tokens: [07-ui-design-system](07-ui-design-system.md); behavior:

@@ -1,5 +1,7 @@
 # 03. Repo Structure
 
+> Fork directory reservation: `apps/mobile/README.md` reserves the future OpenMinis native client. It has no source/build manifest or workspace membership. Existing desktop, packages and crates are not moved. See [intake and adaptation](../../project/pi-workbench/phases.md#phase-4-openminis-intake-and-phone-adaptation) before importing code.
+
 ## 1. Workspace layout
 
 Two workspaces share one repository: pnpm owns every JavaScript package
@@ -9,6 +11,7 @@ Two workspaces share one repository: pnpm owns every JavaScript package
 ```text
 PI-Desktop/
 ├── apps/
+│ ├── mobile/                 # Reserved OpenMinis client; README only, no build membership
 │ └── desktop/                # Electron product shell
 │   ├── electron/
 │   │ ├── main/               # main process, one module per concern

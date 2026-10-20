@@ -1,5 +1,7 @@
 # 06. Settings Information Architecture
 
+> Planned fork shell: [Phase 1](../../project/pi-workbench/phases.md#phase-1-desktop-activity-bar-and-destination-shell) keeps the Activity Bar visible beside Settings and preserves its own category directory and navigation return. Current Settings behavior below remains unchanged by this planning document.
+
 ## 1. Settings root (Codex full-page shell)
 
 Settings is a **full-window page** that replaces the app sidebar + main chrome (Codex electron behavior):

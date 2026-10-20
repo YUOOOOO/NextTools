@@ -1,5 +1,7 @@
 # 01. Product Scope
 
+> Fork target: see the [PI Workbench roadmap](../../project/pi-workbench.md). Its separate Personal Agent, bundled first-party modules, transient E2E relay and future OpenMinis client are planned increments. The current shipped-scope and out-of-scope sections below describe the PI baseline, not completion of that roadmap.
+
 ## 1. Positioning
 
 PI-Desktop is for developers and power users who want a local agent that can read/modify projects with visible control.

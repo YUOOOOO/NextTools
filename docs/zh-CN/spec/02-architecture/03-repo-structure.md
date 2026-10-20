@@ -1,5 +1,7 @@
 # 03. 仓库结构
 
+> 工作台分叉目录预留：`apps/mobile/README.md` 仅说明未来 OpenMinis 原生客户端的预留位置，不包含源码、构建清单，也不属于当前 workspace。桌面、packages 和 crates 的位置不变。导入代码前请先审查[接入与适配阶段](../../../project/pi-workbench/phases.md#phase-4-openminis-intake-and-phone-adaptation)。
+
 > **翻译说明：** 本页是与 [英文源规格](/spec/02-architecture/03-repo-structure) 一一对应的机器辅助翻译。代码、协议字段和标识符保持原文；如翻译与英文源事实有歧义，以英文版本为准。
 
 
@@ -10,6 +12,7 @@
 ```text
 PI-Desktop/
 ├── apps/
+│ ├── mobile/                 # 预留 OpenMinis 客户端；仅 README，不参与构建
 │ └── desktop/                # Electron 产品外壳
 │   ├── electron/
 │   │ ├── main/               # 主进程，每个关注点一个模块

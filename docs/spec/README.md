@@ -1,5 +1,7 @@
 # PI-Desktop Spec
 
+> Fork planning: [PI Workbench roadmap](../project/pi-workbench.md) defines future desktop, bundled-plugin, Personal Agent and OpenMinis work. It does not claim these features are implemented or replace current executable contracts.
+
 > Frozen baseline: `0.4.20` · current app line: `0.14.x`
 > Updated: `2026-10-02`
 > Language: **English-first**

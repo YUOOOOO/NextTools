@@ -1,5 +1,7 @@
 # 01. 插件系统
 
+> 工作台分叉的插件目标见[阶段 2](../../../project/pi-workbench/phases.md#phase-2-bundled-plugin-and-workbench-page-capability)：优先复用现有插件机制，仅在审计确认贡献点不足时增加宿主接口。随包内置不改变用户插件管理，也不会扩大权限。以下内容仍描述当前插件契约。
+
 > **翻译说明：** 本页是与 [英文源规格](/spec/07-plugins/01-plugin-system) 一一对应的机器辅助翻译。代码、协议字段和标识符保持原文；如翻译与英文源事实有歧义，以英文版本为准。
 
 

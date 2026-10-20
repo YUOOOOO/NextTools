@@ -1,5 +1,7 @@
 # Remote Agent Control Target Architecture
 
+> Fork proposal: [PI Workbench architecture](../../project/pi-workbench/architecture.md) adds a separately reviewed endpoint-encrypted live relay with no content/ciphertext persistence or offline execution delivery. This does not enable a listener, change the existing SSH/RACP contract, or reuse the shipped S3 configuration sync as personal-memory synchronization.
+
 - Status: Target specification; post-MVP
 - Decision: D373 / ADR 0205, amended by D374 and D375
 - Scope: Remote observation and control of a PI-Desktop Agent Host

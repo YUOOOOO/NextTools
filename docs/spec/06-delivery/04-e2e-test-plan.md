@@ -1,5 +1,7 @@
 # 04. E2E Test Plan
 
+> Planned fork scenarios: [PI Workbench acceptance checklist](../../project/pi-workbench/acceptance.md) records pending layout, protected bundled-plugin, Personal Agent, mobile, E2E relay and conflict/recovery journeys. No unchecked roadmap gate is claimed passing; existing PI suite results do not prove those future features.
+
 > Scope: MVP acceptance scenarios plus current shipped product increments for PI-Desktop
 > Status: Accepted (protocol/Electron automation is active; full desktop Playwright remains planned)
 > Cross-references: [acceptance-criteria](02-acceptance-criteria.md) · [milestones](01-mvp-milestones.md) · [ai-development-workflow](03-ai-development-workflow.md) · [change-checklist](05-change-checklist.md)

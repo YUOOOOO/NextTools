@@ -1,5 +1,7 @@
 # 01. UI信息架构
 
+> 工作台分叉目标：见[阶段 1](../../../project/pi-workbench/phases.md#phase-1-desktop-activity-bar-and-destination-shell)。左侧图标栏顺序为 Agent、工作台、定时任务、扩展，底部为通知、设置；默认仍进入 Agent。不计划在工作台内嵌 Agent 助手。以下布局描述在实现前仍是当前 PI 基线。
+
 > **翻译说明：** 本页是与 [英文源规格](/spec/04-ux/01-ui-ia) 一一对应的机器辅助翻译。代码、协议字段和标识符保持原文；如翻译与英文源事实有歧义，以英文版本为准。
 
 

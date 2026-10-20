@@ -1,5 +1,7 @@
 # PI-Desktop Spec Navigation
 
+> Fork planning: [PI Workbench roadmap](../project/pi-workbench.md) · [phase specifications](../project/pi-workbench/phases.md) · [acceptance checklist](../project/pi-workbench/acceptance.md).
+
 ## Overview
 - [README.md](README.md)
 

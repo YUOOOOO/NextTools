@@ -1,5 +1,7 @@
 # 01. Plugin System
 
+> Fork extension target: [Phase 2](../../project/pi-workbench/phases.md#phase-2-bundled-plugin-and-workbench-page-capability) prefers existing plugin contracts and adds host-enforced protection for first-party bundled modules where needed. It does not remove user-plugin management or grant bundled code broader permissions; capability support must be audited before implementation.
+
 ## 0. Frozen implementation defaults
 
 - Plugin tool exposed names use forced prefix `plugin_<pluginIdSafe>_<toolName>` (D015)

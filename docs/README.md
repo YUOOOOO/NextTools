@@ -19,8 +19,7 @@ pnpm docs:check
   `spec/` and `guide/` path for path and is checked by `pnpm docs:check`.
 - `image/` holds pictures embedded by the repository READMEs. `public/` holds
   assets served by the site itself (brand mark, screenshots).
-- `project/` keeps historical planning records; current status lives in the
-  changelog and GitHub Issues.
+- `project/` keeps historical PI records and the current [PI Workbench fork roadmap](project/pi-workbench.md). Planned fork work is tracked separately from shipped status in the changelog and GitHub Issues.
 
 ## Entry points
 

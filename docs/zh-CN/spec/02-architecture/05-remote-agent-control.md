@@ -1,5 +1,7 @@
 # 远程 Agent 控制目标架构
 
+> 工作台分叉方案：见 [PI Workbench 架构草案](../../../project/pi-workbench/architecture.md)。目标是增加经端到端加密的实时中继，不保存消息、密文或离线任务。此规划不启用公网监听、不改变现有 SSH/RACP 契约，也不把已发布的 S3 配置同步改作个人记忆同步。
+
 - 状态：目标规格，属于 MVP 之后
 - 决策：D373 / ADR 0205，经 D374 与 D375 修订
 - 英文源规格：[英文源规格](/spec/02-architecture/05-remote-agent-control)

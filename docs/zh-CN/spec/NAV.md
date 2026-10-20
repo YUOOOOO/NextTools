@@ -1,5 +1,7 @@
 # PI-Desktop 规格导航
 
+> 分叉规划： [PI Workbench 总纲](../../project/pi-workbench.md) · [阶段规格](../../project/pi-workbench/phases.md) · [验收清单](../../project/pi-workbench/acceptance.md)。
+
 > **翻译说明：** 本页是与 [英文源规格](/spec/NAV) 一一对应的机器辅助翻译。代码、协议字段和标识符保持原文；如翻译与英文源事实有歧义，以英文版本为准。
 
 

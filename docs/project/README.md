@@ -1,5 +1,7 @@
 # Project Tracking
 
+Current fork planning: [PI Workbench roadmap](pi-workbench.md), [phase specifications](pi-workbench/phases.md), [architecture](pi-workbench/architecture.md), [decisions](pi-workbench/decisions.md), and [acceptance checklist](pi-workbench/acceptance.md). These are planning records, not completion evidence. Historical PI release records below remain historical.
+
 - Pending release highlights: [Unreleased changes](unreleased.md)
 
 - Historical project board (archived; last refreshed 2026-08-11 for the 0.5.x line): [`BOARD.md`](BOARD.md)
