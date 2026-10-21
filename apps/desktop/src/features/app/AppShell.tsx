@@ -6,6 +6,7 @@ import {
   IconNewSession,
   IconPanel,
   IconPanelOpen,
+  IconSidebar,
 } from "../../components/icons";
 import { LifecycleConfirmationDialog } from "../../components/LifecycleConfirmationDialog";
 import { ProjectCreateDialog } from "../../components/ProjectCreateDialog";
@@ -23,6 +24,8 @@ import { workPanelLayout } from "../../lib/work-panel-resize";
 import { LiveVoiceStatusHost } from "../voice/live/LiveVoiceStatusHost";
 import { CollapsedTitlebarActions, RoutePending } from "./chrome";
 import { useAppShellRuntime } from "./useAppShellRuntime";
+import { WorkbenchMenu, WorkbenchToolBridge } from "../workbench/WorkbenchMenu";
+import { ActivityBar } from "./ActivityBar";
 
 const SettingsPage = lazy(() =>
   import("../../pages/SettingsPage").then((module) => ({
@@ -40,6 +43,11 @@ const PluginsPage = lazy(() =>
   })),
 );
 const loadChatSurface = () => import("../../components/ChatSurface");
+const WorkbenchPage = lazy(() =>
+  import("../../pages/WorkbenchPage").then((module) => ({
+    default: module.WorkbenchPage,
+  })),
+);
 const ChatSurface = lazy(() =>
   loadChatSurface().then((module) => ({
     default: module.ChatSurface,
@@ -135,13 +143,16 @@ export function AppShell() {
   if (ready) {
     shell = (
       <>
+        <WorkbenchToolBridge />
+
+        <ActivityBar />
         <PortalVisibilityProvider visible={page !== "settings"}>
           <div
             className="app-chat-shell"
             hidden={page === "settings"}
             inert={page === "settings" ? true : undefined}
           >
-            {!sidebarCollapsed || sidebarExiting ? (
+            {page === "chat" && (!sidebarCollapsed || sidebarExiting) ? (
               <Sidebar
                 className={cx(sidebarEntering && "is-entering", sidebarExiting && "is-exiting")}
                 onAnimationEnd={handleSidebarAnimationEnd}
@@ -155,7 +166,11 @@ export function AppShell() {
               />
             ) : null}
 
-            {workPanelMaximized && (
+            {page === "workbench" && !sidebarCollapsed ? (
+              <WorkbenchMenu onToggleMenu={toggleSidebar} menuToggleShortcut={sidebarToggleShortcut} />
+            ) : null}
+
+            {page === "chat" && workPanelMaximized && (
               /* MainChat is absent; the panel header owns dragging while this
                  pass-through row keeps the shell controls available. */
               <div
@@ -187,7 +202,7 @@ export function AppShell() {
               </div>
             )}
 
-            {!workPanelMaximized && (
+            {(!workPanelMaximized || page !== "chat") && (
               <section className="main-pane">
                 {page === "chat" ? (
                   <ConversationTopbar
@@ -204,15 +219,19 @@ export function AppShell() {
                       presentedWorkPanelOpen && "work-panel-open",
                     )}
                   >
-                    {sidebarCollapsed && (
-                      <div className="main-titlebar-left no-drag">
-                        <CollapsedTitlebarActions
-                          onToggleSidebar={reopenSidebar}
-                          onNewTask={() => void runMenuCommand("newTask")}
-                          sidebarToggleShortcut={sidebarToggleShortcut}
-                        />
-                      </div>
-                    )}
+                    {page === "workbench" && sidebarCollapsed ? (
+                      <TooltipButton
+                        type="button"
+                        className="title-nav-btn workbench-menu-expand no-drag"
+                        tooltip={sidebarToggleShortcut ? `${t("nav.expandSidebar")} (${sidebarToggleShortcut})` : t("nav.expandSidebar")}
+                        ariaLabel={t("nav.expandSidebar")}
+                        aria-expanded={false}
+                        data-nav="toggle-sidebar"
+                        onClick={toggleSidebar}
+                      >
+                        <IconSidebar size={15} />
+                      </TooltipButton>
+                    ) : null}
                   </div>
                 )}
                 {page !== "settings" ? <UpdateBanner /> : null}
@@ -281,14 +300,23 @@ export function AppShell() {
                     <div className="route-surface route-page">
                       <PluginsPage />
                     </div>
-                  ) : (
-                    <ChatSurface visible={page === "chat"} />
-                  )}
+                  ) : page === "workbench" ? (
+                    <div className="route-surface route-page">
+                      <WorkbenchPage />
+                    </div>
+                  ) : null}
                 </Suspense>
+                <div className="retained-agent-surface" hidden={page !== "chat"} inert={page !== "chat" ? true : undefined}>
+                  <PortalVisibilityProvider visible={page === "chat"}>
+                    <Suspense fallback={<RoutePending />}>
+                      <ChatSurface visible={page === "chat"} />
+                    </Suspense>
+                  </PortalVisibilityProvider>
+                </div>
               </section>
             )}
 
-            {(presentedWorkPanelOpen || workPanelExiting) && (
+            {page === "chat" && (presentedWorkPanelOpen || workPanelExiting) && (
               <Suspense
                 fallback={
                   <aside
@@ -322,7 +350,7 @@ export function AppShell() {
               </Suspense>
             )}
 
-            <TooltipButton
+            {page === "chat" && <TooltipButton
               type="button"
               className="app-work-panel-toggle no-drag"
               tooltip={workPanelToggleTooltip}
@@ -335,7 +363,7 @@ export function AppShell() {
                 <IconPanel size={15} />
                 <IconPanelOpen size={15} />
               </span>
-            </TooltipButton>
+            </TooltipButton>}
           </div>
         </PortalVisibilityProvider>
         {page === "settings" ? (
@@ -361,7 +389,7 @@ export function AppShell() {
         !ready && "app-shell-boot",
         page === "settings" && ready && "settings-mode",
         sidebarCollapsed && "sidebar-collapsed",
-        workPanelMaximized && "work-panel-maximized",
+        page === "chat" && workPanelMaximized && "work-panel-maximized",
         showSplash && "is-booting",
       )}
       style={{ "--ds-sidebar-width": `${sidebarWidth}px` } as CSSProperties}

@@ -26,37 +26,30 @@ const shortcutSource = await readFile(
   new URL("../../../packages/shared/src/keyboard-shortcuts.ts", import.meta.url),
   "utf8",
 );
-test("home sidebar exposes only the supported destination entries", () => {
-  assert.match(sidebarSource, /data-nav="home"/);
-  assert.match(sidebarSource, /data-nav="plugins"/);
-  assert.doesNotMatch(sidebarSource, /data-nav="projects"/);
-  assert.match(sidebarSource, /data-nav="scheduled"/);
-  assert.doesNotMatch(sidebarSource, /t\("nav\.scheduled"\)/);
+const activitySource = await readFile(
+  new URL("../src/features/app/ActivityBar.tsx", import.meta.url),
+  "utf8",
+);
+test("activity bar owns the supported destination entries", () => {
+  assert.match(activitySource, /data-nav=\{item\.page\}/);
+  assert.match(activitySource, /NotificationCenter/);
+  assert.match(activitySource, /data-nav="settings"/);
+  assert.doesNotMatch(sidebarSource, /data-nav="plugins"/);
+  assert.doesNotMatch(sidebarSource, /data-nav="scheduled"/);
 });
 
-test("sidebar brand returns to the chat home", () => {
-  const brandButton = sidebarSource.match(
-    /<TooltipButton\s+type="button"\s+className="brand no-drag"[\s\S]*?<\/TooltipButton>/,
-  )?.[0] ?? "";
-
-  assert.match(brandButton, /data-nav="home"/);
-  assert.match(brandButton, /ariaLabel=\{t\("nav\.home"\)\}/);
-  assert.match(brandButton, /onClick=\{\(\) => setPage\("chat"\)\}/);
-  assert.match(brandButton, /<BrandLogo size=\{20\}/);
-  assert.match(brandButton, /t\("app\.shellName"\)/);
-});
-
-test("sidebar header retains non-mac branding and collapse without a search control", () => {
+test("sidebar header keeps the original brand and has no divider", () => {
   const header = sidebarSource.match(
     /<div className="sidebar-header">[\s\S]*?<\/div>\s*<\/div>/,
   )?.[0] ?? "";
 
   assert.match(header, /className="brand no-drag"/);
-  assert.match(header, /className="sidebar-header-actions no-drag"/);
-  assert.doesNotMatch(header, /IconSearch/);
-  assert.match(header, /<IconSidebar/);
+  assert.match(header, /<BrandLogo size=\{20\}/);
   assert.match(header, /data-nav="toggle-sidebar"/);
-  assert.doesNotMatch(appSource, /IconChevronLeft|IconChevronRight/);
+  assert.doesNotMatch(sidebarSource, /sidebar-header-divider/);
+  assert.doesNotMatch(activitySource, /activity-bar-logo|BrandLogo/);
+  assert.doesNotMatch(appSource, /HeaderBox/);
+  assert.doesNotMatch(globalStyles, /\.sidebar-header-divider/);
 });
 
 test("work panel collapse control is the viewport-fixed shell toggle", () => {

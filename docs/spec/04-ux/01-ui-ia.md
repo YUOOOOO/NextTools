@@ -1,6 +1,6 @@
 # 01. UI Information Architecture
 
-> Planned fork shell: [Phase 1](../../project/pi-workbench/phases.md#phase-1-desktop-activity-bar-and-destination-shell) adds Agent, Workbench, Scheduled Tasks and Extensions in a fixed left Activity Bar; Notifications and Settings are pinned below; Agent remains the default. No embedded Workbench Agent assistant is planned. The layout below remains the current PI baseline until implementation.
+> Implemented fork shell: a fixed 48px Activity Bar holds Agent, Workbench, Scheduled Tasks and Extensions; Notifications and Settings are pinned below. Agent remains the default. Workbench is an independent destination with no Agent assistant. The legacy Agent project/session sidebar and work panel are shown only on Agent, and remain mounted/state-preserving across destination changes.
 
 > Language: English (per ADR 0009). This describes the shipped Codex-aligned
 > shell (D034+). Component detail: [08-component-spec](08-component-spec.md);
@@ -17,43 +17,34 @@ destination, chat as the home surface, tools and permissions inline.
 ```text
 +----------------------------------------------------------------------+
 | Platform titlebar: macOS traffic lights / Windows/Linux actions     |
-+------------------+--------------------------------+------------------+
-| Sidebar (275px) | Main pane (active destination) | Work panel       |
-|                  |  chat home / transcript        |  (optional,      |
-|                  |  or Extensions page            |   resizable      |
-|                  |                                |   ≥244px, dynamic|
-|  Sessions     +↕ |                                | surface          |
-|   Recent rows ↕  |                                |                  |
-|  Projects      + |                                | ◫ | App.tsx  ⌄ × |
-|   Project A      |                                | > |              |
-|   Project B      |                                | ◎ | Active       |
-| Footer [⚙][plug][☾][bell] |  Floating composer (chat) |   | resource     |
-+------------------+--------------------------------+------------------+
+| Activity Bar (48px) | Agent: projects/sessions + main pane | Work panel |
+| Agent               | Workbench / Scheduled / Extensions  | optional    |
+|                     |                                      |             |
+|                     |                                      |             |
+|                     |                                      |             |
+|                     |                                      |             |
+| Notifications       |                                      |             |
+| Settings            |                                      |             |
+| Sidebar (Agent only)|                                      |             |
 ```
 
-- **Sidebar**: primary navigation — path-less conversations under a compact
-  **Sessions** section with new-session and sort actions, retained open-project
-  groups under a following **Projects** section with a persistent new-project
-  action, and the WorkBuddy-inspired footer. The footer keeps compact Settings,
-  Extensions, Scheduled (clock), and notification icon actions. Each retained
-  project is a
-  path-keyed tab/group that can be
-  collapsed independently. Project and conversation rows expose
-  non-destructive pin/archive actions, an independent conversation-branch
-  command, and sortable views. Projects not retained in the sidebar remain
-  discoverable through Settings → Project archive.
-  Collapsible to an icon rail (Cmd/Ctrl+B). Its expanded column is user-resizable
-  from 240px to 520px (default 275px); dragging below 160px collapses it.
-- **Product identity**: runtime shell copy uses `PI-Desktop`; the home hero and
-  sidebar reuse the derived `src/assets/brand/logo-*.png` marks, while composer prompt
-  rows have no leading brand icon and session-creation controls use a dedicated
-  message-plus icon. On
-  Windows/Linux, the expanded sidebar begins with a keyboard-accessible Home
-  brand and Collapse sidebar at the right; activating the
-  brand returns the main pane to chat. The macOS expanded sidebar omits the
-  logo/title brand and places only Collapse sidebar at the right of
-  the traffic-light row. `Codex` remains only an external import source or a
-  design-reference term.
+  The fixed 48px Activity Bar owns Agent, Workbench, Scheduled Tasks and
+  Extensions in that order. Notifications and Settings are pinned at the bottom.
+  Clicking the active destination is a no-op. The existing resizable Agent
+  project/session sidebar appears only on Agent and keeps its session, project,
+  running-task, and draft state while other destinations are active. Its
+  expanded column is user-resizable from 240px to 520px (default 275px); dragging
+  below 160px collapses it.
+- **Left HeaderBox**: a shared toolbar-height header spans the 48px Activity
+  Bar and the visible Agent menu column, or the Settings navigation column.
+  Windows/Linux show a non-interactive logo centered above the Activity Bar;
+  the Agent menu keeps its collapse control aligned to the right. Collapsing
+  the menu leaves the logo above the Activity Bar and preserves the existing
+  expand control in the conversation toolbar. There is no duplicate product
+  name or Home button in the menu header. macOS reserves its native traffic
+  lights and hides the logo. HeaderBox does not change the content width budget.
+  `PI-Desktop` remains the product name; `Codex` denotes an external source or
+  design reference.
 - **Main pane**: exactly one destination at a time; destinations replace the
   pane (they are pages, not modals). Once Settings or Extensions is selected,
   bootstrap completion and background refreshes must not replace that
@@ -82,12 +73,12 @@ destination, chat as the home surface, tools and permissions inline.
   Boot splash, search, and toasts stay above that band.
   Preview navigation must also remain above the panel;
   macOS keeps native traffic lights and its existing fullscreen insets.
-  Destination history is
-  shortcut-first (`Cmd/Ctrl+[` and `Cmd/Ctrl+]`) with no dedicated back/forward
-  chrome; while Extensions is active, the footer Plugins button performs one
-  Back step as the only pointer affordance. The main titlebar has no
-  notification action; the durable local inbox opens from the sidebar footer
-  bell instead (D130/D117). In work-panel preview mode, MainChat is unmounted
+  Destination history is shortcut-first (`Cmd/Ctrl+[` and `Cmd/Ctrl+]`). The
+  durable local inbox opens from the Activity Bar bell. No notification action
+  is duplicated in the Agent sidebar footer.
+  The Activity Bar occupies a fixed 48px shell column, excluded from the Agent
+  sidebar, main pane, and work-panel width budget. Only Agent presents the
+  optional right work panel; Workbench does not embed an Agent assistant.
   and a window-level 46px chrome row keeps New Task, sidebar, and native window
   controls available without owning a drag or no-drag rectangle across the
   panel. The panel header alone owns dragging in the preview pane; its actual

@@ -49,7 +49,7 @@ test("settings drag region does not capture control clicks", () => {
     globalStyles,
     /\.settings-titlebar\s*\{[^}]*pointer-events:\s*none;/s,
   );
-  assert.match(settingsSource, /className="settings-back no-drag"/);
+  assert.doesNotMatch(settingsSource, /settings-back|settings-nav-footer/);
   assert.match(settingsSource, /className="settings-search-wrap no-drag"/);
   assert.match(settingsSource, /className="settings-nav-scroll no-drag"/);
 });

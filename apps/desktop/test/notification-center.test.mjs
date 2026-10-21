@@ -17,9 +17,10 @@ const chineseCatalog = await readFile(
   "utf8",
 );
 
-test("notification center exposes an accessible sidebar footer trigger and dialog", () => {
-  assert.match(componentSource, /<IconBell size=\{14\} aria-hidden \/>/);
-  assert.match(componentSource, /className=\{`footer-notification notification-trigger/);
+test("notification center exposes a configurable accessible Activity Bar trigger", () => {
+  assert.match(componentSource, /<IconBell size=\{iconSize\} aria-hidden \/>/);
+  assert.match(componentSource, /className=\{`\$\{triggerClassName\} notification-trigger/);
+  assert.match(componentSource, /placement\?: "above" \| "right"/);
   assert.match(componentSource, /onBeforeOpen\?\.\(\)/);
   assert.match(componentSource, /aria-haspopup="dialog"/);
   assert.match(componentSource, /aria-controls="notification-popover"/);

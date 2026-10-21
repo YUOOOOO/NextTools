@@ -106,6 +106,7 @@ test("app chrome uses the shared brand asset without branding the composer input
   assert.doesNotMatch(styles, /\.composer-input-wrap\s*\{[^}]*\bgap:/s);
   assert.doesNotMatch(composer, /infinity-mark|∞/);
   assert.match(sidebar, /<BrandLogo\s+size=\{20\}/);
+  assert.match(sidebar, /t\("app\.shellName"\)/);
   assert.match(sidebar, /IconNewSession/);
   assert.match(app, /<IconNewSession\s+size=\{15\}/);
   assert.doesNotMatch(sidebar, /IconCompose|IconPiMark|IconPiHome/);

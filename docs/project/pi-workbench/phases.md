@@ -23,6 +23,8 @@ Non-goals: implementing the roadmap, cloning a mobile tree before license review
 
 ## Phase 1: Desktop Activity Bar and destination shell
 
+Status: desktop shell is implemented on the current development branch and is not accepted. Native chrome, resize, and navigation regression checks remain before exit.
+
 Dependencies: Phase 0. This is the first functional implementation increment.
 
 Deliverables:
@@ -40,6 +42,8 @@ Exit: desktop navigation journey and Agent regression tests pass; native chrome,
 Non-goals: embedded Agent in Workbench, mobile, device relay, business plugins, or redesigning PI project storage.
 
 ## Phase 2: Bundled-plugin and Workbench page capability
+
+Status: started. Existing plugin views cannot host a primary destination, and bundled plugins already refuse uninstall. The host page and its command service share one session: open, close, switch, disable, and recover survive a reload in local UI storage. Unknown stored pages are dropped. Host-core persistence, a bundled replacement-policy change, and an Agent Tool registration are not implemented.
 
 Dependencies: Phases 0-1. First inventory existing contributions; extend only proven gaps.
 

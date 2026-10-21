@@ -23,7 +23,7 @@ test("the sidebar forwards collapse-animation props to the aside element", () =>
 });
 
 test("collapsing keeps the sidebar mounted until its exit animation ends", () => {
-  assert.match(appSource, /!sidebarCollapsed \|\| sidebarExiting \?/);
+  assert.match(appSource, /page === "chat" && \(!sidebarCollapsed \|\| sidebarExiting\) \?/);
   assert.match(appSource, /className=\{cx\(sidebarEntering && "is-entering", sidebarExiting && "is-exiting"\)\}/);
   assert.match(appSource, /onAnimationEnd=\{handleSidebarAnimationEnd\}/);
   assert.match(appSource, /event\.target !== event\.currentTarget/);

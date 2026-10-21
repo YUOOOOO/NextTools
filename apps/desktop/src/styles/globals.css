@@ -12,6 +12,7 @@
 @import "./tokens.css";
 @import "./base.css";
 @import "./chrome.css";
+@import "./activity-bar.css";
 @import "./chat-shell.css";
 @import "./composer.css";
 @import "./sidebar-threads.css";
@@ -38,3 +39,4 @@
 @import "./extensions.css";
 @import "./plugin-launcher.css";
 @import "./responsive.css";
+

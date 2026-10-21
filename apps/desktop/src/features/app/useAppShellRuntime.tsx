@@ -37,6 +37,7 @@ import {
 import { useAppStore } from "../../stores/app-store";
 import { useSidebarTransition } from "./useSidebarTransition";
 import { useStartupWatchdog } from "./useStartupWatchdog";
+import { ACTIVITY_BAR_WIDTH } from "./activity-navigation";
 import { useTraySessions } from "./useTraySessions";
 import { runLiveVoiceShortcut } from "../voice/live/live-voice-shortcuts";
 
@@ -118,7 +119,7 @@ export function useAppShellRuntime() {
   useLayoutEffect(() => {
     const shell = appShellRef.current;
     if (!shell) return;
-    const update = () => setShellWidth(Math.round(shell.clientWidth));
+    const update = () => setShellWidth(Math.max(0, Math.round(shell.clientWidth - ACTIVITY_BAR_WIDTH)));
     update();
     if (typeof ResizeObserver === "undefined") {
       window.addEventListener("resize", update);
@@ -130,7 +131,7 @@ export function useAppShellRuntime() {
   }, []);
   const resolveSidebarMax = () => {
     const containerWidth =
-      appShellRef.current?.clientWidth || shellWidthRef.current;
+      appShellRef.current ? Math.max(0, appShellRef.current.clientWidth - ACTIVITY_BAR_WIDTH) : shellWidthRef.current;
     return sidebarWidthBudget({
       containerWidth,
       workPanelOpen: workPanelOpenRef.current,
@@ -320,7 +321,7 @@ export function useAppShellRuntime() {
 
   useEffect(() => {
     const pageHidesWorkPanel =
-      page === "settings" || page === "plugins" || page === "scheduled";
+      page === "settings" || page === "plugins" || page === "scheduled" || page === "workbench";
     const shouldPresent =
       ready && !pageHidesWorkPanel && workPanelOpen;
     const request = ++workPanelReservationRequest.current;
@@ -867,7 +868,7 @@ export function useAppShellRuntime() {
             break;
           case "openWorkPanel": {
             const p = useAppStore.getState().page;
-            if (p !== "settings" && p !== "plugins" && p !== "scheduled") {
+            if (p === "chat") {
               useAppStore.getState().toggleWorkPanel();
             }
             break;

@@ -62,8 +62,14 @@ function formatRelativeTime(value: string, locale: string, justNow: string): str
 
 export function NotificationCenter({
   onBeforeOpen,
+  triggerClassName = "footer-notification",
+  iconSize = 14,
+  placement = "above",
 }: {
   onBeforeOpen?: () => void;
+  triggerClassName?: string;
+  iconSize?: number;
+  placement?: "above" | "right";
 }) {
   const { t, i18n } = useTranslation();
   const storedNotifications = useAppStore((state) => state.notifications);
@@ -118,16 +124,17 @@ export function NotificationCenter({
       const rect = triggerRef.current?.getBoundingClientRect();
       if (!rect) return;
       const width = Math.min(360, window.innerWidth - 24);
-      const left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12));
+      const anchorLeft = placement === "right" ? rect.right + 8 : rect.left;
+      const left = Math.max(12, Math.min(anchorLeft, window.innerWidth - width - 12));
       setPopoverPos({
-        bottom: Math.max(12, window.innerHeight - rect.top + 8),
+        bottom: Math.max(12, window.innerHeight - (placement === "right" ? rect.bottom : rect.top - 8)),
         left,
       });
     };
     place();
     window.addEventListener("resize", place);
     return () => window.removeEventListener("resize", place);
-  }, [open]);
+  }, [open, placement]);
 
   useEffect(() => {
     if (!open) return;
@@ -229,7 +236,7 @@ export function NotificationCenter({
       <TooltipButton
         ref={triggerRef}
         type="button"
-        className={`footer-notification notification-trigger ${open ? "active" : ""}`}
+        className={`${triggerClassName} notification-trigger ${open ? "active" : ""}`}
         tooltip={unreadLabel}
         ariaLabel={unreadLabel}
         aria-haspopup="dialog"
@@ -243,7 +250,7 @@ export function NotificationCenter({
           }
         }}
       >
-        <IconBell size={14} aria-hidden />
+        <IconBell size={iconSize} aria-hidden />
         {unreadCount > 0 ? (
           <span className="notification-badge" aria-hidden>
             {unreadCount > 99 ? "99+" : unreadCount}
