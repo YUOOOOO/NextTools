@@ -75,14 +75,15 @@ export function WorkbenchMenu({
         {Object.values(session.pages)
           .filter((page) => page.id !== "overview" && !session.openIds.includes(page.id))
           .map((page) => (
-            <Button
+            <button
               key={page.id}
               type="button"
+              className="workbench-menu-item"
               disabled={page.available === false}
               onClick={() => dispatchWorkbenchCommand({ action: "open", id: page.id })}
             >
               {page.title ?? (page.titleKey ? t(page.titleKey) : page.id)}
-            </Button>
+            </button>
           ))}
         {session.pages.example || session.openIds.includes("example") ? null : (
           <Button type="button" onClick={() => dispatchWorkbenchCommand({ action: "open", id: "example" })}>

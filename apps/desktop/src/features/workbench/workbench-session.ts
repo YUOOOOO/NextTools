@@ -185,6 +185,7 @@ export type WorkbenchHostClient = {
 let hostClient: WorkbenchHostClient | null = null;
 let hostActive = false;
 let hydration: Promise<void> | null = null;
+let hostRefreshGeneration = 0;
 
 function readLocalRaw(): string | null {
   const store = storage();
@@ -315,12 +316,27 @@ export async function hydrateWorkbenchFromHost(client: WorkbenchHostClient): Pro
   hydration = run.then(() => undefined, () => undefined);
   return run;
 }
+export async function refreshWorkbenchFromHost(): Promise<boolean> {
+  if (!hostActive || !hostClient) return false;
+  const client = hostClient;
+  const generation = ++hostRefreshGeneration;
+  try {
+    const result = await client.get();
+    if (!hostActive || hostClient !== client || generation !== hostRefreshGeneration) return false;
+    publish(restoreWorkbenchSession(result.session), false);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export function disconnectWorkbenchHost() {
+  hostRefreshGeneration += 1;
   hostClient = null;
   hostActive = false;
   hydration = null;
 }
+
 
 export function executeWorkbenchTool(input: unknown): WorkbenchToolResult {
   const command = parseWorkbenchCommand(input);

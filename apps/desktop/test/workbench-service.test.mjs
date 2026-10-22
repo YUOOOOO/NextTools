@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { fork } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { register } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -11,7 +11,7 @@ import { createWorkbenchServiceRegistry, declaredWorkbenchServiceNames } from ".
 register(new URL("./helpers/ts-import-hooks.mjs", import.meta.url));
 const { PluginRuntime } = await import("../electron/main/plugin-runtime.ts");
 
-async function fixture(t) {
+async function fixture(t, example = false) {
   const dir = mkdtempSync(join(tmpdir(), "pi-workbench-service-"));
   const abortMarker = join(dir, "aborted");
   const manifest = {
@@ -65,15 +65,32 @@ module.exports.onLoad = async () => {
     await runtime.unload(manifest.id);
     rmSync(dir, { recursive: true, force: true });
   });
-  await runtime.loadFromPath(dir, manifest.permissions);
+  const source = example ? fileURLToPath(new URL("../../../examples/plugins/workbench-data-lab/", import.meta.url)) : dir;
+  const loadedManifest = example ? JSON.parse(readFileSync(join(source, "manifest.json"), "utf8")) : manifest;
+  if (example) t.after(() => runtime.unload(loadedManifest.id));
+  await runtime.loadFromPath(source, loadedManifest.permissions);
   return {
     runtime,
-    tool: runtime.getTools().find((entry) => entry.name === "counter"),
-    page: (args) => runtime.invokePanelBridge(manifest.id, "workbench.service", { name: "counter", args }),
+    tool: runtime.getTools().find((entry) => entry.name === (example ? "data" : "counter")),
+    page: (args) => runtime.invokePanelBridge(loadedManifest.id, "workbench.service", { name: example ? "data" : "counter", args }),
     started: () => ready.shift() ? Promise.resolve() : new Promise((resolve) => { nextReady = resolve; }),
     abortMarker,
   };
 }
+
+test("Workbench and Agent increment the same counter", { timeout: 15000 }, async (t) => {
+  const { tool, page } = await fixture(t, true);
+  const context = { sessionId: "fixture-session", mode: "agent" };
+  assert.deepEqual(await page({}), { counter: 0, revision: 0 });
+  assert.deepEqual(await page({ action: "increment" }), { counter: 1, revision: 1 });
+  assert.deepEqual(await tool.execute({ action: "get" }, context), { counter: 1, revision: 1 });
+  assert.deepEqual(await tool.execute({ action: "increment" }, context), { counter: 2, revision: 2 });
+  assert.deepEqual(await page({}), { counter: 2, revision: 2 });
+  await assert.rejects(page({ action: "increment", delta: 1.5 }), { code: "INVALID_ARGUMENT" });
+  assert.deepEqual(await page({}), { counter: 2, revision: 2 });
+  assert.deepEqual(await page({ action: "reset" }), { counter: 0, revision: 3 });
+  assert.deepEqual(await tool.execute({ action: "get" }, context), { counter: 0, revision: 3 });
+});
 
 test("page and Agent invoke one plugin handler and unload revokes both entries", { timeout: 15000 }, async (t) => {
   const { runtime, tool, page } = await fixture(t);
