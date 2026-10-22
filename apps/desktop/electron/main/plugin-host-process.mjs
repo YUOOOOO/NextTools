@@ -22,6 +22,10 @@ import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import { join } from "node:path";
 import { AsyncLocalStorage } from "node:async_hooks";
+import {
+  createWorkbenchServiceRegistry,
+  declaredWorkbenchServiceNames,
+} from "./workbench-service.mjs";
 
 const parentPort = process.parentPort;
 
@@ -48,6 +52,7 @@ let pluginModule = null;
 const pending = new Map();
 const invocations = new Map();
 const invocationContext = new AsyncLocalStorage();
+const workbenchServices = createWorkbenchServiceRegistry();
 let nextCallId = 1;
 
 /** Proxy a host API call to the broker and await its verdict. */
@@ -295,6 +300,9 @@ function buildApi() {
         if (typeof tool.execute !== "function") {
           throw new Error("tool.execute must be a function");
         }
+        if (declaredWorkbenchServiceNames(manifest).has(tool.name)) {
+          throw new Error("workbench service methods must use pi.workbench.registerService");
+        }
         tools.set(tool.name, tool.execute);
         try {
           await call("agent.registerTool", [
@@ -315,6 +323,31 @@ function buildApi() {
         await call("agent.unregisterTool", [name]);
       },
       complete: (input) => call("agent.complete", [input ?? {}]),
+    },
+    workbench: {
+      registerService: async (service) => {
+        const name = String(service?.name ?? "");
+        if (!declaredWorkbenchServiceNames(manifest).has(name)) {
+          throw new Error(`workbench service is not declared: ${name}`);
+        }
+        if (typeof service.execute !== "function") {
+          throw new Error("workbench service execute must be a function");
+        }
+        workbenchServices.register(name, service.execute);
+        try {
+          await call("workbench.registerService", [
+            {
+              name,
+              description: service.description,
+              risk: service.risk,
+              schema: service.schema,
+            },
+          ]);
+        } catch (error) {
+          workbenchServices.remove(name);
+          throw error;
+        }
+      },
     },
     models: {
       list: () => call("models.list"),
@@ -527,16 +560,41 @@ async function handleInit(message) {
   return { pluginId };
 }
 
+/** Page calls own a cancellable scope; Agent calls use the tool invocation scope. */
+async function callWorkbenchService(payload, callId) {
+  if (typeof callId !== "string" || !callId || parentCallControllers.has(callId)) {
+    throw Object.assign(new Error("workbench service requires a unique parent call ID"), {
+      code: "INVALID_ARGUMENT",
+    });
+  }
+  const controller = new AbortController();
+  parentCallControllers.set(callId, controller);
+  try {
+    const result = await workbenchServices.call(String(payload?.name ?? ""), payload?.args, {
+      signal: controller.signal,
+    });
+    controller.signal.throwIfAborted();
+    return result;
+  } finally {
+    parentCallControllers.delete(callId);
+  }
+}
+
 async function handleParentCall(method, payload, invocationId, callId) {
   switch (method) {
     case "panel.invoke": {
+      const channel = String(payload?.channel ?? "");
+      const panelPayload = payload?.payload ?? {};
+      if (channel === "workbench.service") {
+        return callWorkbenchService(panelPayload, callId);
+      }
       const invoke = pluginModule?.onPanelInvoke;
       if (typeof invoke !== "function") {
         const error = new Error("plugin does not expose panel operations");
         error.code = "UNSUPPORTED";
         throw error;
       }
-      return invoke(String(payload?.channel ?? ""), payload?.payload ?? {});
+      return invoke(channel, panelPayload);
     }
     case "provider.oauth": {
       const handle = pluginModule?.onProviderOAuth;
@@ -577,11 +635,16 @@ async function handleParentCall(method, payload, invocationId, callId) {
       }
       return handle(payload ?? {});
     }
+    case "workbench.service":
+      return callWorkbenchService(payload, callId);
     case "tool.execute": {
       if (typeof invocationId !== "string" || !invocationId || invocations.has(invocationId)) {
         throw toolAbortedError("A unique host tool invocation ID is required");
       }
-      const execute = tools.get(String(payload?.name ?? ""));
+      const name = String(payload?.name ?? "");
+      const execute = workbenchServices.has(name)
+        ? (args, context) => workbenchServices.call(name, args, context)
+        : tools.get(name);
       if (!execute) {
         const error = new Error(`tool not registered: ${payload?.name}`);
         error.code = "TOOL_NOT_FOUND";
@@ -685,6 +748,7 @@ async function handleParentCall(method, payload, invocationId, callId) {
       commands.clear();
       tools.clear();
       speechHandles.clear();
+      workbenchServices.clear();
       services.clear();
       busHandlers.clear();
       eventListeners.clear();

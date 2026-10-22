@@ -4,8 +4,12 @@ export type WorkbenchPageStatus = "ready" | "unavailable" | "disabled";
 
 export type WorkbenchPageRecord = {
   id: string;
-  titleKey: "workbench.title" | "workbench.exampleTitle";
+  titleKey?: "workbench.title" | "workbench.exampleTitle";
+  title?: string;
   status: WorkbenchPageStatus;
+  pluginId?: string;
+  viewId?: string;
+  available?: boolean;
 };
 
 export type WorkbenchSession = {
@@ -106,10 +110,24 @@ export function restoreWorkbenchSession(value: unknown): WorkbenchSession {
   const pages = { ...base.pages };
   if (raw.pages && typeof raw.pages === "object") {
     for (const [id, page] of Object.entries(raw.pages)) {
-      const known = KNOWN_PAGES[id as keyof typeof KNOWN_PAGES];
-      if (!known || !page || typeof page !== "object") continue;
+      if (!page || typeof page !== "object") continue;
       const status = (page as { status?: unknown }).status;
-      pages[id] = { id, titleKey: known.titleKey, status: isStatus(status) ? status : "ready" };
+      const nextStatus = isStatus(status) ? status : "ready";
+      const known = KNOWN_PAGES[id as keyof typeof KNOWN_PAGES];
+      if (known) {
+        pages[id] = { id, titleKey: known.titleKey, status: nextStatus };
+        continue;
+      }
+      const rawPage = page as { title?: unknown; pluginId?: unknown; viewId?: unknown; available?: unknown };
+      if (typeof rawPage.pluginId !== "string" || typeof rawPage.viewId !== "string") continue;
+      pages[id] = {
+        id,
+        title: typeof rawPage.title === "string" ? rawPage.title : id,
+        status: nextStatus,
+        pluginId: rawPage.pluginId,
+        viewId: rawPage.viewId,
+        available: rawPage.available !== false,
+      };
     }
   }
   const openIds = Array.isArray(raw.openIds)

@@ -207,6 +207,28 @@ Panel bridge file channels are permission-gated as follows:
 | `fs.registerDropped` | `fs.read` plus a real drop gesture |
 | `fs.writeText` | `fs.write` |
 
+### 7.1 Shared Workbench services
+
+Plugins declare business methods in `contributes.workbenchServices` and register
+each handler once through `pi.workbench.registerService`. Registration requires
+both `ui.view` and `agent.tool.register`; undeclared methods are rejected with
+`INVALID_ARGUMENT`, and duplicate registration returns `CONFLICT` without
+replacing the original handler. A failed host registration removes the local
+handler. Declared services cannot be registered through `pi.agent.registerTool`.
+
+Workbench pages invoke `workbench.service` with `{ name, args }` through their
+plugin bridge. Agents invoke the corresponding namespaced plugin tool. Both
+entries execute the same handler in the plugin process, sharing plugin-owned
+state rather than maintaining separate page and Agent implementations.
+
+Handlers receive `(args, { signal })`. Agent execution uses the ordinary tool
+invocation lifecycle, preserving session context for nested host API calls and
+propagating cancellation. Page calls have a separate cancellable parent-call
+scope and do not inherit an Agent session. Timeouts and unload abort pending
+scopes; handlers must observe the signal to stop their own asynchronous work.
+Unload clears the service registry and revokes the Agent tool contribution.
+Unknown methods return `NOT_FOUND`.
+
 ## 8. Failure isolation
 
 - Plugin API timeout: return TIMEOUT

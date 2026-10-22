@@ -1161,6 +1161,37 @@ fn view_contributions_require_permission_and_an_existing_entry() {
 }
 
 #[test]
+fn workbench_pages_must_name_an_existing_view() {
+    let dir = tempdir().unwrap();
+    let ok = dir.path().join("ok");
+    write_plugin(
+        &ok,
+        capability_manifest(
+            json!({
+                "views": [{ "id": "board", "title": "Board", "entry": "views/board.html" }],
+                "workbenchPages": [{ "id": "board", "view": "board" }]
+            }),
+            json!(["ui.view"]),
+        ),
+        &[("views/board.html", "<html></html>")],
+    );
+    assert!(PluginManager::read_manifest(&ok).is_ok());
+
+    let missing = dir.path().join("missing");
+    write_plugin(
+        &missing,
+        capability_manifest(
+            json!({
+                "views": [{ "id": "board", "title": "Board", "entry": "views/board.html" }],
+                "workbenchPages": [{ "id": "other", "view": "missing" }]
+            }),
+            json!(["ui.view"]),
+        ),
+        &[("views/board.html", "<html></html>")],
+    );
+    assert!(read_manifest_err(&missing).contains("must name one of this plugin's views"));
+}
+#[test]
 fn bundled_plugins_refresh_from_disk_but_keep_user_state() {
     let ship = tempdir().unwrap();
     let plugin_manifest = |version: &str| {

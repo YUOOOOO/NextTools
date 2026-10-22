@@ -175,6 +175,17 @@ export type PluginManifest = {
     bus?: PluginBusContrib;
     /** Surfaces the plugin docks inside the host's work panel. */
     views?: PluginViewContrib[];
+    /**
+     * Primary Workbench pages. Each entry names one of this plugin's own
+     * `views`. The host addresses the page as `<pluginId>/<id>` and keeps the
+     * record when the page is disabled.
+     */
+    workbenchPages?: PluginWorkbenchPageContrib[];
+    /**
+     * Methods the Workbench page and the Agent both call. A declared name
+     * cannot also be registered with `pi.agent.registerTool`.
+     */
+    workbenchServices?: PluginWorkbenchServiceContrib[];
     /** External session namespaces this plugin may import and own. */
     sessionSources?: PluginSessionSourceContrib[];
     /**
@@ -760,6 +771,22 @@ export type PluginViewContrib = {
   order?: number;
 };
 
+/** A primary Workbench page hosted by one of this plugin's views. */
+export type PluginWorkbenchPageContrib = {
+  /** Plugin-local page id. The host id is `<pluginId>/<id>`. */
+  id: string;
+  /** One of this plugin's `contributes.views` ids. */
+  view: string;
+};
+
+/** One Workbench data method shared by the page view and the Agent tool. */
+export type PluginWorkbenchServiceContrib = {
+  /** Plugin-local method name. The Agent tool name is prefixed by the plugin id. */
+  name: string;
+  description: string;
+  risk?: "low" | "medium" | "high";
+};
+
 export type PluginCommand = {
   id: string;
   title: string;
@@ -1308,6 +1335,21 @@ export type PluginHostApi = {
     registerTool: (tool: PluginTool) => Promise<void>;
     unregisterTool: (name: string) => Promise<void>;
     complete: (input: PluginCompleteInput) => Promise<PluginCompleteResult>;
+  };
+  workbench: {
+    /**
+     * Register one declared `contributes.workbenchServices` method.
+     * The Workbench page and the Agent tool both call this execute function.
+     */
+    registerService: (
+      service: PluginWorkbenchServiceContrib & {
+        schema?: unknown;
+        execute: (
+          args: Record<string, unknown>,
+          context: { signal: AbortSignal },
+        ) => Promise<unknown> | unknown;
+      },
+    ) => Promise<void>;
   };
   models: {
     list: () => Promise<PluginModelInfo[]>;
@@ -2169,6 +2211,36 @@ export function validateContributions(
     }
     // `icon` is intentionally unchecked: an unknown token degrades to a letter
     // tile, so rejecting one would break a plugin over a cosmetic detail.
+  }
+
+  const workbenchPages = contributes.workbenchPages ?? [];
+  if (!Array.isArray(workbenchPages)) return "contributes.workbenchPages must be an array";
+  const workbenchPageIds = new Set<string>();
+  for (const page of workbenchPages) {
+    if (!page || typeof page !== "object") return "contributes.workbenchPages entries must be objects";
+    if (typeof page.id !== "string" || !/^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/.test(page.id)) {
+      return "contributes.workbenchPages id must match [a-zA-Z][a-zA-Z0-9_-]{0,63}";
+    }
+    if (workbenchPageIds.has(page.id)) return `duplicate workbench page id "${page.id}"`;
+    workbenchPageIds.add(page.id);
+    if (typeof page.view !== "string" || !viewIds.has(page.view)) {
+      return `workbench page "${page.id}" must name one of this plugin's views`;
+    }
+  }
+
+  const workbenchServices = contributes.workbenchServices ?? [];
+  if (!Array.isArray(workbenchServices)) return "contributes.workbenchServices must be an array";
+  const workbenchServiceNames = new Set<string>();
+  for (const service of workbenchServices) {
+    if (!service || typeof service !== "object") return "contributes.workbenchServices entries must be objects";
+    if (typeof service.name !== "string" || !/^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/.test(service.name)) {
+      return "contributes.workbenchServices name must match [a-zA-Z][a-zA-Z0-9_-]{0,63}";
+    }
+    if (workbenchServiceNames.has(service.name)) return `duplicate workbench service "${service.name}"`;
+    workbenchServiceNames.add(service.name);
+    if (typeof service.description !== "string" || !service.description.trim()) {
+      return `workbench service "${service.name}" requires a description`;
+    }
   }
 
   const sessionSourceIds = new Set<string>();

@@ -25,6 +25,7 @@ export function PluginViewTab({
   sessionId,
   location,
   tabId,
+  releaseOnUnmount = false,
 }: {
   pluginId: string;
   viewId: string;
@@ -34,6 +35,7 @@ export function PluginViewTab({
   sessionId?: string;
   location?: string;
   tabId?: string;
+  releaseOnUnmount?: boolean;
 }) {
   const { t } = useTranslation();
   const surfaceRef = useRef<HTMLDivElement | null>(null);
@@ -88,8 +90,9 @@ export function PluginViewTab({
     return () => {
       current = false;
       off();
+      if (releaseOnUnmount) void api.pluginViewClose(pluginId, viewId);
     };
-  }, [pluginId, viewId, sessionId, viewLocation, tabId]);
+  }, [pluginId, viewId, sessionId, viewLocation, tabId, releaseOnUnmount]);
 
   useEffect(() => {
     const surface = surfaceRef.current;

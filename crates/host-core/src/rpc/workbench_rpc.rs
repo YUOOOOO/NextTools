@@ -2,16 +2,17 @@ use super::{rpc_err, AppState, JsonRpcError};
 use serde_json::Value;
 
 pub(super) fn handle(st: &AppState, method: &str, params: Value) -> Result<Value, JsonRpcError> {
+    let sources = crate::workbench::sources_from_plugins(&st.plugins);
     match method {
         "workbench.get" => {
             if let Some(migrate) = params.get("migrate").filter(|value| !value.is_null()) {
-                crate::workbench::import_if_empty(&st.db, migrate)
+                crate::workbench::import_if_empty_with(&st.db, migrate, &sources)
                     .map_err(|error| rpc_err(1000, error.to_string(), "INTERNAL"))?;
             }
-            crate::workbench::load(&st.db)
+            crate::workbench::load_with(&st.db, &sources)
                 .map_err(|error| rpc_err(1000, error.to_string(), "INTERNAL"))
         }
-        "workbench.apply" => crate::workbench::apply(&st.db, &params)
+        "workbench.apply" => crate::workbench::apply_with(&st.db, &params, &sources)
             .map_err(|error| rpc_err(1000, error.to_string(), "INTERNAL")),
         _ => Err(rpc_err(
             -32601,

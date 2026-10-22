@@ -15,6 +15,7 @@ A plugin can contribute one or more of these capabilities:
 | Panel | A small isolated HTML interface | `ui.panel`, `ui.panel` permission, `window.pluginBridge` |
 | Floating widget | A transparent, frameless companion window — a round orb, not a rectangle | `ui.panel` permission, `"ui": { "shape": "widget" }`, `window.pluginBridge` |
 | Work panel view | An interface docked in the app's right work panel | `contributes.views`, `ui.view` permission, `window.pluginBridge` |
+| Workbench page | A primary page in the Workbench. The host id is `<pluginId>/<id>`. Disabling the page keeps its record and unloads the view. Page and Agent data calls share `pi.workbench.registerService` | `contributes.workbenchPages`, `contributes.workbenchServices`, `ui.view`, `agent.tool.register` |
 | Agent tool | A function the Agent can call | `contributes.agentTools`, `pi.agent.registerTool` |
 | OAuth provider | A provider row with host-owned sign-in and encrypted credentials | `contributes.providers`, `provider.oauth`, `onProviderOAuth` |
 | One-shot completion | A host-owned completion against the user's models | `pi.models.list`, `pi.session.getLlmContext`, `pi.agent.complete` |

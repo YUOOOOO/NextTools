@@ -170,3 +170,32 @@ test("workbench host session is authoritative and local fallback remains", async
   assert.equal(opened.ok, true);
   disconnectWorkbenchHost();
 });
+
+test("contributed workbench pages stay disabled without being deleted", () => {
+  const restored = restoreWorkbenchSession({
+    pages: {
+      overview: { id: "overview", titleKey: "workbench.title", status: "ready" },
+      "pi.demo/board": {
+        id: "pi.demo/board",
+        title: "Board",
+        status: "disabled",
+        pluginId: "pi.demo",
+        viewId: "board",
+        available: false,
+      },
+      foreign: { id: "foreign", status: "ready" },
+    },
+    openIds: ["overview", "pi.demo/board"],
+    activeId: "pi.demo/board",
+  });
+  assert.equal(restored.pages["pi.demo/board"].status, "disabled");
+  assert.equal(restored.pages["pi.demo/board"].pluginId, "pi.demo");
+  assert.equal("foreign" in restored.pages, false);
+  const ready = applyWorkbenchCommand(restored, {
+    action: "setStatus",
+    id: "pi.demo/board",
+    status: "ready",
+  });
+  assert.equal(ready.pages["pi.demo/board"].status, "ready");
+  assert.equal(ready.pages["pi.demo/board"].viewId, "board");
+});

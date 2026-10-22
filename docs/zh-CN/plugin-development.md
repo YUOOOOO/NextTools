@@ -17,6 +17,7 @@
 | 命令 | 全局搜索中的显式操作 | `contributes.commands`、`pi.commands.register` |
 | 面板 | 一个小的独立的 HTML 界面 | `ui.panel`、`ui.panel` 权限、`window.pluginBridge` |
 | 悬浮挂件 | 透明无边框的小挂件窗口——例如一个圆形球体 | `ui.panel` 权限、`"ui": { "shape": "widget" }`、`window.pluginBridge` |
+| 工作台页面 | 工作台主页面。页面 id 是 `<pluginId>/<id>`。禁用保留记录并卸下视图。页面和 Agent 的数据读写都走 `pi.workbench.registerService` | `contributes.workbenchPages`、`contributes.workbenchServices`、`ui.view`、`agent.tool.register` |
 | Agent 工具 | Agent 可以调用的函数 | `contributes.agentTools`、`pi.agent.registerTool` |
 | 技能 | Agent 按需加载指令 | `contributes.skills`、`agent.prompt.inject` 权限 |
 | 主题 | 设计令牌覆盖 | `contributes.themes`、`ui.theme` 权限 |

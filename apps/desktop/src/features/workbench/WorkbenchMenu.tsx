@@ -59,6 +59,7 @@ export function WorkbenchMenu({
         {session.openIds.map((id) => {
           const page = session.pages[id];
           if (!page) return null;
+          const label = page.title ?? (page.titleKey ? t(page.titleKey) : page.id);
           return (
             <button
               key={id}
@@ -67,11 +68,23 @@ export function WorkbenchMenu({
               aria-current={session.activeId === id ? "page" : undefined}
               onClick={() => dispatchWorkbenchCommand({ action: "select", id })}
             >
-              {t(page.titleKey)}
+              {label}
             </button>
           );
         })}
-        {session.openIds.includes("example") ? null : (
+        {Object.values(session.pages)
+          .filter((page) => page.id !== "overview" && !session.openIds.includes(page.id))
+          .map((page) => (
+            <Button
+              key={page.id}
+              type="button"
+              disabled={page.available === false}
+              onClick={() => dispatchWorkbenchCommand({ action: "open", id: page.id })}
+            >
+              {page.title ?? (page.titleKey ? t(page.titleKey) : page.id)}
+            </Button>
+          ))}
+        {session.pages.example || session.openIds.includes("example") ? null : (
           <Button type="button" onClick={() => dispatchWorkbenchCommand({ action: "open", id: "example" })}>
             {t("workbench.openExample")}
           </Button>
