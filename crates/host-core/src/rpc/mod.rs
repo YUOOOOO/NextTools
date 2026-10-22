@@ -3824,7 +3824,9 @@ async fn handle_request(
                 let st = state.lock().await;
                 workbench_rpc::handle(&st, method, params)?
             };
-            if method == "workbench.apply" && result.get("ok").and_then(|v| v.as_bool()) == Some(true) {
+            if method == "workbench.apply"
+                && result.get("ok").and_then(|v| v.as_bool()) == Some(true)
+            {
                 emit_notification(
                     &tx,
                     "workbench.changed",

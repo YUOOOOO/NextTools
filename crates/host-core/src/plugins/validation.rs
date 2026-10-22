@@ -528,7 +528,9 @@ pub(crate) fn validate_contributions(root: &Path, manifest: &PluginManifest) -> 
                 .get("id")
                 .and_then(Value::as_str)
                 .filter(|id| is_contrib_id(id))
-                .ok_or_else(|| anyhow!("PLUGIN_INVALID: workbench page id is missing or invalid"))?;
+                .ok_or_else(|| {
+                    anyhow!("PLUGIN_INVALID: workbench page id is missing or invalid")
+                })?;
             if seen.contains(&id) {
                 bail!("PLUGIN_INVALID: duplicate workbench page id {id}");
             }
@@ -559,7 +561,9 @@ pub(crate) fn validate_contributions(root: &Path, manifest: &PluginManifest) -> 
                 .get("name")
                 .and_then(Value::as_str)
                 .filter(|name| is_contrib_id(name))
-                .ok_or_else(|| anyhow!("PLUGIN_INVALID: workbench service name is missing or invalid"))?;
+                .ok_or_else(|| {
+                    anyhow!("PLUGIN_INVALID: workbench service name is missing or invalid")
+                })?;
             if seen.contains(&name) {
                 bail!("PLUGIN_INVALID: duplicate workbench service {name}");
             }
