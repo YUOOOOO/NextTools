@@ -24,6 +24,7 @@ import { workPanelLayout } from "../../lib/work-panel-resize";
 import { LiveVoiceStatusHost } from "../voice/live/LiveVoiceStatusHost";
 import { CollapsedTitlebarActions, RoutePending } from "./chrome";
 import { useAppShellRuntime } from "./useAppShellRuntime";
+import { hydrateWorkbenchFromHost } from "../workbench/workbench-session";
 import { WorkbenchMenu, WorkbenchToolBridge } from "../workbench/WorkbenchMenu";
 import { ActivityBar } from "./ActivityBar";
 
@@ -104,6 +105,14 @@ export function AppShell() {
   } = useAppShellRuntime();
   useCopyTex();
 
+
+  useEffect(() => {
+    if (!window.piDesktop?.invoke) return;
+    void hydrateWorkbenchFromHost({
+      get: (migrate) => api.getWorkbenchSession(migrate),
+      apply: (command) => api.applyWorkbenchCommand(command),
+    });
+  }, []);
   useEffect(() => {
     void loadChatSurface().catch((error: unknown) => {
       console.error("Failed to preload the chat surface", error);

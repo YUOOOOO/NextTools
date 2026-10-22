@@ -20,6 +20,7 @@ import { registerPluginUiIpc } from "./plugin-ui-ipc";
 import { registerJevIpc } from "./jev-ipc";
 import { registerProviderIpc } from "./provider-ipc";
 import { registerScheduledIpc } from "./scheduled-ipc";
+import { registerWorkbenchIpc } from "./workbench-ipc";
 import { registerSessionIpc } from "./session-ipc";
 import { registerSettingsIpc } from "./settings-ipc";
 import { registerStorageIpc } from "../storage/ipc";
@@ -368,6 +369,7 @@ export function registerIpcHandlers(dependencies: RegisterIpcDependencies) {
       return handler(...args);
     },
   });
+  registerWorkbenchIpc({ registrar, getHost });
   registerWorkspaceIpc({
     registrar,
     getMainWindow,

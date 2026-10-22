@@ -120,8 +120,14 @@ export function createPluginServices({
     (error as { errorCode?: string } | null | undefined)?.errorCode ===
     ErrorCodes.HOST_UNAVAILABLE;
   const pluginPanels = new PluginPanelHost(
-    async (pluginId, channel, payload, context) =>
-      plugins.invokePanelBridge(pluginId, channel, payload, context),
+    async (pluginId, channel, payload, context) => {
+      if (channel === "workbench.get" || channel === "workbench.apply") {
+        const host = getHost();
+        if (!host) throw Object.assign(new Error("host unavailable"), { code: "UNSUPPORTED" });
+        return host.call(channel === "workbench.get" ? "workbench.get" : "workbench.apply", payload ?? {});
+      }
+      return plugins.invokePanelBridge(pluginId, channel, payload, context);
+    },
     // A panel reaching for an undeclared host is the shape an exfiltration
     // attempt takes, so it is logged like a denied API call rather than dropped
     // silently in the network layer.

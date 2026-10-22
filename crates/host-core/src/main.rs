@@ -34,6 +34,7 @@ mod transcripts;
 mod turn_queue;
 mod user_skills;
 mod user_subagents;
+mod workbench;
 mod workspace;
 
 use std::sync::Arc;

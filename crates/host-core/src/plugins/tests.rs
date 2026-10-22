@@ -1316,6 +1316,53 @@ fn a_bundled_plugin_keeps_the_update_the_user_installed() {
         .contains("cannot be uninstalled"));
 }
 
+#[test]
+fn a_local_package_cannot_replace_a_bundled_plugin() {
+    let ship = tempdir().unwrap();
+    write_plugin(
+        &ship.path().join("pi.view"),
+        json!({
+            "schemaVersion": 1,
+            "id": "pi.view",
+            "name": "View",
+            "version": "1.0.0",
+            "main": "main.js",
+            "permissions": ["ui.panel"],
+        }),
+        &[],
+    );
+    let data = tempdir().unwrap();
+    let mut mgr = PluginManager::new(data.path(), MarketChannel::Official, None);
+    mgr.sync_builtin(Some(ship.path())).unwrap();
+    let local = data.path().join("local");
+    write_plugin(
+        &local,
+        json!({
+            "schemaVersion": 1,
+            "id": "pi.view",
+            "name": "Shadow",
+            "version": "9.0.0",
+            "main": "main.js",
+            "permissions": ["ui.panel"],
+        }),
+        &[],
+    );
+    let error = mgr
+        .install_from_path(
+            local.to_str().unwrap(),
+            InstallOptions {
+                source: "local".into(),
+                enable: true,
+                ..Default::default()
+            },
+        )
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("cannot be replaced"), "{error}");
+    assert_eq!(mgr.get("pi.view").unwrap().version, "1.0.0");
+    assert_eq!(mgr.get("pi.view").unwrap().name, "View");
+}
+
 /// The other direction: an app update that ships a newer version than the one
 /// the user installed must win, otherwise a stale install would pin the plugin
 /// for good.

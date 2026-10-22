@@ -43,7 +43,7 @@ Non-goals: embedded Agent in Workbench, mobile, device relay, business plugins, 
 
 ## Phase 2: Bundled-plugin and Workbench page capability
 
-Status: started. Existing plugin views cannot host a primary destination, and bundled plugins already refuse uninstall. The host page and its command service share one session: open, close, switch, disable, and recover survive a reload in local UI storage. Unknown stored pages are dropped. Host-core persistence, a bundled replacement-policy change, and an Agent Tool registration are not implemented.
+Status: started. The host page session, Agent `Workbench` tool, and plugin-panel bridge are implemented on the current development branch and are not a Phase 2 exit. The session is stored in the existing `kv` table at `ui` / `workbenchSession`. The menu, the Agent tool, and plugin panels call the same `workbench.get` / `workbench.apply` commands. Disable changes status, releases registered page resources, and keeps the record. A bundled plugin still cannot be uninstalled. A public install cannot replace that id unless it is a strictly newer marketplace version, which remains the ADR 0241 update path. Phase 1 native chrome, resize, and navigation regression remain open. Phase 3 has not started.
 
 Dependencies: Phases 0-1. First inventory existing contributions; extend only proven gaps.
 

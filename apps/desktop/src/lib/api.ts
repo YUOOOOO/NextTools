@@ -1041,6 +1041,21 @@ export const api = {
     invoke<{ workspace: ProjectWorkspace | null }>(IPC.invoke.projectSet, path),
   listScheduled: () =>
     invoke<{ tasks: ScheduledTask[] }>(IPC.invoke.scheduledList),
+  getWorkbenchSession: (migrate?: unknown) =>
+    invoke<{ session: unknown; stored: boolean }>(IPC.invoke.workbenchGet, migrate),
+  applyWorkbenchCommand: (command: {
+    action: "open" | "close" | "select" | "setStatus";
+    id: string;
+    status?: "ready" | "unavailable" | "disabled";
+  }) =>
+    invoke<{
+      ok: boolean;
+      error?: string;
+      session?: unknown;
+      activeId: string | null;
+      openIds: string[];
+      status: "ready" | "unavailable" | "disabled" | null;
+    }>(IPC.invoke.workbenchApply, command),
   createScheduled: (input: {
     title?: string;
     prompt: string;

@@ -152,46 +152,172 @@ export function saveWorkbenchSession(session: WorkbenchSession): void {
   }
 }
 
-export type WorkbenchToolResult =
-  | { ok: true; activeId: string | null; openIds: string[]; status: WorkbenchPageStatus | null }
-  | { ok: false; error: string };
+export type WorkbenchHostClient = {
+  get: (migrate?: unknown) => Promise<{ session: unknown }>;
+  apply: (command: WorkbenchCommand) => Promise<{
+    ok: boolean;
+    error?: string;
+    session?: unknown;
+    activeId?: string | null;
+    openIds?: string[];
+    status?: WorkbenchPageStatus | null;
+  }>;
+};
 
-export function executeWorkbenchTool(input: unknown): WorkbenchToolResult {
-  if (!input || typeof input !== "object") return { ok: false, error: "missing command" };
-  const raw = input as { action?: unknown; id?: unknown; status?: unknown };
-  const id = typeof raw.id === "string" ? raw.id : "";
-  if (!id) return { ok: false, error: "missing id" };
-  let command: WorkbenchCommand | null = null;
-  if (raw.action === "open" || raw.action === "close" || raw.action === "select") {
-    command = { action: raw.action, id };
-  } else if (raw.action === "setStatus" && (raw.status === "ready" || raw.status === "unavailable" || raw.status === "disabled")) {
-    command = { action: "setStatus", id, status: raw.status };
+let hostClient: WorkbenchHostClient | null = null;
+let hostActive = false;
+let hydration: Promise<void> | null = null;
+
+function readLocalRaw(): string | null {
+  const store = storage();
+  if (!store) return null;
+  try {
+    return store.getItem(WORKBENCH_SESSION_KEY);
+  } catch {
+    return null;
   }
-  if (!command) return { ok: false, error: "unsupported command" };
-  const before = currentSession;
-  dispatchWorkbenchCommand(command);
-  if (currentSession === before && raw.action === "open") return { ok: false, error: "unknown page" };
-  const active = currentSession.activeId ? currentSession.pages[currentSession.activeId] : undefined;
+}
+
+function commandResult(session: WorkbenchSession): WorkbenchToolResult {
+  const active = session.activeId ? session.pages[session.activeId] : undefined;
   return {
     ok: true,
-    activeId: currentSession.activeId,
-    openIds: currentSession.openIds,
+    activeId: session.activeId,
+    openIds: session.openIds,
     status: active?.status ?? null,
   };
 }
 
-let currentSession = loadWorkbenchSession();
-const listeners = new Set<() => void>();
+function parseWorkbenchCommand(input: unknown): WorkbenchCommand | { error: string } {
+  if (!input || typeof input !== "object") return { error: "missing command" };
+  const raw = input as { action?: unknown; id?: unknown; status?: unknown };
+  const id = typeof raw.id === "string" ? raw.id : "";
+  if (!id) return { error: "missing id" };
+  if (raw.action === "open" || raw.action === "close" || raw.action === "select") {
+    return { action: raw.action, id };
+  }
+  if (
+    raw.action === "setStatus" &&
+    (raw.status === "ready" || raw.status === "unavailable" || raw.status === "disabled")
+  ) {
+    return { action: "setStatus", id, status: raw.status };
+  }
+  return { error: "unsupported command" };
+}
 
-function publish(next: WorkbenchSession) {
+const pageReleases = new Map<string, Set<() => void>>();
+
+export function retainWorkbenchPage(id: string, release: () => void): () => void {
+  const releases = pageReleases.get(id) ?? new Set<() => void>();
+  releases.add(release);
+  pageReleases.set(id, releases);
+  return () => releases.delete(release);
+}
+
+function releaseDisabledPages(before: WorkbenchSession, next: WorkbenchSession) {
+  for (const [id, page] of Object.entries(next.pages)) {
+    if (page.status !== "disabled" || before.pages[id]?.status === "disabled") continue;
+    const releases = pageReleases.get(id);
+    pageReleases.delete(id);
+    if (!releases) continue;
+    for (const release of releases) release();
+  }
+}
+
+
+function publish(next: WorkbenchSession, persistLocal: boolean) {
   currentSession = next;
-  saveWorkbenchSession(next);
+  if (persistLocal && !hostActive) saveWorkbenchSession(next);
   for (const listener of listeners) listener();
 }
 
-export function dispatchWorkbenchCommand(command: WorkbenchCommand) {
-  publish(applyWorkbenchCommand(currentSession, command));
+function applyLocal(command: WorkbenchCommand): WorkbenchToolResult {
+  const before = currentSession;
+  const next = applyWorkbenchCommand(before, command);
+  if (next === before && command.action === "open") return { ok: false, error: "unknown page" };
+  releaseDisabledPages(before, next);
+  publish(next, true);
+  return commandResult(next);
 }
+
+export async function hydrateWorkbenchFromHost(client: WorkbenchHostClient): Promise<"host" | "local"> {
+  const run = (async () => {
+    const raw = readLocalRaw();
+    let migrate: unknown;
+    if (raw) {
+      try {
+        migrate = JSON.parse(raw);
+      } catch {
+        migrate = undefined;
+      }
+    }
+    try {
+      const result = await client.get(migrate);
+      hostClient = client;
+      hostActive = true;
+      if (raw) storage()?.removeItem(WORKBENCH_SESSION_KEY);
+      publish(restoreWorkbenchSession(result.session), false);
+      return "host" as const;
+    } catch {
+      hostClient = null;
+      hostActive = false;
+      return "local" as const;
+    }
+  })();
+  hydration = run.then(() => undefined, () => undefined);
+  return run;
+}
+
+export function disconnectWorkbenchHost() {
+  hostClient = null;
+  hostActive = false;
+  hydration = null;
+}
+
+export function executeWorkbenchTool(input: unknown): WorkbenchToolResult {
+  const command = parseWorkbenchCommand(input);
+  if ("error" in command) return { ok: false, error: command.error };
+  return applyLocal(command);
+}
+
+export function dispatchWorkbenchCommand(command: WorkbenchCommand): Promise<WorkbenchToolResult> {
+  return runWorkbenchCommand(command);
+}
+
+export async function runWorkbenchCommand(input: unknown): Promise<WorkbenchToolResult> {
+  const command = parseWorkbenchCommand(input);
+  if ("error" in command) return { ok: false, error: command.error };
+  if (hydration) await hydration;
+  if (hostActive && hostClient) {
+    try {
+      const result = await hostClient.apply(command);
+      if (!result.ok) return { ok: false, error: result.error ?? "unknown page" };
+      if (result.session) {
+        const next = restoreWorkbenchSession(result.session);
+        releaseDisabledPages(currentSession, next);
+        publish(next, false);
+      }
+      return {
+        ok: true,
+        activeId: result.activeId ?? null,
+        openIds: result.openIds ?? [],
+        status: result.status ?? null,
+      };
+    } catch {
+      hostActive = false;
+      hostClient = null;
+    }
+  }
+  return applyLocal(command);
+}
+
+export type WorkbenchToolResult =
+  | { ok: true; activeId: string | null; openIds: string[]; status: WorkbenchPageStatus | null }
+  | { ok: false; error: string };
+
+
+let currentSession = loadWorkbenchSession();
+const listeners = new Set<() => void>();
 
 export function useWorkbenchSession(): WorkbenchSession {
   return useSyncExternalStore(

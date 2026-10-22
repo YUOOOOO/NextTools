@@ -223,6 +223,8 @@ export const IPC = {
     scheduledRun: "pi-desktop/scheduled/run",
     scheduledExecute: "pi-desktop/scheduled/execute",
     scheduledListRuns: "pi-desktop/scheduled/listRuns",
+    workbenchGet: "pi-desktop/workbench/get",
+    workbenchApply: "pi-desktop/workbench/apply",
     toolResolvePermission: "pi-desktop/tool/resolvePermission",
     todosGet: "pi-desktop/todos/get",
     askToolResolve: "pi-desktop/agent/askTool/resolve",

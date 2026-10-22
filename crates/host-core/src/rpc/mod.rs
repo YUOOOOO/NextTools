@@ -5,6 +5,8 @@ mod scheduled_rpc;
 mod scheduled_tools;
 mod todos;
 mod window_corner_rpc;
+mod workbench_rpc;
+mod workbench_tools;
 mod worktree_rpc;
 
 #[cfg(test)]
@@ -3817,6 +3819,11 @@ async fn handle_request(
             scheduled_rpc::handle(&st, method, params)
         }
 
+        method if method.starts_with("workbench.") => {
+            let st = state.lock().await;
+            workbench_rpc::handle(&st, method, params)
+        }
+
         method if method.starts_with("worktree.") => {
             worktree_rpc::handle(&state, method, params).await
         }
@@ -3825,6 +3832,7 @@ async fn handle_request(
             let mut definitions = tools::builtin_tool_defs();
             if let Some(items) = definitions.as_array_mut() {
                 items.extend(scheduled_tools::definitions());
+                items.extend(workbench_tools::definitions());
             }
             Ok(json!({ "tools": definitions }))
         }
@@ -4426,6 +4434,9 @@ async fn handle_request(
                 } else if scheduled_tools::recognizes(&p.tool_name) {
                     let st = state.lock().await;
                     scheduled_tools::execute(&st, &p)
+                } else if workbench_tools::recognizes(&p.tool_name) {
+                    let st = state.lock().await;
+                    workbench_tools::execute(&st, &p)
                 } else if let Some(remote) = remote_workspace.clone() {
                     remote_tools::execute_remote_tool(
                         &state,

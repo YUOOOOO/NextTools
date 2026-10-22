@@ -52,6 +52,22 @@ impl PluginManager {
                     .unwrap_or(&[]),
                 &manifest.permissions,
             );
+            if self.bundled_ids.contains(&manifest.id) {
+                let current = existing
+                    .as_ref()
+                    .map(|plugin| plugin.version.as_str())
+                    .unwrap_or("0.0.0");
+                let newer_marketplace = opts.source == "marketplace"
+                    && crate::plugins::marketplace::compare_plugin_versions(
+                        &manifest.version,
+                        current,
+                    ) == std::cmp::Ordering::Greater;
+                if !newer_marketplace {
+                    bail!(
+                        "PLUGIN_INVALID: a bundled plugin cannot be replaced by another package with the same id; disable it, or install a strictly newer marketplace version"
+                    );
+                }
+            }
 
             if upgraded {
                 if let Some(prev) = &existing {

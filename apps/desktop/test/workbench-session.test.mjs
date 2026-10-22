@@ -67,3 +67,89 @@ test("workbench tool uses the same command service and rejects unknown pages", a
     error: "unknown page",
   });
 });
+
+test("disabling a workbench page releases its resources and keeps the record", async () => {
+  const { executeWorkbenchTool, retainWorkbenchPage } = await import(
+    "../src/features/workbench/workbench-session.ts"
+  );
+  executeWorkbenchTool({ action: "open", id: "example" });
+  executeWorkbenchTool({ action: "setStatus", id: "example", status: "ready" });
+  let released = 0;
+  retainWorkbenchPage("example", () => {
+    released += 1;
+  });
+  const disabled = executeWorkbenchTool({ action: "setStatus", id: "example", status: "disabled" });
+  assert.equal(disabled.ok, true);
+  assert.equal(released, 1);
+  const again = executeWorkbenchTool({ action: "setStatus", id: "example", status: "disabled" });
+  assert.equal(again.ok, true);
+  assert.equal(released, 1);
+});
+
+test("workbench host session is authoritative and local fallback remains", async () => {
+  const {
+    disconnectWorkbenchHost,
+    hydrateWorkbenchFromHost,
+    runWorkbenchCommand,
+    WORKBENCH_SESSION_KEY,
+  } = await import("../src/features/workbench/workbench-session.ts");
+  const memory = new Map();
+  const store = {
+    getItem: (key) => memory.get(key) ?? null,
+    setItem: (key, value) => memory.set(key, String(value)),
+    removeItem: (key) => memory.delete(key),
+  };
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: store });
+  memory.set(
+    WORKBENCH_SESSION_KEY,
+    JSON.stringify({
+      pages: {
+        overview: { id: "overview", status: "ready" },
+        example: { id: "example", status: "disabled" },
+      },
+      openIds: ["overview", "example"],
+      activeId: "example",
+    }),
+  );
+  let imports = 0;
+  const host = {
+    get: async (migrate) => {
+      if (migrate) imports += 1;
+      return {
+        session: migrate ?? {
+          pages: { overview: { id: "overview", status: "ready" } },
+          openIds: ["overview"],
+          activeId: "overview",
+        },
+        stored: false,
+      };
+    },
+    apply: async () => ({ ok: false, error: "unknown page" }),
+  };
+  assert.equal(await hydrateWorkbenchFromHost(host), "host");
+  assert.equal(imports, 1);
+  assert.equal(memory.has(WORKBENCH_SESSION_KEY), false);
+  assert.equal(await hydrateWorkbenchFromHost(host), "host");
+  assert.equal(imports, 1);
+  assert.deepEqual(await runWorkbenchCommand({ action: "open", id: "foreign" }), {
+    ok: false,
+    error: "unknown page",
+  });
+
+  memory.set(WORKBENCH_SESSION_KEY, "{\"pages\":{}}");
+  assert.equal(
+    await hydrateWorkbenchFromHost({
+      get: async () => {
+        throw new Error("host unavailable");
+      },
+      apply: async () => {
+        throw new Error("host unavailable");
+      },
+    }),
+    "local",
+  );
+  assert.equal(memory.has(WORKBENCH_SESSION_KEY), true);
+  const opened = await runWorkbenchCommand({ action: "open", id: "example" });
+  assert.equal(opened.ok, true);
+  disconnectWorkbenchHost();
+});

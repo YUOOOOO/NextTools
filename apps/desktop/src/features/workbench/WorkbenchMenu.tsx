@@ -4,13 +4,13 @@ import { BrandLogo } from "../../components/BrandLogo";
 import { IconSidebar } from "../../components/icons";
 import { Button, TooltipButton } from "../../components/ui";
 import { useAppStore } from "../../stores/app-store";
-import { dispatchWorkbenchCommand, executeWorkbenchTool, useWorkbenchSession } from "./workbench-session";
+import { dispatchWorkbenchCommand, runWorkbenchCommand, useWorkbenchSession } from "./workbench-session";
 
 export function WorkbenchToolBridge() {
   const setPage = useAppStore((state) => state.setPage);
   useEffect(() => {
-    const onTool = (event: Event) => {
-      const result = executeWorkbenchTool((event as CustomEvent<unknown>).detail);
+    const onTool = async (event: Event) => {
+      const result = await runWorkbenchCommand((event as CustomEvent<unknown>).detail);
       if (result.ok) setPage("workbench");
     };
     window.addEventListener("pi-workbench-tool", onTool);
