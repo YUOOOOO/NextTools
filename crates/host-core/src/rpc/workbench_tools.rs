@@ -9,7 +9,7 @@ pub fn recognizes(name: &str) -> bool {
 pub fn definitions() -> Vec<Value> {
     vec![json!({
         "name": "Workbench",
-        "description": "Open, close, switch, or disable a Workbench page. Use this tool instead of Browser. Disable changes status only and keeps the page record. Unknown page ids fail and do not change the saved session.",
+        "description": "Open, close, switch, or disable a Workbench page. Use this tool instead of Browser. Page ids are overview, example, or pluginId/pageId from contributes.workbenchPages. Disable changes status only and keeps the page record. Unknown page ids fail and do not change the saved session.",
         "risk": "low",
         "parameters": {
             "type": "object",

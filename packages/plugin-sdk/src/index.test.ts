@@ -410,6 +410,21 @@ describe("contributes.views", () => {
     expect(PLUGIN_VIEW_ICONS).toContain("diff");
     expect(new Set(PLUGIN_VIEW_ICONS).size).toBe(PLUGIN_VIEW_ICONS.length);
   });
+
+  it("accepts a workbench page that names one of the plugin views", () => {
+    expect(
+      validateContributions({
+        views: [view],
+        workbenchPages: [{ id: "changes", view: "changes" }],
+      }),
+    ).toBeUndefined();
+    expect(
+      validateContributions({
+        views: [view],
+        workbenchPages: [{ id: "changes", view: "missing" }],
+      }),
+    ).toMatch(/must name one of this plugin's views/);
+  });
 });
 
 describe("naming helpers", () => {

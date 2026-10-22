@@ -10,6 +10,27 @@
 
 ## 1. Goals
 
+### E2E-WORKBENCH-shared-plugin-service
+
+- **Preconditions:** A plugin declares and registers a Workbench service with
+  `ui.view` and `agent.tool.register`. Use synthetic state and no real provider.
+- **Steps:** Invoke a stateful method from its page bridge, then from its Agent
+  tool, then from the page again. Cancel a waiting Agent invocation and invoke
+  the page again. Unload the plugin while a page invocation is waiting.
+- **Expected:** Both callers observe one handler's state. Agent cancellation
+  reaches the handler's AbortSignal without disabling subsequent page calls.
+  Unload aborts the page handler, rejects its pending request, and removes both
+  service entry points. Unknown methods return `NOT_FOUND`; duplicate service
+  registration preserves the first handler.
+- **Automated coverage:** `apps/desktop/test/workbench-service.test.mjs` runs
+  the production PluginRuntime and plugin host in real Node child processes;
+  an abort marker proves the page handler receives unload cancellation.
+  `workbench-session.test.mjs` covers the page command/session journey.
+- **Rendered acceptance:** Open the contributed page in Workbench, invoke its
+  action and the equivalent Agent tool, then disable/close the page and unload
+  the plugin. Verify visible results and surface cleanup. This manual Electron
+  check is separate from the process tests and is not claimed by those results.
+
 ### E2E-QUEUE-send-now-wakes-subagents
 
 - **Preconditions:** Dedicated request worktree with built workspace packages,

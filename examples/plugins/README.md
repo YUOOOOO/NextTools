@@ -59,6 +59,24 @@ with `mode: "crash"`, and a chart whose first line is `crash` or `tall`
 Covered by `apps/desktop/test/plugin-ui-slots-lab.test.mjs` and the Electron
 E2E.
 
+## workbench-data-lab
+
+Demonstrates one in-memory counter shared between Workbench and Agent.
+
+1. Load `examples/plugins/workbench-data-lab` as a development plugin.
+2. Open the Workbench **Data Lab** page. The counter starts at 0.
+3. Click **+1**. The counter becomes 1.
+4. Switch to Agent and invoke `plugin_local_workbench_data_lab_data` with
+   `{"action":"increment"}`. The counter becomes 2.
+5. Return to Data Lab. The page refreshes automatically every two seconds
+   while visible and when it becomes visible again.
+6. Click **Reset** to repeat the test.
+
+Both surfaces use the same plugin service. State resets on plugin reload.
+The `get` action reads the current counter without changing it.
+
+Covered by `apps/desktop/test/workbench-service.test.mjs`.
+
 ## Planned examples
 
 - `panel-basic`

@@ -76,6 +76,12 @@ pub(crate) fn derive_capabilities(manifest: &PluginManifest) -> Vec<String> {
     if has("views") {
         out.push("views".into());
     }
+    if has("workbenchPages") {
+        out.push("workbench".into());
+    }
+    if has("workbenchServices") {
+        out.push("workbenchService".into());
+    }
     if has("agentExtensions") {
         out.push("agentExtension".into());
     }

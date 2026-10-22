@@ -2551,6 +2551,16 @@ export class PluginRuntime {
         return this.invokeBrowser(loaded, "console", payload);
       case "browser.cdp":
         return this.invokeBrowser(loaded, "cdp", payload);
+      case "workbench.service":
+        return this.sendToChild(
+          loaded,
+          {
+            t: "call",
+            method: "workbench.service",
+            payload: payload ?? {},
+          },
+          PLUGIN_PANEL_TIMEOUT_MS,
+        );
       default:
         // The panel is the plugin's own UI: any channel the host does not
         // implement itself is forwarded to the plugin's onPanelInvoke so
@@ -2872,7 +2882,10 @@ export class PluginRuntime {
           throw apiError(code, (error as Error).message);
         }
       }
+      case "workbench.registerService":
       case "agent.registerTool": {
+        const sharedService = api === "workbench.registerService";
+        if (sharedService) this.assertPermission(loaded, "ui.view");
         this.assertPermission(loaded, "agent.tool.register");
         const descriptor = (args[0] ?? {}) as {
           name?: string;
@@ -2883,7 +2896,25 @@ export class PluginRuntime {
         };
         const name = String(descriptor.name ?? "");
         if (!name) throw apiError("INVALID_ARGUMENT", "tool.name is required");
+        const declaredServices = new Set(
+          ((loaded.manifest.contributes as { workbenchServices?: { name?: string }[] } | undefined)
+            ?.workbenchServices ?? [])
+            .map((service) => service.name)
+            .filter((serviceName): serviceName is string => typeof serviceName === "string"),
+        );
+        if (sharedService && !declaredServices.has(name)) {
+          throw apiError("INVALID_ARGUMENT", `workbench service is not declared: ${name}`);
+        }
+        if (!sharedService && declaredServices.has(name)) {
+          throw apiError(
+            "INVALID_ARGUMENT",
+            "workbench service methods must use pi.workbench.registerService",
+          );
+        }
         const fullName = pluginToolName(pluginId, name);
+        if (sharedService && this.tools.has(fullName)) {
+          throw apiError("CONFLICT", `workbench service already registered: ${name}`);
+        }
         const planSafeActions = normalizePlanSafeActions(
           descriptor.planSafeActions,
           descriptor.schema,

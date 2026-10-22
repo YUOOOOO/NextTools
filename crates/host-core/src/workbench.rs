@@ -1,12 +1,24 @@
 use crate::db::Database;
+use crate::plugins::PluginManager;
 use anyhow::Result;
 use serde_json::{json, Map, Value};
+use std::path::Path;
 
 pub const KV_NS: &str = "ui";
 pub const KV_KEY: &str = "workbenchSession";
 
 const OVERVIEW: &str = "overview";
 const EXAMPLE: &str = "example";
+
+/// A plugin `contributes.workbenchPages` entry. The page id is `pluginId/id`.
+#[derive(Clone, Debug)]
+pub struct PageSource {
+    pub id: String,
+    pub plugin_id: String,
+    pub view_id: String,
+    pub title: String,
+    pub enabled: bool,
+}
 
 fn known_title(id: &str) -> Option<&'static str> {
     match id {
@@ -28,6 +40,36 @@ fn page(id: &str, status: &str) -> Value {
     })
 }
 
+fn contributed_page(source: &PageSource, status: &str) -> Value {
+    json!({
+        "id": source.id,
+        "title": source.title,
+        "status": status,
+        "pluginId": source.plugin_id,
+        "viewId": source.view_id,
+        "available": source.enabled,
+    })
+}
+
+fn source_by_id<'a>(sources: &'a [PageSource], id: &str) -> Option<&'a PageSource> {
+    sources.iter().find(|source| source.id == id)
+}
+
+fn durable(session: &Value) -> Value {
+    let mut session = session.clone();
+    if let Some(pages) = session
+        .get_mut("pages")
+        .and_then(|value| value.as_object_mut())
+    {
+        for page in pages.values_mut() {
+            if let Some(object) = page.as_object_mut() {
+                object.remove("available");
+            }
+        }
+    }
+    session
+}
+
 fn default_session() -> Value {
     json!({
         "pages": { OVERVIEW: page(OVERVIEW, "ready") },
@@ -36,28 +78,109 @@ fn default_session() -> Value {
     })
 }
 
+fn localized_title(value: &Value, locale: &str) -> Option<String> {
+    let text = |value: &str| {
+        let trimmed = value.trim();
+        (!trimmed.is_empty()).then(|| trimmed.to_string())
+    };
+    match value {
+        Value::String(value) => text(value),
+        Value::Object(map) => map
+            .get(locale)
+            .and_then(Value::as_str)
+            .and_then(text)
+            .or_else(|| map.get("en").and_then(Value::as_str).and_then(text))
+            .or_else(|| map.values().find_map(|value| value.as_str().and_then(text))),
+        _ => None,
+    }
+}
+
+fn view_title(contributes: &Map<String, Value>, view_id: &str, locale: &str) -> Option<String> {
+    contributes
+        .get("views")
+        .and_then(Value::as_array)
+        .and_then(|views| {
+            views
+                .iter()
+                .find(|view| view.get("id").and_then(Value::as_str) == Some(view_id))
+        })
+        .and_then(|view| view.get("title"))
+        .and_then(|title| localized_title(title, locale))
+}
+
+/// Read enabled and disabled plugin pages. A missing manifest contributes nothing.
+pub fn sources_from_plugins(plugins: &PluginManager) -> Vec<PageSource> {
+    let mut sources = Vec::new();
+    for plugin in &plugins.runtime {
+        let Some(path) = plugin.path.as_deref() else {
+            continue;
+        };
+        let Ok(manifest) = PluginManager::read_manifest(Path::new(path)) else {
+            continue;
+        };
+        let Some(contributes) = manifest.contributes.as_ref().and_then(Value::as_object) else {
+            continue;
+        };
+        let Some(pages) = contributes.get("workbenchPages").and_then(Value::as_array) else {
+            continue;
+        };
+        for page in pages {
+            let Some(object) = page.as_object() else {
+                continue;
+            };
+            let Some(local_id) = object.get("id").and_then(Value::as_str) else {
+                continue;
+            };
+            let Some(view_id) = object.get("view").and_then(Value::as_str) else {
+                continue;
+            };
+            let id = format!("{}/{local_id}", plugin.id);
+            if sources.iter().any(|source: &PageSource| source.id == id) {
+                continue;
+            }
+            sources.push(PageSource {
+                id,
+                plugin_id: plugin.id.clone(),
+                view_id: view_id.to_string(),
+                title: view_title(contributes, view_id, &plugins.locale)
+                    .unwrap_or_else(|| local_id.to_string()),
+                enabled: plugin.enabled,
+            });
+        }
+    }
+    sources
+}
+
 /// Drop unknown pages and keep known records, including `disabled`.
-pub fn restore(value: Option<&Value>) -> Value {
+pub fn restore(value: Option<&Value>, sources: &[PageSource]) -> Value {
     let Some(value) = value.filter(|item| item.is_object()) else {
-        return default_session();
+        return with_sources(default_session(), sources);
     };
     let mut pages = Map::new();
     pages.insert(OVERVIEW.to_string(), page(OVERVIEW, "ready"));
     if let Some(raw_pages) = value.get("pages").and_then(Value::as_object) {
         for (id, raw) in raw_pages {
-            let Some(title) = known_title(id) else {
-                continue;
-            };
             let status = raw
                 .get("status")
                 .and_then(Value::as_str)
                 .filter(|status| is_status(status))
                 .unwrap_or("ready");
-            pages.insert(
-                id.clone(),
-                json!({ "id": id, "titleKey": title, "status": status }),
-            );
+            if let Some(title) = known_title(id) {
+                pages.insert(
+                    id.clone(),
+                    json!({ "id": id, "titleKey": title, "status": status }),
+                );
+                continue;
+            }
+            if let Some(source) = source_by_id(sources, id) {
+                pages.insert(id.clone(), contributed_page(source, status));
+            }
         }
+    }
+    for source in sources.iter().filter(|source| source.enabled) {
+        pages
+            .entry(source.id.clone())
+            .or_insert_with(|| contributed_page(source, "ready"));
     }
     let open_ids = if let Some(raw_open) = value.get("openIds").and_then(Value::as_array) {
         let mut seen = Vec::new();
@@ -83,7 +206,15 @@ pub fn restore(value: Option<&Value>) -> Value {
     })
 }
 
-pub fn apply_command(session: &Value, command: &Value) -> Result<Value, &'static str> {
+fn with_sources(session: Value, sources: &[PageSource]) -> Value {
+    restore(Some(&session), sources)
+}
+
+pub fn apply_command(
+    session: &Value,
+    command: &Value,
+    sources: &[PageSource],
+) -> Result<Value, &'static str> {
     let action = command
         .get("action")
         .and_then(Value::as_str)
@@ -93,8 +224,12 @@ pub fn apply_command(session: &Value, command: &Value) -> Result<Value, &'static
         .and_then(Value::as_str)
         .filter(|id| !id.is_empty())
         .ok_or("missing id")?;
-    if known_title(id).is_none() {
+    let source = source_by_id(sources, id);
+    if known_title(id).is_none() && source.is_none() {
         return Err("unknown page");
+    }
+    if action == "open" && source.is_some_and(|source| !source.enabled) {
+        return Err("unavailable");
     }
     let mut next = session.clone();
     match action {
@@ -105,7 +240,10 @@ pub fn apply_command(session: &Value, command: &Value) -> Result<Value, &'static
                 return Ok(next);
             }
             if next["pages"].get(id).is_none() {
-                next["pages"][id] = page(id, "ready");
+                next["pages"][id] = match source {
+                    Some(source) => contributed_page(source, "ready"),
+                    None => page(id, "ready"),
+                };
             }
             open_ids.push(json!(id));
             next["openIds"] = json!(open_ids);
@@ -173,12 +311,17 @@ fn success(session: &Value) -> Value {
 }
 
 pub fn load(db: &Database) -> Result<Value> {
+    load_with(db, &[])
+}
+
+pub fn load_with(db: &Database, sources: &[PageSource]) -> Result<Value> {
     let before = db.kv_get(KV_NS, KV_KEY)?;
     let stored = before.is_some();
-    let session = restore(before.as_ref());
+    let session = restore(before.as_ref(), sources);
     if let Some(raw) = before.as_ref() {
-        if raw != &session {
-            db.kv_set(KV_NS, KV_KEY, &session)?;
+        let persisted = durable(&session);
+        if raw != &persisted {
+            db.kv_set(KV_NS, KV_KEY, &persisted)?;
         }
     }
     Ok(json!({ "session": session, "stored": stored }))
@@ -186,23 +329,36 @@ pub fn load(db: &Database) -> Result<Value> {
 
 /// One-shot local migration. An existing host record stays authoritative.
 pub fn import_if_empty(db: &Database, migrate: &Value) -> Result<bool> {
+    import_if_empty_with(db, migrate, &[])
+}
+
+pub fn import_if_empty_with(
+    db: &Database,
+    migrate: &Value,
+    sources: &[PageSource],
+) -> Result<bool> {
     if db.kv_get(KV_NS, KV_KEY)?.is_some() {
         return Ok(false);
     }
-    db.kv_set(KV_NS, KV_KEY, &restore(Some(migrate)))?;
+    db.kv_set(KV_NS, KV_KEY, &durable(&restore(Some(migrate), sources)))?;
     Ok(true)
 }
 
 /// Shared by `workbench.apply` and the `Workbench` tool. A rejected command
 /// does not write, including when the stored value still contains unknown pages.
 pub fn apply(db: &Database, command: &Value) -> Result<Value> {
+    apply_with(db, command, &[])
+}
+
+pub fn apply_with(db: &Database, command: &Value, sources: &[PageSource]) -> Result<Value> {
     let before = db.kv_get(KV_NS, KV_KEY)?;
-    let session = restore(before.as_ref());
-    match apply_command(&session, command) {
+    let session = restore(before.as_ref(), sources);
+    match apply_command(&session, command, sources) {
         Err(error) => Ok(json!({ "ok": false, "error": error })),
         Ok(next) => {
-            if next != session {
-                db.kv_set(KV_NS, KV_KEY, &next)?;
+            let persisted = durable(&next);
+            if persisted != durable(&session) {
+                db.kv_set(KV_NS, KV_KEY, &persisted)?;
             }
             Ok(success(&next))
         }
@@ -213,10 +369,21 @@ pub fn apply(db: &Database, command: &Value) -> Result<Value> {
 mod tests {
     use super::*;
     use crate::db::SCHEMA_VERSION;
+
     fn db() -> (tempfile::TempDir, Database) {
         let dir = tempfile::tempdir().unwrap();
         let db = Database::open(&dir.path().join("pi.sqlite")).unwrap();
         (dir, db)
+    }
+
+    fn board(enabled: bool) -> PageSource {
+        PageSource {
+            id: "pi.demo/board".into(),
+            plugin_id: "pi.demo".into(),
+            view_id: "board".into(),
+            title: "Board".into(),
+            enabled,
+        }
     }
 
     #[test]
@@ -328,5 +495,72 @@ mod tests {
         );
         assert_eq!(db.kv_get(KV_NS, KV_KEY).unwrap(), before);
         assert_eq!(before.unwrap()["pages"]["overview"]["status"], "disabled");
+    }
+
+    #[test]
+    fn contributed_page_disable_keeps_the_record_and_a_disabled_plugin_cannot_open() {
+        let (_dir, db) = db();
+        let sources = [board(true)];
+        let opened = apply_with(
+            &db,
+            &json!({"action":"open","id":"pi.demo/board"}),
+            &sources,
+        )
+        .unwrap();
+        assert_eq!(opened["ok"], true);
+        assert_eq!(
+            opened["session"]["pages"]["pi.demo/board"]["viewId"],
+            "board"
+        );
+        let disabled = apply_with(
+            &db,
+            &json!({"action":"setStatus","id":"pi.demo/board","status":"disabled"}),
+            &sources,
+        )
+        .unwrap();
+        assert_eq!(
+            disabled["session"]["pages"]["pi.demo/board"]["status"],
+            "disabled"
+        );
+        assert_eq!(
+            disabled["session"]["pages"]["pi.demo/board"]["pluginId"],
+            "pi.demo"
+        );
+        let stored = db.kv_get(KV_NS, KV_KEY).unwrap().unwrap();
+        assert!(stored["pages"]["pi.demo/board"].get("available").is_none());
+        assert_eq!(stored["pages"]["pi.demo/board"]["status"], "disabled");
+
+        let closed = apply_with(
+            &db,
+            &json!({"action":"close","id":"pi.demo/board"}),
+            &sources,
+        )
+        .unwrap();
+        assert!(closed["session"]["pages"].get("pi.demo/board").is_some());
+        assert!(!closed["session"]["openIds"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|id| id == "pi.demo/board"));
+
+        let retained = [board(false)];
+        let loaded = load_with(&db, &retained).unwrap();
+        assert_eq!(
+            loaded["session"]["pages"]["pi.demo/board"]["status"],
+            "disabled"
+        );
+        assert_eq!(
+            loaded["session"]["pages"]["pi.demo/board"]["available"],
+            false
+        );
+        let before = db.kv_get(KV_NS, KV_KEY).unwrap();
+        let rejected = apply_with(
+            &db,
+            &json!({"action":"open","id":"pi.demo/board"}),
+            &retained,
+        )
+        .unwrap();
+        assert_eq!(rejected, json!({"ok": false, "error": "unavailable"}));
+        assert_eq!(db.kv_get(KV_NS, KV_KEY).unwrap(), before);
     }
 }

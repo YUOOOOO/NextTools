@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "local.workbench-data-lab",
+  "name": "Workbench Data Lab",
+  "version": "0.1.0",
+  "description": "A shared counter for testing Agent and Workbench interaction.",
+  "main": "main.js",
+  "permissions": ["ui.view", "agent.tool.register"],
+  "contributes": {
+    "views": [{ "id": "data", "title": "Data Lab", "icon": "wrench", "entry": "page.html" }],
+    "workbenchPages": [{ "id": "data", "view": "data" }],
+    "workbenchServices": [{ "name": "data", "description": "Read, increment or reset the Data Lab counter. Actions: get, increment, reset. Increment adds 1 by default. State is shared with the Workbench page and resets on plugin reload.", "risk": "low" }]
+  },
+  "activationEvents": ["onStartup"]
+}

@@ -102,6 +102,61 @@ test("disabling a workbench page releases its resources and keeps the record", a
   assert.equal(again.ok, true);
   assert.equal(released, 1);
 });
+test("workbench host refresh ignores a stale response after a newer refresh", async () => {
+  const { disconnectWorkbenchHost, hydrateWorkbenchFromHost, refreshWorkbenchFromHost, useWorkbenchSession } = await import("../src/features/workbench/workbench-session.ts");
+  const { createElement } = await import("react");
+  const { renderToString } = await import("react-dom/server");
+  const activeId = () => {
+    let value;
+    renderToString(createElement(() => { value = useWorkbenchSession().activeId; return null; }));
+    return value;
+  };
+  let resolveStale;
+  let calls = 0;
+  const client = {
+    get: () => {
+      calls += 1;
+      if (calls === 1) return Promise.resolve({ session: createWorkbenchSession() });
+      if (calls === 2) return new Promise((resolve) => { resolveStale = resolve; });
+      return Promise.resolve({ session: { pages: { overview: { id: "overview" }, example: { id: "example" } }, openIds: ["overview", "example"], activeId: "example" } });
+    },
+    apply: async () => ({ ok: true }),
+  };
+  await hydrateWorkbenchFromHost(client);
+  const stale = refreshWorkbenchFromHost();
+  const latest = refreshWorkbenchFromHost();
+  assert.equal(await latest, true);
+  resolveStale({ session: createWorkbenchSession() });
+  assert.equal(await stale, false);
+  assert.equal(activeId(), "example");
+  disconnectWorkbenchHost();
+});
+
+test("workbench host refresh leaves the current session unchanged on failure", async () => {
+  const { disconnectWorkbenchHost, hydrateWorkbenchFromHost, refreshWorkbenchFromHost, useWorkbenchSession } = await import("../src/features/workbench/workbench-session.ts");
+  const { createElement } = await import("react");
+  const { renderToString } = await import("react-dom/server");
+  const activeId = () => {
+    let value;
+    renderToString(createElement(() => { value = useWorkbenchSession().activeId; return null; }));
+    return value;
+  };
+  let fail = false;
+  const client = {
+    get: async () => {
+      if (fail) throw new Error("host unavailable");
+      return { session: { pages: { overview: { id: "overview" }, example: { id: "example" } }, openIds: ["overview", "example"], activeId: "example" } };
+    },
+    apply: async () => ({ ok: true }),
+  };
+  await hydrateWorkbenchFromHost(client);
+  assert.equal(await refreshWorkbenchFromHost(), true);
+  assert.equal(activeId(), "example");
+  fail = true;
+  assert.equal(await refreshWorkbenchFromHost(), false);
+  assert.equal(activeId(), "example");
+  disconnectWorkbenchHost();
+});
 
 test("workbench host session is authoritative and local fallback remains", async () => {
   const {
@@ -169,4 +224,33 @@ test("workbench host session is authoritative and local fallback remains", async
   const opened = await runWorkbenchCommand({ action: "open", id: "example" });
   assert.equal(opened.ok, true);
   disconnectWorkbenchHost();
+});
+
+test("contributed workbench pages stay disabled without being deleted", () => {
+  const restored = restoreWorkbenchSession({
+    pages: {
+      overview: { id: "overview", titleKey: "workbench.title", status: "ready" },
+      "pi.demo/board": {
+        id: "pi.demo/board",
+        title: "Board",
+        status: "disabled",
+        pluginId: "pi.demo",
+        viewId: "board",
+        available: false,
+      },
+      foreign: { id: "foreign", status: "ready" },
+    },
+    openIds: ["overview", "pi.demo/board"],
+    activeId: "pi.demo/board",
+  });
+  assert.equal(restored.pages["pi.demo/board"].status, "disabled");
+  assert.equal(restored.pages["pi.demo/board"].pluginId, "pi.demo");
+  assert.equal("foreign" in restored.pages, false);
+  const ready = applyWorkbenchCommand(restored, {
+    action: "setStatus",
+    id: "pi.demo/board",
+    status: "ready",
+  });
+  assert.equal(ready.pages["pi.demo/board"].status, "ready");
+  assert.equal(ready.pages["pi.demo/board"].viewId, "board");
 });
