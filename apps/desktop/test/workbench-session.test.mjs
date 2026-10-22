@@ -8,8 +8,8 @@ import {
   restoreWorkbenchSession,
   selectWorkbenchPage,
   setWorkbenchPageStatus,
+  parseWorkbenchSlash,
 } from "../src/features/workbench/workbench-session.ts";
-
 test("workbench session opens, switches, closes, and recovers pages", () => {
   const initial = createWorkbenchSession();
   const opened = openWorkbenchPage(initial, "example");
@@ -50,6 +50,23 @@ test("workbench restoration keeps page data and drops unknown pages", () => {
   assert.deepEqual(restored.openIds, ["example"]);
   assert.equal(restored.activeId, "example");
   assert.equal(restoreWorkbenchSession(null).activeId, "overview");
+});
+
+test("workbench slash body uses the same page commands", () => {
+  assert.deepEqual(parseWorkbenchSlash(""), { kind: "show" });
+  assert.deepEqual(parseWorkbenchSlash("open example"), {
+    kind: "command",
+    command: { action: "open", id: "example" },
+  });
+  assert.deepEqual(parseWorkbenchSlash("disable example"), {
+    kind: "command",
+    command: { action: "setStatus", id: "example", status: "disabled" },
+  });
+  assert.deepEqual(parseWorkbenchSlash("open foreign"), {
+    kind: "command",
+    command: { action: "open", id: "foreign" },
+  });
+  assert.deepEqual(parseWorkbenchSlash("nope"), { kind: "error", error: "missing id" });
 });
 
 test("workbench tool uses the same command service and rejects unknown pages", async () => {

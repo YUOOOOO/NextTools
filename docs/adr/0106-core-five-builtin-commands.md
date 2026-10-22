@@ -43,6 +43,11 @@ not consistently implement.
 - Unknown former aliases fall through as ordinary slash text unless another
   command source contributes the same name.
 
+Workbench is a later first-party destination, not a restored navigation
+command. `builtin.workbench` and `/workbench` call the same page service as
+the Workbench menu and the Agent tool. They do not reopen the removed
+project, settings, plugin, or diagnostic aliases.
+
 ## Alternatives considered
 
 ### Keep all app-navigation commands in the registry

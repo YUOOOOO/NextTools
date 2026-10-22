@@ -2,6 +2,7 @@ import i18n from "i18next";
 import { api } from "./api";
 import { useAppStore } from "../stores/app-store";
 import { trustedExtensionCommandName, type Mode } from "@pi-desktop/shared";
+import { parseWorkbenchSlash, runWorkbenchCommand } from "../features/workbench/workbench-session";
 
 /**
  * First-party command execution shared by the command palette and the
@@ -44,6 +45,9 @@ export async function runPaletteCommand(commandId: string): Promise<void> {
       }
       break;
     }
+    case "builtin.workbench":
+      await runWorkbenchSlash("");
+      break;
     default: {
       // Trusted extension commands run inside the active session's sidecar
       // (spec 16 §8); without a session there is nothing to run them in.
@@ -63,4 +67,14 @@ export async function runExtensionCommand(name: string, args: string): Promise<v
     throw new Error(i18n.t("plugins.agentExtension.commandNeedsSession"));
   }
   await api.runExtensionCommand({ sessionId: store.activeSessionId, name, args });
+}
+
+export async function runWorkbenchSlash(body: string): Promise<void> {
+  const parsed = parseWorkbenchSlash(body);
+  if (parsed.kind === "error") throw new Error(parsed.error);
+  if (parsed.kind === "command") {
+    const result = await runWorkbenchCommand(parsed.command);
+    if (!result.ok) throw new Error(result.error);
+  }
+  useAppStore.getState().setPage("workbench");
 }

@@ -27,10 +27,11 @@ builtin command contracts.
 | `builtin.mode.agent` | Switch to Agent | mode, agent | Session | low | set the idle session mode to Agent |
 | `builtin.mode.plan` | Switch to Plan | mode, plan, planning | Session | low | set the idle session mode to Plan |
 | `builtin.mode.goal` | Switch to Goal | mode, goal, objective, autonomous | Session | low | set the idle session mode to Goal |
+| `builtin.workbench` | Open Workbench | workbench, page, open, close, disable | Workbench | low | open the Workbench destination; an optional body calls the same page command as the menu and Agent tool |
 
 ## 4. Visibility and execution rules
 
-- The five IDs are the complete first-party registry. Removed IDs are not
+- The six IDs are the complete first-party registry. Removed IDs are not
   palette results and are not renderer dispatch cases; plugin commands remain
   independently discoverable.
 - `New Task` uses the current project or temporary group. It selects the
@@ -62,7 +63,7 @@ type CommandExecutionResult =
 
 ## 6. Acceptance
 
-1. The builtin registry contains exactly five unique, prefixed IDs.
+1. The builtin registry contains exactly six unique, prefixed IDs.
 2. Palette search matches each title and keyword set.
 3. Mode switch commands update the idle session mode immediately; Plan, Goal,
    and Agent refer to the same pi Agent.
@@ -84,6 +85,7 @@ in the same registry that feeds palette search
 | `/agent-mode` | `builtin.mode.agent` |
 | `/plan-mode` | `builtin.mode.plan` |
 | `/goal-mode` | `builtin.mode.goal` |
+| `/workbench` | `builtin.workbench` |
 
 Aliases share one namespace with template and plugin command names; builtin
 aliases win collisions, then project templates, then user templates, then
@@ -93,6 +95,12 @@ Agent/Plan/Goal aliases also support a prompt body:
 `/agent-mode <prompt>`, `/plan-mode <prompt>`, or `/goal-mode <prompt>` switches
 the idle session (or the next-session default) and sends `<prompt>` through the
 normal prompt path. A mode alias sent with no body remains a local mode switch.
+`/workbench` alone opens the Workbench destination. `/workbench open example`,
+`/workbench close example`, `/workbench select overview`, and
+`/workbench disable example` call the same host page command as the menu and
+the Agent `Workbench` tool. `ready`, `restore`, and `unavailable` change status
+without deleting the page record. An unknown page fails and leaves the saved
+session unchanged. The body is not sent to the model.
 The prompt body remains the visible user turn; a failed dispatch does not clear
 the composer draft. Former builtin aliases are no longer resolved and are
 handled as ordinary unknown slash text unless supplied by another command

@@ -26,10 +26,11 @@ builtin.<domain>.<action>
 | `builtin.mode.agent` | 切换到 Agent | mode、agent | Session | 低 | 将空闲会话模式设为 Agent |
 | `builtin.mode.plan` | 切换到 Plan | mode、plan、planning | Session | 低 | 将空闲会话模式设为 Plan |
 | `builtin.mode.goal` | 切换到 Goal | mode、goal、objective、autonomous | Session | 低 | 将空闲会话模式设为 Goal |
+| `builtin.workbench` | 打开工作台 | workbench、page、open、close、disable | Workbench | 低 | 打开工作台；可选正文调用与菜单和 Agent 工具相同的页面命令 |
 
 ## 4. 可见性与执行规则
 
-- 五个 ID 构成完整的第一方 registry。移除的 ID 不会出现在命令面板结果中，
+- 六个 ID 构成完整的第一方 registry。移除的 ID 不会出现在命令面板结果中，
   也不再有渲染器 dispatch case；插件命令仍可独立发现。
 - `New Task` 使用当前项目或临时分组。若该组最新会话为空则选中复用；否则
   在第一帧露出空首页并创建持久空会话。同一分组内该操作是幂等的。
@@ -55,7 +56,7 @@ type CommandExecutionResult =
 
 ## 6. 验收
 
-1. 内置 registry 恰好包含五个唯一且带前缀的 ID。
+1. 内置 registry 恰好包含六个唯一且带前缀的 ID。
 2. 命令面板搜索可匹配每条命令的标题和关键词。
 3. 模式切换命令立即更新空闲会话模式；Plan、Goal 和 Agent 使用同一个 pi Agent。
 4. Compact 在空闲时可用，在活动回合/检查点期间返回 `AGENT_BUSY`。
@@ -74,6 +75,7 @@ type CommandExecutionResult =
 | `/agent-mode` | `builtin.mode.agent` |
 | `/plan-mode` | `builtin.mode.plan` |
 | `/goal-mode` | `builtin.mode.goal` |
+| `/workbench` | `builtin.workbench` |
 
 别名与模板和插件命令名称共享一个命名空间；冲突时优先使用内置别名，其次是项目模板、
 用户模板和插件命令。选择别名会插入 `/alias `；单独发送 `/new` 或 `/compact` 时，
@@ -81,6 +83,10 @@ type CommandExecutionResult =
 `/agent-mode <prompt>`、`/plan-mode <prompt>` 或 `/goal-mode <prompt>` 会切换空闲会话
 （或下一个会话默认值），并通过正常提示路径发送 `<prompt>`。不带正文的模式别名仍然
 只执行本地切换。提示正文仍是可见的用户回合；dispatch 失败不会清除输入框草稿。
+`/workbench` 单独发送时只打开工作台。`/workbench open example`、
+`/workbench close example`、`/workbench select overview` 和
+`/workbench disable example` 调用与菜单和 Agent `Workbench` 工具相同的宿主页面命令。
+`ready`、`restore` 和 `unavailable` 只改状态，不删除记录。未知页面失败且不改变已保存会话。正文不会发给模型。
 旧的内置别名不再解析，除非由其他命令来源提供，否则会作为普通未知斜杠文本处理。
 
 命令完成时，只清除提交时的草稿，且前提是该草稿此后没有被编辑。之后发生的任何编辑都必须保留，

@@ -3820,8 +3820,19 @@ async fn handle_request(
         }
 
         method if method.starts_with("workbench.") => {
-            let st = state.lock().await;
-            workbench_rpc::handle(&st, method, params)
+            let result = {
+                let st = state.lock().await;
+                workbench_rpc::handle(&st, method, params)?
+            };
+            if method == "workbench.apply" && result.get("ok").and_then(|v| v.as_bool()) == Some(true) {
+                emit_notification(
+                    &tx,
+                    "workbench.changed",
+                    json!({ "session": result.get("session").cloned().unwrap_or(json!({})) }),
+                )
+                .await;
+            }
+            Ok(result)
         }
 
         method if method.starts_with("worktree.") => {
@@ -4435,8 +4446,19 @@ async fn handle_request(
                     let st = state.lock().await;
                     scheduled_tools::execute(&st, &p)
                 } else if workbench_tools::recognizes(&p.tool_name) {
-                    let st = state.lock().await;
-                    workbench_tools::execute(&st, &p)
+                    let result = {
+                        let st = state.lock().await;
+                        workbench_tools::execute(&st, &p)
+                    };
+                    if result.ok {
+                        emit_notification(
+                            &tx,
+                            "workbench.changed",
+                            json!({ "session": result.content.get("session").cloned().unwrap_or(json!({})) }),
+                        )
+                        .await;
+                    }
+                    result
                 } else if let Some(remote) = remote_workspace.clone() {
                     remote_tools::execute_remote_tool(
                         &state,

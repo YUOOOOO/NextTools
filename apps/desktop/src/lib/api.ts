@@ -1812,6 +1812,15 @@ export const api = {
       listener(normalizePlansChangedEvent(payload)),
     );
   },
+  onWorkbenchChanged: (listener: (session: unknown) => void) => {
+    if (!window.piDesktop?.on) return () => undefined;
+    return window.piDesktop.on(IPC.event.workbenchChanged, (payload) => {
+      const session = payload && typeof payload === "object" && "session" in payload
+        ? (payload as { session?: unknown }).session
+        : payload;
+      listener(session);
+    });
+  },
   getTodos: (sessionId: string) =>
     invoke<SessionTodoSnapshot>(IPC.invoke.todosGet, { sessionId }),
   onTodosChanged: (listener: (snapshot: SessionTodoSnapshot) => void) => {

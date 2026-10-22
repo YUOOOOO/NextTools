@@ -34,8 +34,8 @@ exported by the installed package and directly reusable.
    the builtin command-palette registry (slash aliases defined in
    `electron/main/builtin-commands.ts`, executed by the existing
    renderer-side switch), and plugin palette commands (executed via
-   `commandPalette/execute`). The builtin registry is intentionally limited to
-   the five core entries defined by ADR 0106. Unknown `/foo` is sent as literal
+   `commandPalette/execute`). The builtin registry is the core entries from
+   ADR 0106 plus the Workbench destination command. Unknown `/foo` is sent as literal
    text (pi CLI parity).
 2. **Template expansion happens in the Electron main `agent/prompt`
    handler, before persistence.** The persisted user message stores

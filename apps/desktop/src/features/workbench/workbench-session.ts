@@ -205,6 +205,29 @@ function parseWorkbenchCommand(input: unknown): WorkbenchCommand | { error: stri
   return { error: "unsupported command" };
 }
 
+export function parseWorkbenchSlash(body: string):
+  | { kind: "show" }
+  | { kind: "command"; command: WorkbenchCommand }
+  | { kind: "error"; error: string } {
+  const text = body.trim();
+  if (!text) return { kind: "show" };
+  const [action, id, extra] = text.split(/\s+/);
+  if (extra) return { kind: "error", error: "unsupported command" };
+  if (!id) return { kind: "error", error: "missing id" };
+  if (action === "open" || action === "close" || action === "select") {
+    return { kind: "command", command: { action, id } };
+  }
+  if (action === "disable") return { kind: "command", command: { action: "setStatus", id, status: "disabled" } };
+  if (action === "ready" || action === "restore") {
+    return { kind: "command", command: { action: "setStatus", id, status: "ready" } };
+  }
+  if (action === "unavailable") {
+    return { kind: "command", command: { action: "setStatus", id, status: "unavailable" } };
+  }
+  return { kind: "error", error: "unsupported command" };
+}
+
+
 const pageReleases = new Map<string, Set<() => void>>();
 
 export function retainWorkbenchPage(id: string, release: () => void): () => void {
@@ -222,6 +245,13 @@ function releaseDisabledPages(before: WorkbenchSession, next: WorkbenchSession) 
     if (!releases) continue;
     for (const release of releases) release();
   }
+}
+
+export function replaceWorkbenchSession(value: unknown) {
+  const before = currentSession;
+  const next = restoreWorkbenchSession(value);
+  releaseDisabledPages(before, next);
+  publish(next, false);
 }
 
 

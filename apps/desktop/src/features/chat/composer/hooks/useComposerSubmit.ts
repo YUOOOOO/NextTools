@@ -5,7 +5,7 @@ import {
 } from "@pi-desktop/shared";
 import type { AppState } from "../../../../stores/app-store";
 import { api } from "../../../../lib/api";
-import { runExtensionCommand, runPaletteCommand } from "../../../../lib/commands";
+import { runExtensionCommand, runPaletteCommand, runWorkbenchSlash } from "../../../../lib/commands";
 import { resolveComposerCommand } from "../../../../hooks/use-composer-autocomplete";
 import {
   parseSlashSubmission,
@@ -146,6 +146,19 @@ export function useComposerSubmit({
           }
           return;
         }
+        if (command.id === "builtin.workbench") {
+          try {
+            await runWorkbenchSlash(commandBody);
+            draft.clearDraftForKey(submittedDraftKey, submittedDraftRevision, submittedDraft);
+            remember();
+          } catch (error) {
+            showToast(error instanceof Error ? error.message : String(error), {
+              variant: "error",
+            });
+          }
+          return;
+        }
+
         if (command.kind === "extension") {
           try {
             await runExtensionCommand(command.name, commandBody);

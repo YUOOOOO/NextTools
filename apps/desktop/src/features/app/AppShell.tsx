@@ -24,7 +24,7 @@ import { workPanelLayout } from "../../lib/work-panel-resize";
 import { LiveVoiceStatusHost } from "../voice/live/LiveVoiceStatusHost";
 import { CollapsedTitlebarActions, RoutePending } from "./chrome";
 import { useAppShellRuntime } from "./useAppShellRuntime";
-import { hydrateWorkbenchFromHost } from "../workbench/workbench-session";
+import { hydrateWorkbenchFromHost, replaceWorkbenchSession } from "../workbench/workbench-session";
 import { WorkbenchMenu, WorkbenchToolBridge } from "../workbench/WorkbenchMenu";
 import { ActivityBar } from "./ActivityBar";
 
@@ -113,6 +113,7 @@ export function AppShell() {
       apply: (command) => api.applyWorkbenchCommand(command),
     });
   }, []);
+  useEffect(() => api.onWorkbenchChanged(replaceWorkbenchSession), []);
   useEffect(() => {
     void loadChatSurface().catch((error: unknown) => {
       console.error("Failed to preload the chat surface", error);

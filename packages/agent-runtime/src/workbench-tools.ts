@@ -21,4 +21,4 @@ export const workbenchToolParameters: Record<string, Parameters<typeof Type.Obje
 };
 
 export const workbenchToolDescription =
-  "Open, close, switch, or disable a Workbench page through the host session. Disable changes status only and keeps the page record. Unknown page ids fail and do not change the saved session. Known pages are overview and example.";
+  "Open, close, switch, or disable a Workbench page through the host session. Use this tool instead of Browser. Disable changes status only and keeps the page record. Unknown page ids fail and do not change the saved session. Known pages are overview and example.";
