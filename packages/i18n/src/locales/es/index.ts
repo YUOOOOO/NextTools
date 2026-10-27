@@ -132,6 +132,13 @@ export const es = {
     "allowOnce": "Permitir una vez",
     "deny": "Denegar",
   },
+  "remoteActionConsent": {
+    "title": "Acción remota",
+    "message": "Un navegador con sesión quiere ejecutar {action} en este equipo",
+    "detail": "{summary}\n\nRecházalo si no lo pediste.",
+    "allow": "Permitir una vez",
+    "deny": "Rechazar",
+  },
   "pluginFsConsent": {
     "read": "{name} quiere leer un archivo fuera de lo que declaró",
     "write": "{name} quiere escribir un archivo fuera de lo que declaró",

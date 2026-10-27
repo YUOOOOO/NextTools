@@ -140,6 +140,13 @@ export const ko = {
     allowOnce: "한 번 허용",
     deny: "거부",
   },
+  remoteActionConsent: {
+    title: "원격 작업",
+    message: "로그인한 브라우저가 이 컴퓨터에서 {action}을 실행하려 합니다",
+    detail: "{summary}\n\n요청하지 않았다면 거부하세요.",
+    allow: "한 번 허용",
+    deny: "거부",
+  },
   pluginFsConsent: {
     read: "{name}이(가) 선언한 범위 밖의 파일을 읽으려고 합니다",
     write: "{name}이(가) 선언한 범위 밖의 파일에 쓰려고 합니다",

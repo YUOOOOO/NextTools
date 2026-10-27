@@ -138,6 +138,13 @@ export const en = {
     allowOnce: "Allow once",
     deny: "Deny",
   },
+  remoteActionConsent: {
+    title: "Remote action",
+    message: "A signed-in browser wants to run {action} on this computer",
+    detail: "{summary}\n\nDeny unless you asked for this.",
+    allow: "Allow once",
+    deny: "Deny",
+  },
   pluginFsConsent: {
     read: "{name} wants to read a file outside what it declared",
     write: "{name} wants to write a file outside what it declared",

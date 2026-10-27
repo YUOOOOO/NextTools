@@ -1,6 +1,9 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 import { IPC, IPC_WHITELIST } from "@pi-desktop/shared/protocol";
 
+// Re-read the shared protocol on preload rebuild. The whitelist is frozen into
+// this bundle; a renderer that learned a new channel first fails closed here.
+
 const LOCALE_ARGUMENT_PREFIX = "--pi-desktop-locale=";
 
 function readOsLocale(): string | undefined {

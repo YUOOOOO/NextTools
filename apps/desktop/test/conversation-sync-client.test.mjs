@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createServer } from "node:http";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -8,6 +9,7 @@ import { createConversationSync, toSyncChanges, validateBaseUrl } from "../elect
 test("conversation sync login accepts the server URL", () => {
   assert.equal(validateBaseUrl("http://127.0.0.1:8788"), "http://127.0.0.1:8788");
   assert.equal(validateBaseUrl("http://sync.example:8788"), "http://sync.example:8788");
+  assert.equal(validateBaseUrl("127.0.0.1:8788"), "http://127.0.0.1:8788");
   assert.throws(() => validateBaseUrl("file:///tmp"), /server URL/);
 });
 
@@ -57,4 +59,46 @@ test("conversation sync maps user and assistant text and signs in", async () => 
   const pushedBody = seen.map((item) => item.body).filter(Boolean).at(-1);
   assert.equal(JSON.parse(pushedBody).messages[0].text, "hello");
   rmSync(dir, { recursive: true, force: true });
+});
+
+test("desktop login dials the typed server and reads api_key", async () => {
+  const server = createServer((req, res) => {
+    const chunks = [];
+    req.on("data", (chunk) => chunks.push(chunk));
+    req.on("end", () => {
+      const raw = Buffer.concat(chunks).toString("utf8");
+      if (req.url === "/v1/auth/login") {
+        const body = JSON.parse(raw);
+        assert.equal(body.identifier, "alice");
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(JSON.stringify({ api_key: "issued-token", account: { id: "alice", hint: "alice" } }));
+        return;
+      }
+      assert.equal(req.headers.authorization, "Bearer issued-token");
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({ enabled: true, cursor: 0, counts: { conversations: 0, messages: 0 } }));
+    });
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const dir = mkdtempSync(join(tmpdir(), "conversation-sync-direct-"));
+  try {
+    const sync = createConversationSync({
+      filePath: join(dir, "session.json"),
+      encrypt: (plain) => `enc:${plain}`,
+      decrypt: (encoded) => encoded.slice(4),
+      encryptionAvailable: () => true,
+      listSessions: async () => [],
+    });
+    const signed = await sync.signIn({
+      baseUrl: `127.0.0.1:${address.port}`,
+      account: "alice",
+      password: "secret1",
+    });
+    assert.equal(signed.signedIn, true);
+    assert.equal(signed.account, "alice");
+  } finally {
+    server.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

@@ -35,6 +35,33 @@ conversation even when its messages are outside the tail.
 
 Authorization is `Authorization: Bearer <token>` mapped to an account id.
 
+`POST /v1/auth/register` and `POST /v1/auth/login` take `account` or
+`identifier`, plus `password`. An identifier may be a 3–32 character account
+name, an e-mail address, or a mainland phone number. The response carries the
+same secret as both `token` and `api_key`, and `account` is
+`{id, channel, hint, member}`. `POST /v1/auth/code` logs a six-digit code for
+an e-mail or phone; it does not send SMS. `POST /v1/auth/verify` exchanges
+that code for a session. `POST /v1/auth/password` changes the password,
+`POST /v1/auth/sign-out` revokes the bearer token, and `DELETE /v1/me`
+deletes the account. `GET /v1/models` answers `{object:"list", data:[]}`.
+`GET /v1/me` and `GET /v1/me/profile` answer the stored profile;
+`PUT /v1/me/profile` updates the name and look. `POST /v1/chat/completions`
+returns `503 upstream_unconfigured` unless `CONVERSATION_SYNC_UPSTREAM_KEY`
+is set. The PI-Desktop client dials the typed server with Node HTTP, not
+Chromium's fetch, and accepts a host:port without a scheme.
+
+`/v1/hub` is a WebSocket. A device sends `hello` with its bearer `key` and
+`device.kind` of `phone`, `computer`, or `web`. A `web` device can send `call`
+but cannot be called. The hub forwards `call`, `result`, and `event` inside
+the account and does not run the action. Computers and phones stay in
+`hub_devices` after they disconnect. A push notifies the other sockets with
+`sync`. `GET /v1/devices` lists remembered devices; `DELETE` forgets an
+offline one and `PATCH` renames it. The desktop connects as `computer` and
+accepts `info`, `sessions.list`, `chat.send`, and the remote actions `shell`,
+`files`, `file.get`, `file.put`, `open`, and `screen`. Those remote actions
+ask the person at the computer before they run. `chat.send` starts an agent
+turn on that desktop.
+
 The desktop signs in from Settings → Cloud sync. The access token is encrypted
 with the operating system store. Sync chats pushes local user and assistant
 text; tool rows are not sent.

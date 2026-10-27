@@ -307,7 +307,9 @@ export function registerIpcHandlers(dependencies: RegisterIpcDependencies) {
     getHost,
     sendToRenderer,
   });
-  registerConversationSyncIpc({ registrar, getHost });
+  // Conversation sync is a local settings call; the channel must be in the
+  // preload whitelist rebuilt with this main bundle.
+  registerConversationSyncIpc({ registrar, getHost, getSidecar });
   registerBackgroundTasksIpc({
     registrar,
     getHost,

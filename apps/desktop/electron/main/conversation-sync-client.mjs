@@ -3,14 +3,18 @@
  * The token is encrypted by the caller before it is written.
  */
 
+import { request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
 import { readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 
 const ID = /^[a-z0-9][a-z0-9._:-]{3,63}$/;
 
 export function validateBaseUrl(value) {
+  let raw = String(value ?? "").trim();
+  if (raw && !/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) raw = `http://${raw}`;
   let url;
   try {
-    url = new URL(String(value ?? "").trim());
+    url = new URL(raw);
   } catch {
     throw Object.assign(new Error("Enter a server URL"), { code: "bad_url" });
   }
@@ -21,6 +25,60 @@ export function validateBaseUrl(value) {
     throw Object.assign(new Error("Enter a server URL"), { code: "bad_url" });
   }
   return url.origin;
+}
+
+/** Dial the typed server with Node, not Electron net.fetch. Chromium's fetch
+ * applies CORS and the system proxy, which rejects this private HTTP service. */
+export function directFetch(url, init = {}) {
+  const target = new URL(url);
+  if (target.protocol !== "http:" && target.protocol !== "https:") {
+    return Promise.reject(Object.assign(new Error("Enter a server URL"), { code: "bad_url" }));
+  }
+  const transport = target.protocol === "https:" ? httpsRequest : httpRequest;
+  const body = init.body == null ? null : Buffer.from(String(init.body));
+  return new Promise((resolve, reject) => {
+    const req = transport(
+      {
+        protocol: target.protocol,
+        hostname: target.hostname,
+        ...(target.port ? { port: target.port } : {}),
+        path: `${target.pathname}${target.search}`,
+        method: init.method ?? "GET",
+        headers: {
+          accept: "application/json",
+          ...(init.headers ?? {}),
+          ...(body ? { "content-length": body.length } : {}),
+        },
+      },
+      (res) => {
+        const chunks = [];
+        res.on("data", (chunk) => chunks.push(chunk));
+        res.on("end", () => {
+          const text = Buffer.concat(chunks).toString("utf8");
+          const status = res.statusCode ?? 0;
+          resolve({
+            ok: status >= 200 && status < 300,
+            status,
+            json: async () => {
+              if (!text) return {};
+              try {
+                return JSON.parse(text);
+              } catch {
+                throw Object.assign(new Error(`服务器没有返回 JSON (HTTP ${status})`), { code: "upstream" });
+              }
+            },
+          });
+        });
+      },
+    );
+    req.setTimeout(20_000, () => req.destroy(Object.assign(new Error("连接服务器超时"), { code: "timeout" })));
+    req.on("error", (error) => {
+      const code = error && error.code ? ` (${error.code})` : "";
+      reject(Object.assign(new Error(`${error.message || "连不上服务器"}${code}`), { code: "upstream" }));
+    });
+    if (body) req.write(body);
+    req.end();
+  });
 }
 
 export function messageText(message) {
@@ -73,14 +131,18 @@ export function createConversationSync({
   encrypt,
   decrypt,
   encryptionAvailable,
-  fetchImpl = globalThis.fetch,
+  fetchImpl = directFetch,
   listSessions,
+  onCall,
   deviceId = "desktop-local",
 }) {
+  let hub = null;
+  let hubToken = "";
   return {
     async getState() {
       const saved = readSaved();
       if (!saved) return { signedIn: false };
+      ensureHub(saved);
       const state = await relay(saved, "/v1/sync/state");
       return { signedIn: true, baseUrl: saved.baseUrl, account: saved.account, state };
     },
@@ -91,6 +153,9 @@ export function createConversationSync({
       return authenticate(input, "/v1/auth/login");
     },
     async signOut() {
+      hubToken = "";
+      hub?.close();
+      hub = null;
       rmSync(filePath, { force: true });
       return { signedIn: false };
     },
@@ -120,11 +185,12 @@ export function createConversationSync({
     const account = String(input?.account ?? "").trim();
     const password = String(input?.password ?? "");
     if (!account || !password) throw Object.assign(new Error("填写账号和密码"), { code: "bad_credentials" });
-    const result = await publicPost(baseUrl, path, { account, password });
-    const token = String(result.token ?? "");
+    const result = await publicPost(baseUrl, path, { account, identifier: account, password });
+    const token = String(result.token || result.api_key || "");
     if (!token) throw Object.assign(new Error("登录没有返回令牌"), { code: "bad_key" });
-    const saved = { baseUrl, token, account: String(result.account ?? account) };
+    const saved = { baseUrl, token, account: accountLabel(result, account) };
     writeSaved(saved);
+    ensureHub(saved);
     const state = await relay(saved, "/v1/sync/state");
     return { signedIn: true, baseUrl, account: saved.account, state };
   }
@@ -139,6 +205,56 @@ export function createConversationSync({
       if (error && error.code === "bad_url") return null;
       throw error;
     }
+  }
+
+  function ensureHub(saved) {
+    if (!onCall || typeof WebSocket !== "function") return;
+    if (hub && hubToken === saved.token) return;
+    hub?.close();
+    hubToken = saved.token;
+    const socket = new WebSocket(`${saved.baseUrl.replace(/^http/, "ws")}/v1/hub`);
+    hub = socket;
+    socket.addEventListener("open", () => {
+      socket.send(JSON.stringify({
+        type: "hello",
+        key: saved.token,
+        device: {
+          id: deviceId,
+          name: "Pilot",
+          kind: "computer",
+          os: process.platform,
+          actions: ["info", "sessions.list", "chat.send", "shell", "files", "file.get", "file.put", "open", "screen"],
+        },
+      }));
+    });
+    socket.addEventListener("message", (event) => {
+      let frame;
+      try {
+        frame = JSON.parse(String(event.data));
+      } catch {
+        return;
+      }
+      if (!frame || frame.type !== "call") return;
+      const args = frame.args && typeof frame.args === "object" ? frame.args : {};
+      Promise.resolve()
+        .then(() => onCall(String(frame.action ?? ""), args))
+        .then((body) => socket.send(JSON.stringify({ type: "result", id: frame.id, ok: true, body })))
+        .catch((error) => socket.send(JSON.stringify({
+          type: "result",
+          id: frame.id,
+          ok: false,
+          error: "failed",
+          message: error instanceof Error ? error.message : String(error),
+        })));
+    });
+    socket.addEventListener("close", () => {
+      if (hub !== socket || hubToken !== saved.token) return;
+      hub = null;
+      setTimeout(() => {
+        const again = readSaved();
+        if (again && again.token === saved.token) ensureHub(again);
+      }, 2000);
+    });
   }
 
   function writeSaved(saved) {
@@ -182,6 +298,16 @@ export function createConversationSync({
     return payload;
   }
 
+}
+
+function accountLabel(result, fallback) {
+  const value = result?.account;
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (value && typeof value === "object") {
+    const id = value.id ?? value.hint;
+    if (typeof id === "string" && id.trim()) return id.trim();
+  }
+  return fallback;
 }
 
 function unixSeconds(value) {

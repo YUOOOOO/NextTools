@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import { AccountBook } from "./accounts.js";
+import { DeviceHub } from "./hub.js";
 import { SyncError, SyncStore, type WorkingFrame } from "./store.js";
 
 export interface SyncServerOptions {
@@ -18,14 +19,25 @@ export interface SyncServerOptions {
 export function createSyncServer(options: SyncServerOptions): Server {
   const store = options.store ?? new SyncStore(options.db);
   const accounts = new AccountBook(options.db);
-  return createServer((req, res) => {
-    void handle(store, accounts, options, req, res);
+  const hub = new DeviceHub(accounts);
+  const server = createServer((req, res) => {
+    void handle(store, accounts, hub, options, req, res);
   });
+  server.on("upgrade", (req, socket, head) => {
+    hub.handleUpgrade(req, socket, head);
+  });
+  return server;
 }
 
-async function handle(store: SyncStore, accounts: AccountBook, options: SyncServerOptions, req: IncomingMessage, res: ServerResponse): Promise<void> {
+async function handle(store: SyncStore, accounts: AccountBook, hub: DeviceHub, options: SyncServerOptions, req: IncomingMessage, res: ServerResponse): Promise<void> {
   try {
     const url = new URL(req.url ?? "/", "http://sync.local");
+    if (req.method === "OPTIONS") {
+      writeCors(res);
+      res.writeHead(204);
+      res.end();
+      return;
+    }
     if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/console")) {
       const page = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "console.html"));
       res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
@@ -34,12 +46,80 @@ async function handle(store: SyncStore, accounts: AccountBook, options: SyncServ
     }
     if (req.method === "POST" && (url.pathname === "/v1/auth/register" || url.pathname === "/v1/auth/login")) {
       const body = await readJson(req);
-      const result = url.pathname.endsWith("/register")
-        ? accounts.register(body.account, body.password)
-        : accounts.login(body.account, body.password);
-      return send(res, 200, result);
+      const name = body.account ?? body.identifier;
+      const created = url.pathname.endsWith("/register");
+      const result = created ? accounts.register(name, body.password) : accounts.login(name, body.password);
+      return send(res, 200, sessionPayload(result));
+    }
+    if (req.method === "POST" && url.pathname === "/v1/auth/code") {
+      const body = await readJson(req);
+      accounts.requestCode(body.identifier ?? body.account);
+      writeCors(res);
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    if (req.method === "POST" && url.pathname === "/v1/auth/verify") {
+      const body = await readJson(req);
+      return send(res, 200, sessionPayload(accounts.verifyCode(body.identifier ?? body.account, body.code)));
     }
     const accountId = accountFrom(req, options.accounts, accounts);
+    if (req.method === "GET" && url.pathname === "/v1/models") {
+      return send(res, 200, { object: "list", data: [] });
+    }
+    if (req.method === "GET" && (url.pathname === "/v1/me" || url.pathname === "/v1/me/profile")) {
+      return send(res, 200, profilePayload(accounts, accountId));
+    }
+    if (req.method === "PUT" && url.pathname === "/v1/me/profile") {
+      const body = await readJson(req);
+      const device = String(req.headers["x-nanomuse-device"] ?? "").slice(0, 80);
+      accounts.saveProfile(accountId, body, device);
+      return send(res, 200, profilePayload(accounts, accountId));
+    }
+    if (req.method === "POST" && url.pathname === "/v1/auth/password") {
+      const body = await readJson(req);
+      accounts.changePassword(tokenFrom(req), body.current, body.password);
+      writeCors(res);
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    if (req.method === "POST" && url.pathname === "/v1/auth/sign-out") {
+      accounts.revokeToken(tokenFrom(req));
+      writeCors(res);
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    if (req.method === "DELETE" && url.pathname === "/v1/me") {
+      const removed = accounts.deleteAccount(tokenFrom(req));
+      store.wipe(removed);
+      writeCors(res);
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    if (req.method === "GET" && url.pathname === "/v1/devices") {
+      return send(res, 200, { devices: hubDevices(hub, accountId) });
+    }
+    const devicePath = url.pathname.match(/^\/v1\/devices\/([^/]+)$/);
+    if (devicePath && (req.method === "DELETE" || req.method === "PATCH")) {
+      const deviceId = decodeURIComponent(devicePath[1] ?? "");
+      if (req.method === "DELETE") {
+        hub.forget(accountId, deviceId);
+        writeCors(res);
+        res.writeHead(204);
+        res.end();
+        return;
+      }
+      const body = await readJson(req);
+      hub.rename(accountId, deviceId, String(body.name ?? ""));
+      return send(res, 200, { devices: hubDevices(hub, accountId) });
+    }
+    if (req.method === "POST" && url.pathname === "/v1/chat/completions") {
+      await proxyChat(req, res);
+      return;
+    }
     if (req.method === "GET" && url.pathname === "/v1/sync/state") {
       return send(res, 200, store.state(accountId));
     }
@@ -67,7 +147,10 @@ async function handle(store: SyncStore, accounts: AccountBook, options: SyncServ
       const body = await readJson(req);
       const device = String(body.device ?? "").slice(0, 80);
       const out = store.push(accountId, device, body.conversations ?? [], body.messages ?? []);
-      if (out.accepted) options.onSync?.(accountId, out.cursor, device);
+      if (out.accepted) {
+        hub.notifySync(accountId, out.cursor, device);
+        options.onSync?.(accountId, out.cursor, device);
+      }
       return send(res, 200, out);
     }
     if (req.method === "DELETE" && url.pathname === "/v1/sync/changes") {
@@ -79,6 +162,7 @@ async function handle(store: SyncStore, accounts: AccountBook, options: SyncServ
       if (!cid || !("working" in body)) throw new SyncError(400, "bad_request", "Say cid and working: true or false");
       const device = String(body.device ?? req.headers["x-nanomuse-device"] ?? "").slice(0, 80);
       const frame = store.setWorking(accountId, cid, device, Boolean(body.working));
+      hub.notifyWorking(accountId, frame as unknown as Record<string, unknown>);
       options.onWorking?.(accountId, frame);
       res.writeHead(204);
       res.end();
@@ -89,6 +173,7 @@ async function handle(store: SyncStore, accounts: AccountBook, options: SyncServ
       const cid = decodeURIComponent(deleted[1] ?? "");
       const out = store.deleteConversation(accountId, cid);
       const device = String(req.headers["x-nanomuse-device"] ?? "").slice(0, 80);
+      hub.notifySync(accountId, out.cursor, device);
       options.onSync?.(accountId, out.cursor, device);
       return send(res, 200, out);
     }
@@ -145,6 +230,57 @@ function readJson(req: IncomingMessage): Promise<Record<string, unknown>> {
 
 function send(res: ServerResponse, status: number, body: unknown): void {
   const payload = JSON.stringify(body);
+  writeCors(res);
   res.writeHead(status, { "content-type": "application/json; charset=utf-8", "content-length": Buffer.byteLength(payload) });
+  res.end(payload);
+}
+
+function writeCors(res: ServerResponse): void {
+  res.setHeader("access-control-allow-origin", "*");
+  res.setHeader("access-control-allow-methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.setHeader("access-control-allow-headers", "authorization, content-type, x-nanomuse-device");
+  res.setHeader("access-control-allow-private-network", "true");
+}
+
+function sessionPayload(result: { token: string; account: string; channel: string; created?: boolean }) {
+  return {
+    token: result.token,
+    api_key: result.token,
+    created: Boolean(result.created),
+    account: { id: result.account, channel: result.channel, hint: result.account, member: false },
+    tokens: { unlimited: true, granted: 0, used: 0, remaining: 0 },
+  };
+}
+
+function profilePayload(accounts: AccountBook, accountId: string) {
+  return {
+    ...accounts.profile(accountId),
+    account: { id: accountId, channel: accounts.channelFor(accountId), hint: accountId, member: false },
+    tokens: { unlimited: true, granted: 0, used: 0, remaining: 0 },
+  };
+}
+
+function tokenFrom(req: IncomingMessage): string {
+  const header = req.headers.authorization ?? "";
+  return header.toLowerCase().startsWith("bearer ") ? header.slice(7).trim() : "";
+}
+
+function hubDevices(hub: DeviceHub, accountId: string): unknown[] {
+  return hub.list(accountId);
+}
+
+async function proxyChat(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const key = process.env.CONVERSATION_SYNC_UPSTREAM_KEY ?? "";
+  if (!key) throw new SyncError(503, "upstream_unconfigured", "没有配置模型上游密钥");
+  const upstream = process.env.CONVERSATION_SYNC_UPSTREAM_URL || "https://api.openai.com/v1/chat/completions";
+  const body = await readJson(req);
+  const response = await fetch(upstream, {
+    method: "POST",
+    headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const payload = Buffer.from(await response.arrayBuffer());
+  writeCors(res);
+  res.writeHead(response.status, { "content-type": response.headers.get("content-type") ?? "application/json" });
   res.end(payload);
 }

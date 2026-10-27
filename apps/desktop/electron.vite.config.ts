@@ -83,6 +83,14 @@ export default defineConfig({
     },
   },
   preload: {
+    resolve: {
+      alias: [
+        {
+          find: "@pi-desktop/shared/protocol",
+          replacement: resolve(__dirname, "../../packages/shared/src/protocol.ts"),
+        },
+      ],
+    },
     // The preload must be a fully bundled CJS file so it can run in a
     // sandboxed renderer without Node module resolution.
     build: {

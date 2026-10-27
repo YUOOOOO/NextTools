@@ -134,6 +134,13 @@ export const zhCN = {
     allowOnce: "允许一次",
     deny: "拒绝",
   },
+  remoteActionConsent: {
+    title: "远程操作",
+    message: "已登录的网页要在这台电脑上执行 {action}",
+    detail: "{summary}\n\n不是你发起的就拒绝。",
+    allow: "允许一次",
+    deny: "拒绝",
+  },
   pluginFsConsent: {
     read: "{name} 想读取声明范围之外的文件",
     write: "{name} 想写入声明范围之外的文件",

@@ -11,7 +11,14 @@ pnpm start
 ```
 
 Register with `POST /v1/auth/register` and `{account, password}`. Sign in with
-`POST /v1/auth/login`. Passwords are stored as scrypt hashes.
+`POST /v1/auth/login`. An account may also be an e-mail or a mainland phone.
+`POST /v1/auth/code` logs a six-digit code; it does not send SMS.
+Passwords are stored as scrypt hashes. `POST /v1/chat/completions` answers
+503 until `CONVERSATION_SYNC_UPSTREAM_KEY` is set.
+
+`/v1/hub` forwards calls. The desktop asks before `shell`, `files`,
+`file.get`, `file.put`, `open`, or `screen`. Computers stay listed after they
+disconnect.
 
 Run Docker on the server, then point the desktop at it. In this directory:
 

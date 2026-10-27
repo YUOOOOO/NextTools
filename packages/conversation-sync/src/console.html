@@ -22,7 +22,7 @@
 <body>
 <main>
   <h1>会话同步</h1>
-  <p>账号和密码注册或登录。这里只看这个账号已经同步上来的聊天，不经过验证码。</p>
+  <p>账号和密码注册或登录。登录后可以向在线的桌面发一条消息，由桌面本机执行。</p>
   <p id="error" class="error"></p>
   <form id="auth">
     <label>账号 <input id="account" autocomplete="username"></label>
@@ -32,6 +32,26 @@
   </form>
   <section id="chats" hidden>
     <p id="summary"></p>
+    <form id="profile">
+      <label>名字 <input id="name"></label>
+      <button type="submit">保存资料</button>
+    </form>
+    <div id="devices" class="meta"></div>
+    <form id="control">
+      <label>动作
+        <select id="action">
+          <option value="chat.send">chat.send</option>
+          <option value="info">info</option>
+          <option value="sessions.list">sessions.list</option>
+          <option value="files">files</option>
+          <option value="shell">shell</option>
+          <option value="screen">screen</option>
+        </select>
+      </label>
+      <label>参数 <input id="command" placeholder="文字、路径或命令"></label>
+      <button type="submit">发给桌面</button>
+      <p id="control-status" class="meta"></p>
+    </form>
     <button id="reload" class="secondary" type="button">刷新</button>
     <button id="signout" class="secondary" type="button">退出</button>
     <div id="list"></div>
@@ -54,7 +74,7 @@ async function call(path, options = {}) {
 }
 async function load() {
   const state = await call("/v1/sync/state");
-  const page = await call("/v1/sync/changes?since=0&limit=200");
+  const page = await call("/v1/sync/changes?since=0&tail=200");
   document.querySelector("#summary").textContent =
     `${state.counts.conversations} 个会话，${state.counts.messages} 条消息，游标 ${state.cursor}`;
   const byCid = new Map(page.conversations.map((item) => [item.cid, item]));
@@ -92,6 +112,59 @@ auth.addEventListener("submit", async (event) => {
 });
 document.querySelector("#register").addEventListener("click", () => enter("/v1/auth/register"));
 document.querySelector("#reload").addEventListener("click", () => load().catch((cause) => showError(cause.message)));
+document.querySelector("#control").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const action = document.querySelector("#action").value;
+  const text = document.querySelector("#command").value.trim();
+  if (!hub || hub.readyState !== WebSocket.OPEN) {
+    showError("桌面还没连上");
+    return;
+  }
+  const target = devices.find((device) => device.kind === "computer" && device.online);
+  if (!target) {
+    showError("没有在线的桌面");
+    return;
+  }
+  const args = action === "chat.send" ? { text } : action === "shell" ? { command: text } : action === "files" ? { path: text || "~" } : {};
+  const id = "web-" + Date.now();
+  pending = id;
+  document.querySelector("#control-status").textContent = "已发给 " + (target.name || target.id);
+  hub.send(JSON.stringify({ type: "call", id, to: target.id, action, args }));
+});
+document.querySelector("#profile").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    await call("/v1/me/profile", { method: "PUT", body: JSON.stringify({ name: document.querySelector("#name").value }) });
+  } catch (cause) {
+    showError(cause.message);
+  }
+});
+let hub = null;
+let devices = [];
+let pending = "";
+function connectHub(token) {
+  if (hub) hub.close();
+  const socket = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/v1/hub");
+  hub = socket;
+  socket.addEventListener("open", () => {
+    socket.send(JSON.stringify({ type: "hello", key: token, device: { name: "Browser", kind: "web", actions: [] } }));
+  });
+  socket.addEventListener("message", (event) => {
+    const frame = JSON.parse(event.data);
+    if (frame.type === "welcome" || frame.type === "devices") {
+      devices = frame.devices || [];
+      document.querySelector("#devices").textContent = devices.map((device) => `${device.name} ${device.kind} ${device.online ? "在线" : "离线"}`).join(" · ");
+    }
+    if (frame.type === "result" && frame.id === pending) {
+      document.querySelector("#control-status").textContent = frame.ok ? "桌面已收下" : (frame.message || "桌面拒绝了");
+      pending = "";
+    }
+    if (frame.type === "error" && frame.id === pending) {
+      document.querySelector("#control-status").textContent = frame.message || frame.code;
+      pending = "";
+    }
+  });
+}
 document.querySelector("#signout").addEventListener("click", () => {
   sessionStorage.removeItem(tokenKey);
   auth.hidden = false;
@@ -108,6 +181,7 @@ async function enter(path) {
       }),
     });
     sessionStorage.setItem(tokenKey, result.token);
+    connectHub(result.token);
     await load();
   } catch (cause) {
     showError(cause.message);

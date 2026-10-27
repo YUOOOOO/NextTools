@@ -180,9 +180,10 @@ describe("sync HTTP", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ account: "Ada", password: "secret1" }),
     });
-    const body = (await registered.json()) as { token: string; account: string };
+    const body = (await registered.json()) as { token: string; api_key: string; account: { id: string } };
     expect(registered.status).toBe(200);
-    expect(body.account).toBe("ada");
+    expect(body.account.id).toBe("ada");
+    expect(body.api_key).toBe(body.token);
     const again = await fetch(`${base}/v1/auth/register`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -195,6 +196,16 @@ describe("sync HTTP", () => {
       body: JSON.stringify({ account: "ada", password: "nope12" }),
     });
     expect(wrong.status).toBe(401);
+    const logged = await fetch(`${base}/v1/auth/login`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ identifier: "Ada", password: "secret1" }),
+    });
+    expect(logged.status).toBe(200);
+    const session = (await logged.json()) as { api_key: string };
+    const models = await fetch(`${base}/v1/models`, { headers: { authorization: `Bearer ${session.api_key}` } });
+    expect(models.status).toBe(200);
+    expect(await models.json()).toEqual({ object: "list", data: [] });
     const state = await fetch(`${base}/v1/sync/state`, { headers: { authorization: `Bearer ${body.token}` } });
     expect(state.status).toBe(200);
   });

@@ -132,6 +132,13 @@ export const de = {
     "allowOnce": "Einmal erlauben",
     "deny": "Ablehnen",
   },
+  "remoteActionConsent": {
+    "title": "Fernaktion",
+    "message": "Ein angemeldetes Browserfenster will {action} auf diesem Computer ausführen",
+    "detail": "{summary}\n\nAblehnen, wenn du das nicht angefordert hast.",
+    "allow": "Einmal erlauben",
+    "deny": "Ablehnen",
+  },
   "pluginFsConsent": {
     "read": "{name} möchte eine Datei außerhalb der Deklaration lesen",
     "write": "{name} möchte eine Datei außerhalb der Deklaration schreiben",

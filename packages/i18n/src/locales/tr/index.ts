@@ -140,6 +140,13 @@ export const tr = {
     allowOnce: "Bir kez izin ver",
     deny: "Reddet",
   },
+  remoteActionConsent: {
+    title: "Uzaktan işlem",
+    message: "Oturum açmış bir tarayıcı bu bilgisayarda {action} çalıştırmak istiyor",
+    detail: "{summary}\n\nİstemediyseniz reddedin.",
+    allow: "Bir kez izin ver",
+    deny: "Reddet",
+  },
   pluginFsConsent: {
     read: "{name}, bildirdiği kapsamın dışında bir dosya okumak istiyor",
     write: "{name}, bildirdiği kapsamın dışında bir dosyaya yazmak istiyor",

@@ -134,6 +134,13 @@ export const zhTW = {
     allowOnce: "允許一次",
     deny: "拒絕",
   },
+  remoteActionConsent: {
+    title: "遠端操作",
+    message: "已登入的網頁要在這台電腦上執行 {action}",
+    detail: "{summary}\n\n不是你發起的就拒絕。",
+    allow: "允許一次",
+    deny: "拒絕",
+  },
   pluginFsConsent: {
     read: "{name} 想讀取聲明範圍之外的檔案",
     write: "{name} 想寫入聲明範圍之外的檔案",

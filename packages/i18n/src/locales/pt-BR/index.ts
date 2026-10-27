@@ -131,6 +131,13 @@ export const ptBR = {
     allowOnce: "Permitir uma vez",
     deny: "Negar"
   },
+  remoteActionConsent: {
+    title: "Ação remota",
+    message: "Um navegador conectado quer executar {action} neste computador",
+    detail: "{summary}\n\nRecuse se você não pediu isso.",
+    allow: "Permitir uma vez",
+    deny: "Recusar",
+  },
   pluginFsConsent: {
     read: "{name} deseja ler um arquivo fora do escopo declarado",
     write: "{name} deseja gravar um arquivo fora do escopo declarado",
