@@ -112,6 +112,8 @@ Exit: an untrusted relay cannot read or substitute endpoint content/identity; sl
 
 Non-goals: remote execution bypass, shared provider secrets, cloud model execution, or promising metadata anonymity.
 
+The conversation mirror in `packages/conversation-sync` is not this relay. It is an opt-in account store for chat text, with the same save rules as nanomuse_cloud sync: 16 KB text, attachment metadata only, one main conversation, seq cursor, and tombstones. Project-control frames still must not be persisted here.
+
 ## Phase 6: Online-only desktop Project Agent control
 
 Dependencies: Phases 1, 4-5 and durable desktop receipt design.

@@ -13,7 +13,7 @@ This is a planning decision register, not an ADR claiming implementation.
 | WB-04 | Prefer bundled first-party plugins, protected from uninstall | Audit current contributions; add host contracts only for real gaps; do not create a second plugin runtime |
 | WB-05 | Host owns persistence, security, permissions and execution | Plugin UI/services access bounded host APIs; built-in status is not a sandbox exemption |
 | WB-06 | OpenMinis-based local-first mobile app, later detailed design | Reserve `apps/mobile/` now; do not fetch or adapt mobile code in this documentation task |
-| WB-07 | Relay cannot decrypt or retain application content, including ciphertext | No server conversation/memory database, snapshot store, offline queue or durable task broker |
+| WB-07 | Project-control relay cannot decrypt or retain application content, including ciphertext | No project-control payload history, snapshot store, offline task queue or durable task broker. The separate conversation mirror in `@pi-desktop/conversation-sync` is the explicit exception: it stores truncated chat text with the nanomuse save rules. |
 | WB-08 | Desktop tasks can be sent only to an online authenticated target | No automatic task delivery after the desktop comes online; unknown acceptance is queried, not replayed |
 | WB-09 | Personal Agent shares identity, conversations, memory and personality across endpoints | Versioned peer synchronization while online; no guarantee of constant equality while disconnected |
 | WB-10 | Mino is a memory/identity design reference | Preserve readable layered memory; do not adopt Git/cloud sync or copy unrelated AGPL implementation without review |
