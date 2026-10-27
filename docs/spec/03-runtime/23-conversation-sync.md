@@ -65,4 +65,34 @@ turn on that desktop.
 The desktop signs in from Settings → Cloud sync. The access token is encrypted
 with the operating system store. Sync chats pushes local user and assistant
 text; tool rows are not sent.
-Unknown tokens answer `401 bad_key`. Calls while sync is off answer `409 sync_off`.
+Unknown tokens answer `401 bad_key`. Sync data calls while sync is off answer
+`409 sync_off`; account and Hub calls remain available.
+
+## Reused cloud console
+
+`/` and `/app/` serve the adapted nanoMuse cloud user console; `/app` redirects
+there. Static assets and license notices ship as one directory in both local
+and Docker builds, with revalidation caching. `/sync-view` keeps the previous
+sync-inspection page. S3 configuration sync is unchanged.
+
+The console selects a device and sends `task {text, conversation, from}`.
+The desktop creates/reuses a dedicated session, sets permission mode `ask`, and
+uses normal Agent prompt/abort admission. It forwards safe progress events and
+returns `{text}` only after the admitted turn ends. `stop {conversation}`
+cancels that caller's conversation only. Socket loss, account replacement or
+sign-out cancels work and suppresses stale results. Each desktop installation
+persists a distinct device id; conversation mapping currently survives socket
+reconnects within a process, not full desktop restarts.
+
+`GET /v1/me` includes true `has_password`, creation time and session count.
+`GET /v1/me/sessions`, `DELETE /v1/me/sessions/{opaque-id}` and
+`POST /v1/auth/sign-out-all` manage real sessions, never exposing bearer tokens.
+Revocation closes affected live Hub sockets with code 4001. `GET /v1/me/events`
+returns account-scoped activity, not chat text. Additive portal schema version 1
+preserves existing passwords and sessions. The Hub accepts the console's
+`forget {device_id}` frame for offline devices.
+
+Billing, invitations, training contributions and password removal are not
+advertised by this service. The reused page hides unsupported controls using
+capability flags instead of displaying fictitious usage or functioning toggles.
+See the package's CONSOLE-COMPATIBILITY.md and source notices for the full mapping.

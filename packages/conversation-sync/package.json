@@ -12,11 +12,12 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && node -e \"fs.copyFileSync('src/console.html','dist/console.html')\"",
+    "build": "tsc -p tsconfig.json && node scripts/copy-console.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "start": "node dist/main.js",
-    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\""
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
+    "test:browser": "node scripts/test-console-browser.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",

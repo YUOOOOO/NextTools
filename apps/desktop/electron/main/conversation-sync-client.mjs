@@ -134,10 +134,15 @@ export function createConversationSync({
   fetchImpl = directFetch,
   listSessions,
   onCall,
+  WebSocketImpl = globalThis.WebSocket,
   deviceId = "desktop-local",
 }) {
   let hub = null;
   let hubToken = "";
+  let hubUrl = "";
+  let hubController = null;
+  let reconnectTimer = null;
+  let generation = 0;
   return {
     async getState() {
       const saved = readSaved();
@@ -153,9 +158,7 @@ export function createConversationSync({
       return authenticate(input, "/v1/auth/login");
     },
     async signOut() {
-      hubToken = "";
-      hub?.close();
-      hub = null;
+      closeHub();
       rmSync(filePath, { force: true });
       return { signedIn: false };
     },
@@ -207,54 +210,110 @@ export function createConversationSync({
     }
   }
 
+  function closeHub() {
+    generation += 1;
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+    hubToken = "";
+    hubUrl = "";
+    const previous = hub;
+    hub = null;
+    hubController?.abort();
+    hubController = null;
+    previous?.close();
+  }
+
   function ensureHub(saved) {
-    if (!onCall || typeof WebSocket !== "function") return;
-    if (hub && hubToken === saved.token) return;
-    hub?.close();
+    if (!onCall || typeof WebSocketImpl !== "function") return;
+    if (hub && hubToken === saved.token && hubUrl === saved.baseUrl) return;
+    closeHub();
+    const epoch = generation;
     hubToken = saved.token;
-    const socket = new WebSocket(`${saved.baseUrl.replace(/^http/, "ws")}/v1/hub`);
+    hubUrl = saved.baseUrl;
+    const controller = new AbortController();
+    hubController = controller;
+    const socket = new WebSocketImpl(`${saved.baseUrl.replace(/^http/, "ws")}/v1/hub`);
     hub = socket;
-    socket.addEventListener("open", () => {
-      socket.send(JSON.stringify({
-        type: "hello",
-        key: saved.token,
-        device: {
-          id: deviceId,
-          name: "Pilot",
-          kind: "computer",
-          os: process.platform,
-          actions: ["info", "sessions.list", "chat.send", "shell", "files", "file.get", "file.put", "open", "screen"],
-        },
-      }));
+    const pending = new Set();
+    const current = () => hub === socket && generation === epoch && !controller.signal.aborted;
+    const send = (body) => {
+      if (!current() || socket.readyState !== 1) return;
+      try { socket.send(JSON.stringify(body)); } catch { lost(); socket.close(); }
+    };
+    const open = () => send({
+      type: "hello",
+      key: saved.token,
+      device: {
+        id: deviceId, name: "Pilot", kind: "computer", os: process.platform,
+        actions: ["info", "sessions.list", "chat.send", "task", "stop", "shell", "files", "file.get", "file.put", "open", "screen"],
+      },
     });
-    socket.addEventListener("message", (event) => {
+    const message = (event) => {
+      if (!current()) return;
       let frame;
-      try {
-        frame = JSON.parse(String(event.data));
-      } catch {
-        return;
-      }
-      if (!frame || frame.type !== "call") return;
-      const args = frame.args && typeof frame.args === "object" ? frame.args : {};
+      try { frame = JSON.parse(String(event.data)); } catch { return; }
+      if (!frame || frame.type !== "call" || typeof frame.id !== "string" || !frame.id || pending.has(frame.id)) return;
+      const args = frame.args && typeof frame.args === "object" && !Array.isArray(frame.args) ? frame.args : {};
+      const caller = frame.from && typeof frame.from === "object" ? frame.from : {};
+      const context = {
+        signal: controller.signal,
+        scope: JSON.stringify([saved.baseUrl, saved.account]),
+        caller: {
+          id: typeof caller.id === "string" ? caller.id : "",
+          name: typeof caller.name === "string" ? caller.name : "",
+          kind: typeof caller.kind === "string" ? caller.kind : "",
+        },
+        emit: (body) => {
+          if (pending.has(frame.id)) send({ type: "event", id: frame.id, body });
+        },
+      };
+      pending.add(frame.id);
       Promise.resolve()
-        .then(() => onCall(String(frame.action ?? ""), args))
-        .then((body) => socket.send(JSON.stringify({ type: "result", id: frame.id, ok: true, body })))
-        .catch((error) => socket.send(JSON.stringify({
-          type: "result",
-          id: frame.id,
-          ok: false,
-          error: "failed",
-          message: error instanceof Error ? error.message : String(error),
-        })));
-    });
-    socket.addEventListener("close", () => {
-      if (hub !== socket || hubToken !== saved.token) return;
+        .then(() => {
+          if (!current()) return;
+          return onCall(String(frame.action ?? ""), args, context);
+        })
+        .then((body) => {
+          pending.delete(frame.id);
+          send({ type: "result", id: frame.id, ok: true, body });
+        })
+        .catch((error) => {
+          pending.delete(frame.id);
+          send({
+            type: "result", id: frame.id, ok: false,
+            error: typeof error?.code === "string" ? error.code : "failed",
+            message: error instanceof Error ? error.message : String(error),
+          });
+        });
+    };
+    const lost = () => {
+      socket.removeEventListener("open", open);
+      socket.removeEventListener("message", message);
+      socket.removeEventListener("close", lost);
+      socket.removeEventListener("error", lost);
+      controller.abort();
+      if (socket.readyState < 2) socket.close();
+      if (hub !== socket || generation !== epoch) return;
       hub = null;
-      setTimeout(() => {
-        const again = readSaved();
-        if (again && again.token === saved.token) ensureHub(again);
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        if (generation !== epoch) return;
+        let again;
+        try { again = readSaved(); } catch { return; }
+        if (again && again.token === saved.token && again.baseUrl === saved.baseUrl) ensureHub(again);
       }, 2000);
-    });
+      reconnectTimer.unref?.();
+    };
+    socket.addEventListener("open", open);
+    socket.addEventListener("message", message);
+    socket.addEventListener("close", lost);
+    socket.addEventListener("error", lost);
+    controller.signal.addEventListener("abort", () => {
+      socket.removeEventListener("open", open);
+      socket.removeEventListener("message", message);
+      socket.removeEventListener("close", lost);
+      socket.removeEventListener("error", lost);
+    }, { once: true });
   }
 
   function writeSaved(saved) {

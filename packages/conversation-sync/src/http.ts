@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import { AccountBook } from "./accounts.js";
 import { DeviceHub } from "./hub.js";
+import { AccountPortal } from "./portal.js";
+import { serveConsole } from "./console-assets.js";
 import { SyncError, SyncStore, type WorkingFrame } from "./store.js";
 
 export interface SyncServerOptions {
@@ -20,8 +22,9 @@ export function createSyncServer(options: SyncServerOptions): Server {
   const store = options.store ?? new SyncStore(options.db);
   const accounts = new AccountBook(options.db);
   const hub = new DeviceHub(accounts);
+  const portal = new AccountPortal(options.db, accounts);
   const server = createServer((req, res) => {
-    void handle(store, accounts, hub, options, req, res);
+    void handle(store, accounts, hub, portal, options, req, res);
   });
   server.on("upgrade", (req, socket, head) => {
     hub.handleUpgrade(req, socket, head);
@@ -29,7 +32,7 @@ export function createSyncServer(options: SyncServerOptions): Server {
   return server;
 }
 
-async function handle(store: SyncStore, accounts: AccountBook, hub: DeviceHub, options: SyncServerOptions, req: IncomingMessage, res: ServerResponse): Promise<void> {
+async function handle(store: SyncStore, accounts: AccountBook, hub: DeviceHub, portal: AccountPortal, options: SyncServerOptions, req: IncomingMessage, res: ServerResponse): Promise<void> {
   try {
     const url = new URL(req.url ?? "/", "http://sync.local");
     if (req.method === "OPTIONS") {
@@ -38,7 +41,10 @@ async function handle(store: SyncStore, accounts: AccountBook, hub: DeviceHub, o
       res.end();
       return;
     }
-    if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/console")) {
+    if (req.method === "GET" && serveConsole(url, res)) return;
+    if (req.method === "GET" && url.pathname === "/healthz") return send(res, 200, { ok: true });
+    if (req.method === "GET" && url.pathname === "/v1/config") return send(res, 200, { password_min_len: 6, code_ttl_s: 600 });
+    if (req.method === "GET" && url.pathname === "/sync-view") {
       const page = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "console.html"));
       res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
       res.end(page);
@@ -49,6 +55,7 @@ async function handle(store: SyncStore, accounts: AccountBook, hub: DeviceHub, o
       const name = body.account ?? body.identifier;
       const created = url.pathname.endsWith("/register");
       const result = created ? accounts.register(name, body.password) : accounts.login(name, body.password);
+      portal.authenticated(result, body.device, "password");
       return send(res, 200, sessionPayload(result));
     }
     if (req.method === "POST" && url.pathname === "/v1/auth/code") {
@@ -61,9 +68,31 @@ async function handle(store: SyncStore, accounts: AccountBook, hub: DeviceHub, o
     }
     if (req.method === "POST" && url.pathname === "/v1/auth/verify") {
       const body = await readJson(req);
-      return send(res, 200, sessionPayload(accounts.verifyCode(body.identifier ?? body.account, body.code)));
+      const result = accounts.verifyCode(body.identifier ?? body.account, body.code);
+      portal.authenticated(result, body.device, "code");
+      return send(res, 200, sessionPayload(result));
     }
     const accountId = accountFrom(req, options.accounts, accounts);
+    if (req.method === "GET" && url.pathname === "/v1/me/sessions") {
+      return send(res, 200, { sessions: portal.sessions(accountId, tokenFrom(req)) });
+    }
+    if (req.method === "GET" && url.pathname === "/v1/me/events") {
+      return send(res, 200, { events: portal.events(accountId, numberParam(url, "limit")) });
+    }
+    const sessionPath = url.pathname.match(/^\/v1\/me\/sessions\/([a-f0-9]{24})$/);
+    if (req.method === "DELETE" && sessionPath) {
+      portal.revoke(accountId, sessionPath[1]);
+      hub.dropRevoked(accountId);
+      writeCors(res); res.writeHead(204); res.end(); return;
+    }
+    if (req.method === "POST" && url.pathname === "/v1/auth/sign-out-all") {
+      portal.revokeAll(accountId);
+      hub.dropRevoked(accountId);
+      writeCors(res); res.writeHead(204); res.end(); return;
+    }
+    if (req.method === "GET" && url.pathname === "/v1/me") {
+      return send(res, 200, { ...profilePayload(accounts, accountId), ...portal.me(accountId) });
+    }
     if (req.method === "GET" && url.pathname === "/v1/models") {
       return send(res, 200, { object: "list", data: [] });
     }
@@ -79,20 +108,24 @@ async function handle(store: SyncStore, accounts: AccountBook, hub: DeviceHub, o
     if (req.method === "POST" && url.pathname === "/v1/auth/password") {
       const body = await readJson(req);
       accounts.changePassword(tokenFrom(req), body.current, body.password);
+      portal.event(accountId, "password.changed");
       writeCors(res);
       res.writeHead(204);
       res.end();
       return;
     }
     if (req.method === "POST" && url.pathname === "/v1/auth/sign-out") {
-      accounts.revokeToken(tokenFrom(req));
+      portal.signedOut(accountId, tokenFrom(req));
+      hub.dropRevoked(accountId);
       writeCors(res);
       res.writeHead(204);
       res.end();
       return;
     }
     if (req.method === "DELETE" && url.pathname === "/v1/me") {
+      portal.deleteData(accountId);
       const removed = accounts.deleteAccount(tokenFrom(req));
+      hub.dropRevoked(accountId);
       store.wipe(removed);
       writeCors(res);
       res.writeHead(204);

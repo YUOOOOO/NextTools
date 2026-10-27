@@ -643,6 +643,7 @@ function normalizePlansChangedEvent(value: unknown): PlanningStateEvent {
 
 export interface ConversationSyncStatus {
   signedIn: boolean;
+  baseUrl?: string;
   account?: string;
   accepted?: number;
   state?: {

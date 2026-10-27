@@ -28,4 +28,12 @@ docker compose up -d --build
 
 The service listens on port 8788. In the desktop, open Settings, then Cloud sync,
 then Conversation sync. Set the server to `http://<server>:8788` and register or
-sign in. Open that same URL in a browser to read the synced chats.
+sign in. Open that same URL (or `/app/`) in a browser to select a device and
+send tasks using the reused nanoMuse console. Account settings include sign-in
+sessions, password changes, sign-out everywhere and sync controls. The previous
+sync inspection page remains available at `/sync-view`.
+
+The build includes the complete console asset directory and GPLv3 notices, not
+just one HTML file. Rebuild the Docker image after updating. See
+[console compatibility](CONSOLE-COMPATIBILITY.md) for reused code, supported
+contracts, test commands and the explicitly unsupported operator features.

@@ -309,7 +309,14 @@ export function registerIpcHandlers(dependencies: RegisterIpcDependencies) {
   });
   // Conversation sync is a local settings call; the channel must be in the
   // preload whitelist rebuilt with this main bundle.
-  registerConversationSyncIpc({ registrar, getHost, getSidecar });
+  registerConversationSyncIpc({
+    registrar, getHost, getSidecar,
+    invoke: async (channel, args) => {
+      const handler = ipcHandlers.get(channel);
+      if (!handler) throw new Error("conversation task handler unavailable");
+      return handler(...args);
+    },
+  });
   registerBackgroundTasksIpc({
     registrar,
     getHost,

@@ -4,6 +4,8 @@ import { catalogs, resolveLocale } from "@pi-desktop/i18n";
 import { IPC } from "@pi-desktop/shared";
 import { REMOTE_ACTIONS, remoteSummary, runRemoteAction } from "../conversation-sync-actions.mjs";
 import { createConversationSync } from "../conversation-sync-client.mjs";
+import { loadOrCreateSyncDeviceId } from "../conversation-sync-device-id.mjs";
+import { createConversationTaskBridge, type InternalInvoke, type TaskCallContext, type TaskSidecar } from "../conversation-task-bridge.mjs";
 import type { HostProcess } from "../host-process";
 import type { IpcRegistrar } from "./types";
 
@@ -11,19 +13,31 @@ export function registerConversationSyncIpc({
   registrar,
   getHost,
   getSidecar,
+  invoke,
 }: {
   registrar: IpcRegistrar;
   getHost: () => HostProcess | null;
-  getSidecar: () => { call(method: string, params: unknown): Promise<unknown> } | null;
+  getSidecar: () => ({ call(method: string, params: unknown): Promise<unknown> } & TaskSidecar) | null;
+  /** Reuse the registered Agent handlers, including local approvals and durable turns. */
+  invoke: InternalInvoke;
 }): void {
+  const tasks = createConversationTaskBridge({
+    getHost, getSidecar,
+    prompt: (request) => invoke(IPC.invoke.agentPrompt, [request]),
+    abort: (request) => invoke(IPC.invoke.agentAbort, [request]),
+  });
   const sync = createConversationSync({
     filePath: join(app.getPath("userData"), "conversation-sync.json"),
     encrypt: (plain: string) => safeStorage.encryptString(plain).toString("base64"),
     decrypt: (encoded: string) => safeStorage.decryptString(Buffer.from(encoded, "base64")),
     encryptionAvailable: () => safeStorage.isEncryptionAvailable(),
     listSessions: () => loadSessions(getHost),
-    onCall: (action: string, args: Record<string, unknown>) => runCall(getHost, getSidecar, action, args),
-    deviceId: "desktop-local",
+    onCall: (action: string, args: Record<string, unknown>, context: TaskCallContext) => {
+      if (action === "task") return tasks.task(args, context);
+      if (action === "stop") return tasks.stop(args, context);
+      return runCall(getHost, getSidecar, action, args, invoke);
+    },
+    deviceId: loadOrCreateSyncDeviceId(join(app.getPath("userData"), "conversation-sync-device-id")),
   });
   registrar.handle(IPC.invoke.conversationSyncGetState, () => sync.getState());
   registrar.handle(IPC.invoke.conversationSyncSignIn, (input: unknown) => sync.signIn(input));
@@ -37,6 +51,7 @@ async function runCall(
   getSidecar: () => { call(method: string, params: unknown): Promise<unknown> } | null,
   action: string,
   args: Record<string, unknown>,
+  invoke?: InternalInvoke,
 ): Promise<unknown> {
   if (action === "info") return { name: "Pilot", kind: "computer" };
   if (REMOTE_ACTIONS.includes(action)) {
@@ -71,7 +86,8 @@ async function runCall(
   if (!sessionId) throw new Error("no session");
   const sidecar = getSidecar();
   if (!sidecar) throw new Error("agent unavailable");
-  const result = await sidecar.call("agent.prompt", { sessionId, content: text });
+  if (!invoke) throw new Error("agent_unavailable");
+  const result = await invoke(IPC.invoke.agentPrompt, [{ sessionId, content: text }]);
   return { sessionId, result };
 }
 

@@ -1,0 +1,123 @@
+// Real browser + real HTTP/Hub; only the desktop/model boundary is a fixture.
+import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
+import { createSyncServer } from "../dist/http.js";
+
+const executable = process.env.CLOUD_TEST_BROWSER;
+if (!executable) throw new Error("Set CLOUD_TEST_BROWSER to a Chrome/Chromium executable; build this package first");
+const directory = await mkdtemp(join(process.env.PI_SCRATCH_DIR || tmpdir(), "cloud-console-browser-"));
+const db = new DatabaseSync(":memory:");
+const server = createSyncServer({ db, accounts: new Map() });
+await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+const base = `http://127.0.0.1:${server.address().port}`;
+const browser = spawn(executable, ["--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check", "--remote-debugging-port=0", `--user-data-dir=${directory}`, "about:blank"], { stdio: "ignore", windowsHide: true });
+let socket, computer;
+const pending = new Map();
+let sequence = 0;
+let browserError;
+browser.on("error", (error) => { browserError = error; });
+const delay = () => new Promise((resolve) => setTimeout(resolve, 40));
+async function until(read, message) {
+  const deadline = Date.now() + 15000;
+  while (Date.now() < deadline) {
+    if (browserError) throw browserError;
+    const result = await read();
+    if (result) return result;
+    await delay();
+  }
+  throw new Error(message);
+}
+function cdp(method, params = {}) {
+  return new Promise((resolve, reject) => {
+    const id = ++sequence;
+    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)); }, 15000);
+    pending.set(id, { resolve, reject, timer }); socket.send(JSON.stringify({ id, method, params }));
+  });
+}
+async function evaluate(expression) {
+  const result = await cdp("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
+  if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+  return result.result?.value;
+}
+const visible = (selector) => until(() => evaluate(`!!document.querySelector(${JSON.stringify(selector)})`), `Missing UI: ${selector}`);
+async function fill(selector, value) {
+  await evaluate(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); el.value = ${JSON.stringify(value)}; el.dispatchEvent(new Event('input', {bubbles:true})); })()`);
+}
+async function click(selector) {
+  await evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
+}
+try {
+  const activePort = await until(async () => {
+    try { return (await readFile(join(directory, "DevToolsActivePort"), "utf8")).split("\n")[0]; } catch { return null; }
+  }, "Browser did not start");
+  const target = await (await fetch(`http://127.0.0.1:${activePort}/json/new?about:blank`, { method: "PUT" })).json();
+  socket = new WebSocket(target.webSocketDebuggerUrl);
+  await new Promise((resolve, reject) => { socket.addEventListener("open", resolve, { once: true }); socket.addEventListener("error", reject, { once: true }); });
+  socket.addEventListener("message", ({ data }) => {
+    const message = JSON.parse(String(data)); const request = pending.get(message.id);
+    if (!request) return;
+    clearTimeout(request.timer); pending.delete(message.id);
+    if (message.error) request.reject(new Error(JSON.stringify(message.error))); else request.resolve(message.result);
+  });
+  await cdp("Page.enable");
+  await cdp("Page.navigate", { url: base + "/app/" });
+  await visible("#ident");
+  await fill("#ident", "browser-user"); await fill("#pw", "fixture-password");
+  await click(".signin .btn.ghost"); await visible(".main");
+  const login = await fetch(base + "/v1/auth/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ account: "browser-user", password: "fixture-password", device: "Fixture desktop" }) });
+  const session = await login.json(); assert.equal(login.status, 200);
+  computer = new WebSocket(base.replace("http", "ws") + "/v1/hub");
+  const welcomed = new Promise((resolve) => computer.addEventListener("message", ({ data }) => { if (JSON.parse(String(data)).type === "welcome") resolve(); }));
+  computer.addEventListener("open", () => computer.send(JSON.stringify({ type: "hello", key: session.token, device: { id: "browser-fixture", kind: "computer", name: "Pilot fixture", os: "test", actions: ["task", "stop"] } })));
+  let waitingTask;
+  computer.addEventListener("message", ({ data }) => {
+    const frame = JSON.parse(String(data)); if (frame.type !== "call") return;
+    if (frame.action === "task") {
+      if (frame.args.text === "wait for stop") { waitingTask = frame.id; return; }
+      computer.send(JSON.stringify({ type: "event", id: frame.id, body: { stage: "tool", name: "fixture", summary: "isolated browser test" } }));
+      computer.send(JSON.stringify({ type: "result", id: frame.id, ok: true, body: { text: "Fixture completed: " + frame.args.text } }));
+    } else if (frame.action === "stop") {
+      computer.send(JSON.stringify({ type: "result", id: waitingTask, ok: false, error: "cancelled", message: "cancelled" }));
+      computer.send(JSON.stringify({ type: "result", id: frame.id, ok: true, body: { stopped: true } }));
+    }
+  });
+  await welcomed;
+  await until(() => evaluate("document.querySelector('.devices')?.textContent.includes('Pilot fixture')"), "Device missing");
+  await click(".devices button"); await visible(".composer textarea");
+  await fill(".composer textarea", "hello from browser"); await click(".composer .box button");
+  await until(() => evaluate("document.querySelector('.messages')?.textContent.includes('Fixture completed: hello from browser')"), "Final answer missing");
+  await fill(".composer textarea", "wait for stop"); await click(".composer .box button"); await visible(".composer .stop");
+  await click(".composer .stop");
+  await until(() => evaluate("document.querySelector('.messages')?.textContent.includes('cancelled')"), "Stop did not settle task");
+  await click(".foot button"); await visible(".sheet .identity");
+  const accountText = await evaluate("document.querySelector('.sheet').textContent");
+  assert(accountText.includes("browser-user"));
+  assert(!accountText.includes("not_found"));
+  assert(!accountText.includes("Help improve nanoMuse"));
+  assert(!accountText.includes("帮助改进 nanoMuse"));
+  await evaluate("Array.from(document.querySelectorAll('.sheet button')).find(el => /Change password|修改密码/.test(el.textContent)).click()");
+  await visible(".dialog input[autocomplete='current-password']");
+  await fill(".dialog input[autocomplete='current-password']", "fixture-password");
+  await evaluate("Array.from(document.querySelectorAll('.dialog input[autocomplete=new-password]')).forEach(el => {el.value='fixture-password-2'})");
+  await click(".dialog .acts button:last-child"); await visible(".sheet .identity");
+  const updated = await fetch(base + "/v1/auth/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ account: "browser-user", password: "fixture-password-2" }) });
+  assert.equal(updated.status, 200);
+  await cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+  assert(await evaluate("document.documentElement.scrollWidth <= window.innerWidth"), "Mobile layout overflows");
+  if (process.env.CLOUD_TEST_SCREENSHOT) {
+    const image = await cdp("Page.captureScreenshot", { format: "png" });
+    await writeFile(process.env.CLOUD_TEST_SCREENSHOT, Buffer.from(image.data, "base64"));
+  }
+  console.log("PASS: browser register → device → task result → stop → account → password → mobile layout");
+} finally {
+  computer?.close();
+  if (socket?.readyState === 1) { try { await cdp("Browser.close"); } catch {} }
+  socket?.close(); browser.kill();
+  for (const request of pending.values()) clearTimeout(request.timer);
+  await new Promise((resolve) => server.close(resolve)); db.close();
+  await rm(directory, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
+}

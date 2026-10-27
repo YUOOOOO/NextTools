@@ -92,6 +92,8 @@ export function ConversationSyncCard() {
           <SettingsRow title={t("settings.conversationSync.password")}>
             <div className="settings-config-sync-password-actions">
               <PasswordInput
+                showLabel={t("settings.configSync.showPassword")}
+                hideLabel={t("settings.configSync.hidePassword")}
                 value={password}
                 disabled={busy}
                 autoComplete="current-password"

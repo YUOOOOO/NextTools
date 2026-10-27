@@ -10,6 +10,23 @@
 
 ## 1. Goals
 
+### E2E-CLOUD-reused-nanomuse-console
+
+- Use a built conversation-sync candidate, in-memory database, isolated
+  Chrome/Chromium profile and a local fixture desktop; no real provider or
+  running user desktop is authorized by this scenario.
+- Register from `/app/`, see and select a computer, send a task, see progress
+  and the final text, stop a second task, open the account sheet and change
+  password. Check the 390px mobile layout and complete asset delivery.
+- Account/API tests additionally prove session revocation, sign-out everywhere,
+  account isolation, schema upgrade compatibility and Hub offline/forget state.
+- Run `packages/conversation-sync/scripts/test-console-browser.mjs` with
+  `CLOUD_TEST_BROWSER` set after package build. Desktop bridge tests separately
+  prove admitted-turn correlation, safe progress, busy state, cancellation,
+  reconnect and stale-result suppression. This fixture browser journey does
+  not by itself claim real Electron/provider execution or Docker verification.
+
+
 ### E2E-WORKBENCH-shared-plugin-service
 
 - **Preconditions:** A plugin declares and registers a Workbench service with

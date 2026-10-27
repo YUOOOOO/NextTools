@@ -37,11 +37,14 @@ export class WsPeer {
     this.socket.write(Buffer.concat([header, payload]));
   }
 
-  close(): void {
+  close(code = 1000, reason = ""): void {
     if (this.closed) return;
-    this.closed = true;
-    this.socket.end(Buffer.from([0x88, 0x00]));
-    this.socket.destroy();
+    const message = Buffer.from(reason).subarray(0, 123);
+    const payload = Buffer.alloc(2 + message.length);
+    payload.writeUInt16BE(code);
+    message.copy(payload, 2);
+    this.markClosed();
+    this.socket.end(Buffer.concat([Buffer.from([0x88, payload.length]), payload]), () => this.socket.destroy());
   }
 
   private markClosed(): void {

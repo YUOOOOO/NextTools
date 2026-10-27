@@ -8,10 +8,13 @@ WORKDIR /srv/conversation-sync
 # `import.meta` fails.
 COPY package.json tsconfig.docker.json ./
 COPY src ./src
+COPY scripts ./scripts
 RUN tsc -p tsconfig.docker.json \
- && cp src/console.html dist/console.html \
+ && node scripts/copy-console.mjs \
  && node --check dist/main.js \
- && test -f dist/console.html
+ && test -f dist/console/index.html \
+ && test -f dist/console/app.js \
+ && test -f dist/console/app.css
 ENV SYNC_HOST=0.0.0.0
 ENV SYNC_PORT=8788
 ENV SYNC_DB=/data/conversation-sync.sqlite

@@ -23,6 +23,7 @@ interface Device {
 interface Connection {
   peer: WsPeer;
   accountId: string;
+  token: string;
   device: Device;
 }
 
@@ -72,6 +73,15 @@ export class DeviceHub {
 
   list(accountId: string): Device[] {
     return this.devices(accountId);
+  }
+
+  dropRevoked(accountId: string): void {
+    for (const conn of [...(this.online.get(accountId)?.values() ?? [])]) {
+      if (this.accounts.accountForToken(conn.token) !== accountId) {
+        conn.peer.send(JSON.stringify({ type: "error", code: "bad_key", message: "Sign-in revoked" }));
+        conn.peer.close(4001, "bad_key");
+      }
+    }
   }
 
   notifySync(accountId: string, cursor: number, fromDevice: string): void {
@@ -140,6 +150,7 @@ export class DeviceHub {
     const conn: Connection = {
       peer,
       accountId,
+      token,
       device: {
         id,
         name: String(device.name ?? "").trim().slice(0, 60) || kind,
@@ -165,6 +176,20 @@ export class DeviceHub {
   }
 
   private route(conn: Connection, frame: Record<string, unknown> | null): void {
+    if (this.accounts.accountForToken(conn.token) !== conn.accountId) {
+      this.dropRevoked(conn.accountId);
+      return;
+    }
+    if (frame?.type === "forget") {
+      try {
+        this.forget(conn.accountId, String(frame.device_id ?? ""));
+        this.broadcast(conn.accountId);
+      } catch (error) {
+        if (!(error instanceof SyncError)) throw error;
+        conn.peer.send(JSON.stringify({ type: "error", code: error.code, message: error.message }));
+      }
+      return;
+    }
     if (!frame) {
       conn.peer.send(JSON.stringify({ type: "error", code: "bad_frame", message: "Frames are JSON objects" }));
       return;
@@ -249,13 +274,14 @@ export class DeviceHub {
       this.online.set(conn.accountId, account);
     }
     const previous = account.get(conn.device.id);
-    if (previous && previous !== conn) previous.peer.close();
     account.set(conn.device.id, conn);
+    if (previous && previous !== conn) previous.peer.close();
   }
 
   private detach(conn: Connection): void {
     const account = this.online.get(conn.accountId);
     if (!account || account.get(conn.device.id) !== conn) return;
+    if (conn.device.kind !== "web" && this.accounts.accountForToken(conn.token)) this.accounts.rememberDevice(this.stored(conn));
     account.delete(conn.device.id);
     if (!account.size) this.online.delete(conn.accountId);
     for (const [key, pending] of this.pending) {
