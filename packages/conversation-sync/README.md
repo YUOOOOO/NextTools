@@ -6,9 +6,8 @@ tombstones, and the 2,000 / 20,000 caps. See
 `docs/spec/03-runtime/23-conversation-sync.md`.
 
 ```powershell
-$env:SYNC_PORT = "8788"
-$env:SYNC_DB = "conversation-sync.sqlite"
-node --experimental-strip-types src/main.ts
+pnpm build
+pnpm start
 ```
 
 Register with `POST /v1/auth/register` and `{account, password}`. Sign in with

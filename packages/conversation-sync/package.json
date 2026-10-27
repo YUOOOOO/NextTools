@@ -12,10 +12,10 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node -e \"fs.copyFileSync('src/console.html','dist/console.html')\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "start": "node --experimental-strip-types src/main.ts",
+    "start": "node dist/main.js",
     "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\""
   },
   "devDependencies": {

@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import { AccountBook } from "./accounts.js";
-import { SyncError, SyncStore } from "./store.js";
+import { SyncError, SyncStore, type WorkingFrame } from "./store.js";
 
 export interface SyncServerOptions {
   db: DatabaseSync;
@@ -12,7 +12,7 @@ export interface SyncServerOptions {
   accounts: ReadonlyMap<string, string>;
   store?: SyncStore;
   onSync?: (accountId: string, cursor: number, fromDevice: string) => void;
-  onWorking?: (accountId: string, frame: Record<string, unknown>) => void;
+  onWorking?: (accountId: string, frame: WorkingFrame) => void;
 }
 
 export function createSyncServer(options: SyncServerOptions): Server {
