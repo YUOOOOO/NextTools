@@ -81,7 +81,7 @@ export const ptBR = {
     },
   },
   app: {
-    shellName: "PI-Desktop",
+    shellName: "Pilot",
     tagline: "Parceiro local de programação com IA",
     starting: "Iniciando o PI-Desktop…",
     loadingView: "Carregando visualização…",
@@ -1194,6 +1194,19 @@ export const ptBR = {
       sshFailed: "Falha na conexão SSH: {{message}}",
       transportSsh: "SSH",
       experimental: "Experimental"
+    },
+    conversationSync: {
+      title: "Conversation sync",
+      description: "Sign in to keep this device's chats on your sync server. The token stays on this machine.",
+      server: "Server",
+      account: "Account",
+      password: "Password",
+      register: "Register",
+      signIn: "Sign in",
+      signOut: "Sign out",
+      signedIn: "Signed in",
+      syncNow: "Sync chats",
+      counts: "{{conversations}} conversations, {{messages}} messages, cursor {{cursor}}",
     },
     configSync: {
       title: "Sincronização na nuvem",

@@ -25,6 +25,7 @@ import { registerSessionIpc } from "./session-ipc";
 import { registerSettingsIpc } from "./settings-ipc";
 import { registerStorageIpc } from "../storage/ipc";
 import { registerConfigSyncIpc } from "./config-sync-ipc";
+import { registerConversationSyncIpc } from "./conversation-sync-ipc";
 import { registerBackgroundTasksIpc } from "./background-tasks-ipc";
 import { registerSkillsIpc } from "./skills-ipc";
 import { registerAgentImportIpc } from "./agent-import-ipc";
@@ -306,6 +307,7 @@ export function registerIpcHandlers(dependencies: RegisterIpcDependencies) {
     getHost,
     sendToRenderer,
   });
+  registerConversationSyncIpc({ registrar, getHost });
   registerBackgroundTasksIpc({
     registrar,
     getHost,

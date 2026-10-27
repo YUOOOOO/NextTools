@@ -81,7 +81,7 @@ export const tr = {
     },
   },
   app: {
-    shellName: "PI-Desktop",
+    shellName: "Pilot",
     tagline: "Yerel AI kodlama ortağı",
     starting: "PI-Desktop başlatılıyor…",
     loadingView: "Görünüm yükleniyor…",
@@ -941,6 +941,19 @@ sklm: {
       remoteHosts: "Uzak ana bilgisayarlar",
       info: "Bilgi",
       voice: "Ses",
+    },
+    conversationSync: {
+      title: "Conversation sync",
+      description: "Sign in to keep this device's chats on your sync server. The token stays on this machine.",
+      server: "Server",
+      account: "Account",
+      password: "Password",
+      register: "Register",
+      signIn: "Sign in",
+      signOut: "Sign out",
+      signedIn: "Signed in",
+      syncNow: "Sync chats",
+      counts: "{{conversations}} conversations, {{messages}} messages, cursor {{cursor}}",
     },
     configSync: {
       title: "Bulut senkronizasyonu",

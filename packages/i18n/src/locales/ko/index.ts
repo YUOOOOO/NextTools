@@ -81,7 +81,7 @@ export const ko = {
     },
   },
   app: {
-    shellName: "PI-Desktop",
+    shellName: "Pilot",
     tagline: "로컬 AI 코딩 파트너",
     starting: "PI-Desktop 시작 중…",
     loadingView: "화면 불러오는 중…",
@@ -941,6 +941,19 @@ sklm: {
       remoteHosts: "원격 호스트",
       info: "정보",
       voice: "음성",
+    },
+    conversationSync: {
+      title: "Conversation sync",
+      description: "Sign in to keep this device's chats on your sync server. The token stays on this machine.",
+      server: "Server",
+      account: "Account",
+      password: "Password",
+      register: "Register",
+      signIn: "Sign in",
+      signOut: "Sign out",
+      signedIn: "Signed in",
+      syncNow: "Sync chats",
+      counts: "{{conversations}} conversations, {{messages}} messages, cursor {{cursor}}",
     },
     configSync: {
       title: "Cloud sync",

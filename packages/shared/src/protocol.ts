@@ -2,6 +2,8 @@ export const PROTOCOL_VERSION = 11 as const;
 export const SCHEMA_VERSION = 16 as const;
 export const APP_ID = "net.aiuo.pi-desktop";
 export const APP_NAME = "PI-Desktop";
+/** Visible window, tray, and taskbar label. Keeps APP_NAME as the data-directory identity. */
+export const APP_DISPLAY_NAME = "Pilot";
 export const APP_VERSION = "0.21.0-beta.4";
 
 export const APP_MENU_COMMANDS = [
@@ -191,6 +193,11 @@ export const IPC = {
     configSyncRestore: "pi-desktop/configSync/restore",
     configSyncChangePassword: "pi-desktop/configSync/changePassword",
     configSyncDisconnect: "pi-desktop/configSync/disconnect",
+    conversationSyncGetState: "pi-desktop/conversationSync/getState",
+    conversationSyncSignIn: "pi-desktop/conversationSync/signIn",
+    conversationSyncRegister: "pi-desktop/conversationSync/register",
+    conversationSyncSignOut: "pi-desktop/conversationSync/signOut",
+    conversationSyncPush: "pi-desktop/conversationSync/push",
     networkProxyTest: "pi-desktop/network/testProxy",
     commandShellList: "pi-desktop/commandShell/list",
     secretsSet: "pi-desktop/secrets/set",

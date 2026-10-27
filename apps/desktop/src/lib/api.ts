@@ -641,6 +641,17 @@ function normalizePlansChangedEvent(value: unknown): PlanningStateEvent {
   };
 }
 
+export interface ConversationSyncStatus {
+  signedIn: boolean;
+  account?: string;
+  accepted?: number;
+  state?: {
+    enabled?: boolean;
+    cursor?: number;
+    counts?: { conversations?: number; messages?: number };
+  };
+}
+
 export const api = {
   getVersion: () => invoke<AppVersionInfo>(IPC.invoke.appGetVersion),
   health: () => invoke<HostHealth>(IPC.invoke.appHealth),
@@ -839,6 +850,16 @@ export const api = {
   configSyncChangePassword: (input: ConfigSyncChangePasswordInput) =>
     invoke<ConfigSyncState>(IPC.invoke.configSyncChangePassword, input),
   configSyncDisconnect: () => invoke<ConfigSyncState>(IPC.invoke.configSyncDisconnect),
+  conversationSyncGetState: () =>
+    invoke<ConversationSyncStatus>(IPC.invoke.conversationSyncGetState),
+  conversationSyncSignIn: (input: { baseUrl: string; account: string; password: string }) =>
+    invoke<ConversationSyncStatus>(IPC.invoke.conversationSyncSignIn, input),
+  conversationSyncRegister: (input: { baseUrl: string; account: string; password: string }) =>
+    invoke<ConversationSyncStatus>(IPC.invoke.conversationSyncRegister, input),
+  conversationSyncSignOut: () =>
+    invoke<ConversationSyncStatus>(IPC.invoke.conversationSyncSignOut),
+  conversationSyncPush: () =>
+    invoke<ConversationSyncStatus & { accepted?: number }>(IPC.invoke.conversationSyncPush),
   testNetworkProxy: (settings: unknown) =>
     invoke<{ ok: boolean; error?: string }>(IPC.invoke.networkProxyTest, settings),
   /** Installed system font families (Electron main, cached briefly). */

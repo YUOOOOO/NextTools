@@ -34,4 +34,8 @@ returns the newest K messages, their conversation rows, and the live main
 conversation even when its messages are outside the tail.
 
 Authorization is `Authorization: Bearer <token>` mapped to an account id.
+
+The desktop signs in from Settings → Cloud sync. The access token is encrypted
+with the operating system store. Sync chats pushes local user and assistant
+text; tool rows are not sent.
 Unknown tokens answer `401 bad_key`. Calls while sync is off answer `409 sync_off`.

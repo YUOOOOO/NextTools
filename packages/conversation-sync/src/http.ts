@@ -1,5 +1,9 @@
+import { readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
+import { AccountBook } from "./accounts.js";
 import { SyncError, SyncStore } from "./store.js";
 
 export interface SyncServerOptions {
@@ -13,15 +17,29 @@ export interface SyncServerOptions {
 
 export function createSyncServer(options: SyncServerOptions): Server {
   const store = options.store ?? new SyncStore(options.db);
+  const accounts = new AccountBook(options.db);
   return createServer((req, res) => {
-    void handle(store, options, req, res);
+    void handle(store, accounts, options, req, res);
   });
 }
 
-async function handle(store: SyncStore, options: SyncServerOptions, req: IncomingMessage, res: ServerResponse): Promise<void> {
+async function handle(store: SyncStore, accounts: AccountBook, options: SyncServerOptions, req: IncomingMessage, res: ServerResponse): Promise<void> {
   try {
     const url = new URL(req.url ?? "/", "http://sync.local");
-    const accountId = accountFrom(req, options.accounts);
+    if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/console")) {
+      const page = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "console.html"));
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+      res.end(page);
+      return;
+    }
+    if (req.method === "POST" && (url.pathname === "/v1/auth/register" || url.pathname === "/v1/auth/login")) {
+      const body = await readJson(req);
+      const result = url.pathname.endsWith("/register")
+        ? accounts.register(body.account, body.password)
+        : accounts.login(body.account, body.password);
+      return send(res, 200, result);
+    }
+    const accountId = accountFrom(req, options.accounts, accounts);
     if (req.method === "GET" && url.pathname === "/v1/sync/state") {
       return send(res, 200, store.state(accountId));
     }
@@ -86,10 +104,10 @@ async function handle(store: SyncStore, options: SyncServerOptions, req: Incomin
   }
 }
 
-function accountFrom(req: IncomingMessage, accounts: ReadonlyMap<string, string>): string {
+function accountFrom(req: IncomingMessage, accounts: ReadonlyMap<string, string>, book: AccountBook): string {
   const header = req.headers.authorization ?? "";
   const token = header.toLowerCase().startsWith("bearer ") ? header.slice(7).trim() : "";
-  const accountId = accounts.get(token);
+  const accountId = accounts.get(token) ?? book.accountForToken(token);
   if (!accountId) throw new SyncError(401, "bad_key", "Unknown or revoked key");
   return accountId;
 }

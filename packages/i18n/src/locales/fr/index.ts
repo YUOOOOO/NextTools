@@ -81,7 +81,7 @@ export const fr = {
     },
   },
   "app": {
-    "shellName": "PI-Desktop",
+    "shellName": "Pilot",
     "tagline": "Partenaire de codage IA local",
     "starting": "Démarrage de PI-Desktop…",
     "loadingView": "Chargement de la vue…",
@@ -933,6 +933,19 @@ sklm: {
       "remoteHosts": "Hôtes distants",
       "info": "Informations",
       "voice": "Voix"
+    },
+    "conversationSync": {
+      "title": "Conversation sync",
+      "description": "Sign in to keep this device's chats on your sync server. The token stays on this machine.",
+      "server": "Server",
+      "account": "Account",
+      "password": "Password",
+      "register": "Register",
+      "signIn": "Sign in",
+      "signOut": "Sign out",
+      "signedIn": "Signed in",
+      "syncNow": "Sync chats",
+      "counts": "{{conversations}} conversations, {{messages}} messages, cursor {{cursor}}",
     },
     "configSync": {
       title: "Cloud sync",

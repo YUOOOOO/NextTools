@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>会话同步</title>
+<style>
+  body { margin: 0; font: 15px/1.5 "Segoe UI", sans-serif; background: #f4f1ea; color: #1c1a16; }
+  main { max-width: 880px; margin: 0 auto; padding: 32px 20px 64px; }
+  h1 { font-size: 28px; margin: 0 0 8px; }
+  form, section { background: #fff; border: 1px solid #e4ddd0; border-radius: 16px; padding: 16px; margin-top: 16px; }
+  label { display: block; margin: 10px 0; }
+  input { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cfc6b8; border-radius: 8px; }
+  button { margin-right: 8px; padding: 8px 14px; border-radius: 999px; border: 0; background: #1c1a16; color: #fff; }
+  button.secondary { background: #efeae1; color: #1c1a16; }
+  .error { color: #9d1c1c; }
+  article { border-top: 1px solid #eee6da; padding: 12px 0; }
+  .meta { color: #6d665c; font-size: 13px; }
+  pre { white-space: pre-wrap; margin: 8px 0 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>会话同步</h1>
+  <p>账号和密码注册或登录。这里只看这个账号已经同步上来的聊天，不经过验证码。</p>
+  <p id="error" class="error"></p>
+  <form id="auth">
+    <label>账号 <input id="account" autocomplete="username"></label>
+    <label>密码 <input id="password" type="password" autocomplete="current-password"></label>
+    <button type="submit">登录</button>
+    <button id="register" class="secondary" type="button">注册</button>
+  </form>
+  <section id="chats" hidden>
+    <p id="summary"></p>
+    <button id="reload" class="secondary" type="button">刷新</button>
+    <button id="signout" class="secondary" type="button">退出</button>
+    <div id="list"></div>
+  </section>
+</main>
+<script>
+const error = document.querySelector("#error");
+const auth = document.querySelector("#auth");
+const chats = document.querySelector("#chats");
+const tokenKey = "conversation-sync-token";
+function showError(message) { error.textContent = message || ""; }
+async function call(path, options = {}) {
+  const headers = { ...(options.body ? { "content-type": "application/json" } : {}) };
+  const token = sessionStorage.getItem(tokenKey);
+  if (token) headers.authorization = "Bearer " + token;
+  const response = await fetch(path, { ...options, headers });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error?.message || response.statusText);
+  return body;
+}
+async function load() {
+  const state = await call("/v1/sync/state");
+  const page = await call("/v1/sync/changes?since=0&limit=200");
+  document.querySelector("#summary").textContent =
+    `${state.counts.conversations} 个会话，${state.counts.messages} 条消息，游标 ${state.cursor}`;
+  const byCid = new Map(page.conversations.map((item) => [item.cid, item]));
+  const groups = new Map();
+  for (const message of page.messages) {
+    if (!groups.has(message.cid)) groups.set(message.cid, []);
+    groups.get(message.cid).push(message);
+  }
+  const list = document.querySelector("#list");
+  list.replaceChildren();
+  const ids = new Set([...byCid.keys(), ...groups.keys()]);
+  if (!ids.size) list.textContent = "还没有同步上来的聊天。";
+  for (const cid of ids) {
+    const conversation = byCid.get(cid);
+    const article = document.createElement("article");
+    const title = document.createElement("strong");
+    title.textContent = conversation?.title || cid;
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = `${conversation?.kind || "side"} · ${conversation?.deleted ? "已删除" : "保留"}`;
+    article.append(title, meta);
+    for (const message of groups.get(cid) || []) {
+      const line = document.createElement("pre");
+      line.textContent = `${message.role}: ${message.text}`;
+      article.append(line);
+    }
+    list.append(article);
+  }
+  auth.hidden = true;
+  chats.hidden = false;
+}
+auth.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  await enter("/v1/auth/login");
+});
+document.querySelector("#register").addEventListener("click", () => enter("/v1/auth/register"));
+document.querySelector("#reload").addEventListener("click", () => load().catch((cause) => showError(cause.message)));
+document.querySelector("#signout").addEventListener("click", () => {
+  sessionStorage.removeItem(tokenKey);
+  auth.hidden = false;
+  chats.hidden = true;
+});
+async function enter(path) {
+  showError("");
+  try {
+    const result = await call(path, {
+      method: "POST",
+      body: JSON.stringify({
+        account: document.querySelector("#account").value,
+        password: document.querySelector("#password").value,
+      }),
+    });
+    sessionStorage.setItem(tokenKey, result.token);
+    await load();
+  } catch (cause) {
+    showError(cause.message);
+  }
+}
+if (sessionStorage.getItem(tokenKey)) load().catch(() => sessionStorage.removeItem(tokenKey));
+</script>
+</body>
+</html>

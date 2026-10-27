@@ -166,4 +166,36 @@ describe("sync HTTP", () => {
     const page = (await pulled.json()) as { messages: Array<{ text: string }> };
     expect(page.messages[0]?.text).toBe("saved");
   });
+
+  it("registers an account and rejects the wrong password", async () => {
+    const db = new DatabaseSync(":memory:");
+    const server = createSyncServer({ db, accounts: new Map() });
+    servers.push(server);
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("no port");
+    const base = `http://127.0.0.1:${address.port}`;
+    const registered = await fetch(`${base}/v1/auth/register`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ account: "Ada", password: "secret1" }),
+    });
+    const body = (await registered.json()) as { token: string; account: string };
+    expect(registered.status).toBe(200);
+    expect(body.account).toBe("ada");
+    const again = await fetch(`${base}/v1/auth/register`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ account: "ada", password: "secret1" }),
+    });
+    expect(again.status).toBe(409);
+    const wrong = await fetch(`${base}/v1/auth/login`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ account: "ada", password: "nope12" }),
+    });
+    expect(wrong.status).toBe(401);
+    const state = await fetch(`${base}/v1/sync/state`, { headers: { authorization: `Bearer ${body.token}` } });
+    expect(state.status).toBe(200);
+  });
 });

@@ -81,7 +81,7 @@ export const zhTW = {
     },
   },
   app: {
-    shellName: "PI-Desktop",
+    shellName: "Pilot",
     tagline: "本地 AI 程式設計助手",
     starting: "正在啟動 PI-Desktop…",
     loadingView: "正在載入頁面…",
@@ -932,6 +932,19 @@ sklm: {
       remoteHosts: "遠端主機",
       info: "資訊",
       voice: "語音",
+    },
+    conversationSync: {
+      title: "會話同步",
+      description: "登入後，這台裝置的聊天會按帳號保存到同步服務。權杖只留在本機。",
+      server: "伺服器",
+      account: "帳號",
+      password: "密碼",
+      register: "註冊",
+      signIn: "登入",
+      signOut: "登出",
+      signedIn: "已登入",
+      syncNow: "同步聊天",
+      counts: "{{conversations}} 個會話，{{messages}} 則訊息，游標 {{cursor}}",
     },
     configSync: {
       title: "雲端同步",

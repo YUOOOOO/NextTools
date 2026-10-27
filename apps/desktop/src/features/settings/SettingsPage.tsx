@@ -59,6 +59,7 @@ import { AgentInstructionsSection, UpdatesRow } from "./agent-sections";
 import { CloseBehaviorSection, DeveloperSection } from "./developer-sections";
 import { PluginScenicThemesDestination } from "../../components/settings/PluginScenicThemesDestination";
 import { ConfigSyncPage } from "../../components/settings/ConfigSyncPage";
+import { ConversationSyncCard } from "../../components/settings/ConversationSyncCard";
 import { StorageSettingsSection } from "./StorageSettingsSection";
 
 type SettingsTab = ReturnType<typeof useAppStore.getState>["settingsTab"];
@@ -599,7 +600,12 @@ export function SettingsPage() {
 
           {tab === "projects" && <ProjectsPage />}
 
-          {tab === "sync" && !tabHidden && <ConfigSyncPage />}
+          {tab === "sync" && !tabHidden && (
+            <div className="settings-stack">
+              <ConversationSyncCard />
+              <ConfigSyncPage />
+            </div>
+          )}
 
           {tab === "remoteHosts" && !tabHidden && <RemoteHostsPage />}
 
