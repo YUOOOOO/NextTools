@@ -10,7 +10,8 @@
     "skipLibCheck": true,
     "declaration": false,
     "sourceMap": false,
-    "types": ["node"]
+    "types": ["node"],
+    "typeRoots": ["/usr/local/lib/node_modules/@types"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts"]
