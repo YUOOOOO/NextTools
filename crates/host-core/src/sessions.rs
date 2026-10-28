@@ -11,6 +11,8 @@ use std::collections::HashMap;
 use crate::transcripts::{self, CompactionRecord, MessageRecord, RevisionRecord};
 
 mod fork_files;
+#[cfg(test)]
+mod input_source_tests;
 mod model_system;
 mod usage;
 pub use usage::record_usage;
@@ -184,6 +186,13 @@ pub struct MessageAttachment {
     pub inline_path: Option<String>,
 }
 
+/// Origin of a user input; absent for ordinary local messages.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum InputSource {
+    Web,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UiMessage {
@@ -202,6 +211,9 @@ pub struct UiMessage {
     /// Minimal provenance for an accepted Live Voice work input.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub voice_origin: Option<Value>,
+    /// Accepted web input provenance, independent of voice and collaboration.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input_source: Option<InputSource>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attachments: Option<Vec<MessageAttachment>>,
     /// Accepted input to an existing turn, preserved by Stop after renderer reload.
@@ -398,6 +410,11 @@ pub(crate) fn ui_to_record(message: &UiMessage) -> (MessageRecord, Option<String
     if let Some(origin) = &message.voice_origin {
         meta_obj.insert("voiceOrigin".into(), origin.clone());
     }
+    if message.role == "user" {
+        if let Some(source) = message.input_source {
+            meta_obj.insert("inputSource".into(), json!(source));
+        }
+    }
     if let Some(steering) = message.steering {
         meta_obj.insert("steering".into(), json!(steering));
     }
@@ -551,6 +568,9 @@ pub(crate) fn record_to_ui(record: MessageRecord) -> UiMessage {
         .and_then(|value| serde_json::from_value(value.clone()).ok());
     let session_message = meta.get("sessionMessage").cloned();
     let voice_origin = meta.get("voiceOrigin").cloned();
+    let input_source = (record.role == "user"
+        && meta.get("inputSource").and_then(Value::as_str) == Some("web"))
+    .then_some(InputSource::Web);
     let steering = meta.get("steering").and_then(Value::as_bool);
     let status = meta
         .get("status")
@@ -684,6 +704,7 @@ pub(crate) fn record_to_ui(record: MessageRecord) -> UiMessage {
             skill_mentions: skill_mentions.clone(),
             session_message,
             voice_origin: voice_origin.clone(),
+            input_source,
             attachments: None,
             steering,
             created_at: record.created_at,
@@ -738,6 +759,7 @@ pub(crate) fn record_to_ui(record: MessageRecord) -> UiMessage {
             skill_mentions,
             session_message,
             voice_origin,
+            input_source,
             attachments,
             steering,
             created_at: record.created_at,
@@ -2139,6 +2161,9 @@ pub fn append_message(
     turn_id: Option<&str>,
 ) -> Result<()> {
     model_system::validate(message)?;
+    if message.input_source.is_some() && message.role != "user" {
+        return Err(anyhow!("inputSource is only valid for user messages"));
+    }
     let message = crate::session_collaboration::prepare_append(db, session_id, message, turn_id)?;
     let session_created = ensure_session_for_append(db, session_id)?;
     let (mut record, text) = ui_to_record(&message);
@@ -4309,6 +4334,7 @@ mod tests {
             skill_mentions: None,
             attachments: None,
             voice_origin: None,
+            input_source: None,
             steering: None,
             created_at: ts.into(),
             thinking: None,
@@ -5200,6 +5226,7 @@ mod tests {
             skill_mentions: None,
             attachments: None,
             voice_origin: None,
+            input_source: None,
             steering: None,
             created_at: "2025-05-01T00:00:02Z".into(),
             thinking: None,
@@ -5818,6 +5845,7 @@ mod tests {
             skill_mentions: None,
             attachments: None,
             voice_origin: None,
+            input_source: None,
             steering: None,
             created_at: "2025-05-01T00:00:01Z".into(),
             thinking: Some("first plan\nsecond plan".into()),
@@ -5907,6 +5935,7 @@ mod tests {
             skill_mentions: None,
             attachments: None,
             voice_origin: None,
+            input_source: None,
             steering: None,
             created_at: "2025-05-01T00:00:01Z".into(),
             thinking: None,

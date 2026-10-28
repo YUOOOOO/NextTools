@@ -1,4 +1,5 @@
 export const en = {
+  messageOrigin: { web: "From web" },
   worktree: {
     menu: { group: "Git" },
     newIsolatedSession: "New isolated session",

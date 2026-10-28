@@ -4,6 +4,7 @@ import { catalogs, resolveLocale } from "@pi-desktop/i18n";
 import { IPC } from "@pi-desktop/shared";
 import { REMOTE_ACTIONS, remoteSummary, runRemoteAction } from "../conversation-sync-actions.mjs";
 import { createConversationSync } from "../conversation-sync-client.mjs";
+import { markWebPrompt } from "../web-message-source.mjs";
 import { createConversationAutoSync } from "../conversation-auto-sync.mjs";
 import { loadOrCreateSyncDeviceId } from "../conversation-sync-device-id.mjs";
 import { createConversationTaskBridge, type InternalInvoke, type TaskCallContext, type TaskSidecar } from "../conversation-task-bridge.mjs";
@@ -26,7 +27,10 @@ export function registerConversationSyncIpc({
 }): void {
   const tasks = createConversationTaskBridge({
     getHost, getSidecar,
-    prompt: (request) => invoke(IPC.invoke.agentPrompt, [request]),
+    prompt: (request) => {
+      const { inputSource, ...prompt } = request;
+      return invoke(IPC.invoke.agentPrompt, [inputSource === "web" ? markWebPrompt(prompt) : prompt]);
+    },
     abort: (request) => invoke(IPC.invoke.agentAbort, [request]),
   });
   const sync = createConversationSync({
@@ -43,7 +47,7 @@ export function registerConversationSyncIpc({
         });
       }
       if (action === "stop") return tasks.stop(args, context);
-      return runCall(getHost, getSidecar, action, args, invoke);
+      return runCall(getHost, getSidecar, action, args, invoke, context.caller.kind === "web");
     },
     deviceId: loadOrCreateSyncDeviceId(join(app.getPath("userData"), "conversation-sync-device-id")),
   });
@@ -70,6 +74,7 @@ async function runCall(
   action: string,
   args: Record<string, unknown>,
   invoke?: InternalInvoke,
+  fromWeb = false,
 ): Promise<unknown> {
   if (action === "info") return { name: "Pilot", kind: "computer" };
   if (REMOTE_ACTIONS.includes(action)) {
@@ -105,7 +110,8 @@ async function runCall(
   const sidecar = getSidecar();
   if (!sidecar) throw new Error("agent unavailable");
   if (!invoke) throw new Error("agent_unavailable");
-  const result = await invoke(IPC.invoke.agentPrompt, [{ sessionId, content: text }]);
+  const prompt = { sessionId, content: text };
+  const result = await invoke(IPC.invoke.agentPrompt, [fromWeb ? markWebPrompt(prompt) : prompt]);
   return { sessionId, result };
 }
 

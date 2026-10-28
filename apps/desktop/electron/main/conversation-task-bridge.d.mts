@@ -12,7 +12,7 @@ export type InternalInvoke = (channel: string, args: unknown[]) => Promise<unkno
 export function createConversationTaskBridge(options: {
   getHost(): { call(method: string, params: unknown): Promise<unknown> } | null;
   getSidecar(): TaskSidecar | null;
-  prompt?: (request: { sessionId: string; content: string; messageId: string }) => Promise<unknown>;
+  prompt?: (request: { sessionId: string; content: string; messageId: string; inputSource?: "web" }) => Promise<unknown>;
   abort?: (request: { sessionId: string; turnId: string }) => Promise<unknown>;
   timeoutMs?: number;
 }): {

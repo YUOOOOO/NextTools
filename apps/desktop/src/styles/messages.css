@@ -3497,3 +3497,9 @@
     opacity: 0.7;
   }
 }
+
+
+.message-row.user .message-input-source {
+  align-self: flex-end;
+  justify-content: flex-end;
+}

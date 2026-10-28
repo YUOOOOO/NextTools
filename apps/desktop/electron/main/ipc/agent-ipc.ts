@@ -1,4 +1,5 @@
 import { expandMcpInvocation } from "../composer-mcp";
+import { consumeWebPromptSource } from "../web-message-source.mjs";
 import { IPC, ErrorCodes, compactionRecordId, findSkillMentions, isGlobalPermissionMode, isRpcTimeoutError, type AgentEventEnvelope, type AgentPromptRequest, type AgentSteerRequest, type UiMessage, type AgentQueuePushRequest, type AgentStopRequest, type AgentStopSubagentsRequest, type AskToolResolution, type GlobalPermissionMode, type MessageUsage, type PendingInteractiveRequests, type PlanExecutionFinishStatus, type PlanResolutionResult, type PlanResolveRequest, type VoiceOrigin } from "@pi-desktop/shared";
 import type { FinishTurn } from "../runtime/plans";
 import { expandSlashInvocation, visionFromModelConfig, type ComposerTemplate } from "@pi-desktop/agent-runtime";
@@ -181,6 +182,7 @@ export function registerAgentIpc({
   });
 
   handle(IPC.invoke.agentPrompt, async (req: AgentPromptRequest) => {
+    const inputSource = consumeWebPromptSource(req);
     if (!sidecar) throw new Error("sidecar unavailable");
     const voiceOrigin = parseVoiceOrigin(req.voiceOrigin);
     if (req.sessionId.startsWith("native-pi:")) {
@@ -474,6 +476,7 @@ export function registerAgentIpc({
           }
         : {}),
       ...(voiceOrigin ? { voiceOrigin } : {}),
+      ...(inputSource === "web" ? { inputSource } : {}),
       ...(slashCommand ? { command: slashCommand } : {}),
       ...(skillMentions ? { skillMentions } : {}),
       ...(revisionMeta?.revisionCount

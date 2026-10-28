@@ -1,6 +1,7 @@
 import { en, type EnglishCatalog } from "../en/index.js";
 
 export const ko = {
+  messageOrigin: { web: "웹에서 보냄" },
   worktree: {
     menu: { group: "Git" },
     newIsolatedSession: "새 격리 세션",

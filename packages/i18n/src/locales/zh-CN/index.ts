@@ -1,6 +1,7 @@
 import { en, type EnglishCatalog } from "../en/index.js";
 
 export const zhCN = {
+  messageOrigin: { web: "来自网页" },
   worktree: {
     menu: { group: "Git" },
     newIsolatedSession: "新建隔离会话",

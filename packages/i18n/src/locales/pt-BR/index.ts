@@ -1,6 +1,7 @@
 import { en, type EnglishCatalog } from "../en/index.js";
 
 export const ptBR = {
+  messageOrigin: { web: "Da web" },
   worktree: {
     menu: { group: "Git" },
     newIsolatedSession: "Nova sessão isolada",

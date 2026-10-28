@@ -408,3 +408,17 @@ test("two callers cannot run or stop each other's continuation of one Host sessi
   assert.deepEqual(await f.bridge.stop(args, context), { stopped: true }); await cancelled;
   assert.deepEqual(f.aborts.at(-1), { sessionId: "project-session", turnId: "project-turn" });
 });
+
+
+test("task provenance follows authenticated caller kind, not args or display text", async () => {
+  for (const [kind, expected] of [["web", "web"], ["computer", undefined], ["phone", undefined]]) {
+    const f = runtime(); const context = { ...f.context, caller: { id: "caller-origin", kind } };
+    const task = f.bridge.task({ text: "Hello", conversation: "origin-test", inputSource: "web", from: "web" }, context);
+    await tick(); assert.equal(f.admissions[0].request.inputSource, expected);
+    complete(f); await task;
+  }
+  const f = runtime(), original = f.host.call;
+  f.host.call = async (method, params) => method === "session.get" ? { session: { id: "project-session", mode: "agent" } } : original(method, params);
+  const task = f.bridge.task({ text: "Shared continuation", conversation: "origin-test", sessionId: "project-session" }, { ...f.context, caller: { id: "web-shared", kind: "web" }, isSessionShared: () => true });
+  await tick(); assert.equal(f.admissions[0].request.inputSource, "web"); complete(f); await task;
+});

@@ -10,6 +10,8 @@ mod workbench_tools;
 mod worktree_rpc;
 
 #[cfg(test)]
+mod input_source_tests;
+#[cfg(test)]
 mod plugin_reviews_rpc_tests;
 
 use std::io::{self, BufRead, BufReader as StdBufReader, Read, Write};

@@ -1,3 +1,4 @@
+import { UserMessageSource } from "./UserMessageSource";
 import {
   memo,
   useMemo,
@@ -347,6 +348,7 @@ export const MessageRow = memo(function MessageRow({
             )}
           </div>
         ) : null}
+        {!editing ? <UserMessageSource message={message} /> : null}
         {!editing && (hasAnswer || showRevisionPager) ? (
           <div className="message-actions">
             <MessageTimestamp createdAt={message.createdAt} />

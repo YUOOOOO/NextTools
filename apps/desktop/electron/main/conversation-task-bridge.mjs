@@ -136,7 +136,7 @@ export function createConversationTaskBridge({ getHost, getSidecar, prompt, abor
         });
         emit({ stage: "thinking" });
         check();
-        const admitted = await prompt({ sessionId, content: args.text, messageId: randomUUID() });
+        const admitted = await prompt({ sessionId, content: args.text, messageId: randomUUID(), ...(context.caller.kind === "web" ? { inputSource: "web" } : {}) });
         if (admitted?.accepted !== true || typeof admitted.turnId !== "string" || !admitted.turnId) {
           throw failure("admission_failed");
         }

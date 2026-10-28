@@ -18299,3 +18299,15 @@ the previous secondary-sidebar right edge. Check both 240px and 360px sidebar
 widths, menu rows below the header, no overlapping drag/resize targets and
 keyboard-clickable home/collapse controls. Collapse then expand, switch routes
 and verify no duplicate brand row. Preserve the native macOS control inset.
+
+
+### E2E-CLOUD-web-input-source-chip
+
+Send one Web-origin task and one ordinary desktop user prompt to the same
+session. The Web accepted user row persists inputSource web and renders a small
+From web chip below its bubble. Local input has no chip, even when its text or
+serialized request says it came from Web. Reload/reopen and a bounded transcript
+read preserve only the authentic Web row's source. Assistant rows never display
+a source chip. Verify localized copy and that provenance is absent from model
+content/permission logic. Tests cover task admission, actual Agent prompt IPC,
+Host transcript roundtrip and rendered source-chip cases.

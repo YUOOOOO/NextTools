@@ -1,6 +1,7 @@
 import { en, type EnglishCatalog } from "../en/index.js";
 
 export const zhTW = {
+  messageOrigin: { web: "來自網頁" },
   worktree: {
     menu: { group: "Git" },
     newIsolatedSession: "新增隔離工作階段",

@@ -104,6 +104,8 @@ export type UiMessage = {
   sessionMessage?: SessionMessageOrigin;
   /** Present only on the durable user row created by a Live Voice operation. */
   voiceOrigin?: VoiceOrigin;
+  /** Origin assigned by the authenticated Web admission; absent for local input. */
+  inputSource?: "web";
   /** Files or images associated with a user turn, kept separate from text. */
   attachments?: MessageAttachment[];
   /** Accepted input to an existing turn; Stop must preserve it after reload. */

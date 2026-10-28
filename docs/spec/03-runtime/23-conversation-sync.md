@@ -170,3 +170,17 @@ sync once on the original desktop. Offline history remains readable but input
 is disabled until its executor reconnects. Unsaved composer drafts survive
 sync refresh; concurrent aliases cannot run two tasks on the same Host session.
 See ADR 0333 for the decision and permission boundaries.
+
+
+## Web input provenance on the desktop
+
+Authenticated Hub calls from a `web` caller mark only the accepted durable user
+row with optional `inputSource: "web"`. Main keeps this admission marker by
+object identity; serialized renderer, model or caller-supplied fields do not
+establish provenance. The field is display metadata, not model prompt text or
+permission authority. Host transcript metadata preserves it across reads/reopen.
+Absent fields in legacy messages remain ordinary input and are not backfilled.
+Desktop user rows show a quiet localized From web chip below the bubble; local
+user messages and assistant/tool rows show no source chip. Mixed-origin turns
+in one session keep independent provenance. The legacy chat.send path uses the
+same trusted Main marker as task admission.
