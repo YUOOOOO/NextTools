@@ -18289,3 +18289,13 @@ Covered by conversation-sync's real HTTP/Hub Chrome browser fixture.
   stop the task. Legacy metadata migration is additive and idempotent.
 - Coverage: server migration/API/Hub tests, production task-bridge tests and
   `scripts/test-console-browser.mjs` with isolated local desktop fixture.
+
+
+### E2E-CHROME-unified-navigation-header
+
+At expanded Chat and Workbench routes, verify one shared title row covers both
+navigation columns, the brand is left-aligned and the collapse button stays at
+the previous secondary-sidebar right edge. Check both 240px and 360px sidebar
+widths, menu rows below the header, no overlapping drag/resize targets and
+keyboard-clickable home/collapse controls. Collapse then expand, switch routes
+and verify no duplicate brand row. Preserve the native macOS control inset.

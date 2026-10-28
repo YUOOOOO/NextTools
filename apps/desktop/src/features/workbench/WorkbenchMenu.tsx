@@ -1,8 +1,6 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { BrandLogo } from "../../components/BrandLogo";
-import { IconSidebar } from "../../components/icons";
-import { Button, TooltipButton } from "../../components/ui";
+import { Button } from "../../components/ui";
 import { useAppStore } from "../../stores/app-store";
 import { dispatchWorkbenchCommand, runWorkbenchCommand, useWorkbenchSession } from "./workbench-session";
 
@@ -20,41 +18,11 @@ export function WorkbenchToolBridge() {
 }
 
 
-export function WorkbenchMenu({
-  onToggleMenu,
-  menuToggleShortcut,
-}: {
-  onToggleMenu: () => void;
-  menuToggleShortcut: string;
-}) {
+export function WorkbenchMenu() {
   const { t } = useTranslation();
   const session = useWorkbenchSession();
   return (
     <aside className="sidebar sidebar-surface workbench-menu" aria-label={t("workbench.menu")}>
-      <div className="sidebar-header">
-        <TooltipButton
-          type="button"
-          className="brand no-drag"
-          tooltip={t("app.shellName")}
-          ariaLabel={t("app.shellName")}
-        >
-          <BrandLogo size={20} />
-          <span>{t("app.shellName")}</span>
-        </TooltipButton>
-        <div className="sidebar-header-actions no-drag">
-          <TooltipButton
-            type="button"
-            className="icon-btn icon-btn-square"
-            tooltip={menuToggleShortcut ? `${t("nav.collapseSidebar")} (${menuToggleShortcut})` : t("nav.collapseSidebar")}
-            ariaLabel={t("nav.collapseSidebar")}
-            aria-expanded={true}
-            data-nav="toggle-sidebar"
-            onClick={onToggleMenu}
-          >
-            <IconSidebar size={15} />
-          </TooltipButton>
-        </div>
-      </div>
       <nav className="sidebar-body workbench-menu-body">
         {session.openIds.map((id) => {
           const page = session.pages[id];

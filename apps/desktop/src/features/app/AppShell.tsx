@@ -19,6 +19,7 @@ import { cx, TooltipButton } from "../../components/ui";
 import { WindowControls } from "../../components/WindowControls";
 import { useCopyTex } from "../../hooks/use-copy-tex";
 import { api } from "../../lib/api";
+import { useAppStore } from "../../stores/app-store";
 import { PortalVisibilityProvider } from "../../lib/portal-visibility";
 import { workPanelLayout } from "../../lib/work-panel-resize";
 import { LiveVoiceStatusHost } from "../voice/live/LiveVoiceStatusHost";
@@ -27,6 +28,7 @@ import { useAppShellRuntime } from "./useAppShellRuntime";
 import { hydrateWorkbenchFromHost, replaceWorkbenchSession } from "../workbench/workbench-session";
 import { WorkbenchMenu, WorkbenchToolBridge } from "../workbench/WorkbenchMenu";
 import { ActivityBar } from "./ActivityBar";
+import { SidebarBrandHeader } from "./SidebarBrandHeader";
 
 const SettingsPage = lazy(() =>
   import("../../pages/SettingsPage").then((module) => ({
@@ -155,6 +157,10 @@ export function AppShell() {
       <>
         <WorkbenchToolBridge />
 
+        {(page === "chat" || page === "workbench") && !sidebarCollapsed ? (
+          <SidebarBrandHeader onHome={() => useAppStore.getState().setPage("chat")}
+            onToggleSidebar={toggleSidebar} sidebarToggleShortcut={sidebarToggleShortcut} />
+        ) : null}
         <ActivityBar />
         <PortalVisibilityProvider visible={page !== "settings"}>
           <div
@@ -166,8 +172,6 @@ export function AppShell() {
               <Sidebar
                 className={cx(sidebarEntering && "is-entering", sidebarExiting && "is-exiting")}
                 onAnimationEnd={handleSidebarAnimationEnd}
-                onToggleSidebar={toggleSidebar}
-                sidebarToggleShortcut={sidebarToggleShortcut}
                 sidebarWidth={sidebarWidth}
                 widthMax={sidebarWidthMax}
                 onWidthChange={handleSidebarWidthChange}
@@ -177,7 +181,7 @@ export function AppShell() {
             ) : null}
 
             {page === "workbench" && !sidebarCollapsed ? (
-              <WorkbenchMenu onToggleMenu={toggleSidebar} menuToggleShortcut={sidebarToggleShortcut} />
+              <WorkbenchMenu />
             ) : null}
 
             {page === "chat" && workPanelMaximized && (

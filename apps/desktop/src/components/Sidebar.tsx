@@ -14,7 +14,6 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { BrandLogo } from "./BrandLogo";
 import { TooltipButton, cx } from "./ui";
 
 import { portalToBody } from "../lib/portal-visibility";
@@ -117,7 +116,6 @@ import {
   IconNewProject,
   IconPin,
   IconPencil,
-  IconSidebar,
   IconStar,
   IconTrash,
   IconX,
@@ -234,8 +232,6 @@ function compareOptionalDate(
 }
 
 export function Sidebar({
-  onToggleSidebar,
-  sidebarToggleShortcut,
   sidebarWidth,
   widthMax = SIDEBAR_WIDTH_MAX,
   onWidthChange,
@@ -244,8 +240,6 @@ export function Sidebar({
   className,
   onAnimationEnd,
 }: {
-  onToggleSidebar: () => void;
-  sidebarToggleShortcut: string;
   sidebarWidth: number;
   widthMax?: number;
   onWidthChange: (width: number) => void;
@@ -2528,36 +2522,6 @@ export function Sidebar({
       data-window-blur={windowFocused ? undefined : "true"}
       onAnimationEnd={onAnimationEnd}
     >
-      <div className="sidebar-header">
-        <TooltipButton
-          type="button"
-          className="brand no-drag"
-          data-nav="home"
-          tooltip={t("nav.home")}
-          ariaLabel={t("nav.home")}
-          onClick={() => setPage("chat")}
-        >
-          <BrandLogo size={20} />
-          <span>{t("app.shellName")}</span>
-        </TooltipButton>
-        <div className="sidebar-header-actions no-drag">
-          <TooltipButton
-            type="button"
-            className="icon-btn icon-btn-square"
-            tooltip={
-              sidebarToggleShortcut
-                ? `${t("nav.collapseSidebar")} (${sidebarToggleShortcut})`
-                : t("nav.collapseSidebar")
-            }
-            ariaLabel={t("nav.collapseSidebar")}
-            aria-expanded={true}
-            data-nav="toggle-sidebar"
-            onClick={onToggleSidebar}
-          >
-            <IconSidebar size={15} />
-          </TooltipButton>
-        </div>
-      </div>
       <div className="sidebar-body no-drag">
 
         {pinnedSessions.length > 0 ? (

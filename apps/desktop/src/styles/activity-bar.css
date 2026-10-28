@@ -201,3 +201,29 @@
   left: 12px;
   pointer-events: auto;
 }
+
+
+/* Unified brand row: rail and secondary menu start below this shared header. */
+.sidebar-brand-header {
+  position: absolute;
+  inset: 0 auto auto 0;
+  z-index: 3;
+  box-sizing: border-box;
+  width: calc(48px + var(--ds-sidebar-width));
+  min-width: 0;
+  background: var(--ds-bg-sidebar);
+}
+
+.sidebar-brand-header > .brand,
+.sidebar-brand-header > .sidebar-header-actions {
+  -webkit-app-region: no-drag;
+}
+
+.app-shell:has(> .sidebar-brand-header) .sidebar {
+  box-sizing: border-box;
+  padding-top: var(--ds-toolbar-height);
+}
+
+.app-shell:has(> .sidebar-brand-header) .sidebar-resize-handle {
+  top: var(--ds-toolbar-height);
+}

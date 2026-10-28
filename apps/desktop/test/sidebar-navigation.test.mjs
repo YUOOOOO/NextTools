@@ -38,10 +38,10 @@ test("activity bar owns the supported destination entries", () => {
   assert.doesNotMatch(sidebarSource, /data-nav="scheduled"/);
 });
 
-test("sidebar header keeps the original brand and has no divider", () => {
-  const header = sidebarSource.match(
-    /<div className="sidebar-header">[\s\S]*?<\/div>\s*<\/div>/,
-  )?.[0] ?? "";
+test("shared shell header keeps the original brand and has no divider", async () => {
+  const header = await readFile(new URL("../src/features/app/SidebarBrandHeader.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(sidebarSource, /className="sidebar-header"/);
+  assert.match(appSource, /<SidebarBrandHeader/);
 
   assert.match(header, /className="brand no-drag"/);
   assert.match(header, /<BrandLogo size=\{20\}/);
