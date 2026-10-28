@@ -64,9 +64,36 @@ turn on that desktop.
 
 The desktop signs in from Settings → Cloud sync. The access token is encrypted
 with the operating system store. Sync chats pushes local user and assistant
-text; tool rows are not sent.
+text; tool rows and streaming assistant checkpoints are not sent. A serial automatic uploader backfills on startup
+and sign-in, requests a round after a Web task settles, and retries every 15
+seconds so completed local turns are included after Host persistence. It checks
+the account sync switch before loading/uploading transcripts, does not overlap
+automatic rounds, and stops scheduling on quit. In-flight transcript loading
+cannot upload after sign-out or account replacement. Rejected push entries are
+observable failures rather than a successful status. The manual button remains.
+
+The web sidebar lists cloud conversations, reads up to the latest 2,000 stored
+messages on connect and `sync` notifications, and offers explicit refresh.
+Selecting one shows read-only text from the cloud, independent of the browser's
+local task history. It does not import or overwrite another desktop's Host
+transcript. Web task settlement notifies the local desktop session list.
+`/sync-view` shares the main web login and refreshes on Hub sync notifications.
 Unknown tokens answer `401 bad_key`. Sync data calls while sync is off answer
 `409 sync_off`; account and Hub calls remain available.
+
+## Multiple Web conversations
+
+Each device has a list of independently identified Web conversations. New
+conversation creates a fresh task conversation id and an empty transcript;
+selecting a list entry restores its messages and live busy/stop state. The
+first user message titles the list entry. Messages, list and active selection
+are persisted per account and device. Existing single-conversation history is
+migrated lazily without deleting its original data. Task callbacks capture the
+conversation id at dispatch, so switching views cannot redirect a final answer
+or persist it under another conversation. Stop addresses the selected conversation
+only. Clear history is disabled for a running conversation and does not rotate
+its task id. The desktop bridge continues to own a distinct Host session per
+caller/conversation; Web history does not merge with the read-only cloud list.
 
 ## Reused cloud console
 

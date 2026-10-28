@@ -110,6 +110,8 @@ export function toSyncChanges(sessions) {
     });
     const rows = Array.isArray(session.messages) ? session.messages : [];
     for (const message of rows) {
+      // Cloud messages are idempotent by id; never freeze a streaming checkpoint.
+      if (message?.status === "streaming") continue;
       const role = message?.role === "assistant" || message?.role === "user" ? message.role : "";
       const mid = String(message?.id ?? "").trim().toLowerCase();
       const text = messageText(message);
@@ -165,7 +167,15 @@ export function createConversationSync({
     async push() {
       const saved = readSaved();
       if (!saved) throw Object.assign(new Error("Sign in first"), { code: "signed_out" });
+      const epoch = generation;
+      const stillSignedIn = () => {
+        const current = readSaved();
+        if (epoch !== generation || !current || current.token !== saved.token || current.baseUrl !== saved.baseUrl) {
+          throw Object.assign(new Error("Sign-in changed during sync"), { code: "signed_out" });
+        }
+      };
       const sessions = await listSessions();
+      stillSignedIn();
       const changes = toSyncChanges(sessions);
       let accepted = 0;
       for (let index = 0; index < Math.max(changes.conversations.length, changes.messages.length, 1); index += 200) {
@@ -175,7 +185,12 @@ export function createConversationSync({
           messages: changes.messages.slice(index, index + 200),
         };
         if (!body.conversations.length && !body.messages.length) break;
+        stillSignedIn();
         const result = await relay(saved, "/v1/sync/changes", { method: "POST", body });
+        stillSignedIn();
+        if (Array.isArray(result.rejected) && result.rejected.length) {
+          throw Object.assign(new Error("Some conversations could not be synced"), { code: "sync_rejected" });
+        }
         accepted += Number(result.accepted ?? 0);
       }
       const state = await relay(saved, "/v1/sync/state");

@@ -17,7 +17,12 @@
   running user desktop is authorized by this scenario.
 - Register from `/app/`, see and select a computer, send a task, see progress
   and the final text, stop a second task, open the account sheet and change
-  password. Check the 390px mobile layout and complete asset delivery.
+  password. Create two Web conversations, assert distinct dispatched ids and
+  isolated messages, switch while one is running, stop it and reload to restore
+  both histories. Use the production desktop client and automatic scheduler to upload
+  user/assistant messages; observe the cloud conversation via Hub notification,
+  clear browser task history and reload, then verify both messages remain.
+  Check the 390px mobile layout and complete asset delivery.
 - Account/API tests additionally prove session revocation, sign-out everywhere,
   account isolation, schema upgrade compatibility and Hub offline/forget state.
 - Run `packages/conversation-sync/scripts/test-console-browser.mjs` with

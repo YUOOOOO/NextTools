@@ -311,6 +311,7 @@ export function registerIpcHandlers(dependencies: RegisterIpcDependencies) {
   // preload whitelist rebuilt with this main bundle.
   registerConversationSyncIpc({
     registrar, getHost, getSidecar,
+    onSessionsChanged: () => sendToRenderer(IPC.event.sessionsChanged, { reason: "conversation.task" }),
     invoke: async (channel, args) => {
       const handler = ipcHandlers.get(channel);
       if (!handler) throw new Error("conversation task handler unavailable");

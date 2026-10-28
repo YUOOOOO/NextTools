@@ -29,8 +29,14 @@ docker compose up -d --build
 The service listens on port 8788. In the desktop, open Settings, then Cloud sync,
 then Conversation sync. Set the server to `http://<server>:8788` and register or
 sign in. Open that same URL (or `/app/`) in a browser to select a device and
-send tasks using the reused nanoMuse console. Account settings include sign-in
-sessions, password changes, sign-out everywhere and sync controls. The previous
+send tasks using the reused nanoMuse console. Each device supports multiple
+Web conversations with New conversation, independent task context and persisted
+message history; existing single-conversation history is preserved. Account settings include sign-in
+sessions, password changes, sign-out everywhere and sync controls. Signed-in
+desktops automatically backfill and upload enabled accounts every 15 seconds,
+and request an upload after a Web task finishes. The web sidebar's Synced
+conversations reads cloud text and refreshes when other devices upload; it
+survives page reloads and cleared browser task history. The previous
 sync inspection page remains available at `/sync-view`.
 
 The build includes the complete console asset directory and GPLv3 notices, not

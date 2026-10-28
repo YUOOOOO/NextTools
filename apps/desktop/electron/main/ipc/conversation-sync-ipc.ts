@@ -4,6 +4,7 @@ import { catalogs, resolveLocale } from "@pi-desktop/i18n";
 import { IPC } from "@pi-desktop/shared";
 import { REMOTE_ACTIONS, remoteSummary, runRemoteAction } from "../conversation-sync-actions.mjs";
 import { createConversationSync } from "../conversation-sync-client.mjs";
+import { createConversationAutoSync } from "../conversation-auto-sync.mjs";
 import { loadOrCreateSyncDeviceId } from "../conversation-sync-device-id.mjs";
 import { createConversationTaskBridge, type InternalInvoke, type TaskCallContext, type TaskSidecar } from "../conversation-task-bridge.mjs";
 import type { HostProcess } from "../host-process";
@@ -14,12 +15,14 @@ export function registerConversationSyncIpc({
   getHost,
   getSidecar,
   invoke,
+  onSessionsChanged,
 }: {
   registrar: IpcRegistrar;
   getHost: () => HostProcess | null;
   getSidecar: () => ({ call(method: string, params: unknown): Promise<unknown> } & TaskSidecar) | null;
   /** Reuse the registered Agent handlers, including local approvals and durable turns. */
   invoke: InternalInvoke;
+  onSessionsChanged: () => void;
 }): void {
   const tasks = createConversationTaskBridge({
     getHost, getSidecar,
@@ -33,15 +36,30 @@ export function registerConversationSyncIpc({
     encryptionAvailable: () => safeStorage.isEncryptionAvailable(),
     listSessions: () => loadSessions(getHost),
     onCall: (action: string, args: Record<string, unknown>, context: TaskCallContext) => {
-      if (action === "task") return tasks.task(args, context);
+      if (action === "task") {
+        return tasks.task(args, context).finally(() => {
+          onSessionsChanged();
+          automatic.request();
+        });
+      }
       if (action === "stop") return tasks.stop(args, context);
       return runCall(getHost, getSidecar, action, args, invoke);
     },
     deviceId: loadOrCreateSyncDeviceId(join(app.getPath("userData"), "conversation-sync-device-id")),
   });
+  const automatic = createConversationAutoSync({
+    sync,
+    onError: (error: unknown) => {
+      // Only a stable code goes to the log; no token, chat text or server body.
+      const code = (error as { code?: unknown })?.code;
+      console.warn("[conversation-sync] automatic upload failed", typeof code === "string" ? code : "sync_failed");
+    },
+  });
+  automatic.start();
+  app.once("before-quit", () => automatic.dispose());
   registrar.handle(IPC.invoke.conversationSyncGetState, () => sync.getState());
-  registrar.handle(IPC.invoke.conversationSyncSignIn, (input: unknown) => sync.signIn(input));
-  registrar.handle(IPC.invoke.conversationSyncRegister, (input: unknown) => sync.register(input));
+  registrar.handle(IPC.invoke.conversationSyncSignIn, async (input: unknown) => { const state = await sync.signIn(input); automatic.request(); return state; });
+  registrar.handle(IPC.invoke.conversationSyncRegister, async (input: unknown) => { const state = await sync.register(input); automatic.request(); return state; });
   registrar.handle(IPC.invoke.conversationSyncSignOut, () => sync.signOut());
   registrar.handle(IPC.invoke.conversationSyncPush, () => sync.push());
 }

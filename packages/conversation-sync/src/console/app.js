@@ -101,6 +101,25 @@
   let hint = LS.getItem("nm.hint") || "";
   let ws = null, wsState = "off", hubPaused = false, backoff = 1000, devices = [], selected = params.get("device") || LS.getItem("nm.selected") || "";
   const pending = new Map(); // call id → {onEvent, resolve, reject}
+  let cloud = { conversations: [], messages: [] }, cloudSelected = "", cloudError = "";
+  let cloudLoading = false, cloudAgain = false, cloudEpoch = 0;
+  async function loadCloud() {
+    if (!key) return;
+    if (cloudLoading) { cloudAgain = true; return; }
+    const requestKey = key, epoch = cloudEpoch;
+    cloudLoading = true;
+    try {
+      const page = await api("GET", "/v1/sync/changes?since=0&tail=2000", null, requestKey);
+      if (key !== requestKey || epoch !== cloudEpoch) return;
+      cloud = { conversations: page.conversations || [], messages: page.messages || [] }; cloudError = "";
+      drawSide(); if (cloudSelected) drawChatShell();
+    } catch (error) {
+      if (key !== requestKey || epoch !== cloudEpoch) return;
+      cloudError = errText(error); drawSide();
+    } finally {
+      if (epoch === cloudEpoch) { cloudLoading = false; if (cloudAgain) { cloudAgain = false; void loadCloud(); } }
+    }
+  }
   const chats = new Map(); // device id → {messages:[], busy:false, callId:null}
   // One hub device per tab, not per browser: the id lives in sessionStorage, so a reload
   // keeps it and a second tab gets its own. Two tabs sharing one id took turns replacing
@@ -249,7 +268,8 @@
     ws.onmessage = (ev) => {
       if (ws !== socket || key !== connectionKey) return;
       let f; try { f = JSON.parse(ev.data); } catch (_) { return; }
-      if (f.type === "welcome") { wsState = "on"; hubPaused = false; backoff = 1000; devices = f.devices || []; drawAll(); }
+      if (f.type === "welcome") { wsState = "on"; hubPaused = false; backoff = 1000; devices = f.devices || []; drawAll(); void loadCloud(); }
+      else if (f.type === "sync") { void loadCloud(); }
       else if (f.type === "devices") { devices = f.devices || []; drawSide(); drawHead(); }
       else if (f.type === "error" && !f.id) {
         if (f.code === "bad_key") { signOut(true); }
@@ -286,28 +306,57 @@
     if (ws) { try { ws.onclose = null; ws.close(); } catch (_) { /* ignore */ } ws = null; }
     for (const p of pending.values()) p.reject({ code: "signed_out" });
     pending.clear(); chats.clear(); devices = []; selected = ""; me = null; meErr = ""; els = {};
+    cloudEpoch++; cloud = { conversations: [], messages: [] }; cloudSelected = ""; cloudError = ""; cloudLoading = false; cloudAgain = false;
     closeSheet();
     renderSignIn();
   }
 
   // ── chats ────────────────────────────────────────────────────────
-  function chat(id) {
-    if (!chats.has(id)) {
-      let messages = [];
-      try { messages = JSON.parse(LS.getItem("nm.chat." + encodeURIComponent(hint) + "." + id) || "[]"); } catch (_) { /* fresh */ }
-      chats.set(id, { messages, busy: false, callId: null, steps: [] });
+  const newConversationId = () => "web-" + Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const conversationKey = (deviceId) => "nm.conversations." + encodeURIComponent(hint) + "." + deviceId;
+  const activeKey = (deviceId) => "nm.conv." + encodeURIComponent(hint) + "." + deviceId;
+  const historyKey = (deviceId, conversation) => "nm.chat." + encodeURIComponent(hint) + "." + deviceId + "." + conversation;
+  function conversations(deviceId) {
+    let list = [];
+    try { list = JSON.parse(LS.getItem(conversationKey(deviceId)) || "[]"); } catch (_) { /* migrate */ }
+    if (!Array.isArray(list)) list = [];
+    list = list.filter((c) => c && typeof c.id === "string" && /^web-[a-z0-9-]+$/.test(c.id) && typeof c.title === "string");
+    if (!list.length) {
+      const oldId = LS.getItem(activeKey(deviceId));
+      const id = oldId && /^web-[a-z0-9-]+$/.test(oldId) ? oldId : newConversationId();
+      list = [{ id, title: zh ? "新会话" : "New conversation" }];
+      const legacy = LS.getItem("nm.chat." + encodeURIComponent(hint) + "." + deviceId);
+      if (legacy && !LS.getItem(historyKey(deviceId, id))) LS.setItem(historyKey(deviceId, id), legacy);
+      LS.setItem(conversationKey(deviceId), JSON.stringify(list)); LS.setItem(activeKey(deviceId), id);
     }
-    return chats.get(id);
-  }
-  function persist(id) {
-    const c = chat(id);
-    const keep = c.messages.slice(-60).map((m) => (m.image && m.image.length > 400000 ? { ...m, image: null } : m));
-    try { LS.setItem("nm.chat." + encodeURIComponent(hint) + "." + id, JSON.stringify(keep)); } catch (_) { /* quota */ }
+    return list;
   }
   function convId(deviceId) {
-    let c = LS.getItem("nm.conv." + encodeURIComponent(hint) + "." + deviceId);
-    if (!c) { c = "web-" + Math.random().toString(36).slice(2, 12); LS.setItem("nm.conv." + encodeURIComponent(hint) + "." + deviceId, c); }
-    return c;
+    const list = conversations(deviceId), current = LS.getItem(activeKey(deviceId));
+    if (list.some((c) => c.id === current)) return current;
+    LS.setItem(activeKey(deviceId), list[0].id); return list[0].id;
+  }
+  function newConversation(deviceId) {
+    const list = conversations(deviceId), id = newConversationId();
+    list.push({ id, title: zh ? "新会话" : "New conversation" });
+    LS.setItem(conversationKey(deviceId), JSON.stringify(list)); LS.setItem(activeKey(deviceId), id);
+    cloudSelected = ""; drawSide(); drawChatShell();
+  }
+  function chat(id, conversation = convId(id)) {
+    const cacheKey = historyKey(id, conversation);
+    if (!chats.has(cacheKey)) {
+      let messages = [];
+      try { messages = JSON.parse(LS.getItem(cacheKey) || "[]"); } catch (_) { /* fresh */ }
+      if (!Array.isArray(messages)) messages = [];
+      for (const message of messages) if (message.role === "approval" && message.state === "open") message.state = "expired";
+      chats.set(cacheKey, { messages, busy: false, callId: null, steps: [] });
+    }
+    return chats.get(cacheKey);
+  }
+  function persist(id, conversation = convId(id)) {
+    const c = chat(id, conversation);
+    const keep = c.messages.slice(-60).map((m) => (m.image && m.image.length > 400000 ? { ...m, image: null } : m));
+    try { LS.setItem(historyKey(id, conversation), JSON.stringify(keep)); } catch (_) { /* quota */ }
   }
   const dev = (id) => devices.find((d) => d.id === id);
   const kindLabel = (k) => T[k] || k;
@@ -324,10 +373,12 @@
   async function send(text) {
     const d = dev(selected); if (!d || !d.online) return;
     const requestKey = key;
-    const c = chat(d.id);
-    if (c.busy) return;
-    c.messages.push({ role: "me", text }); c.busy = true; c.steps = []; persist(d.id); drawChat(); drawComposer();
     const conversation = convId(d.id);
+    const c = chat(d.id, conversation);
+    if (c.busy) return;
+    const list = conversations(d.id), entry = list.find((item) => item.id === conversation);
+    if (!c.messages.length && entry) { entry.title = text.slice(0, 48); LS.setItem(conversationKey(d.id), JSON.stringify(list)); }
+    c.messages.push({ role: "me", text }); c.busy = true; c.steps = []; persist(d.id, conversation); drawSide(); drawChat(); drawComposer();
     const onEvent = (b) => {
       if (key !== requestKey) return;
       const stage = b.stage;
@@ -352,7 +403,7 @@
       c.messages.push({ role: "them", text: `⚠ ${m}`, from: d.name });
     }
     c.busy = false; c.steps = []; for (const m of c.messages) if (m.role === "approval" && m.state === "open") m.state = "expired";
-    persist(d.id); drawChat(); drawComposer();
+    persist(d.id, conversation); drawSide(); drawChat(); drawComposer();
   }
   async function decide(deviceId, approvalId, allow) {
     const c = chat(deviceId); const a = c.messages.find((m) => m.role === "approval" && m.id === approvalId); if (!a || a.state !== "open") return;
@@ -377,7 +428,7 @@
   function drawStatus() { const s = els.status; if (s) { s.className = "status " + (wsState === "on" ? "on" : wsState === "off" ? "off" : ""); s.title = wsState === "on" ? T.connected : wsState === "off" ? (hubPaused ? T.hubPaused : T.disconnected) : T.connecting; } }
   const glyph = (kind) => ICON[kind] || ICON.computer;
   function pickDevice(id) {
-    selected = id; LS.setItem("nm.selected", id); history.replaceState(null, "", "?device=" + encodeURIComponent(id));
+    cloudSelected = ""; selected = id; LS.setItem("nm.selected", id); history.replaceState(null, "", "?device=" + encodeURIComponent(id));
     drawSide(); drawChatShell();
     if (window.matchMedia("(max-width: 760px)").matches) { els.side.classList.add("hidden"); }
   }
@@ -394,6 +445,25 @@
           h("div", { class: "txt" }, h("div", { class: "t" }, d.name), h("div", { class: "s" }, `${kindLabel(d.kind)} · ${d.os || ""} · ${d.online ? T.online : `${T.lastSeen} ${ago(d.last_seen)}`}`)),
           h("span", { class: "dot" + (d.online ? " on" : "") }),
         )) : h("div", { class: "empty" }, T.noDevices))),
+      selected && dev(selected) ? h("div", { class: "web-conversations" },
+        h("div", { class: "label" }, zh ? "会话" : "Conversations",
+          h("button", { class: "btn quiet sm new-conversation", onclick: () => newConversation(selected) }, zh ? "新建会话" : "New conversation")),
+        h("div", { class: "card" }, ...conversations(selected).map((conversation) => h("button", {
+          class: "row tap conversation-entry" + (!cloudSelected && convId(selected) === conversation.id ? " active" : ""),
+          "data-conversation": conversation.id,
+          onclick: () => { LS.setItem(activeKey(selected), conversation.id); cloudSelected = ""; drawSide(); drawChatShell(); if (window.matchMedia("(max-width: 760px)").matches) els.side.classList.add("hidden"); },
+        }, h("span", { class: "tile grey", html: ICON.chat }), h("div", { class: "txt" }, h("div", { class: "t" }, conversation.title),
+          chat(selected, conversation.id).busy ? h("div", { class: "s" }, T.thinking) : null))))) : null,
+      h("div", { class: "label" }, zh ? "云端会话" : "Synced conversations",
+        h("button", { class: "btn quiet sm", onclick: () => void loadCloud() }, T.refresh)),
+      h("div", { class: "cloud-conversations card" },
+        cloudError ? h("div", { class: "empty" }, cloudError) : null,
+        ...cloud.conversations.filter((c) => !c.deleted).map((conversation) => h("button", {
+          class: "row tap" + (cloudSelected === conversation.cid ? " active" : ""),
+          onclick: () => { cloudSelected = conversation.cid; drawSide(); drawChatShell(); if (window.matchMedia("(max-width: 760px)").matches) els.side.classList.add("hidden"); },
+        }, h("span", { class: "tile grey", html: ICON.chat }), h("div", { class: "txt" },
+          h("div", { class: "t" }, conversation.title || conversation.cid)))),
+        !cloudError && !cloud.conversations.some((c) => !c.deleted) ? h("div", { class: "empty" }, T.syncEmpty) : null),
       h("div", { class: "foot card" },
         h("button", { class: "row tap", onclick: openAccount },
           h("span", { class: "tile grey", html: ICON.person }),
@@ -404,6 +474,20 @@
   }
   function drawChatShell() {
     if (!els.chat) return;
+    if (cloudSelected) {
+      const conversation = cloud.conversations.find((c) => c.cid === cloudSelected && !c.deleted);
+      if (!conversation) { cloudSelected = ""; drawChatShell(); return; }
+      els.head = null; els.messages = null; els.composer = null;
+      els.chat.replaceChildren(
+        h("div", { class: "head" }, h("button", { class: "round back", onclick: () => els.side.classList.remove("hidden"), html: ICON.back }),
+          h("div", { class: "name" }, conversation.title || conversation.cid)),
+        h("div", { class: "messages cloud-messages" },
+          ...cloud.messages.filter((m) => m.cid === conversation.cid && !m.deleted).sort((a, b) => a.created_at - b.created_at || a.seq - b.seq).map((message) =>
+            h("div", { class: "msg " + (message.role === "user" ? "me" : "them") },
+              h("div", { class: "bubble" }, message.text || "")))),
+        h("div", { class: "note" }, zh ? "云端同步记录 · 文件和图片保留在原设备" : "Synced history · files and images remain on the original device"));
+      return;
+    }
     const d = dev(selected);
     if (!d) {
       els.chat.replaceChildren(h("div", { class: "empty-chat" }, h("img", { src: "mark.svg", alt: "" }), h("p", {}, h("b", {}, T.pick), T.pickSub)));
@@ -422,7 +506,10 @@
       h("span", { class: "tile", html: glyph(d.kind) }),
       h("div", {}, h("div", { class: "name" }, d.name), h("div", { class: "sub" }, `${kindLabel(d.kind)} · ${d.os || ""} · ${d.online ? T.online : T.offline}`)),
       h("span", { class: "spacer" }),
-      h("button", { class: "btn quiet sm", onclick: () => { const c = chat(d.id); c.messages = []; persist(d.id); LS.removeItem("nm.conv." + encodeURIComponent(hint) + "." + d.id); drawChat(); } }, T.clear),
+      h("button", { class: "btn quiet sm", disabled: chat(d.id).busy ? "" : null, onclick: () => {
+        const c = chat(d.id); if (c.busy) return; c.messages = []; persist(d.id); drawChat();
+      } }, T.clear),
+      h("button", { class: "btn quiet sm new-conversation", onclick: () => newConversation(d.id) }, zh ? "新建会话" : "New conversation"),
       d.online ? null : h("button", { class: "btn quiet sm", onclick: () => { if (!confirm(T.forgetConfirm(d.name))) return; if (ws && wsState === "on") ws.send(JSON.stringify({ type: "forget", device_id: d.id })); LS.removeItem("nm.conv." + encodeURIComponent(hint) + "." + d.id); if (selected === d.id) { selected = ""; LS.removeItem("nm.selected"); history.replaceState(null, "", location.pathname); } devices = devices.filter((x) => x.id !== d.id); drawSide(); drawChatShell(); } }, T.forget),
     );
     drawComposer();

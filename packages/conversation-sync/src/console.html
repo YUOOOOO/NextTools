@@ -65,7 +65,7 @@ const tokenKey = "conversation-sync-token";
 function showError(message) { error.textContent = message || ""; }
 async function call(path, options = {}) {
   const headers = { ...(options.body ? { "content-type": "application/json" } : {}) };
-  const token = sessionStorage.getItem(tokenKey);
+  const token = sessionStorage.getItem(tokenKey) || localStorage.getItem("nm.key");
   if (token) headers.authorization = "Bearer " + token;
   const response = await fetch(path, { ...options, headers });
   const body = await response.json().catch(() => ({}));
@@ -155,6 +155,7 @@ function connectHub(token) {
       devices = frame.devices || [];
       document.querySelector("#devices").textContent = devices.map((device) => `${device.name} ${device.kind} ${device.online ? "在线" : "离线"}`).join(" · ");
     }
+    if (frame.type === "sync") load().catch((cause) => showError(cause.message));
     if (frame.type === "result" && frame.id === pending) {
       document.querySelector("#control-status").textContent = frame.ok ? "桌面已收下" : (frame.message || "桌面拒绝了");
       pending = "";
@@ -167,6 +168,8 @@ function connectHub(token) {
 }
 document.querySelector("#signout").addEventListener("click", () => {
   sessionStorage.removeItem(tokenKey);
+  localStorage.removeItem("nm.key");
+  if (hub) hub.close();
   auth.hidden = false;
   chats.hidden = true;
 });
@@ -187,7 +190,8 @@ async function enter(path) {
     showError(cause.message);
   }
 }
-if (sessionStorage.getItem(tokenKey)) load().catch(() => sessionStorage.removeItem(tokenKey));
+const savedToken = sessionStorage.getItem(tokenKey) || localStorage.getItem("nm.key");
+if (savedToken) { connectHub(savedToken); load().catch((cause) => showError(cause.message)); }
 </script>
 </body>
 </html>

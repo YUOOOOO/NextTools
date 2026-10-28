@@ -102,3 +102,49 @@ test("desktop login dials the typed server and reads api_key", async () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+
+test("signout during transcript loading prevents any stale upload", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "conversation-sync-stale-"));
+  let resolveSessions;
+  const bodies = [];
+  const sync = createConversationSync({
+    filePath: join(dir, "session.json"), encrypt: (x) => x, decrypt: (x) => x, encryptionAvailable: () => true,
+    listSessions: () => new Promise((resolve) => { resolveSessions = resolve; }),
+    fetchImpl: async (url, init) => {
+      if (url.endsWith("/v1/auth/login")) return { ok: true, json: async () => ({ token: "token", account: "alice" }) };
+      if (init.method === "POST") bodies.push(init.body);
+      return { ok: true, json: async () => ({ enabled: true }) };
+    },
+  });
+  try {
+    await sync.signIn({ baseUrl: "http://127.0.0.1:8788", account: "alice", password: "secret1" });
+    const pending = sync.push();
+    await sync.signOut();
+    resolveSessions([{ id: "session-stale", messages: [{ id: "message-stale", role: "user", content: "do not upload" }] }]);
+    await assert.rejects(pending, { code: "signed_out" });
+    assert.equal(bodies.length, 0);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+
+test("streaming assistant checkpoints are uploaded only after becoming final", () => {
+  const session = { id: "stream-session", messages: [{ id: "stream-message", role: "assistant", status: "streaming", content: "partial" }] };
+  assert.equal(toSyncChanges([session]).messages.length, 0);
+  session.messages[0] = { ...session.messages[0], status: "complete", content: "final answer" };
+  assert.equal(toSyncChanges([session]).messages[0].text, "final answer");
+});
+
+test("server-rejected messages are observable sync failures", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "conversation-sync-rejected-"));
+  const sync = createConversationSync({
+    filePath: join(dir, "session.json"), encrypt: (x) => x, decrypt: (x) => x, encryptionAvailable: () => true,
+    listSessions: async () => [{ id: "test-session", messages: [{ id: "test-message", role: "user", content: "hello" }] }],
+    fetchImpl: async (url) => ({ ok: true, json: async () => url.endsWith("/v1/auth/login") ? { token: "token", account: "alice" }
+      : url.endsWith("/v1/sync/changes") ? { accepted: 0, rejected: [{ mid: "test-message", reason: "conversation_limit" }] } : { enabled: true } }),
+  });
+  try {
+    await sync.signIn({ baseUrl: "http://127.0.0.1:8788", account: "alice", password: "secret1" });
+    await assert.rejects(sync.push(), { code: "sync_rejected" });
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

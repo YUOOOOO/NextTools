@@ -30,7 +30,7 @@ There is no new front-end dependency, CDN, or build toolchain.
 | Hub hello/welcome/devices | Account-scoped presence and persistent offline computer/phone list |
 | Hub forget | Forget an offline device, then broadcast the updated list |
 | Hub task/stop/event/result | Forwarded to the selected desktop; normal Agent admission/abort handlers |
-| sync state/changes | Existing nanomuse save rules, unchanged |
+| sync state/changes | Existing nanomuse save rules; automatic desktop uploads and web read-only cloud history |
 
 `task` creates a dedicated desktop session per server/account/caller/conversation,
 sets permission mode to `ask`, observes the admitted turn and returns its final
