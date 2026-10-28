@@ -74,9 +74,9 @@ observable failures rather than a successful status. The manual button remains.
 
 The web sidebar lists cloud conversations, reads up to the latest 2,000 stored
 messages on connect and `sync` notifications, and offers explicit refresh.
-Selecting one shows read-only text from the cloud, independent of the browser's
-local task history. It does not import or overwrite another desktop's Host
-transcript. Web task settlement notifies the local desktop session list.
+Selecting one loads its bounded cloud history independently of the browser's
+local task history and enables same-session continuation when executor metadata
+is available. It does not import or overwrite another desktop's Host transcript. Web task settlement notifies the local desktop session list.
 `/sync-view` shares the main web login and refreshes on Hub sync notifications.
 Unknown tokens answer `401 bad_key`. Sync data calls while sync is off answer
 `409 sync_off`; account and Hub calls remain available.
@@ -123,3 +123,50 @@ Billing, invitations, training contributions and password removal are not
 advertised by this service. The reused page hides unsupported controls using
 capability flags instead of displaying fictitious usage or functioning toggles.
 See the package's CONSOLE-COMPATIBILITY.md and source notices for the full mapping.
+
+
+Web task progress includes `stage: "session", sessionId` after configuring the
+owned Host session. The browser stores this association on its account/device
+conversation entry. Cloud sync notifications reconcile matching Host messages
+into idle Web conversations, including desktop-originated continuations.
+The last completed Web answer must be present before accepting a cloud snapshot;
+this prevents delayed uploads from erasing an unsynced reply. Busy conversations
+are not replaced. Reconciliation uses canonical cloud messages rather than
+appending duplicates; associations survive browser reloads.
+
+
+`GET /v1/sync/conversations` returns all live conversation metadata for the
+bearer account, independently of the recent-message tail. Empty conversations
+and older conversations therefore remain visible in the web cloud list.
+Deleted conversations are excluded and the account sync switch is enforced.
+Desktop `session.list` already includes project sessions; project grouping and
+filesystem project paths are not carried by the current sync format.
+
+
+## Project groups and continuing a cloud conversation
+
+Conversation metadata optionally includes `project_id`, `project_name`,
+`execution_device` and `session_id`. A desktop hashes the local project identity
+and sends only an opaque id and basename display label, not a full project
+filesystem path. Group identity is execution device plus project id; absent
+project metadata is shown as Global conversations. Native-Pi and remotely
+hosted sessions are not advertised as executable local sessions.
+
+The additive sync schema migration records version 1, keeps existing rows,
+and backfills metadata even without a newer title timestamp. Repeated metadata
+is idempotent; omitted legacy fields preserve stored values. Execution metadata
+must name the push's own device and cannot take over another device's binding.
+`GET /v1/sync/conversations/{cid}` reads account-scoped live conversation metadata
+and up to 500 latest stored messages independently of the account-wide tail.
+
+Selecting a cloud conversation uses the normal chat composer. `task`/`stop`
+carry its cid and Host sessionId. The Hub verifies the exact account, session,
+conversation and execution-device binding before forwarding. The desktop also
+verifies that the session was successfully shared to the current account/server,
+is still local and exists. It resumes that exact session with its original
+project, model and mode, using normal Agent admission/abort and ask permissions.
+Unshared/missing/remote sessions fail closed; missing metadata asks the user to
+sync once on the original desktop. Offline history remains readable but input
+is disabled until its executor reconnects. Unsaved composer drafts survive
+sync refresh; concurrent aliases cannot run two tasks on the same Host session.
+See ADR 0333 for the decision and permission boundaries.

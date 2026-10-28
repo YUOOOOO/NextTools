@@ -43,3 +43,11 @@ The build includes the complete console asset directory and GPLv3 notices, not
 just one HTML file. Rebuild the Docker image after updating. See
 [console compatibility](CONSOLE-COMPATIBILITY.md) for reused code, supported
 contracts, test commands and the explicitly unsupported operator features.
+
+
+Cloud conversations are grouped by originating desktop and project (with a
+Global conversations group). Select a conversation to read its bounded history
+and continue it on the same desktop session. Keep that desktop online and let
+it sync once after upgrading to populate its execution binding. Project paths
+stay local; the cloud receives a project name and opaque id. Offline devices
+keep their history readable and disable execution until they reconnect.

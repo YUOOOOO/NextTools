@@ -86,3 +86,24 @@ it("adds portal tables without losing a pre-portal password or session", () => {
   expect(db.prepare("SELECT version FROM cloud_portal_schema").get()).toMatchObject({ version: 1 });
   server.close(); db.close();
 });
+
+
+it("lists empty and older conversations independently of message tails and isolates accounts", async () => {
+  const api = await fixture();
+  const first = await (await api("/v1/auth/register", "POST", { identifier: "index-one", password: "secret1" })).json() as { token: string };
+  const second = await (await api("/v1/auth/register", "POST", { identifier: "index-two", password: "secret1" })).json() as { token: string };
+  const conversations = ["empty-project", "older-project", "recent-global"].map((cid) => ({ cid, kind: "side", title: cid, created_at: 1700000000, updated_at: 1700000000 }));
+  const pushed = await api("/v1/sync/changes", "POST", { device: "desktop-one", conversations,
+    messages: [{ mid: "older-message", cid: "older-project", role: "user", text: "older", created_at: 1700000000 },
+      { mid: "recent-message", cid: "recent-global", role: "user", text: "recent", created_at: 1700000001 }] }, first.token);
+  expect(pushed.status).toBe(200);
+  const tail = await (await api("/v1/sync/changes?since=0&tail=1", "GET", undefined, first.token)).json() as { conversations: Array<{ cid: string }> };
+  expect(tail.conversations.map((c) => c.cid)).toEqual(["recent-global"]);
+  const directory = await (await api("/v1/sync/conversations", "GET", undefined, first.token)).json() as { conversations: Array<{ cid: string }> };
+  expect(directory.conversations.map((c) => c.cid).sort()).toEqual(["empty-project", "older-project", "recent-global"]);
+  expect(await (await api("/v1/sync/conversations", "GET", undefined, second.token)).json()).toMatchObject({ conversations: [] });
+  expect((await api("/v1/sync/conversations")).status).toBe(401);
+  expect((await api("/v1/sync/conversations/older-project", "DELETE", undefined, first.token)).status).toBe(200);
+  const after = await (await api("/v1/sync/conversations", "GET", undefined, first.token)).json() as { conversations: Array<{ cid: string }> };
+  expect(after.conversations.some((c) => c.cid === "older-project")).toBe(false);
+});

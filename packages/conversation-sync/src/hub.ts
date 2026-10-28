@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import type { IncomingMessage } from "node:http";
 import type { Duplex } from "node:stream";
 import type { AccountBook } from "./accounts.js";
-import { SyncError } from "./store.js";
+import { SyncError, type SyncStore } from "./store.js";
 import { acceptWebSocket, type WsPeer } from "./ws.js";
 
 const ID = /^[A-Za-z0-9._:-]{4,80}$/;
@@ -41,7 +41,7 @@ export class DeviceHub {
   private readonly online = new Map<string, Map<string, Connection>>();
   private readonly pending = new Map<string, Pending>();
 
-  constructor(private readonly accounts: AccountBook) {}
+  constructor(private readonly accounts: AccountBook, private readonly store?: SyncStore) {}
 
   handleUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer): void {
     const url = new URL(req.url ?? "/", "http://sync.local");
@@ -234,8 +234,26 @@ export class DeviceHub {
       conn.peer.send(JSON.stringify({ type: "error", id, code: "self_call", message: "That is this device" }));
       return;
     }
-    this.pending.set(`${conn.accountId}\n${id}`, { callerId: conn.device.id, targetId: to });
-    const args = frame.args && typeof frame.args === "object" ? frame.args : {};
+    const args = frame.args && typeof frame.args === "object" && !Array.isArray(frame.args) ? frame.args as Record<string, unknown> : {};
+    if (args.sessionId !== undefined) {
+      let authorized = false;
+      try {
+        const directory = this.store?.listConversations(conn.accountId);
+        const rows = directory?.conversations as Array<Record<string, unknown>> | undefined;
+        authorized = (action === "task" || action === "stop") && !!rows?.some((row) =>
+          row.cid === args.cid && row.session_id === args.sessionId && row.execution_device === to);
+      } catch (error) { if (!(error instanceof SyncError)) throw error; }
+      if (!authorized) {
+        conn.peer.send(JSON.stringify({ type: "error", id, code: "session_not_shared", message: "This session is not shared by that device" }));
+        return;
+      }
+    }
+    const pendingKey = `${conn.accountId}\n${id}`;
+    if (this.pending.has(pendingKey)) {
+      conn.peer.send(JSON.stringify({ type: "error", id, code: "duplicate_call", message: "A call with that id is already active" }));
+      return;
+    }
+    this.pending.set(pendingKey, { callerId: conn.device.id, targetId: to });
     target.peer.send(JSON.stringify({
       type: "call",
       id,

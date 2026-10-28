@@ -148,3 +148,97 @@ test("server-rejected messages are observable sync failures", async () => {
     await assert.rejects(sync.push(), { code: "sync_rejected" });
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+
+test("project metadata is opaque, stable and labelled for Windows and POSIX; remote sessions stay local to their owner", () => {
+  const sessions = [
+    { id: "local-windows", projectPath: "C:\\Users\\alice\\Project\\" },
+    { id: "local-posix", projectPath: "/home/alice/Project/" },
+    { id: "native-session", source: "pi-native" },
+    { id: "native-alias", source: "native-pi" },
+    { id: "remote-session", source: "remote" },
+    { id: "remote-host", remoteHostKey: "host" },
+    { id: "remote-workspace", remoteWorkspace: { hostKey: "host", path: "/private" } },
+  ];
+  const changes = toSyncChanges(sessions, "desktop-one");
+  assert.equal(changes.conversations.length, 2);
+  for (const row of changes.conversations) {
+    assert.match(row.project_id, /^[a-f0-9]{64}$/);
+    assert.equal(row.project_name, "Project");
+    assert.equal(row.session_id, row.cid);
+    assert.equal(row.execution_device, "desktop-one");
+  }
+  assert.equal(changes.conversations[0].project_id, toSyncChanges([{ ...sessions[0], projectPath: "C:/Users/alice/Project" }], "desktop-one").conversations[0].project_id);
+  assert.equal(changes.conversations[1].project_id, toSyncChanges([{ ...sessions[1], projectPath: "/home/alice/Project" }], "desktop-one").conversations[0].project_id);
+  assert.ok(!JSON.stringify(changes).includes("alice"));
+  assert.equal(toSyncChanges([{ id: "legacy-local" }]).conversations[0].execution_device, undefined);
+});
+
+test("shared-session grants follow successful uploads and current server/account, survive reconnect, and revoke old contexts", async () => {
+  class Socket {
+    static instances = [];
+    readyState = 1;
+    listeners = new Map();
+    constructor() { Socket.instances.push(this); }
+    addEventListener(type, fn) { if (!this.listeners.has(type)) this.listeners.set(type, new Set()); this.listeners.get(type).add(fn); }
+    removeEventListener(type, fn) { this.listeners.get(type)?.delete(fn); }
+    send() {}
+    close() { this.readyState = 3; this.fire("close", {}); }
+    fire(type, event) { for (const fn of [...(this.listeners.get(type) ?? [])]) fn(event); }
+  }
+  const dir = mkdtempSync(join(tmpdir(), "conversation-sync-grants-"));
+  let rejectPush = true;
+  let context;
+  let pushed;
+  const sync = createConversationSync({
+    filePath: join(dir, "session.json"), encrypt: (x) => x, decrypt: (x) => x, encryptionAvailable: () => true,
+    deviceId: "desktop-one", WebSocketImpl: Socket,
+    listSessions: async () => [{ id: "local-session", projectPath: "/home/user/Project" }],
+    onCall: async (_action, _args, value) => { context = value; return {}; },
+    fetchImpl: async (url, init) => {
+      if (url.endsWith("/v1/auth/login")) { const input = JSON.parse(init.body); return { ok: true, json: async () => ({ token: `token-${input.account}`, account: input.account }) }; }
+      if (url.endsWith("/v1/sync/changes")) {
+        pushed = JSON.parse(init.body);
+        return { ok: true, json: async () => ({ accepted: rejectPush ? 0 : 1, rejected: rejectPush ? [{ cid: "local-session", reason: "limit" }] : [] }) };
+      }
+      return { ok: true, json: async () => ({ enabled: true }) };
+    },
+  });
+  const credentials = { baseUrl: "http://127.0.0.1:8788", account: "alice", password: "secret1" };
+  let callId = 0;
+  async function call() {
+    Socket.instances.at(-1).fire("message", { data: JSON.stringify({ type: "call", id: `call-${++callId}`, action: "info" }) });
+    await new Promise((resolve) => setImmediate(resolve));
+    return context;
+  }
+  try {
+    await sync.signIn(credentials);
+    const first = await call();
+    assert.equal(first.isSessionShared("local-session"), false);
+    await assert.rejects(sync.push(), { code: "sync_rejected" });
+    assert.equal(first.isSessionShared("local-session"), false);
+    rejectPush = false;
+    await sync.push();
+    assert.equal(pushed.conversations[0].execution_device, "desktop-one");
+    assert.equal(first.isSessionShared("local-session"), true);
+    assert.equal(first.isSessionShared("unknown-session"), false);
+    Socket.instances.at(-1).close();
+    await sync.getState();
+    const reconnected = await call();
+    assert.equal(first.isSessionShared("local-session"), false);
+    assert.equal(reconnected.isSessionShared("local-session"), true);
+    await sync.signIn({ ...credentials, account: "bob" });
+    assert.equal(reconnected.isSessionShared("local-session"), false);
+    assert.equal((await call()).isSessionShared("local-session"), false);
+    await sync.push();
+    await sync.signIn({ ...credentials, account: "bob", baseUrl: "http://127.0.0.1:8789" });
+    assert.equal((await call()).isSessionShared("local-session"), false);
+    await sync.signIn(credentials);
+    const returned = await call();
+    assert.equal(returned.isSessionShared("local-session"), false);
+    await sync.push();
+    assert.equal(returned.isSessionShared("local-session"), true);
+    await sync.signOut();
+    assert.equal(returned.isSessionShared("local-session"), false);
+  } finally { await sync.signOut(); rmSync(dir, { recursive: true, force: true }); }
+});

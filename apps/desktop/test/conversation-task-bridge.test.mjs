@@ -72,6 +72,7 @@ test("task waits for its final answer, projects safe progress, and reuses only i
   assert.deepEqual(f.calls.map((c) => c.method), ["session.create", "session.configure"]);
   assert.deepEqual(f.calls[1].params, { id: sessionId, mode: "agent", permissionMode: "ask" });
   assert.equal(f.admissions[0].request.content, "Do the task");
+  assert.deepEqual(f.events[0], { stage: "session", sessionId });
   assert.equal("permissionMode" in f.admissions[0].request, false);
   f.admissions[0].resolve({ accepted: true, turnId: "turn-one" });
   await tick();
@@ -90,7 +91,7 @@ test("task waits for its final answer, projects safe progress, and reuses only i
   assert.equal(resolved, false, "turn_end can precede later tool/model steps");
   f.emit(sessionId, "turn-one", { type: "agent_end" });
   assert.deepEqual(await first, { text: "Actual final answer" });
-  assert.deepEqual(f.events.map((e) => e.stage), ["thinking", "tool", "text", "text", "done"]);
+  assert.deepEqual(f.events.map((e) => e.stage), ["session", "thinking", "tool", "text", "text", "done"]);
   assert.doesNotMatch(JSON.stringify(f.events), /SECRET|private reasoning|delegate answer|stale answer/);
   assert.equal(f.listeners.size, 0);
 
@@ -249,7 +250,7 @@ test("hub task user path: advertised actions, progress events, final result, con
   await tick();
   assert.deepEqual(socket.sent.find((e) => e.type === "result"), { type: "result", id: "call-one", ok: true, body: { text: "Actual final answer" } });
   assert.deepEqual(socket.sent.filter((e) => e.type === "event").map((e) => [e.id, e.body.stage]), [
-    ["call-one", "thinking"], ["call-one", "text"], ["call-one", "done"],
+    ["call-one", "session"], ["call-one", "thinking"], ["call-one", "text"], ["call-one", "done"],
   ]);
   assert.doesNotMatch(JSON.stringify(socket.sent.slice(1)), /FIXTURE_TOKEN/);
   socket.call("call-two", "task", { text: "Continue", conversation: "browser-conversation" });
@@ -330,7 +331,7 @@ test("backend replacement during admission cannot stream a stale answer", async 
   f.handles.sidecar = null;
   complete(f);
   await rejected;
-  assert.deepEqual(f.events.map((e) => e.stage), ["thinking", "error"]);
+  assert.deepEqual(f.events.map((e) => e.stage), ["session", "thinking", "error"]);
   assert.equal(f.listeners.size, 0);
 });
 
@@ -365,4 +366,45 @@ test("socket reconnect preserves its conversation mapping; signout cancels a sch
   const afterSignout = SocketFixture.sockets.length;
   t.mock.timers.tick(10_000);
   assert.equal(SocketFixture.sockets.length, afterSignout);
+});
+
+
+test("cloud continuation reuses the shared project session with its existing model and mode", async () => {
+  const f = runtime(); const original = f.host.call;
+  f.host.call = async (method, params) => {
+    if (method === "session.get") return { session: { id: "project-session", projectPath: "C:/Projects/one", mode: "plan", providerId: "provider-one", modelId: "model-one" } };
+    return original(method, params);
+  };
+  const context = { ...f.context, isSessionShared: (id) => id === "project-session" };
+  const task = f.bridge.task({ text: "Continue existing work", conversation: "cloud-conversation", sessionId: "project-session" }, context);
+  await tick();
+  assert.equal(f.calls.some((call) => call.method === "session.create"), false);
+  assert.deepEqual(f.calls.find((call) => call.method === "session.configure").params, { id: "project-session", mode: "plan", permissionMode: "ask" });
+  assert.equal(f.admissions[0].request.sessionId, "project-session");
+  complete(f, "continued-turn", "continued answer"); assert.deepEqual(await task, { text: "continued answer" });
+});
+
+test("cloud continuation refuses unshared ids and missing or remote local sessions", async () => {
+  const f = runtime();
+  await assert.rejects(f.bridge.task({ text: "hello", conversation: "cloud", sessionId: "unshared-session" }, f.context), { code: "session_not_shared" });
+  assert.equal(f.calls.length, 0);
+  for (const session of [null, { id: "project-session", remoteWorkspace: { hostKey: "elsewhere" } }]) {
+    f.host.call = async () => ({ session });
+    await assert.rejects(f.bridge.task({ text: "hello", conversation: "cloud", sessionId: "project-session" }, { ...f.context, isSessionShared: () => true }), { code: "session_not_found" });
+  }
+  assert.equal(f.admissions.length, 0);
+});
+
+test("two callers cannot run or stop each other's continuation of one Host session", async () => {
+  const f = runtime(); const original = f.host.call;
+  f.host.call = async (method, params) => method === "session.get" ? { session: { id: "project-session", mode: "agent" } } : original(method, params);
+  const context = { ...f.context, isSessionShared: () => true };
+  const args = { text: "hello", conversation: "cloud", sessionId: "project-session" };
+  const task = f.bridge.task(args, context); const cancelled = assert.rejects(task, { code: "cancelled" });
+  await tick(); f.admissions[0].resolve({ accepted: true, turnId: "project-turn" }); await tick();
+  const other = { ...context, caller: { id: "another-tab" } };
+  await assert.rejects(f.bridge.task({ ...args, conversation: "another-cloud" }, other), { code: "busy" });
+  assert.deepEqual(await f.bridge.stop(args, other), { stopped: false });
+  assert.deepEqual(await f.bridge.stop(args, context), { stopped: true }); await cancelled;
+  assert.deepEqual(f.aborts.at(-1), { sessionId: "project-session", turnId: "project-turn" });
 });

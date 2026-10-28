@@ -18262,3 +18262,30 @@ host-created files. The full app's file-preview viewer is covered separately.
   `ui.view` gating, panel-bridge channel) and the wiring contract in
   `apps/desktop/test/main-wiring-contract.test.mjs`; the interactive Electron
   scenario remains a manual validation run.
+
+
+### E2E-CLOUD-desktop-continuation-roundtrip
+
+Send a Web task, associate its Host session from session progress, then upload
+additional user/assistant messages representing desktop continuation in that
+same session. The active Web chat must show both additions exactly once without
+opening the cloud-history view. Another Web conversation must remain unchanged.
+Reload the page and verify the association and desktop additions survive.
+Covered by conversation-sync's real HTTP/Hub Chrome browser fixture.
+
+
+### E2E-CLOUD-project-group-and-continuation
+
+- Upload same-account local sessions with project identity, executor binding
+  and messages. Verify project/global groups and empty/older conversation rows.
+- Select a project cloud conversation, read its original history and send text.
+  Assert the Hub call targets the stored execution device and exact Host session,
+  preserving the project, model and mode. Verify response and desktop-originated
+  continuation show in that conversation, not another project.
+- Disconnect the executor: retain messages with a disabled input. Reconnect:
+  re-enable continuation. Refresh sync while typing and verify the draft stays.
+- Reject wrong device/session/cid, cross-account records, unshared local ids,
+  deleted/missing/remote sessions and concurrent aliases. Another caller cannot
+  stop the task. Legacy metadata migration is additive and idempotent.
+- Coverage: server migration/API/Hub tests, production task-bridge tests and
+  `scripts/test-console-browser.mjs` with isolated local desktop fixture.

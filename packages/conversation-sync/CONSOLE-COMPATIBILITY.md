@@ -30,7 +30,7 @@ There is no new front-end dependency, CDN, or build toolchain.
 | Hub hello/welcome/devices | Account-scoped presence and persistent offline computer/phone list |
 | Hub forget | Forget an offline device, then broadcast the updated list |
 | Hub task/stop/event/result | Forwarded to the selected desktop; normal Agent admission/abort handlers |
-| sync state/changes | Existing nanomuse save rules; automatic desktop uploads and web read-only cloud history |
+| sync state/changes | Existing nanomuse save rules; automatic desktop uploads, project groups and same-session cloud continuation |
 
 `task` creates a dedicated desktop session per server/account/caller/conversation,
 sets permission mode to `ask`, observes the admitted turn and returns its final
@@ -61,3 +61,50 @@ For the actual browser journey, build the package, set `CLOUD_TEST_BROWSER` to
 a local Chrome/Chromium executable, then run `pnpm test:browser`. It creates
 an isolated browser profile and in-memory DB and substitutes only the desktop
 boundary. It does not attach to a personal browser, desktop or real model.
+
+
+Web task progress includes `stage: "session", sessionId` after configuring the
+owned Host session. The browser stores this association on its account/device
+conversation entry. Cloud sync notifications reconcile matching Host messages
+into idle Web conversations, including desktop-originated continuations.
+The last completed Web answer must be present before accepting a cloud snapshot;
+this prevents delayed uploads from erasing an unsynced reply. Busy conversations
+are not replaced. Reconciliation uses canonical cloud messages rather than
+appending duplicates; associations survive browser reloads.
+
+
+`GET /v1/sync/conversations` returns all live conversation metadata for the
+bearer account, independently of the recent-message tail. Empty conversations
+and older conversations therefore remain visible in the web cloud list.
+Deleted conversations are excluded and the account sync switch is enforced.
+Desktop `session.list` includes project sessions. Project grouping uses optional
+opaque ids and display labels; full filesystem project paths stay local.
+
+
+## Project groups and continuing a cloud conversation
+
+Conversation metadata optionally includes `project_id`, `project_name`,
+`execution_device` and `session_id`. A desktop hashes the local project identity
+and sends only an opaque id and basename display label, not a full project
+filesystem path. Group identity is execution device plus project id; absent
+project metadata is shown as Global conversations. Native-Pi and remotely
+hosted sessions are not advertised as executable local sessions.
+
+The additive sync schema migration records version 1, keeps existing rows,
+and backfills metadata even without a newer title timestamp. Repeated metadata
+is idempotent; omitted legacy fields preserve stored values. Execution metadata
+must name the push's own device and cannot take over another device's binding.
+`GET /v1/sync/conversations/{cid}` reads account-scoped live conversation metadata
+and up to 500 latest stored messages independently of the account-wide tail.
+
+Selecting a cloud conversation uses the normal chat composer. `task`/`stop`
+carry its cid and Host sessionId. The Hub verifies the exact account, session,
+conversation and execution-device binding before forwarding. The desktop also
+verifies that the session was successfully shared to the current account/server,
+is still local and exists. It resumes that exact session with its original
+project, model and mode, using normal Agent admission/abort and ask permissions.
+Unshared/missing/remote sessions fail closed; missing metadata asks the user to
+sync once on the original desktop. Offline history remains readable but input
+is disabled until its executor reconnects. Unsaved composer drafts survive
+sync refresh; concurrent aliases cannot run two tasks on the same Host session.
+See ADR 0333 for the decision and permission boundaries.

@@ -1,6 +1,7 @@
 export type TaskCallContext = {
   signal: AbortSignal;
   scope: string;
+  isSessionShared?(sessionId: string): boolean;
   caller: { id: string; name?: string; kind?: string };
   emit(body: Record<string, unknown>): void;
 };

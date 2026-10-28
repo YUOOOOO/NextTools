@@ -101,7 +101,9 @@
   let hint = LS.getItem("nm.hint") || "";
   let ws = null, wsState = "off", hubPaused = false, backoff = 1000, devices = [], selected = params.get("device") || LS.getItem("nm.selected") || "";
   const pending = new Map(); // call id → {onEvent, resolve, reject}
-  let cloud = { conversations: [], messages: [] }, cloudSelected = "", cloudError = "";
+  let cloud = { conversations: [], messages: [] }, cloudSelected = LS.getItem("nm.cloud.selected." + encodeURIComponent(hint)) || "", cloudError = "";
+  const cloudSnapshots = new Map();
+  let detailGeneration = 0;
   let cloudLoading = false, cloudAgain = false, cloudEpoch = 0;
   async function loadCloud() {
     if (!key) return;
@@ -109,10 +111,18 @@
     const requestKey = key, epoch = cloudEpoch;
     cloudLoading = true;
     try {
-      const page = await api("GET", "/v1/sync/changes?since=0&tail=2000", null, requestKey);
+      const [page, directory] = await Promise.all([
+        api("GET", "/v1/sync/changes?since=0&tail=2000", null, requestKey),
+        api("GET", "/v1/sync/conversations", null, requestKey),
+      ]);
       if (key !== requestKey || epoch !== cloudEpoch) return;
-      cloud = { conversations: page.conversations || [], messages: page.messages || [] }; cloudError = "";
-      drawSide(); if (cloudSelected) drawChatShell();
+      cloud = { conversations: directory.conversations || [], messages: page.messages || [] }; cloudError = "";
+      reconcileWebConversations();
+      if (cloudSelected && cloud.conversations.some((c) => c.cid === cloudSelected)) {
+        selectCloudConversation(cloudSelected, false);
+        void loadCloudDetail(cloudSelected);
+      }
+      drawSide(); drawChatShell();
     } catch (error) {
       if (key !== requestKey || epoch !== cloudEpoch) return;
       cloudError = errText(error); drawSide();
@@ -306,6 +316,7 @@
     if (ws) { try { ws.onclose = null; ws.close(); } catch (_) { /* ignore */ } ws = null; }
     for (const p of pending.values()) p.reject({ code: "signed_out" });
     pending.clear(); chats.clear(); devices = []; selected = ""; me = null; meErr = ""; els = {};
+    cloudSnapshots.clear(); detailGeneration++;
     cloudEpoch++; cloud = { conversations: [], messages: [] }; cloudSelected = ""; cloudError = ""; cloudLoading = false; cloudAgain = false;
     closeSheet();
     renderSignIn();
@@ -340,7 +351,7 @@
     const list = conversations(deviceId), id = newConversationId();
     list.push({ id, title: zh ? "新会话" : "New conversation" });
     LS.setItem(conversationKey(deviceId), JSON.stringify(list)); LS.setItem(activeKey(deviceId), id);
-    cloudSelected = ""; drawSide(); drawChatShell();
+    cloudSelected = ""; LS.removeItem("nm.cloud.selected." + encodeURIComponent(hint)); drawSide(); drawChatShell();
   }
   function chat(id, conversation = convId(id)) {
     const cacheKey = historyKey(id, conversation);
@@ -353,12 +364,71 @@
     }
     return chats.get(cacheKey);
   }
+  function reconcileWebConversations() {
+    for (const device of devices.filter((item) => item.kind !== "web")) {
+      let entries = [];
+      try { entries = JSON.parse(LS.getItem(conversationKey(device.id)) || "[]"); } catch (_) { /* no local mappings */ }
+      if (!Array.isArray(entries)) continue;
+      for (const entry of entries) {
+        if (!entry.sessionId) continue;
+        const c = chat(device.id, entry.id);
+        if (c.busy) continue;
+        const historyCid = entry.cloudCid || entry.sessionId;
+        const rows = (cloudSnapshots.get(historyCid) || cloud.messages).filter((m) => m.cid === historyCid && !m.deleted && (m.role === "user" || m.role === "assistant"))
+          .sort((a, b) => a.created_at - b.created_at || a.seq - b.seq);
+        // A previous cloud snapshot must not erase the just-completed Web reply.
+        if (!rows.length || (entry.syncText && !rows.some((m) => m.role === "assistant" && m.text === entry.syncText))) continue;
+        c.messages = rows.map((m) => ({ role: m.role === "user" ? "me" : "them", text: m.text, from: device.name, mid: m.mid }));
+        persist(device.id, entry.id);
+      }
+    }
+  }
   function persist(id, conversation = convId(id)) {
     const c = chat(id, conversation);
     const keep = c.messages.slice(-60).map((m) => (m.image && m.image.length > 400000 ? { ...m, image: null } : m));
     try { LS.setItem(historyKey(id, conversation), JSON.stringify(keep)); } catch (_) { /* quota */ }
   }
-  const dev = (id) => devices.find((d) => d.id === id);
+  const dev = (id) => devices.find((d) => d.id === id) || (cloudSelected && selected === id ? {
+    id, name: (cloud.conversations.find((c) => c.cid === cloudSelected)?.device_name || (zh ? "原桌面" : "Original desktop")), kind: "computer", online: false,
+  } : undefined);
+  function selectCloudConversation(cid, render = true) {
+    const row = cloud.conversations.find((c) => c.cid === cid && !c.deleted);
+    if (!row) return;
+    cloudSelected = cid; selected = row.execution_device || row.device || "unknown-device";
+    LS.setItem("nm.cloud.selected." + encodeURIComponent(hint), cid);
+    const list = conversations(selected);
+    let entry = list.find((c) => c.sessionId === (row.session_id || row.cid));
+    if (!entry) { entry = { id: "web-shared-" + cid, title: row.title || cid }; list.push(entry); }
+    entry.sessionId = row.session_id || row.cid; entry.cloudCid = cid; entry.shared = true;
+    entry.controllable = !!row.execution_device && !!row.session_id;
+    entry.title = row.title || cid;
+    LS.setItem(conversationKey(selected), JSON.stringify(list)); LS.setItem(activeKey(selected), entry.id);
+    if (render) { drawSide(); drawChatShell(); void loadCloudDetail(cid); if (window.matchMedia("(max-width: 760px)").matches) els.side.classList.add("hidden"); }
+  }
+  async function loadCloudDetail(cid) {
+    const requestKey = key, epoch = cloudEpoch, generation = ++detailGeneration;
+    try {
+      const detail = await api("GET", "/v1/sync/conversations/" + encodeURIComponent(cid), null, requestKey);
+      if (requestKey !== key || epoch !== cloudEpoch || generation !== detailGeneration) return;
+      cloudSnapshots.set(cid, detail.messages || []);
+      reconcileWebConversations();
+      if (cloudSelected === cid) { const c = chat(selected); c.historyReady = true; c.historyError = ""; drawChat(); drawComposer(); }
+    } catch (error) {
+      if (requestKey !== key || epoch !== cloudEpoch || generation !== detailGeneration || cloudSelected !== cid) return;
+      const c = chat(selected); c.historyReady = false; c.historyError = errText(error); drawComposer();
+    }
+  }
+  function activeEntry(deviceId) { return conversations(deviceId).find((c) => c.id === convId(deviceId)); }
+  function cloudGroups() {
+    const groups = new Map();
+    for (const row of cloud.conversations.filter((c) => !c.deleted)) {
+      const owner = row.execution_device || row.device || "";
+      const id = JSON.stringify([owner, row.project_id || ""]);
+      if (!groups.has(id)) groups.set(id, { project: row.project_name || (zh ? "全局会话" : "Global conversations"), owner, rows: [] });
+      groups.get(id).rows.push(row);
+    }
+    return [...groups.values()];
+  }
   const kindLabel = (k) => T[k] || k;
   function ago(ts) {
     if (!ts) return "";
@@ -376,12 +446,19 @@
     const conversation = convId(d.id);
     const c = chat(d.id, conversation);
     if (c.busy) return;
+    const selection = activeEntry(d.id);
+    if (selection?.shared && (!selection.controllable || !c.historyReady)) return;
     const list = conversations(d.id), entry = list.find((item) => item.id === conversation);
     if (!c.messages.length && entry) { entry.title = text.slice(0, 48); LS.setItem(conversationKey(d.id), JSON.stringify(list)); }
+    c.taskRoute = { conversation, ...(selection?.shared ? { sessionId: selection.sessionId, cid: selection.cloudCid } : {}) };
     c.messages.push({ role: "me", text }); c.busy = true; c.steps = []; persist(d.id, conversation); drawSide(); drawChat(); drawComposer();
     const onEvent = (b) => {
       if (key !== requestKey) return;
       const stage = b.stage;
+      if (stage === "session" && typeof b.sessionId === "string") {
+        const entries = conversations(d.id), target = entries.find((item) => item.id === conversation);
+        if (target) { target.sessionId = b.sessionId; LS.setItem(conversationKey(d.id), JSON.stringify(entries)); }
+      }
       if (stage === "thinking") c.steps.push({ kind: "thinking" });
       else if (stage === "tool") c.steps.push({ kind: "tool", k: T.running, v: `${b.name} ${b.summary || ""}` });
       else if (stage === "delegate") c.steps.push({ kind: "tool", k: T.asks, v: `${b.device}: ${b.task}` });
@@ -394,16 +471,19 @@
       drawChat();
     };
     try {
-      const r = await call(d.id, "task", { text, conversation, from: zh ? "网页" : "web console" }, onEvent);
+      const r = await call(d.id, "task", { text, ...c.taskRoute, from: zh ? "网页" : "web console" }, onEvent);
       if (key !== requestKey) return;
-      c.messages.push({ role: "them", text: r.text || r.answer || JSON.stringify(r), from: d.name });
+      const answer = r.text || r.answer || JSON.stringify(r);
+      c.messages.push({ role: "them", text: answer, from: d.name });
+      const entries = conversations(d.id), target = entries.find((item) => item.id === conversation);
+      if (target) { target.syncText = answer; LS.setItem(conversationKey(d.id), JSON.stringify(entries)); }
     } catch (e) {
       if (key !== requestKey) return;
-      const m = e.code === "device_offline" ? T.errorOffline : e.code === "busy" ? T.errorBusy : e.code === "timeout" ? T.errorTimeout : (e.message || e.code);
+      const m = e.code === "session_not_shared" ? (zh ? "原桌面尚未共享该会话，请在桌面同步后重试" : "Sync this conversation from the original desktop before retrying") : e.code === "session_not_found" ? (zh ? "原桌面上的会话已不存在" : "The original desktop session no longer exists") : e.code === "device_offline" ? T.errorOffline : e.code === "busy" ? T.errorBusy : e.code === "timeout" ? T.errorTimeout : (e.message || e.code);
       c.messages.push({ role: "them", text: `⚠ ${m}`, from: d.name });
     }
-    c.busy = false; c.steps = []; for (const m of c.messages) if (m.role === "approval" && m.state === "open") m.state = "expired";
-    persist(d.id, conversation); drawSide(); drawChat(); drawComposer();
+    c.busy = false; c.taskRoute = null; c.steps = []; for (const m of c.messages) if (m.role === "approval" && m.state === "open") m.state = "expired";
+    persist(d.id, conversation); reconcileWebConversations(); drawSide(); drawChat(); drawComposer(); void loadCloud();
   }
   async function decide(deviceId, approvalId, allow) {
     const c = chat(deviceId); const a = c.messages.find((m) => m.role === "approval" && m.id === approvalId); if (!a || a.state !== "open") return;
@@ -412,7 +492,7 @@
   }
   async function stop() {
     const d = dev(selected); if (!d) return;
-    try { await call(d.id, "stop", { conversation: convId(d.id) }); } catch (_) { /* ignore */ }
+    try { await call(d.id, "stop", chat(d.id).taskRoute || { conversation: convId(d.id), ...(activeEntry(d.id)?.shared ? { sessionId: activeEntry(d.id).sessionId, cid: activeEntry(d.id).cloudCid } : {}) }); } catch (_) { /* ignore */ }
   }
 
   // ── main view ────────────────────────────────────────────────────
@@ -428,7 +508,7 @@
   function drawStatus() { const s = els.status; if (s) { s.className = "status " + (wsState === "on" ? "on" : wsState === "off" ? "off" : ""); s.title = wsState === "on" ? T.connected : wsState === "off" ? (hubPaused ? T.hubPaused : T.disconnected) : T.connecting; } }
   const glyph = (kind) => ICON[kind] || ICON.computer;
   function pickDevice(id) {
-    cloudSelected = ""; selected = id; LS.setItem("nm.selected", id); history.replaceState(null, "", "?device=" + encodeURIComponent(id));
+    cloudSelected = ""; LS.removeItem("nm.cloud.selected." + encodeURIComponent(hint)); selected = id; LS.setItem("nm.selected", id); history.replaceState(null, "", "?device=" + encodeURIComponent(id));
     drawSide(); drawChatShell();
     if (window.matchMedia("(max-width: 760px)").matches) { els.side.classList.add("hidden"); }
   }
@@ -451,18 +531,20 @@
         h("div", { class: "card" }, ...conversations(selected).map((conversation) => h("button", {
           class: "row tap conversation-entry" + (!cloudSelected && convId(selected) === conversation.id ? " active" : ""),
           "data-conversation": conversation.id,
-          onclick: () => { LS.setItem(activeKey(selected), conversation.id); cloudSelected = ""; drawSide(); drawChatShell(); if (window.matchMedia("(max-width: 760px)").matches) els.side.classList.add("hidden"); },
+          onclick: () => { LS.setItem(activeKey(selected), conversation.id); cloudSelected = ""; LS.removeItem("nm.cloud.selected." + encodeURIComponent(hint)); drawSide(); drawChatShell(); if (window.matchMedia("(max-width: 760px)").matches) els.side.classList.add("hidden"); },
         }, h("span", { class: "tile grey", html: ICON.chat }), h("div", { class: "txt" }, h("div", { class: "t" }, conversation.title),
           chat(selected, conversation.id).busy ? h("div", { class: "s" }, T.thinking) : null))))) : null,
       h("div", { class: "label" }, zh ? "云端会话" : "Synced conversations",
         h("button", { class: "btn quiet sm", onclick: () => void loadCloud() }, T.refresh)),
       h("div", { class: "cloud-conversations card" },
         cloudError ? h("div", { class: "empty" }, cloudError) : null,
-        ...cloud.conversations.filter((c) => !c.deleted).map((conversation) => h("button", {
-          class: "row tap" + (cloudSelected === conversation.cid ? " active" : ""),
-          onclick: () => { cloudSelected = conversation.cid; drawSide(); drawChatShell(); if (window.matchMedia("(max-width: 760px)").matches) els.side.classList.add("hidden"); },
-        }, h("span", { class: "tile grey", html: ICON.chat }), h("div", { class: "txt" },
-          h("div", { class: "t" }, conversation.title || conversation.cid)))),
+        ...cloudGroups().map((group) => h("div", { class: "cloud-project-group", "data-project": group.rows[0].project_id || "global", "data-device": group.owner },
+          h("div", { class: "label" }, group.project, " · ", devices.find((d) => d.id === group.owner)?.name || group.rows[0].device_name || (zh ? "原设备" : "Original device")),
+          ...group.rows.map((conversation) => h("button", {
+            class: "row tap" + (cloudSelected === conversation.cid ? " active" : ""),
+            "data-cloud-conversation": conversation.cid,
+            onclick: () => selectCloudConversation(conversation.cid),
+          }, h("span", { class: "tile grey", html: ICON.chat }), h("div", { class: "txt" }, h("div", { class: "t" }, conversation.title || conversation.cid)))))),
         !cloudError && !cloud.conversations.some((c) => !c.deleted) ? h("div", { class: "empty" }, T.syncEmpty) : null),
       h("div", { class: "foot card" },
         h("button", { class: "row tap", onclick: openAccount },
@@ -474,19 +556,8 @@
   }
   function drawChatShell() {
     if (!els.chat) return;
-    if (cloudSelected) {
-      const conversation = cloud.conversations.find((c) => c.cid === cloudSelected && !c.deleted);
-      if (!conversation) { cloudSelected = ""; drawChatShell(); return; }
-      els.head = null; els.messages = null; els.composer = null;
-      els.chat.replaceChildren(
-        h("div", { class: "head" }, h("button", { class: "round back", onclick: () => els.side.classList.remove("hidden"), html: ICON.back }),
-          h("div", { class: "name" }, conversation.title || conversation.cid)),
-        h("div", { class: "messages cloud-messages" },
-          ...cloud.messages.filter((m) => m.cid === conversation.cid && !m.deleted).sort((a, b) => a.created_at - b.created_at || a.seq - b.seq).map((message) =>
-            h("div", { class: "msg " + (message.role === "user" ? "me" : "them") },
-              h("div", { class: "bubble" }, message.text || "")))),
-        h("div", { class: "note" }, zh ? "云端同步记录 · 文件和图片保留在原设备" : "Synced history · files and images remain on the original device"));
-      return;
+    if (cloudSelected && !cloud.conversations.some((c) => c.cid === cloudSelected && !c.deleted)) {
+      cloudSelected = ""; LS.removeItem("nm.cloud.selected." + encodeURIComponent(hint));
     }
     const d = dev(selected);
     if (!d) {
@@ -494,7 +565,7 @@
       return;
     }
     els.head = h("div", { class: "head" });
-    els.messages = h("div", { class: "messages" });
+    els.messages = h("div", { class: "messages" + (cloudSelected ? " cloud-messages" : "") });
     els.composer = h("div", { class: "composer" });
     els.chat.replaceChildren(els.head, els.messages, els.composer);
     drawHead(); drawChat(); drawComposer();
@@ -504,7 +575,7 @@
     els.head.replaceChildren(
       h("button", { class: "round back", onclick: () => { els.side.classList.remove("hidden"); }, html: ICON.back }),
       h("span", { class: "tile", html: glyph(d.kind) }),
-      h("div", {}, h("div", { class: "name" }, d.name), h("div", { class: "sub" }, `${kindLabel(d.kind)} · ${d.os || ""} · ${d.online ? T.online : T.offline}`)),
+      h("div", {}, h("div", { class: "name" }, activeEntry(d.id)?.shared ? activeEntry(d.id).title : d.name), h("div", { class: "sub" }, `${kindLabel(d.kind)} · ${d.os || ""} · ${d.online ? T.online : T.offline}`)),
       h("span", { class: "spacer" }),
       h("button", { class: "btn quiet sm", disabled: chat(d.id).busy ? "" : null, onclick: () => {
         const c = chat(d.id); if (c.busy) return; c.messages = []; persist(d.id); drawChat();
@@ -541,15 +612,18 @@
   function drawComposer() {
     const d = dev(selected); if (!els.composer || !d) return;
     const c = chat(d.id);
-    const ta = h("textarea", { rows: "1", placeholder: T.placeholder(d.name), disabled: d.online ? null : "", onkeydown: (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); go(); } }, oninput: (e) => { e.target.style.height = "auto"; e.target.style.height = Math.min(160, e.target.scrollHeight) + "px"; } });
-    const go = () => { const t = ta.value.trim(); if (!t) return; ta.value = ""; ta.style.height = "auto"; send(t); };
+    const entry = activeEntry(d.id);
+    const enabled = d.online && (!entry?.shared || (entry.controllable && c.historyReady));
+    const ta = h("textarea", { rows: "1", placeholder: T.placeholder(d.name), disabled: enabled ? null : "", onkeydown: (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); go(); } }, oninput: (e) => { c.draft = e.target.value; e.target.style.height = "auto"; e.target.style.height = Math.min(160, e.target.scrollHeight) + "px"; } });
+    ta.value = c.draft || "";
+    const go = () => { const t = ta.value.trim(); if (!enabled || c.busy || !t) return; c.draft = ""; ta.value = ""; ta.style.height = "auto"; send(t); };
     els.composer.replaceChildren(
       h("div", { class: "box" }, ta,
         c.busy ? h("button", { class: "stop", title: T.stop, onclick: stop, html: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2" fill="#fff"/></svg>' })
-          : h("button", { disabled: d.online ? null : "", onclick: go, html: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>' })),
-      h("div", { class: "note" }, d.online ? (d.kind === "phone" ? (zh ? "手机上需要确认的操作，会在手机上弹出确认卡。" : "Anything that needs an OK on the phone is asked on the phone.") : (zh ? "需要确认的操作会在桌面本机弹出确认框。" : "Anything that needs an OK is asked on the desktop itself.")) : T.offlineNote(d.name)),
+          : h("button", { disabled: enabled ? null : "", onclick: go, html: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>' })),
+      h("div", { class: "note" }, c.historyError || (entry?.shared && !entry.controllable ? (zh ? "请在原桌面同步一次，以关联这个会话" : "Sync once on the original desktop to associate this conversation") : entry?.shared && !c.historyReady ? (zh ? "正在读取会话历史…" : "Loading conversation history…") : d.online ? (d.kind === "phone" ? (zh ? "手机上需要确认的操作，会在手机上弹出确认卡。" : "Anything that needs an OK on the phone is asked on the phone.") : (zh ? "需要确认的操作会在桌面本机弹出确认框。" : "Anything that needs an OK is asked on the desktop itself.")) : T.offlineNote(d.name))),
     );
-    if (d.online && !c.busy) ta.focus();
+    if (enabled && !c.busy && document.activeElement === document.body) ta.focus();
   }
 
   // ── account sheet (/v1/me, the same picture as the phone's Account screen) ──

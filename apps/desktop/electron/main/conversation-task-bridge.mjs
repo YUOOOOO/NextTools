@@ -8,6 +8,7 @@ const failure = (code) => Object.assign(new Error(code), { code });
 export function createConversationTaskBridge({ getHost, getSidecar, prompt, abort, timeoutMs = 600_000 }) {
   const sessions = new Map();
   const active = new Map();
+  const activeSessions = new Map();
 
   function keyFor(args, context) {
     const conversation = args?.conversation;
@@ -15,6 +16,11 @@ export function createConversationTaskBridge({ getHost, getSidecar, prompt, abor
     if (typeof conversation !== "string" || !conversation.trim() || conversation.length > 256 ||
         typeof caller !== "string" || !caller || typeof context?.scope !== "string" || !context.scope) {
       throw failure("invalid_conversation");
+    }
+    if (args.sessionId !== undefined) {
+      if (typeof args.sessionId !== "string" || !/^[a-z0-9][a-z0-9._:-]{3,63}$/.test(args.sessionId) ||
+          context.isSessionShared?.(args.sessionId) !== true) throw failure("session_not_shared");
+      return JSON.stringify([context.scope, "shared-session", args.sessionId]);
     }
     return JSON.stringify([context.scope, caller, conversation]);
   }
@@ -29,7 +35,7 @@ export function createConversationTaskBridge({ getHost, getSidecar, prompt, abor
       const sidecar = getSidecar();
       if (!host || !sidecar || !prompt || !abort) throw failure("agent_unavailable");
       const controller = new AbortController();
-      const state = { controller };
+      const state = { controller, callerId: context.caller.id };
       active.set(key, state);
       const cancel = () => controller.abort();
       context.signal.addEventListener("abort", cancel, { once: true });
@@ -48,12 +54,20 @@ export function createConversationTaskBridge({ getHost, getSidecar, prompt, abor
       const check = () => {
         if (controller.signal.aborted || context.signal.aborted) throw failure("cancelled");
         if (getHost() !== host || getSidecar() !== sidecar) throw failure("agent_unavailable");
+        if (args.sessionId && context.isSessionShared?.(args.sessionId) !== true) throw failure("session_not_shared");
       };
       const emit = (body) => {
         if (!controller.signal.aborted && !context.signal.aborted) context.emit(body);
       };
       try {
-        sessionId = sessions.get(key);
+        let existing;
+        if (args.sessionId) {
+          const loaded = await host.call("session.get", { id: args.sessionId, messageLimit: 1 });
+          check();
+          existing = loaded?.session;
+          if (!existing || existing.id !== args.sessionId || existing.remoteWorkspace || existing.remoteHostKey) throw failure("session_not_found");
+        }
+        sessionId = args.sessionId || sessions.get(key);
         if (!sessionId) {
           if (sessions.size >= 512) throw failure("conversation_limit");
           const created = await host.call("session.create", { title: "Web", mode: "agent" });
@@ -64,8 +78,12 @@ export function createConversationTaskBridge({ getHost, getSidecar, prompt, abor
         check();
         // session.create ignores arbitrary permissionMode. Configure the dedicated
         // session explicitly: a remote task must not inherit unattended execution.
-        await host.call("session.configure", { id: sessionId, mode: "agent", permissionMode: "ask" });
+        const sessionLease = JSON.stringify([context.scope, sessionId]);
+        if (activeSessions.has(sessionLease)) throw failure("busy");
+        activeSessions.set(sessionLease, state);
+        await host.call("session.configure", { id: sessionId, mode: existing?.mode || "agent", permissionMode: "ask" });
         check();
+        emit({ stage: "session", sessionId });
         let resolveEnd;
         let rejectEnd;
         const ended = new Promise((resolve, reject) => { resolveEnd = resolve; rejectEnd = reject; });
@@ -137,7 +155,7 @@ export function createConversationTaskBridge({ getHost, getSidecar, prompt, abor
         if (turnId && !terminal) {
           try { await abortTurn(); } catch { throw failure("abort_failed"); }
         }
-        const code = ["cancelled", "agent_unavailable", "conversation_limit", "admission_failed", "no_answer", "task_failed"].includes(error?.code)
+        const code = ["cancelled", "agent_unavailable", "conversation_limit", "admission_failed", "no_answer", "task_failed", "session_not_shared", "session_not_found", "busy"].includes(error?.code)
           ? error.code : "task_failed";
         emit({ stage: "error", code, message: code });
         throw failure(code);
@@ -147,11 +165,13 @@ export function createConversationTaskBridge({ getHost, getSidecar, prompt, abor
         context.signal.removeEventListener("abort", cancel);
         clearTimeout(timer);
         if (active.get(key) === state) active.delete(key);
+        const sessionLease = JSON.stringify([context.scope, sessionId]);
+        if (activeSessions.get(sessionLease) === state) activeSessions.delete(sessionLease);
       }
     },
     async stop(args, context) {
       const state = active.get(keyFor(args, context));
-      if (!state) return { stopped: false };
+      if (!state || state.callerId !== context.caller.id) return { stopped: false };
       state.controller.abort();
       return { stopped: true };
     },

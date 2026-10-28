@@ -110,6 +110,15 @@ export class SyncStore {
   ) {
     this.presence = presence ?? new Presence(clock);
     this.db.exec(SCHEMA);
+    this.tx((c) => {
+      c.run("CREATE TABLE IF NOT EXISTS sync_schema (version INTEGER PRIMARY KEY)");
+      if (!c.get("SELECT version FROM sync_schema WHERE version=1")) {
+        for (const column of ["project_id", "project_name", "execution_device", "session_id"]) {
+          c.run(`ALTER TABLE sync_conversations ADD COLUMN ${column} TEXT`);
+        }
+        c.run("INSERT INTO sync_schema(version) VALUES (1)");
+      }
+    });
   }
 
   state(accountId: string): SyncState {
@@ -239,6 +248,30 @@ export class SyncStore {
     });
   }
 
+  listConversations(accountId: string): Record<string, unknown> {
+    return this.tx((c) => {
+      if (!this.enabled(c, accountId)) throw new SyncError(409, "sync_off", "Conversation sync is off for this account");
+      const names = this.deviceNames(c, accountId);
+      const rows = c.all("SELECT * FROM sync_conversations WHERE account_id=? AND deleted=0 ORDER BY updated_at DESC, cid", accountId);
+      return { cursor: this.cursor(c, accountId), conversations: rows.map((row) => conversationRow(row, names)) };
+    });
+  }
+
+  conversation(accountId: string, cid: string): Record<string, unknown> {
+    return this.tx((c) => {
+      if (!this.enabled(c, accountId)) throw new SyncError(409, "sync_off", "Conversation sync is off for this account");
+      const id = validId(cid);
+      const row = id ? c.get("SELECT * FROM sync_conversations WHERE account_id=? AND cid=? AND deleted=0", accountId, id) : undefined;
+      if (!row) throw new SyncError(404, "not_found", "No synced conversation with that id");
+      const names = this.deviceNames(c, accountId);
+      const messages = c.all(
+        "SELECT * FROM sync_messages WHERE account_id=? AND cid=? AND deleted=0 ORDER BY created_at DESC, seq DESC LIMIT ?",
+        accountId, String(row.cid), MAX_TAIL,
+      ).reverse();
+      return { conversation: conversationRow(row, names), messages: messages.map((message) => messageRow(message, names)) };
+    });
+  }
+
   setWorking(accountId: string, cid: string, device: string, working: boolean): WorkingFrame {
     const cidOk = validId(cid);
     if (!cidOk) throw new SyncError(400, "bad_cid", "That is not a conversation id");
@@ -291,6 +324,16 @@ export class SyncStore {
         const updatedAt = Math.max(createdAt, timestamp(conv.updated_at, createdAt, t));
         const deleted = Boolean(conv.deleted);
         const row = c.get("SELECT * FROM sync_conversations WHERE account_id=? AND cid=?", accountId, cid);
+        const metadata = readMetadata(conv, device);
+        if (!metadata) {
+          rejected.push({ cid, reason: "bad_metadata" });
+          continue;
+        }
+        const hasMetadata = Object.keys(metadata).length > 0;
+        if (hasMetadata && row && (row.execution_device ?? row.device) !== device) {
+          rejected.push({ cid, reason: "metadata_owner" });
+          continue;
+        }
         if (!row) {
           if (kind === "side" && !deleted && this.liveConversations(c, accountId) >= LIMITS.conversations) {
             rejected.push({ cid, reason: "conversation_limit" });
@@ -309,8 +352,8 @@ export class SyncStore {
           }
           const seq = this.nextSeq(c, accountId);
           c.run(
-            `INSERT INTO sync_conversations(account_id, cid, kind, title, device, created_at, updated_at, deleted, deleted_at, seq)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO sync_conversations(account_id, cid, kind, title, device, created_at, updated_at, deleted, deleted_at, seq, project_id, project_name, execution_device, session_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             accountId,
             cid,
             kind,
@@ -321,6 +364,10 @@ export class SyncStore {
             deleted ? 1 : 0,
             deleted ? t : null,
             seq,
+            metadata.project_id ?? null,
+            metadata.project_name ?? null,
+            metadata.execution_device ?? null,
+            metadata.session_id ?? null,
           );
           accepted += 1;
           continue;
@@ -329,13 +376,18 @@ export class SyncStore {
         if (deleted) {
           this.tombstone(c, accountId, cid, t);
           accepted += 1;
-        } else if (updatedAt >= Number(row.updated_at) && (title !== row.title || updatedAt !== Number(row.updated_at))) {
+        } else if (updatedAt >= Number(row.updated_at) && (title !== row.title || updatedAt !== Number(row.updated_at)
+          || Object.entries(metadata).some(([key, value]) => row[key] !== value))) {
           const seq = this.nextSeq(c, accountId);
           c.run(
-            "UPDATE sync_conversations SET title=?, updated_at=?, seq=? WHERE account_id=? AND cid=?",
+            "UPDATE sync_conversations SET title=?, updated_at=?, seq=?, project_id=?, project_name=?, execution_device=?, session_id=? WHERE account_id=? AND cid=?",
             title,
             updatedAt,
             seq,
+            metadata.project_id ?? row.project_id ?? null,
+            metadata.project_name ?? row.project_name ?? null,
+            metadata.execution_device ?? row.execution_device ?? null,
+            metadata.session_id ?? row.session_id ?? null,
             accountId,
             cid,
           );
@@ -625,6 +677,21 @@ function timestamp(value: unknown, fallback: number, ceiling?: number): number {
   return t;
 }
 
+const METADATA_LIMITS = { project_id: 64, project_name: 200, execution_device: 80, session_id: 64 } as const;
+
+function readMetadata(conv: Record<string, unknown>, device: string): Record<string, string> | null {
+  const out: Record<string, string> = {};
+  for (const [key, limit] of Object.entries(METADATA_LIMITS)) {
+    if (!(key in conv)) continue;
+    const value = conv[key];
+    if (typeof value !== "string" || !value.length || value.length > limit) return null;
+    if ((key === "project_id" || key === "session_id") && validId(value) !== value) return null;
+    if (key === "execution_device" && value !== device) return null;
+    out[key] = value;
+  }
+  return out;
+}
+
 function conversationRow(row: Row, names: Map<string, string>): Record<string, unknown> {
   return {
     cid: row.cid,
@@ -632,6 +699,7 @@ function conversationRow(row: Row, names: Map<string, string>): Record<string, u
     title: row.title,
     device: row.device,
     device_name: names.get(String(row.device)) ?? "",
+    ...Object.fromEntries(Object.keys(METADATA_LIMITS).filter((key) => typeof row[key] === "string").map((key) => [key, row[key]])),
     created_at: Number(row.created_at),
     updated_at: Number(row.updated_at),
     deleted: Boolean(row.deleted),

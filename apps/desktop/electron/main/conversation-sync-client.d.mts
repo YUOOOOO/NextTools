@@ -12,8 +12,8 @@ export type ConversationSyncStatus = {
 export function validateBaseUrl(value: unknown): string;
 export function directFetch(url: string, init?: FetchInit): Promise<FetchResponse>;
 export function messageText(message: unknown): string;
-export function toSyncChanges(sessions: unknown): {
-  conversations: Array<{ cid: string; kind: string; title: string; created_at: number; updated_at: number }>;
+export function toSyncChanges(sessions: unknown, deviceId?: string): {
+  conversations: Array<{ cid: string; kind: string; title: string; created_at: number; updated_at: number; project_id?: string; project_name?: string; execution_device?: string; session_id?: string }>;
   messages: Array<{ mid: string; cid: string; role: string; text: string; created_at: number }>;
 };
 export function createConversationSync(options: {

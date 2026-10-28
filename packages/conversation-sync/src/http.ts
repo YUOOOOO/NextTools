@@ -21,7 +21,7 @@ export interface SyncServerOptions {
 export function createSyncServer(options: SyncServerOptions): Server {
   const store = options.store ?? new SyncStore(options.db);
   const accounts = new AccountBook(options.db);
-  const hub = new DeviceHub(accounts);
+  const hub = new DeviceHub(accounts, store);
   const portal = new AccountPortal(options.db, accounts);
   const server = createServer((req, res) => {
     void handle(store, accounts, hub, portal, options, req, res);
@@ -163,6 +163,9 @@ async function handle(store: SyncStore, accounts: AccountBook, hub: DeviceHub, p
       const current = store.state(accountId);
       return send(res, 200, current.enabled === enabled ? current : store.setEnabled(accountId, enabled));
     }
+    if (req.method === "GET" && url.pathname === "/v1/sync/conversations") {
+      return send(res, 200, store.listConversations(accountId));
+    }
     if (req.method === "GET" && url.pathname === "/v1/sync/changes") {
       return send(
         res,
@@ -202,6 +205,9 @@ async function handle(store: SyncStore, accounts: AccountBook, hub: DeviceHub, p
       return;
     }
     const deleted = url.pathname.match(/^\/v1\/sync\/conversations\/([^/]+)$/);
+    if (req.method === "GET" && deleted) {
+      return send(res, 200, store.conversation(accountId, decodeURIComponent(deleted[1] ?? "")));
+    }
     if (req.method === "DELETE" && deleted) {
       const cid = decodeURIComponent(deleted[1] ?? "");
       const out = store.deleteConversation(accountId, cid);

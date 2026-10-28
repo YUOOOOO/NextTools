@@ -3,6 +3,8 @@
  * The token is encrypted by the caller before it is written.
  */
 
+import { createHash } from "node:crypto";
+import { posix, win32 } from "node:path";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
@@ -93,10 +95,11 @@ export function messageText(message) {
     .join("\n");
 }
 
-export function toSyncChanges(sessions) {
+export function toSyncChanges(sessions, deviceId) {
   const conversations = [];
   const messages = [];
   for (const session of Array.isArray(sessions) ? sessions : []) {
+    if (["pi-native", "native-pi", "remote"].includes(session?.source) || session?.remoteHostKey || session?.remoteWorkspace) continue;
     const cid = String(session?.id ?? "").trim().toLowerCase();
     if (!ID.test(cid)) continue;
     const created = unixSeconds(session.createdAt ?? session.created_at);
@@ -107,6 +110,8 @@ export function toSyncChanges(sessions) {
       title: String(session.title ?? "").slice(0, 200),
       created_at: created,
       updated_at: updated,
+      ...(deviceId ? { execution_device: deviceId, session_id: session.id } : {}),
+      ...(typeof session.projectPath === "string" && session.projectPath.trim() ? projectMetadata(session.projectPath) : {}),
     });
     const rows = Array.isArray(session.messages) ? session.messages : [];
     for (const message of rows) {
@@ -128,6 +133,15 @@ export function toSyncChanges(sessions) {
   return { conversations, messages };
 }
 
+function projectMetadata(projectPath) {
+  const paths = /\\/.test(projectPath) || /^[a-z]:/i.test(projectPath) ? win32 : posix;
+  const normalized = paths.normalize(projectPath).replace(/[\\/]+$/, "") || paths.parse(projectPath).root;
+  return {
+    project_id: createHash("sha256").update(normalized).digest("hex"),
+    project_name: (paths.basename(normalized) || "Project").slice(0, 200),
+  };
+}
+
 export function createConversationSync({
   filePath,
   encrypt,
@@ -145,6 +159,17 @@ export function createConversationSync({
   let hubController = null;
   let reconnectTimer = null;
   let generation = 0;
+  let activeScope = "";
+  const sharedSessions = new Map();
+  function useScope(saved) {
+    const scope = JSON.stringify([saved.baseUrl, saved.account]);
+    if (scope !== activeScope) {
+      sharedSessions.clear();
+      activeScope = scope;
+    }
+    if (!sharedSessions.has(scope)) sharedSessions.set(scope, new Set());
+    return scope;
+  }
   return {
     async getState() {
       const saved = readSaved();
@@ -167,16 +192,17 @@ export function createConversationSync({
     async push() {
       const saved = readSaved();
       if (!saved) throw Object.assign(new Error("Sign in first"), { code: "signed_out" });
+      const scope = useScope(saved);
       const epoch = generation;
       const stillSignedIn = () => {
         const current = readSaved();
-        if (epoch !== generation || !current || current.token !== saved.token || current.baseUrl !== saved.baseUrl) {
+        if (epoch !== generation || !current || current.token !== saved.token || current.baseUrl !== saved.baseUrl || current.account !== saved.account) {
           throw Object.assign(new Error("Sign-in changed during sync"), { code: "signed_out" });
         }
       };
       const sessions = await listSessions();
       stillSignedIn();
-      const changes = toSyncChanges(sessions);
+      const changes = toSyncChanges(sessions, deviceId);
       let accepted = 0;
       for (let index = 0; index < Math.max(changes.conversations.length, changes.messages.length, 1); index += 200) {
         const body = {
@@ -194,6 +220,8 @@ export function createConversationSync({
         accepted += Number(result.accepted ?? 0);
       }
       const state = await relay(saved, "/v1/sync/state");
+      stillSignedIn();
+      for (const conversation of changes.conversations) sharedSessions.get(scope)?.add(conversation.session_id);
       return { signedIn: true, baseUrl: saved.baseUrl, account: saved.account, accepted, state };
     },
   };
@@ -208,6 +236,8 @@ export function createConversationSync({
     if (!token) throw Object.assign(new Error("登录没有返回令牌"), { code: "bad_key" });
     const saved = { baseUrl, token, account: accountLabel(result, account) };
     writeSaved(saved);
+    closeHub(false);
+    useScope(saved);
     ensureHub(saved);
     const state = await relay(saved, "/v1/sync/state");
     return { signedIn: true, baseUrl, account: saved.account, state };
@@ -225,8 +255,12 @@ export function createConversationSync({
     }
   }
 
-  function closeHub() {
+  function closeHub(clearGrants = true) {
     generation += 1;
+    if (clearGrants) {
+      sharedSessions.clear();
+      activeScope = "";
+    }
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
     hubToken = "";
@@ -239,9 +273,10 @@ export function createConversationSync({
   }
 
   function ensureHub(saved) {
+    const scope = useScope(saved);
     if (!onCall || typeof WebSocketImpl !== "function") return;
     if (hub && hubToken === saved.token && hubUrl === saved.baseUrl) return;
-    closeHub();
+    closeHub(false);
     const epoch = generation;
     hubToken = saved.token;
     hubUrl = saved.baseUrl;
@@ -272,7 +307,8 @@ export function createConversationSync({
       const caller = frame.from && typeof frame.from === "object" ? frame.from : {};
       const context = {
         signal: controller.signal,
-        scope: JSON.stringify([saved.baseUrl, saved.account]),
+        scope,
+        isSessionShared: (id) => current() && activeScope === scope && sharedSessions.get(scope)?.has(id) === true,
         caller: {
           id: typeof caller.id === "string" ? caller.id : "",
           name: typeof caller.name === "string" ? caller.name : "",
