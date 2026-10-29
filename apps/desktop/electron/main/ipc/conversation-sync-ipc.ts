@@ -9,6 +9,7 @@ import { createConversationInteractiveBridge } from "../conversation-interactive
 import { redactValue } from "../logger";
 import { createConversationAutoSync } from "../conversation-auto-sync.mjs";
 import { loadOrCreateSyncDeviceId } from "../conversation-sync-device-id.mjs";
+import { desktopDeviceName, desktopOsLabel } from "../device-identity.mjs";
 import { createConversationTaskBridge, type InternalInvoke, type TaskCallContext, type TaskSidecar } from "../conversation-task-bridge.mjs";
 import type { HostProcess } from "../host-process";
 import type { IpcRegistrar } from "./types";
@@ -99,7 +100,7 @@ async function runCall(
   invoke?: InternalInvoke,
   fromWeb = false,
 ): Promise<unknown> {
-  if (action === "info") return { name: "Pilot", kind: "computer" };
+  if (action === "info") return { name: desktopDeviceName(), kind: "computer", os: desktopOsLabel() };
   if (REMOTE_ACTIONS.includes(action)) {
     const allowed = await confirmRemote(action, args);
     if (!allowed) throw new Error("local_denied");

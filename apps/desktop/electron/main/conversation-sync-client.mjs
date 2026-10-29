@@ -8,6 +8,7 @@ import { posix, win32 } from "node:path";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { desktopDeviceName, desktopOsLabel } from "./device-identity.mjs";
 
 const ID = /^[a-z0-9][a-z0-9._:-]{3,63}$/;
 
@@ -340,7 +341,7 @@ export function createConversationSync({
       type: "hello",
       key: saved.token,
       device: {
-        id: deviceId, name: "Pilot", kind: "computer", os: process.platform,
+        id: deviceId, name: desktopDeviceName(), kind: "computer", os: desktopOsLabel(),
         actions: ["info", "sessions.list", "chat.send", "task", "stop", "interactive.list", "interactive.resolve", "shell", "files", "file.get", "file.put", "open", "screen"],
       },
     });

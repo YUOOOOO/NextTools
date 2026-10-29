@@ -56,8 +56,9 @@ but cannot be called. The hub forwards `call`, `result`, and `event` inside
 the account and does not run the action. Computers and phones stay in
 `hub_devices` after they disconnect. A push notifies the other sockets with
 `sync`. `GET /v1/devices` lists remembered devices; `DELETE` forgets an
-offline one and `PATCH` renames it. The desktop connects as `computer` and
-accepts `info`, `sessions.list`, `chat.send`, and the remote actions `shell`,
+offline one and `PATCH` renames it. The desktop connects as `computer`, labelled
+with the computer name and a readable OS name such as `Windows 11`, and accepts
+`info`, `sessions.list`, `chat.send`, and the remote actions `shell`,
 `files`, `file.get`, `file.put`, `open`, and `screen`. Those remote actions
 ask the person at the computer before they run. `chat.send` starts an agent
 turn on that desktop.
