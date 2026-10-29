@@ -77,7 +77,17 @@ jobs:
         run: pnpm lint
 
       - name: Unit tests
-        run: pnpm -r --if-present test
+        run: |
+          set -o pipefail
+          if pnpm -r --if-present test 2>&1 | tee /tmp/unit-tests.log; then
+            exit 0
+          fi
+          # Surface the failing workspace and the log tail as an annotation so a
+          # red gate is diagnosable without a full log download.
+          failed="$(grep -m1 -E 'failed in |ELIFECYCLE' /tmp/unit-tests.log | tr -d '\r' || true)"
+          excerpt="$(tail -n 80 /tmp/unit-tests.log | tr '\n' ' ' | tr -d '\r' | cut -c1-3500)"
+          echo "::error title=Unit tests failed::${failed:-unknown workspace} ${excerpt}"
+          exit 1
 
       - name: Rust host-core test
         run: cargo test -p host-core --locked
