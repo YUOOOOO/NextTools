@@ -108,3 +108,54 @@ sync once on the original desktop. Offline history remains readable but input
 is disabled until its executor reconnects. Unsaved composer drafts survive
 sync refresh; concurrent aliases cannot run two tasks on the same Host session.
 See ADR 0333 for the decision and permission boundaries.
+
+
+## Interactive tool permissions and asktool cards
+
+The Web console reads the selected online conversation's current tool permission
+and asktool cards through `interactive.list`, using the same cid/session/device
+binding as shared task continuation. Desktop-originated turns in shared sessions
+are included. Its recursive polling has no overlapping list requests and ignores
+responses from previous accounts, selections and sockets. Card state is ephemeral,
+not a stored chat message; identical snapshots retain form input and selection.
+
+`interactive.resolve` carries an opaque card token and either allow-once/deny or
+an answers array (one string array or null per question). Desktop verifies caller,
+account/server scope, session, current turn, exact pending request and live backend
+again, then invokes normal permission/ask resolution. Other-tab tokens cannot be
+reused and concurrent requests share a resolution lock. Desktop decisions remove
+the card from the next Web snapshot; duplicate, expired or terminal cards fail
+closed. Ask answers support single/multiple options, custom text and skip/decline.
+Previews are redacted and rendered as text; no permanent grants are offered.
+
+This mirrors the original nanoMuse approval roundtrip while adapting asktool to
+Pilot's own canonical input protocol. Plan/Goal approval cards, plugin native
+consent dialogs and app quit dialogs are not forwarded by this protocol. See
+ADR 0334 for the authority and lifecycle decision.
+
+
+Selected ask options are submitted as opaque option identifiers and mapped back
+to original labels on the desktop, separately from custom text. Redaction or
+truncation of display text therefore cannot change the selected answer. Card
+tokens retain their issuing Host/sidecar identities; backend replacement and
+TTL expiration are rechecked after asynchronous snapshot validation immediately
+before dispatching any decision.
+The console sidebar keeps its brand and account card outside one bounded,
+keyboard-focusable navigation scroll region. Device, Web-conversation and
+project/synced-conversation lists scroll without pushing the account card out
+of view, including at the mobile sidebar height cap. Synced project/global
+groups include only rows whose execution_device (or legacy device fallback)
+matches the selected account device. Selecting another device clears the old
+cloud selection, preserves its conversations and drafts, and shows only the
+new device's groups. The device picker exposes pressed state and remembers the
+selected device per account; a first connection asks the user to pick a device.
+
+
+The sidebar presents Browser conversations (entries created in this browser)
+and Desktop synced conversations (durable cloud mirrors executed by their
+original desktop). Both are filtered by the selected device where applicable.
+Account controls are outside the navigation scroll region. Console build
+`1.1.0-sidebar-cards` appears below the account label and in the root
+`data-console-version` attribute, so deployments can verify updated assets.
+Interactive cards require both the updated cloud assets/Hub and updated desktop
+Main broker; replacing only server HTML cannot enable an older desktop.

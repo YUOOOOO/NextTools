@@ -6,7 +6,8 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.0.6";
+  const VERSION = "1.1.0-sidebar-cards";
+  document.documentElement.dataset.consoleVersion = VERSION;
 
   // ── i18n ────────────────────────────────────────────────────────
   const zh = (navigator.language || "").toLowerCase().startsWith("zh");
@@ -84,6 +85,14 @@
     email: "e-mail", hubPaused: "device hub paused",
   };
 
+  const I = zh ? {
+    permission: "工具权限", ask: "需要你的回答", allow: "仅允许一次", deny: "拒绝", submit: "提交回答", skip: "跳过", custom: "自定义回答", skipQuestion: "跳过此问题", reason: "原因", risk: "风险",
+    errors: { card_expired: "此请求已结束。", card_busy: "此请求正在处理，请稍后重试。", invalid_answer: "请检查回答后重试。", session_not_shared: "请先在桌面共享此会话。", cancelled: "此请求已取消。" }, failed: "暂时无法处理请求，请重试。",
+  } : {
+    permission: "Tool permission", ask: "Your answer is needed", allow: "Allow once", deny: "Deny", submit: "Submit answers", skip: "Skip", custom: "Custom answer", skipQuestion: "Skip this question", reason: "Reason", risk: "Risk",
+    errors: { card_expired: "This request has ended.", card_busy: "This request is being handled; try again shortly.", invalid_answer: "Check your answers and try again.", session_not_shared: "Share this conversation from the desktop first.", cancelled: "This request was cancelled." }, failed: "Unable to handle this request; try again.",
+  };
+
   // ── state ───────────────────────────────────────────────────────
   const LS = window.localStorage;
   const base = location.origin;
@@ -99,7 +108,7 @@
   const params = new URLSearchParams(location.search);
   let key = LS.getItem("nm.key") || "";
   let hint = LS.getItem("nm.hint") || "";
-  let ws = null, wsState = "off", hubPaused = false, backoff = 1000, devices = [], selected = params.get("device") || LS.getItem("nm.selected") || "";
+  let ws = null, wsState = "off", hubPaused = false, backoff = 1000, devices = [], selected = params.get("device") || LS.getItem("nm.selected." + encodeURIComponent(hint)) || "";
   const pending = new Map(); // call id → {onEvent, resolve, reject}
   let cloud = { conversations: [], messages: [] }, cloudSelected = LS.getItem("nm.cloud.selected." + encodeURIComponent(hint)) || "", cloudError = "";
   const cloudSnapshots = new Map();
@@ -265,7 +274,7 @@
 
   // ── hub socket ───────────────────────────────────────────────────
   function connect() {
-    if (!key) return;
+    if (!key || unloading) return;
     if (ws) { try { ws.onclose = null; ws.close(); } catch (_) { /* ignore */ } }
     wsState = "connecting"; drawStatus();
     const url = base.replace(/^http/, "ws") + "/v1/hub";
@@ -280,7 +289,7 @@
       let f; try { f = JSON.parse(ev.data); } catch (_) { return; }
       if (f.type === "welcome") { wsState = "on"; hubPaused = false; backoff = 1000; devices = f.devices || []; drawAll(); void loadCloud(); }
       else if (f.type === "sync") { void loadCloud(); }
-      else if (f.type === "devices") { devices = f.devices || []; drawSide(); drawHead(); }
+      else if (f.type === "devices") { devices = f.devices || []; drawSide(); drawHead(); syncInteractive(); }
       else if (f.type === "error" && !f.id) {
         if (f.code === "bad_key") { signOut(true); }
         else console.warn("hub:", f.code, f.message);
@@ -293,7 +302,7 @@
     };
     ws.onclose = (ev) => {
       if (ws !== socket || key !== connectionKey) return;
-      wsState = "off"; drawStatus();
+      wsState = "off"; clearInteractive(); drawStatus();
       for (const [id, p] of pending) { p.reject({ code: "disconnected", message: "" }); pending.delete(id); }
       if (ev.code === 4001) { signOut(true); return; }
       // 0.22: the operator paused the hub (4003 `hub_paused`, docs/hub.md); keep trying, slowly, and say why
@@ -306,12 +315,16 @@
     return new Promise((resolve, reject) => {
       if (!ws || ws.readyState !== 1) { reject({ code: "disconnected" }); return; }
       const id = Math.random().toString(36).slice(2, 14);
-      pending.set(id, { onEvent: onEvent || (() => {}), resolve, reject });
-      ws.send(JSON.stringify({ type: "call", id, to, action, args: args || {} }));
+      const settle = (fn, value) => { clearTimeout(timer); pending.delete(id); fn(value); };
+      const timer = setTimeout(() => settle(reject, { code: "timeout" }), action === "task" ? 600000 : 10000);
+      pending.set(id, { onEvent: onEvent || (() => {}), resolve: (v) => settle(resolve, v), reject: (e) => settle(reject, e) });
+      try { ws.send(JSON.stringify({ type: "call", id, to, action, args: args || {} })); }
+      catch (_) { settle(reject, { code: "disconnected" }); }
     });
   }
   function signOut(expired) {
     if (!expired && key) api("POST", "/v1/auth/sign-out", {}, key).catch(() => {});
+    clearInteractive();
     key = ""; hint = ""; LS.removeItem("nm.key"); LS.removeItem("nm.hint");
     if (ws) { try { ws.onclose = null; ws.close(); } catch (_) { /* ignore */ } ws = null; }
     for (const p of pending.values()) p.reject({ code: "signed_out" });
@@ -423,6 +436,7 @@
     const groups = new Map();
     for (const row of cloud.conversations.filter((c) => !c.deleted)) {
       const owner = row.execution_device || row.device || "";
+      if (!selected || owner !== selected) continue;
       const id = JSON.stringify([owner, row.project_id || ""]);
       if (!groups.has(id)) groups.set(id, { project: row.project_name || (zh ? "全局会话" : "Global conversations"), owner, rows: [] });
       groups.get(id).rows.push(row);
@@ -458,6 +472,7 @@
       if (stage === "session" && typeof b.sessionId === "string") {
         const entries = conversations(d.id), target = entries.find((item) => item.id === conversation);
         if (target) { target.sessionId = b.sessionId; LS.setItem(conversationKey(d.id), JSON.stringify(entries)); }
+        syncInteractive(true);
       }
       if (stage === "thinking") c.steps.push({ kind: "thinking" });
       else if (stage === "tool") c.steps.push({ kind: "tool", k: T.running, v: `${b.name} ${b.summary || ""}` });
@@ -483,7 +498,7 @@
       c.messages.push({ role: "them", text: `⚠ ${m}`, from: d.name });
     }
     c.busy = false; c.taskRoute = null; c.steps = []; for (const m of c.messages) if (m.role === "approval" && m.state === "open") m.state = "expired";
-    persist(d.id, conversation); reconcileWebConversations(); drawSide(); drawChat(); drawComposer(); void loadCloud();
+    persist(d.id, conversation); reconcileWebConversations(); drawSide(); drawChat(); drawComposer(); syncInteractive(true); void loadCloud();
   }
   async function decide(deviceId, approvalId, allow) {
     const c = chat(deviceId); const a = c.messages.find((m) => m.role === "approval" && m.id === approvalId); if (!a || a.state !== "open") return;
@@ -494,6 +509,122 @@
     const d = dev(selected); if (!d) return;
     try { await call(d.id, "stop", chat(d.id).taskRoute || { conversation: convId(d.id), ...(activeEntry(d.id)?.shared ? { sessionId: activeEntry(d.id).sessionId, cid: activeEntry(d.id).cloudCid } : {}) }); } catch (_) { /* ignore */ }
   }
+
+  // Selected-session snapshots live only in memory. Keep unchanged card DOM nodes
+  // so background refreshes preserve typing, selection and keyboard focus.
+  let interactive = null, interactiveSerial = 0, unloading = false;
+  function clearInteractive() {
+    if (interactive) { clearTimeout(interactive.timer); interactive.cards.clear(); }
+    interactive = null;
+    if (els.interactive) els.interactive.replaceChildren();
+  }
+  function interactiveContext() {
+    const d = dev(selected), entry = d && activeEntry(d.id);
+    if (unloading || !key || wsState !== "on" || !d?.online || !entry?.sessionId) return null;
+    const route = { conversation: entry.id, ...(entry.shared ? { sessionId: entry.sessionId, cid: entry.cloudCid } : {}) };
+    return { key, socket: ws, device: d.id, identity: JSON.stringify([key, d.id, entry.sessionId, route, cloudSelected]), route };
+  }
+  function interactiveCurrent(state) {
+    const context = interactiveContext();
+    return interactive === state && context?.identity === state.identity && context.socket === state.socket;
+  }
+  function syncInteractive(immediate = false) {
+    const context = interactiveContext();
+    if (!context) { clearInteractive(); return; }
+    if (!interactive || interactive.identity !== context.identity || interactive.socket !== context.socket) {
+      clearInteractive();
+      interactive = { ...context, serial: ++interactiveSerial, cards: new Map(), timer: null, loading: false, again: false, revision: 0, error: "" };
+      immediate = true;
+    }
+    paintInteractive(interactive);
+    if (immediate) void refreshInteractive(interactive);
+  }
+  function paintInteractive(state) {
+    if (!interactiveCurrent(state) || !els.interactive) return;
+    const nodes = [...state.cards.values()].map((item) => item.node);
+    if (state.error) nodes.push(h("p", { role: "status" }, state.error));
+    // Avoid detaching focused controls when the snapshot is unchanged.
+    if (nodes.length === els.interactive.childNodes.length && nodes.every((n, i) => n === els.interactive.childNodes[i])) return;
+    for (const child of [...els.interactive.childNodes]) if (!nodes.includes(child)) child.remove();
+    nodes.forEach((node, i) => { if (els.interactive.childNodes[i] !== node) els.interactive.insertBefore(node, els.interactive.childNodes[i] || null); });
+  }
+  async function refreshInteractive(state) {
+    if (!interactiveCurrent(state)) return;
+    if (state.loading) { state.again = true; return; }
+    clearTimeout(state.timer); state.loading = true;
+    const revision = state.revision;
+    try {
+      const result = await call(state.device, "interactive.list", state.route);
+      if (!interactiveCurrent(state) || state.revision !== revision) return;
+      state.error = "";
+      const next = new Map();
+      for (const card of result.cards || []) {
+        if (typeof card.id !== "string" || !["permission", "ask"].includes(card.kind)) continue;
+        const fingerprint = JSON.stringify(card), previous = state.cards.get(card.id);
+        next.set(card.id, previous?.fingerprint === fingerprint ? previous : makeInteractiveCard(state, card, fingerprint));
+      }
+      state.cards = next; paintInteractive(state);
+    } catch (error) {
+      if (interactiveCurrent(state)) { state.error = I.errors[error.code] || I.failed; paintInteractive(state); }
+    } finally {
+      state.loading = false;
+      if (interactiveCurrent(state)) {
+        const wait = state.again ? 0 : 1500; state.again = false;
+        state.timer = setTimeout(() => void refreshInteractive(state), wait);
+      }
+    }
+  }
+  function makeInteractiveCard(state, card, fingerprint) {
+    const item = { fingerprint, busy: false, node: h("section", { class: "interactive-card approval", "aria-label": card.kind === "permission" ? I.permission : I.ask }) };
+    const node = item.node, answers = [];
+    node.append(h("h3", {}, card.kind === "permission" ? I.permission : I.ask));
+    const actions = h("div", { class: "btns" });
+    const status = h("p", { role: "status" });
+    async function resolve(payload) {
+      if (item.busy || !interactiveCurrent(state) || state.cards.get(card.id) !== item) return;
+      item.busy = true; status.textContent = "";
+      const controls = [...node.querySelectorAll("input, button")]; controls.forEach((el) => { el.disabled = true; });
+      try {
+        const result = await call(state.device, "interactive.resolve", { ...state.route, id: card.id, ...payload });
+        if (!interactiveCurrent(state) || state.cards.get(card.id) !== item) return;
+        if (result.ok !== true) throw { code: "failed" };
+        state.revision++; state.cards.delete(card.id); paintInteractive(state);
+        void refreshInteractive(state);
+      } catch (error) {
+        if (!interactiveCurrent(state) || state.cards.get(card.id) !== item) return;
+        status.textContent = I.errors[error.code] || I.failed;
+        if (error.code === "card_expired" || error.code === "cancelled") {
+          state.revision++; state.cards.delete(card.id); state.error = status.textContent; paintInteractive(state); void refreshInteractive(state);
+        }
+      } finally {
+        item.busy = false; controls.forEach((el) => { el.disabled = false; });
+      }
+    }
+    if (card.kind === "permission") {
+      node.append(h("b", {}, card.toolName), h("pre", {}, card.preview || ""), h("p", {}, I.reason + ": " + (card.reason || "")), h("p", {}, I.risk + ": " + (T.risks[card.risk] || card.risk || "")));
+      actions.append(h("button", { class: "yes", onclick: () => resolve({ decision: "allow-once" }) }, I.allow), h("button", { onclick: () => resolve({ decision: "deny" }) }, I.deny));
+    } else {
+      (card.questions || []).forEach((question, index) => {
+        const group = h("fieldset", {}, h("legend", {}, question.question));
+        const options = [], name = "interactive-" + state.serial + "-" + state.cards.size + "-" + index + "-" + (++interactiveSerial);
+        const choices = h("div", { role: question.multiSelect ? "group" : "radiogroup", "aria-label": question.question });
+        for (const option of question.options || []) {
+          const label = typeof option === "string" ? option : option.label;
+          const input = h("input", { type: question.multiSelect ? "checkbox" : "radio", name });
+          options.push({ input, value: typeof option === "object" && typeof option.id === "string" ? { option: option.id } : label });
+          choices.append(h("label", {}, input, label, typeof option === "object" && option.description ? h("small", {}, option.description) : null));
+        }
+        const custom = h("input", { type: "text", "aria-label": I.custom + ": " + question.question });
+        const skip = h("input", { type: "checkbox" });
+        group.append(choices, h("label", {}, I.custom, custom), h("label", {}, skip, I.skipQuestion)); node.append(group);
+        answers.push(() => skip.checked ? null : !question.multiSelect && custom.value.trim() ? [custom.value.trim()] : [...options.filter((o) => o.input.checked).map((o) => o.value), ...(custom.value.trim() ? [custom.value.trim()] : [])]);
+      });
+      actions.append(h("button", { class: "yes", onclick: () => resolve({ answers: answers.map((answer) => answer()) }) }, I.submit), h("button", { onclick: () => resolve({ answers: answers.map(() => null) }) }, I.skip));
+    }
+    node.append(actions, status);
+    return item;
+  }
+  window.addEventListener("pagehide", () => { unloading = true; clearInteractive(); for (const p of pending.values()) p.reject({ code: "cancelled" }); if (ws) ws.close(); });
 
   // ── main view ────────────────────────────────────────────────────
   let els = {};
@@ -508,25 +639,28 @@
   function drawStatus() { const s = els.status; if (s) { s.className = "status " + (wsState === "on" ? "on" : wsState === "off" ? "off" : ""); s.title = wsState === "on" ? T.connected : wsState === "off" ? (hubPaused ? T.hubPaused : T.disconnected) : T.connecting; } }
   const glyph = (kind) => ICON[kind] || ICON.computer;
   function pickDevice(id) {
-    cloudSelected = ""; LS.removeItem("nm.cloud.selected." + encodeURIComponent(hint)); selected = id; LS.setItem("nm.selected", id); history.replaceState(null, "", "?device=" + encodeURIComponent(id));
+    cloudSelected = ""; LS.removeItem("nm.cloud.selected." + encodeURIComponent(hint)); selected = id; LS.setItem("nm.selected." + encodeURIComponent(hint), id); history.replaceState(null, "", "?device=" + encodeURIComponent(id));
     drawSide(); drawChatShell();
     if (window.matchMedia("(max-width: 760px)").matches) { els.side.classList.add("hidden"); }
   }
   function drawSide() {
     if (!els.side) return;
     const others = devices.filter((d) => d.kind !== "web");
+    const scrollTop = els.side.querySelector(".side-scroll")?.scrollTop || 0;
+    const groups = cloudGroups();
     els.status = h("span", { class: "status" });
     els.side.replaceChildren(
       h("div", { class: "top" }, h("img", { src: "mark.svg", alt: "" }), h("b", {}, "Pilot"), els.status),
+      h("div", { class: "side-scroll", role: "region", "aria-label": zh ? "设备与会话" : "Devices and conversations", tabindex: "0" },
       h("div", { class: "label" }, T.devices, " · ", h("a", { href: "/sync-view" }, zh ? "同步记录" : "Synced chats")),
       h("div", { class: "devices" }, h("div", { class: "card" },
-        others.length ? others.map((d) => h("button", { class: "row tap" + (d.id === selected ? " active" : ""), onclick: () => pickDevice(d.id) },
+        others.length ? others.map((d) => h("button", { class: "row tap" + (d.id === selected ? " active" : ""), "data-device-id": d.id, "aria-pressed": d.id === selected ? "true" : "false", onclick: () => pickDevice(d.id) },
           h("span", { class: "tile" + (d.online ? "" : " grey"), html: glyph(d.kind) }),
           h("div", { class: "txt" }, h("div", { class: "t" }, d.name), h("div", { class: "s" }, `${kindLabel(d.kind)} · ${d.os || ""} · ${d.online ? T.online : `${T.lastSeen} ${ago(d.last_seen)}`}`)),
           h("span", { class: "dot" + (d.online ? " on" : "") }),
         )) : h("div", { class: "empty" }, T.noDevices))),
       selected && dev(selected) ? h("div", { class: "web-conversations" },
-        h("div", { class: "label" }, zh ? "会话" : "Conversations",
+        h("div", { class: "label" }, zh ? "本浏览器会话" : "Browser conversations",
           h("button", { class: "btn quiet sm new-conversation", onclick: () => newConversation(selected) }, zh ? "新建会话" : "New conversation")),
         h("div", { class: "card" }, ...conversations(selected).map((conversation) => h("button", {
           class: "row tap conversation-entry" + (!cloudSelected && convId(selected) === conversation.id ? " active" : ""),
@@ -534,24 +668,25 @@
           onclick: () => { LS.setItem(activeKey(selected), conversation.id); cloudSelected = ""; LS.removeItem("nm.cloud.selected." + encodeURIComponent(hint)); drawSide(); drawChatShell(); if (window.matchMedia("(max-width: 760px)").matches) els.side.classList.add("hidden"); },
         }, h("span", { class: "tile grey", html: ICON.chat }), h("div", { class: "txt" }, h("div", { class: "t" }, conversation.title),
           chat(selected, conversation.id).busy ? h("div", { class: "s" }, T.thinking) : null))))) : null,
-      h("div", { class: "label" }, zh ? "云端会话" : "Synced conversations",
+      h("div", { class: "label" }, zh ? "桌面同步会话" : "Desktop synced conversations",
         h("button", { class: "btn quiet sm", onclick: () => void loadCloud() }, T.refresh)),
       h("div", { class: "cloud-conversations card" },
         cloudError ? h("div", { class: "empty" }, cloudError) : null,
-        ...cloudGroups().map((group) => h("div", { class: "cloud-project-group", "data-project": group.rows[0].project_id || "global", "data-device": group.owner },
+        ...groups.map((group) => h("div", { class: "cloud-project-group", "data-project": group.rows[0].project_id || "global", "data-device": group.owner },
           h("div", { class: "label" }, group.project, " · ", devices.find((d) => d.id === group.owner)?.name || group.rows[0].device_name || (zh ? "原设备" : "Original device")),
           ...group.rows.map((conversation) => h("button", {
             class: "row tap" + (cloudSelected === conversation.cid ? " active" : ""),
             "data-cloud-conversation": conversation.cid,
             onclick: () => selectCloudConversation(conversation.cid),
           }, h("span", { class: "tile grey", html: ICON.chat }), h("div", { class: "txt" }, h("div", { class: "t" }, conversation.title || conversation.cid)))))),
-        !cloudError && !cloud.conversations.some((c) => !c.deleted) ? h("div", { class: "empty" }, T.syncEmpty) : null),
+        !cloudError && !groups.length ? h("div", { class: "empty" }, selected ? T.syncEmpty : T.pick) : null)),
       h("div", { class: "foot card" },
         h("button", { class: "row tap", onclick: openAccount },
           h("span", { class: "tile grey", html: ICON.person }),
-          h("div", { class: "txt" }, h("div", { class: "t" }, hint), h("div", { class: "s" }, T.account)),
+          h("div", { class: "txt" }, h("div", { class: "t" }, hint), h("div", { class: "s", title: "Console " + VERSION }, T.account + " · " + VERSION)),
           h("span", { class: "chev" }))),
     );
+    els.side.querySelector(".side-scroll").scrollTop = scrollTop;
     drawStatus();
   }
   function drawChatShell() {
@@ -561,18 +696,21 @@
     }
     const d = dev(selected);
     if (!d) {
+      clearInteractive();
       els.chat.replaceChildren(h("div", { class: "empty-chat" }, h("img", { src: "mark.svg", alt: "" }), h("p", {}, h("b", {}, T.pick), T.pickSub)));
       return;
     }
     els.head = h("div", { class: "head" });
     els.messages = h("div", { class: "messages" + (cloudSelected ? " cloud-messages" : "") });
     els.composer = h("div", { class: "composer" });
-    els.chat.replaceChildren(els.head, els.messages, els.composer);
+    els.interactive = h("div", { class: "interactive-cards", "aria-label": I.ask });
+    els.chat.replaceChildren(els.head, els.messages, els.interactive, els.composer);
+    syncInteractive();
     drawHead(); drawChat(); drawComposer();
   }
   function drawHead() {
     const d = dev(selected); if (!els.head || !d) return;
-    els.head.replaceChildren(
+    els.head.replaceChildren(...[
       h("button", { class: "round back", onclick: () => { els.side.classList.remove("hidden"); }, html: ICON.back }),
       h("span", { class: "tile", html: glyph(d.kind) }),
       h("div", {}, h("div", { class: "name" }, activeEntry(d.id)?.shared ? activeEntry(d.id).title : d.name), h("div", { class: "sub" }, `${kindLabel(d.kind)} · ${d.os || ""} · ${d.online ? T.online : T.offline}`)),
@@ -581,8 +719,8 @@
         const c = chat(d.id); if (c.busy) return; c.messages = []; persist(d.id); drawChat();
       } }, T.clear),
       h("button", { class: "btn quiet sm new-conversation", onclick: () => newConversation(d.id) }, zh ? "新建会话" : "New conversation"),
-      d.online ? null : h("button", { class: "btn quiet sm", onclick: () => { if (!confirm(T.forgetConfirm(d.name))) return; if (ws && wsState === "on") ws.send(JSON.stringify({ type: "forget", device_id: d.id })); LS.removeItem("nm.conv." + encodeURIComponent(hint) + "." + d.id); if (selected === d.id) { selected = ""; LS.removeItem("nm.selected"); history.replaceState(null, "", location.pathname); } devices = devices.filter((x) => x.id !== d.id); drawSide(); drawChatShell(); } }, T.forget),
-    );
+      d.online ? null : h("button", { class: "btn quiet sm", onclick: () => { if (!confirm(T.forgetConfirm(d.name))) return; if (ws && wsState === "on") ws.send(JSON.stringify({ type: "forget", device_id: d.id })); LS.removeItem("nm.conv." + encodeURIComponent(hint) + "." + d.id); if (selected === d.id) { selected = ""; LS.removeItem("nm.selected." + encodeURIComponent(hint)); history.replaceState(null, "", location.pathname); } devices = devices.filter((x) => x.id !== d.id); drawSide(); drawChatShell(); } }, T.forget),
+    ].filter((node) => node !== null && node !== undefined));
     drawComposer();
   }
   function drawChat() {
@@ -621,7 +759,7 @@
       h("div", { class: "box" }, ta,
         c.busy ? h("button", { class: "stop", title: T.stop, onclick: stop, html: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2" fill="#fff"/></svg>' })
           : h("button", { disabled: enabled ? null : "", onclick: go, html: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>' })),
-      h("div", { class: "note" }, c.historyError || (entry?.shared && !entry.controllable ? (zh ? "请在原桌面同步一次，以关联这个会话" : "Sync once on the original desktop to associate this conversation") : entry?.shared && !c.historyReady ? (zh ? "正在读取会话历史…" : "Loading conversation history…") : d.online ? (d.kind === "phone" ? (zh ? "手机上需要确认的操作，会在手机上弹出确认卡。" : "Anything that needs an OK on the phone is asked on the phone.") : (zh ? "需要确认的操作会在桌面本机弹出确认框。" : "Anything that needs an OK is asked on the desktop itself.")) : T.offlineNote(d.name))),
+      h("div", { class: "note" }, c.historyError || (entry?.shared && !entry.controllable ? (zh ? "请在原桌面同步一次，以关联这个会话" : "Sync once on the original desktop to associate this conversation") : entry?.shared && !c.historyReady ? (zh ? "正在读取会话历史…" : "Loading conversation history…") : d.online ? (d.kind === "phone" ? (zh ? "手机上需要确认的操作，会在手机上弹出确认卡。" : "Anything that needs an OK on the phone is asked on the phone.") : (zh ? "待处理的工具权限和问题会显示在这里，也可以在桌面处理。" : "Pending tool permissions and questions appear here; you can also answer on the desktop.")) : T.offlineNote(d.name))),
     );
     if (enabled && !c.busy && document.activeElement === document.body) ta.focus();
   }

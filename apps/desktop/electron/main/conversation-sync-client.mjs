@@ -295,7 +295,7 @@ export function createConversationSync({
       key: saved.token,
       device: {
         id: deviceId, name: "Pilot", kind: "computer", os: process.platform,
-        actions: ["info", "sessions.list", "chat.send", "task", "stop", "shell", "files", "file.get", "file.put", "open", "screen"],
+        actions: ["info", "sessions.list", "chat.send", "task", "stop", "interactive.list", "interactive.resolve", "shell", "files", "file.get", "file.put", "open", "screen"],
       },
     });
     const message = (event) => {

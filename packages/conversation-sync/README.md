@@ -51,3 +51,20 @@ and continue it on the same desktop session. Keep that desktop online and let
 it sync once after upgrading to populate its execution binding. Project paths
 stay local; the cloud receives a project name and opaque id. Offline devices
 keep their history readable and disable execution until they reconnect.
+
+
+The selected online conversation also shows current tool permission and asktool
+input cards. Choose Allow once or Deny, or answer single/multi/custom questions
+from Web; the original desktop verifies and resolves the actual pending request.
+Desktop decisions are reflected on the next refresh. App lifecycle dialogs and
+Plan/Goal approvals still use their local desktop interfaces.
+
+
+The sidebar presents Browser conversations (entries created in this browser)
+and Desktop synced conversations (durable cloud mirrors executed by their
+original desktop). Both are filtered by the selected device where applicable.
+Account controls are outside the navigation scroll region. Console build
+`1.1.0-sidebar-cards` appears below the account label and in the root
+`data-console-version` attribute, so deployments can verify updated assets.
+Interactive cards require both the updated cloud assets/Hub and updated desktop
+Main broker; replacing only server HTML cannot enable an older desktop.

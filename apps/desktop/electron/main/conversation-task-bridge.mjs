@@ -26,6 +26,13 @@ export function createConversationTaskBridge({ getHost, getSidecar, prompt, abor
   }
 
   return {
+    sessionFor(args, context) {
+      const key = keyFor(args, context);
+      if (context.signal.aborted) throw failure("cancelled");
+      const sessionId = args.sessionId || sessions.get(key);
+      if (!sessionId) throw failure("session_not_found");
+      return sessionId;
+    },
     async task(args, context) {
       const key = keyFor(args, context);
       if (typeof args.text !== "string" || !args.text.trim() || args.text.length > 65_536) throw failure("invalid_text");

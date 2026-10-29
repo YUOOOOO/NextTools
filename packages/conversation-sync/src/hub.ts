@@ -240,7 +240,7 @@ export class DeviceHub {
       try {
         const directory = this.store?.listConversations(conn.accountId);
         const rows = directory?.conversations as Array<Record<string, unknown>> | undefined;
-        authorized = (action === "task" || action === "stop") && !!rows?.some((row) =>
+        authorized = (action === "task" || action === "stop" || action === "interactive.list" || action === "interactive.resolve") && !!rows?.some((row) =>
           row.cid === args.cid && row.session_id === args.sessionId && row.execution_device === to);
       } catch (error) { if (!(error instanceof SyncError)) throw error; }
       if (!authorized) {

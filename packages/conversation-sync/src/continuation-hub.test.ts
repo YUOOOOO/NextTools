@@ -59,6 +59,19 @@ it("routes shared project continuation only to its declared local executor and s
     const answer = frame(web, "result", "continued");
     desktop.send(JSON.stringify({ type: "result", id: "continued", ok: true, body: { text: "Original project continued" } }));
     expect(await answer).toMatchObject({ ok: true, body: { text: "Original project continued" } });
+    for (const action of ["interactive.list", "interactive.resolve"]) {
+      const id = "valid-" + action;
+      const forwarded = frame(desktop, "call", id);
+      web.send(JSON.stringify({ type: "call", id, to: "desktop-one", action, args: { cid: "project-conversation", sessionId: "local-session", conversation: "web-thread", id: "opaque-token", decision: "deny" } }));
+      expect(await forwarded).toMatchObject({ action, args: { sessionId: "local-session" } });
+      const reply = frame(web, "result", id);
+      desktop.send(JSON.stringify({ type: "result", id, ok: true, body: { cards: [], ok: true } }));
+      expect(await reply).toMatchObject({ ok: true });
+      const wrong = frame(web, "error", "wrong-" + action);
+      web.send(JSON.stringify({ type: "call", id: "wrong-" + action, to: "desktop-one", action, args: { cid: "project-conversation", sessionId: "another-local-session", conversation: "web-thread" } }));
+      expect(await wrong).toMatchObject({ code: "session_not_shared" });
+    }
+
   } finally {
     for (const socket of sockets) socket.close();
     await new Promise<void>((resolve) => server.close(() => resolve())); db.close();

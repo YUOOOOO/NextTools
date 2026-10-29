@@ -5,6 +5,8 @@ import { IPC } from "@pi-desktop/shared";
 import { REMOTE_ACTIONS, remoteSummary, runRemoteAction } from "../conversation-sync-actions.mjs";
 import { createConversationSync } from "../conversation-sync-client.mjs";
 import { markWebPrompt } from "../web-message-source.mjs";
+import { createConversationInteractiveBridge } from "../conversation-interactive-bridge.mjs";
+import { redactValue } from "../logger";
 import { createConversationAutoSync } from "../conversation-auto-sync.mjs";
 import { loadOrCreateSyncDeviceId } from "../conversation-sync-device-id.mjs";
 import { createConversationTaskBridge, type InternalInvoke, type TaskCallContext, type TaskSidecar } from "../conversation-task-bridge.mjs";
@@ -17,6 +19,7 @@ export function registerConversationSyncIpc({
   getSidecar,
   invoke,
   onSessionsChanged,
+  currentTurn,
 }: {
   registrar: IpcRegistrar;
   getHost: () => HostProcess | null;
@@ -24,6 +27,7 @@ export function registerConversationSyncIpc({
   /** Reuse the registered Agent handlers, including local approvals and durable turns. */
   invoke: InternalInvoke;
   onSessionsChanged: () => void;
+  currentTurn: (sessionId: string) => string | null;
 }): void {
   const tasks = createConversationTaskBridge({
     getHost, getSidecar,
@@ -33,6 +37,15 @@ export function registerConversationSyncIpc({
     },
     abort: (request) => invoke(IPC.invoke.agentAbort, [request]),
   });
+  const interactive = createConversationInteractiveBridge({
+    authorize: (args, context) => tasks.sessionFor(args, context),
+    getHost, getSidecar, currentTurn,
+    pending: (sessionId) => invoke(IPC.invoke.pendingInteractive, [{ sessionId }]),
+    resolvePermission: (resolution) => invoke(IPC.invoke.toolResolvePermission, [resolution]),
+    resolveAsk: (resolution) => invoke(IPC.invoke.askToolResolve, [resolution]),
+    redact: redactValue,
+  });
+  app.once("before-quit", () => interactive.dispose());
   const sync = createConversationSync({
     filePath: join(app.getPath("userData"), "conversation-sync.json"),
     encrypt: (plain: string) => safeStorage.encryptString(plain).toString("base64"),
@@ -46,6 +59,8 @@ export function registerConversationSyncIpc({
           automatic.request();
         });
       }
+      if (action === "interactive.list") return interactive.list(args, context);
+      if (action === "interactive.resolve") return interactive.resolve(args, context);
       if (action === "stop") return tasks.stop(args, context);
       return runCall(getHost, getSidecar, action, args, invoke, context.caller.kind === "web");
     },
@@ -64,7 +79,7 @@ export function registerConversationSyncIpc({
   registrar.handle(IPC.invoke.conversationSyncGetState, () => sync.getState());
   registrar.handle(IPC.invoke.conversationSyncSignIn, async (input: unknown) => { const state = await sync.signIn(input); automatic.request(); return state; });
   registrar.handle(IPC.invoke.conversationSyncRegister, async (input: unknown) => { const state = await sync.register(input); automatic.request(); return state; });
-  registrar.handle(IPC.invoke.conversationSyncSignOut, () => sync.signOut());
+  registrar.handle(IPC.invoke.conversationSyncSignOut, () => { interactive.dispose(); return sync.signOut(); });
   registrar.handle(IPC.invoke.conversationSyncPush, () => sync.push());
 }
 

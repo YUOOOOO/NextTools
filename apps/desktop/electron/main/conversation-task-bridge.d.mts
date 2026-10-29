@@ -16,6 +16,7 @@ export function createConversationTaskBridge(options: {
   abort?: (request: { sessionId: string; turnId: string }) => Promise<unknown>;
   timeoutMs?: number;
 }): {
+  sessionFor(args: Record<string, unknown>, context: TaskCallContext): string;
   task(args: Record<string, unknown>, context: TaskCallContext): Promise<{ text: string }>;
   stop(args: Record<string, unknown>, context: TaskCallContext): Promise<{ stopped: boolean }>;
 };

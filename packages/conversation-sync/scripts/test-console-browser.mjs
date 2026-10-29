@@ -72,16 +72,31 @@ try {
   const session = await login.json(); assert.equal(login.status, 200);
   computer = new WebSocket(base.replace("http", "ws") + "/v1/hub");
   const welcomed = new Promise((resolve) => computer.addEventListener("message", ({ data }) => { if (JSON.parse(String(data)).type === "welcome") resolve(); }));
-  const helloComputer = () => computer.send(JSON.stringify({ type: "hello", key: session.token, device: { id: "browser-fixture", kind: "computer", name: "Pilot fixture", os: "test", actions: ["task", "stop"] } }));
+  const helloComputer = () => computer.send(JSON.stringify({ type: "hello", key: session.token, device: { id: "browser-fixture", kind: "computer", name: "Pilot fixture", os: "test", actions: ["task", "stop", "interactive.list", "interactive.resolve"] } }));
   computer.addEventListener("open", helloComputer);
   let waitingTask;
   const taskConversations = [];
   const taskArguments = [];
   const stoppedConversations = [];
   const stoppedArguments = [];
+  const cardsByConversation = new Map(), interactiveLists = [], resolutions = [];
+  let holdSnapshot = false, delayedSnapshot, holdResolution = false, delayedResolution;
+  let resolutionError = "";
+  const sendResult = (id, body) => computer.send(JSON.stringify({ type: "result", id, ok: true, body }));
   const computerMessage = ({ data }) => {
     const frame = JSON.parse(String(data)); if (frame.type !== "call") return;
-    if (frame.action === "task") {
+    if (frame.action === "interactive.list") {
+      interactiveLists.push(frame.args);
+      const body = { cards: structuredClone(cardsByConversation.get(frame.args.conversation) || []) };
+      if (holdSnapshot) { holdSnapshot = false; delayedSnapshot = () => sendResult(frame.id, body); return; }
+      sendResult(frame.id, body);
+    } else if (frame.action === "interactive.resolve") {
+      resolutions.push(frame.args);
+      if (resolutionError) { const error = resolutionError; resolutionError = ""; computer.send(JSON.stringify({ type: "result", id: frame.id, ok: false, error })); return; }
+      const finish = () => { cardsByConversation.set(frame.args.conversation, (cardsByConversation.get(frame.args.conversation) || []).filter(c => c.id !== frame.args.id)); sendResult(frame.id, { ok: true }); };
+      if (holdResolution) { holdResolution = false; delayedResolution = finish; return; }
+      finish();
+    } else if (frame.action === "task") {
       taskConversations.push(frame.args.conversation);
       taskArguments.push(frame.args);
       computer.send(JSON.stringify({ type: "event", id: frame.id, body: { stage: "session", sessionId: frame.args.sessionId || "host-" + frame.args.conversation } }));
@@ -100,6 +115,8 @@ try {
   await until(() => evaluate("document.querySelector('.devices')?.textContent.includes('Pilot fixture')"), "Device missing");
   await evaluate("localStorage.setItem('nm.conv.browser-user.browser-fixture', 'web-legacy-conversation'); localStorage.setItem('nm.chat.browser-user.browser-fixture', JSON.stringify([{role:'me',text:'Legacy saved question'},{role:'them',text:'Legacy saved answer'}]))");
   await click(".devices button"); await visible(".composer textarea");
+  assert.equal(await evaluate("document.querySelector('.head').textContent.includes('null')"), false);
+  assert.equal(await evaluate("document.documentElement.dataset.consoleVersion"), "1.1.0-sidebar-cards");
   assert(await evaluate("document.querySelector('.messages').textContent.includes('Legacy saved answer')"), "Legacy single-conversation history was lost");
   await fill(".composer textarea", "hello from browser"); await click(".composer .box button");
   await until(() => evaluate("document.querySelector('.messages')?.textContent.includes('Fixture completed: hello from browser')"), "Final answer missing");
@@ -184,6 +201,105 @@ try {
   await until(() => evaluate("document.querySelector('.messages')?.textContent.includes('Fixture completed: continue from cloud project')"), "Cloud project continuation failed");
   assert.equal(taskArguments.at(-1).sessionId, "host-" + firstConversation);
   assert.equal(taskArguments.at(-1).cid, "host-" + firstConversation);
+  // Pending desktop tasks appear without a Web task being busy. Snapshots are
+  // authoritative and contain opaque UI tokens, never raw Host request ids.
+  const permission = (id) => ({ id, kind: "permission", toolName: "fixture-shell", preview: '<img src=x onerror="window.previewExecuted=true">', reason: "Fixture reason", risk: "system" });
+  await click(".head .new-conversation");
+  await fill(".composer textarea", "prepare regular interactive session"); await click(".composer .box button");
+  await until(() => evaluate("document.querySelector('.messages')?.textContent.includes('Fixture completed: prepare regular interactive session')"), "Regular session missing");
+  const firstRoute = taskArguments.at(-1).conversation;
+  cardsByConversation.set(firstRoute, [permission("opaque-allow")]);
+  await visible(".interactive-card");
+  assert(await evaluate("document.querySelector('.interactive-card').textContent.includes('Fixture reason')"));
+  assert.equal(await evaluate("!!document.querySelector('.interactive-card img') || !!window.previewExecuted"), false);
+  await fill(".composer textarea", "preserved interactive draft");
+  holdResolution = true;
+  await click(".interactive-card .yes");
+  await until(() => delayedResolution, "Resolution was not received");
+  assert.equal(await evaluate("document.querySelector('.interactive-card .yes').disabled"), true);
+  await click(".interactive-card .yes");
+  assert.equal(resolutions.filter(r => r.id === "opaque-allow").length, 1);
+  delayedResolution(); delayedResolution = null;
+  await until(() => evaluate("!document.querySelector('.interactive-card')"), "Successful permission did not disappear");
+  assert.equal(resolutions.at(-1).decision, "allow-once");
+  assert.equal(resolutions.at(-1).sessionId, undefined);
+  assert.equal(resolutions.at(-1).cid, undefined);
+  cardsByConversation.set(firstRoute, [permission("opaque-deny")]);
+  await visible(".interactive-card"); await click(".interactive-card .btns button:last-child");
+  await until(() => evaluate("!document.querySelector('.interactive-card')"), "Denied permission did not disappear");
+  assert.equal(resolutions.at(-1).decision, "deny");
+  cardsByConversation.set(firstRoute, [{ id: "opaque-ask", kind: "ask", questions: [
+    { question: "Choose several", options: [{id:"option-one",label:"One"}, {id:"option-two",label:"Two",description:"Second option"}], multiSelect:true },
+    { question: "Choose one", options: ["Yes", "No"] },
+    { question: "Optional question", options: [] },
+  ] }]);
+  await visible(".interactive-card fieldset");
+  await click('.interactive-card fieldset:nth-of-type(1) input[type=checkbox]');
+  await evaluate("document.querySelectorAll('.interactive-card fieldset:nth-of-type(1) input[type=checkbox]')[1].click()");
+  await fill('.interactive-card fieldset:nth-of-type(1) input[type=text]', "Custom detail");
+  await click('.interactive-card fieldset:nth-of-type(2) input[type=radio]');
+  await click('.interactive-card fieldset:nth-of-type(3) input[type=checkbox]');
+  await evaluate("window.retainedAskInput = document.querySelector('.interactive-card input[type=text]')");
+  const listCount = interactiveLists.length;
+  await until(() => interactiveLists.length >= listCount + 2, "Selected idle session was not polled");
+  assert.equal(await evaluate("window.retainedAskInput === document.querySelector('.interactive-card input[type=text]')"), true);
+  assert.equal(await evaluate("document.querySelector('.interactive-card input[type=text]').value"), "Custom detail");
+  assert.equal(await evaluate("document.querySelector('.composer textarea').value"), "preserved interactive draft");
+  assert.equal(await evaluate("document.querySelectorAll('.interactive-card').length"), 1);
+  await click(".interactive-card .yes");
+  await until(() => evaluate("!document.querySelector('.interactive-card')"), "Ask did not settle");
+  assert.deepEqual(resolutions.at(-1).answers, [[{option:"option-one"},{option:"option-two"},"Custom detail"],["Yes"],null]);
+  cardsByConversation.set(firstRoute, [{ id: "custom-single", kind: "ask", questions: [{ question: "Custom single answer", options: ["Default"] }] }]);
+  await visible(".interactive-card input[type=text]");
+  await click(".interactive-card input[type=radio]");
+  await fill(".interactive-card input[type=text]", "My own answer");
+  resolutionError = "invalid_answer";
+  await click(".interactive-card .yes");
+  await until(() => evaluate("/Check your answers|请检查回答/.test(document.querySelector('.interactive-card')?.textContent || '')"), "Invalid answer error missing");
+  assert.equal(await evaluate("document.querySelector('.interactive-card .yes').disabled"), false);
+  assert.equal(await evaluate("document.querySelector('.interactive-card input[type=text]').value"), "My own answer");
+  await click(".interactive-card .yes");
+  await until(() => evaluate("!document.querySelector('.interactive-card')"), "Custom answer retry failed");
+  assert.deepEqual(resolutions.at(-1).answers, [["My own answer"]]);
+  cardsByConversation.set(firstRoute, [{ id: "skip-all", kind: "ask", questions: [{question:"Skip whole card",options:["One"]}] }]);
+  await visible(".interactive-card"); await click(".interactive-card .btns button:last-child");
+  await until(() => evaluate("!document.querySelector('.interactive-card')"), "Skip did not settle");
+  assert.deepEqual(resolutions.at(-1).answers, [null]);
+  assert.equal(await evaluate("Object.keys(localStorage).some(k => /opaque-ask|opaque-allow/.test(localStorage.getItem(k)))"), false, "Pending cards were persisted");
+  cardsByConversation.set(firstRoute, [permission("desktop-resolves")]);
+  await visible(".interactive-card");
+  cardsByConversation.set(firstRoute, []);
+  await until(() => evaluate("!document.querySelector('.interactive-card')"), "Desktop resolution was not reflected");
+  cardsByConversation.set(firstRoute, [permission("expired")]);
+  await visible(".interactive-card"); resolutionError = "card_expired"; cardsByConversation.set(firstRoute, []);
+  await click(".interactive-card .yes");
+  await until(() => evaluate("!document.querySelector('.interactive-card')"), "Expired card remained actionable");
+  cardsByConversation.set(firstRoute, [permission("stale-secret")]); holdSnapshot = true;
+  await until(() => delayedSnapshot, "Delayed snapshot was not captured");
+  await click(".head .new-conversation");
+  await fill(".composer textarea", "another interactive session"); await click(".composer .box button");
+  await until(() => evaluate("document.querySelector('.messages')?.textContent.includes('Fixture completed: another interactive session')"), "Switched session missing");
+  delayedSnapshot(); delayedSnapshot = null;
+  const switchedLists = interactiveLists.length;
+  await until(() => interactiveLists.length > switchedLists, "Switched session was not polled");
+  assert.equal(await evaluate("document.querySelector('.interactive-cards').textContent.includes('fixture-shell')"), false, "Delayed snapshot leaked into another session");
+  const regularConversation = taskArguments.at(-1).conversation;
+  cardsByConversation.set(regularConversation, [permission("regular-route")]);
+  await visible(".interactive-card");
+  const regularRoute = interactiveLists.at(-1);
+  assert.equal(regularRoute.conversation, regularConversation); assert.equal(regularRoute.sessionId, undefined); assert.equal(regularRoute.cid, undefined);
+  await click(".interactive-card .yes");
+  await until(() => evaluate("!document.querySelector('.interactive-card')"), "Regular permission did not settle");
+  assert.equal(resolutions.at(-1).sessionId, undefined);
+  cardsByConversation.set(firstRoute, []);
+  await click('[data-cloud-conversation="host-' + firstConversation + '"]');
+  await until(() => evaluate("document.querySelector('.composer textarea')?.disabled === false"), "Shared composer not restored");
+  const sharedEntry = await evaluate("document.querySelector('.conversation-entry.active')?.dataset.conversation || localStorage.getItem('nm.conv.browser-user.browser-fixture')");
+  cardsByConversation.set(sharedEntry, [permission("shared-route")]);
+  await visible(".interactive-card"); await click(".interactive-card .yes");
+  await until(() => evaluate("!document.querySelector('.interactive-card')"), "Shared permission did not settle");
+  assert.equal(resolutions.at(-1).sessionId, "host-" + firstConversation);
+  assert.equal(resolutions.at(-1).cid, "host-" + firstConversation);
   // Offline keeps history and a disabled composer; reconnect restores execution.
   computer.close();
   await until(() => evaluate("document.querySelector('.composer textarea')?.disabled === true"), "Offline project composer still enabled");
@@ -220,6 +336,50 @@ try {
     const page = await fetch(base + "/v1/sync/changes?since=0&tail=200", { headers: { authorization: `Bearer ${session.token}` } });
     const saved = await page.json(); assert.equal(saved.messages.filter((m) => m.cid === "browser-synced-session").length, 2);
   } finally { automatic?.dispose(); await cloudClient?.signOut(); await rm(uploadRoot, { recursive: true, force: true }); }
+  // Many sessions must not push account controls outside the sidebar.
+  const secondDevice = new WebSocket(base.replace("http", "ws") + "/v1/hub");
+  const secondWelcome = new Promise(resolve => secondDevice.addEventListener("message", ({data}) => { if (JSON.parse(String(data)).type === "welcome") resolve(); }));
+  secondDevice.addEventListener("open", () => secondDevice.send(JSON.stringify({type:"hello",key:session.token,device:{id:"second-desktop",kind:"computer",name:"Second desktop",actions:["task"]}})));
+  await secondWelcome;
+  const secondClosed = new Promise(resolve => secondDevice.addEventListener("close",resolve,{once:true})); secondDevice.close(); await secondClosed;
+  async function addMany(device, prefix) {
+    const response = await fetch(base + "/v1/sync/changes", {method:"POST",headers:{authorization:`Bearer ${session.token}`,"content-type":"application/json"},body:JSON.stringify({device,
+      conversations:Array.from({length:80},(_,index)=>({cid:prefix+"-"+String(index).padStart(3,"0"),kind:"side",title:prefix+" conversation "+index,execution_device:device,session_id:prefix+"-"+String(index).padStart(3,"0"),project_id:prefix+"-project",project_name:prefix+" project",created_at:1700000000,updated_at:1700000000})),messages:[]})});
+    assert.equal(response.status,200); assert.deepEqual((await response.json()).rejected,[]);
+  }
+  await addMany("browser-fixture","first-device"); await addMany("second-desktop","second-device");
+  await until(()=>evaluate("document.querySelectorAll('.cloud-conversations [data-cloud-conversation]').length >= 80"),"First device history missing");
+  assert.equal(await evaluate("document.querySelector('.cloud-conversations').textContent.includes('second-device conversation')"),false);
+  await click('[data-device-id="second-desktop"]');
+  await until(()=>evaluate("document.querySelectorAll('.cloud-conversations [data-cloud-conversation]').length === 80"),"Device filter did not replace history");
+  assert(await evaluate("document.querySelector('.cloud-conversations').textContent.includes('second-device project')"));
+  assert.equal(await evaluate("document.querySelector('.cloud-conversations').textContent.includes('first-device conversation')"),false);
+  assert.equal(await evaluate("document.querySelector('[data-device-id=second-desktop]').getAttribute('aria-pressed')"),'true');
+  await cdp("Page.reload");
+  await until(()=>evaluate("document.querySelector('.cloud-conversations')?.textContent.includes('second-device conversation 79')"),"Device filter selection not restored");
+  async function checkAccountPinned(width,height) {
+    await cdp("Emulation.setDeviceMetricsOverride",{width,height,deviceScaleFactor:1,mobile:width<760});
+    const state=await evaluate(`(()=>{const side=document.querySelector('.side'),area=side.querySelector('.side-scroll'),foot=side.querySelector('.foot');area.scrollTop=area.scrollHeight;const s=side.getBoundingClientRect(),f=foot.getBoundingClientRect(),a=area.getBoundingClientRect();return{areaHeight:area.clientHeight,scrollHeight:area.scrollHeight,scrollTop:area.scrollTop,areaY:a.top,areaBottom:a.bottom,rowY:area.querySelector('[data-cloud-conversation="second-device-079"]').getBoundingClientRect().top,rowBottom:area.querySelector('[data-cloud-conversation="second-device-079"]').getBoundingClientRect().bottom,scrolls:area.scrollHeight>area.clientHeight,within:f.top>=s.top&&f.bottom<=s.bottom+1,bounded:a.bottom<=f.top+1,hit:!!document.elementFromPoint(f.left+30,f.top+20)?.closest('.foot'),lastVisible:(()=>{const row=area.querySelector('[data-cloud-conversation="second-device-079"]').getBoundingClientRect();return row.top>=a.top&&row.bottom<=a.bottom+1})()}})()`);
+    assert(state.scrolls,'Long history must scroll');assert(state.within,'Account card pushed out');assert(state.bounded,'History overlaps account');assert(state.hit,'Account not clickable');assert(state.lastVisible,'Last session not reachable '+JSON.stringify({width,height,...state}));
+  }
+  await checkAccountPinned(1200,800);await checkAccountPinned(390,844);
+  await cdp("Emulation.setDeviceMetricsOverride",{width:1200,height:800,deviceScaleFactor:1,mobile:false});
+  await click('[data-device-id="browser-fixture"]');
+  await evaluate(`document.querySelector('[data-conversation="${firstConversation}"]').click()`);
+  cardsByConversation.set(firstConversation, [{ id:"long-list-permission",kind:"permission",toolName:"Write",preview:"long list fixture",reason:"fixture",risk:"high" }]);
+  await until(()=>evaluate("document.querySelector('.interactive-card')?.textContent.includes('long list fixture')"),"Card missing with long sidebar");
+  assert(await evaluate("(()=>{const r=document.querySelector('.foot').getBoundingClientRect();return r.bottom<=innerHeight&&r.top>=0})()"));
+  await click(".interactive-card button:not(.yes)");
+  await until(()=>evaluate("!document.querySelector('.interactive-card')"),"Long-list card did not resolve");
+  await click('[data-device-id="second-desktop"]');
+
+  await click(".foot button");await visible(".sheet .identity");
+  assert((await evaluate("document.querySelector('.sheet').textContent")).includes('browser-user'));
+  await click(".sheet .head button:last-child");
+  await cdp("Emulation.setDeviceMetricsOverride",{width:1200,height:800,deviceScaleFactor:1,mobile:false});
+  await click('[data-device-id="browser-fixture"]');
+  await until(()=>evaluate("document.querySelector('.cloud-conversations')?.textContent.includes('first-device conversation 79')"),"Switch back failed");
+  assert.equal(await evaluate("document.querySelector('.cloud-conversations').textContent.includes('second-device conversation')"),false);
   await click(".foot button"); await visible(".sheet .identity");
   const accountText = await evaluate("document.querySelector('.sheet').textContent");
   assert(accountText.includes("browser-user"));
@@ -245,7 +405,7 @@ try {
   await click(".signin .btn.ghost"); await visible(".main");
   await until(() => evaluate("!!document.querySelector('.cloud-conversations')"), "Second account cloud list missing");
   assert.equal(await evaluate("document.querySelector('.cloud-conversations').textContent.includes('Desktop cloud history')"), false);
-  console.log("PASS: browser register → project groups → shared project continuation → offline/reconnect → multiple isolated conversations → desktop continuation roundtrip → switch → stop → reload → task → automatic desktop upload → cloud history → reload recovery → account → password → mobile layout → account isolation");
+  console.log("PASS: pinned account with 160 conversations → selected-device filter → cards during long-list scroll → no null header text → interactive permission allow/deny → exact ask answers → preserved forms/drafts → desktop resolution → expired → stale snapshot isolation → regular/shared routes → browser register → project groups → shared project continuation → offline/reconnect → multiple isolated conversations → desktop continuation roundtrip → switch → stop → reload → task → automatic desktop upload → cloud history → reload recovery → account → password → mobile layout → account isolation");
 } finally {
   computer?.close();
   if (socket?.readyState === 1) { try { await cdp("Browser.close"); } catch {} }

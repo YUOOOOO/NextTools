@@ -18311,3 +18311,31 @@ read preserve only the authentic Web row's source. Assistant rows never display
 a source chip. Verify localized copy and that provenance is absent from model
 content/permission logic. Tests cover task admission, actual Agent prompt IPC,
 Host transcript roundtrip and rendered source-chip cases.
+### E2E-CLOUD-device-filter-and-pinned-account
+
+Create two same-account devices and more than a viewport of synced sessions,
+with separate projects. Selecting one device shows only its project/global
+sessions; switching devices replaces the list without deleting either history.
+Verify pressed device state, account-scoped reload selection, an offline device
+and its disabled composer. Scroll the long navigation region on desktop and at
+390px mobile width: account card remains visible and clickable, while first/last
+session rows remain reachable. Open the account sheet after scrolling. Covered
+by the local HTTP/Hub Chrome console fixture, without a real desktop/provider.
+
+
+### E2E-CLOUD-interactive-tool-and-input-cards
+
+- Open a shared conversation whose desktop turn waits for a tool permission.
+  Verify readable tool/risk/reason/preview, allow-once and deny actions; result
+  goes through normal desktop permission IPC and unblocks the original turn.
+- Show asktool single/multi options, custom text and skip/decline, submit once,
+  verify exact answers and removal from Host's pending ledger. Polling identical
+  cards must retain typed text and checked selections.
+- Resolve on desktop; the Web card disappears on the next authoritative snapshot.
+  Reject wrong account/session/caller tokens, stale requests, changed turns,
+  repeated clicks and concurrent tab decisions; backend failures stay sanitized.
+- Switch conversations/accounts or disconnect while a snapshot waits; no stale
+  card appears in another conversation. Cards are not localStorage history.
+- Desktop tests run the production broker and the registered Agent IPC handlers
+  with external Host/sidecar fixtures. The console browser test runs real
+  HTTP/Hub/Chrome with a simulated desktop boundary and no paid model requests.

@@ -312,6 +312,7 @@ export function registerIpcHandlers(dependencies: RegisterIpcDependencies) {
   registerConversationSyncIpc({
     registrar, getHost, getSidecar,
     onSessionsChanged: () => sendToRenderer(IPC.event.sessionsChanged, { reason: "conversation.task" }),
+    currentTurn: (sessionId) => getAgentHostBridge()?.observeWorkTarget(sessionId) ?? null,
     invoke: async (channel, args) => {
       const handler = ipcHandlers.get(channel);
       if (!handler) throw new Error("conversation task handler unavailable");
