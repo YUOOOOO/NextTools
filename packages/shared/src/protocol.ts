@@ -4,7 +4,7 @@ export const APP_ID = "net.aiuo.pi-desktop";
 export const APP_NAME = "PI-Desktop";
 /** Visible window, tray, and taskbar label. Keeps APP_NAME as the data-directory identity. */
 export const APP_DISPLAY_NAME = "Pilot";
-export const APP_VERSION = "0.21.0-beta.4";
+export const APP_VERSION = "0.1.0";
 
 export const APP_MENU_COMMANDS = [
   "newTask",

@@ -10,6 +10,8 @@ The repository currently contains the PI-Desktop desktop baseline. The personal 
 
 Application names, package IDs and build metadata still use PI-Desktop. NextTools is the repository identity; PI Workbench is the working name used in the design documents. Branding and distribution changes are separate tasks.
 
+The current release line is 0.1.x.
+
 ## Reference projects
 
 | Project | Role in NextTools | Source |
