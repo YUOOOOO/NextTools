@@ -19,6 +19,7 @@ const [
   appSource,
   shellRuntimeSource,
   sidebarSource,
+  activityBarSource,
   pluginRuntimeSource,
 ] =
   await Promise.all([
@@ -29,6 +30,7 @@ const [
     readAppSource(),
     read("../src/features/app/useAppShellRuntime.tsx"),
     read("../src/components/Sidebar.tsx"),
+    read("../src/features/app/ActivityBar.tsx"),
     read("../electron/main/plugin-runtime.ts"),
   ]);
 
@@ -67,7 +69,11 @@ test("terminal notifications flow from host completion to the renderer", () => {
   assert.match(storeSource, /receiveNotification:/);
   assert.match(storeSource, /unreadNotificationCount/);
   assert.match(appSource, /api\.onNotificationChanged/);
-  assert.match(sidebarSource, /<NotificationCenter onBeforeOpen=\{\(\) => closeMenus\(false\)\} \/>/);
+  // The popover lives on the Activity Bar since the destination shell replaced
+  // the sidebar footer entry.
+  assert.match(activityBarSource, /<NotificationCenter\b/);
+  assert.match(activityBarSource, /triggerClassName="activity-bar-button"/);
+  assert.doesNotMatch(sidebarSource, /<NotificationCenter\b/);
   assert.doesNotMatch(appSource, /<NotificationCenter \/>/);
   const changedHandler = appSource.match(
     /api\.onNotificationChanged[\s\S]*?\n\s*\}\);/,
