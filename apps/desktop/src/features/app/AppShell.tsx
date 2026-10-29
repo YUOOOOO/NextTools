@@ -79,7 +79,6 @@ export function AppShell() {
     handleSidebarWidthCommit,
     handleSidebarResizeCollapse,
     toggleSidebar,
-    reopenSidebar,
     autoCollapseSidebar,
     appShellRef,
     shellWidth,
