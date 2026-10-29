@@ -242,3 +242,60 @@ test("shared-session grants follow successful uploads and current server/account
     assert.equal(returned.isSessionShared("local-session"), false);
   } finally { await sync.signOut(); rmSync(dir, { recursive: true, force: true }); }
 });
+
+
+test("explicit deletion survives restart/offline, revokes grants and deletes only the original device's record", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "sync-deletions-")), filePath = join(dir, "login.json");
+  let failDelete = true; const deleted = [], posted = [];
+  let directory = [{ cid: "owned-session", execution_device: "desktop-one" }, { cid: "other-session", execution_device: "desktop-two" }];
+  const options = { filePath, encrypt: (x) => x, decrypt: (x) => x, encryptionAvailable: () => true, deviceId: "desktop-one", listSessions: async () => [],
+    fetchImpl: async (url, init) => {
+      if (url.endsWith("/v1/auth/login")) return { ok: true, json: async () => ({ token: "test", account: "alice" }) };
+      if (url.endsWith("/v1/sync/conversations")) return { ok: true, json: async () => ({ conversations: directory }) };
+      if (init.method === "DELETE") {
+        if (failDelete) throw new Error("offline");
+        const cid = url.split("/").at(-1); deleted.push(cid); directory = directory.filter((r) => r.cid !== cid);
+        assert.equal(init.headers["x-nanomuse-device"], "desktop-one");
+        return { ok: true, json: async () => ({ deleted: true }) };
+      }
+      if (init.method === "POST") posted.push(init.body);
+      return { ok: true, json: async () => ({ enabled: true, accepted: 0 }) };
+    },
+  };
+  try {
+    const first = createConversationSync(options);
+    await first.signIn({ baseUrl: "http://127.0.0.1:8788", account: "alice", password: "secret1" });
+    first.queueDeleted(["owned-session"]); await assert.rejects(first.push(), /offline/);
+    const reopened = createConversationSync(options); failDelete = false;
+    await reopened.signIn({ baseUrl: "http://127.0.0.1:8788", account: "alice", password: "secret1" });
+    await reopened.push(); assert.deepEqual(deleted, ["owned-session"]);
+    await reopened.push(); assert.equal(deleted.length, 1);
+    reopened.queueDeleted(["other-session"]);
+    await assert.rejects(reopened.push(), { code: "sync_delete_owner" });
+    assert.deepEqual(deleted, ["owned-session"]); assert.equal(posted.length, 0);
+    await reopened.signOut();
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("partial transcript failures never manufacture deletion requests", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "sync-no-inferred-delete-")), seen = [];
+  const sync = createConversationSync({ filePath: join(dir,"login.json"), encrypt:x=>x, decrypt:x=>x,encryptionAvailable:()=>true,
+    listSessions: async () => { throw new Error("Host temporarily unavailable"); },
+    fetchImpl: async (url, init) => {seen.push(init.method);return {ok:true,json:async()=>url.endsWith("/v1/auth/login")?{token:"t",account:"alice"}:{enabled:true}};},
+  });
+  try {await sync.signIn({baseUrl:"http://127.0.0.1:8788",account:"alice",password:"secret1"});await assert.rejects(sync.push());assert.equal(seen.includes("DELETE"),false);}finally{rmSync(dir,{recursive:true,force:true});}
+});
+
+
+test("legacy orphan cleanup requires explicit Host not-found and never deletes other device history", async () => {
+  const dir=mkdtempSync(join(tmpdir(),"sync-orphan-")), checked=[], deleted=[];
+  const rows=[{cid:"orphan-session",execution_device:"desktop-one",session_id:"orphan-session"},{cid:"other-session",execution_device:"desktop-two",session_id:"other-session"}];
+  const sync=createConversationSync({filePath:join(dir,"login.json"),encrypt:x=>x,decrypt:x=>x,encryptionAvailable:()=>true,deviceId:"desktop-one",listSessions:async()=>[],
+    confirmSessionDeleted:async(id)=>{checked.push(id);return true;},
+    fetchImpl:async(url,init)=>{
+      if(url.endsWith("/v1/auth/login"))return {ok:true,json:async()=>({token:"test",account:"alice"})};
+      if(init.method==="DELETE"){const id=url.split("/").at(-1);deleted.push(id);const i=rows.findIndex(row=>row.cid===id);if(i>=0)rows.splice(i,1);return {ok:true,json:async()=>({deleted:true})};}
+      return {ok:true,json:async()=>url.endsWith("/v1/sync/conversations")?{conversations:rows}:{enabled:true}};
+    }});
+  try{await sync.signIn({baseUrl:"http://127.0.0.1:8788",account:"alice",password:"secret1"});await sync.push();assert.deepEqual(checked,["orphan-session"]);assert.deepEqual(deleted,[]);await sync.push();assert.deepEqual(deleted,["orphan-session"]);assert.equal(rows[0].cid,"other-session");}finally{rmSync(dir,{recursive:true,force:true});}
+});

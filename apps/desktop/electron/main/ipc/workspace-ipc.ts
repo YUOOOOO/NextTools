@@ -78,6 +78,7 @@ export function createComposerTemplateLoader(
 }
 
 export type WorkspaceIpcDependencies = {
+  onSessionsDeleted?: (ids: string[]) => void;
   registrar: IpcRegistrar;
   getMainWindow: () => Electron.BrowserWindow | null;
   getHost: () => HostProcess | null;
@@ -95,6 +96,7 @@ export type WorkspaceIpcDependencies = {
 };
 
 export function registerWorkspaceIpc({
+  onSessionsDeleted,
   registrar,
   getMainWindow,
   getHost,
@@ -525,10 +527,14 @@ export function registerWorkspaceIpc({
     // Deletion only touches host records, so a project whose folder was moved
     // or deleted on disk stays deletable: deliberately no existence check.
     const projectPath = requestedPath.startsWith("remote-project:") ? requestedPath : resolve(requestedPath);
+    const localSessions = onSessionsDeleted && !projectPath.startsWith("remote-project:")
+      ? await host.call<{ sessions: Array<{ id: string; projectPath?: string; remoteHostKey?: string }> }>("session.list", {}) : null;
+    const removedIds = (localSessions?.sessions || []).filter((session) => !session.remoteHostKey && session.projectPath && resolve(session.projectPath) === projectPath).map((session) => session.id);
     const result = (await host.call("projects.remove", {
       path: projectPath,
     })) as { removed?: boolean; sessionsRemoved?: number };
     const removed = Boolean(result?.removed);
+    if (removed && removedIds.length) onSessionsDeleted?.(removedIds);
     const workspacePath = currentWorkspacePath();
     if (removed && workspacePath && (workspacePath.startsWith("remote-project:") ? workspacePath : resolve(workspacePath)) === projectPath) {
       // Leaving the host bound to a deleted project would re-create it on boot.

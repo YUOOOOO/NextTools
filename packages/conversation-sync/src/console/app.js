@@ -125,7 +125,32 @@
         api("GET", "/v1/sync/conversations", null, requestKey),
       ]);
       if (key !== requestKey || epoch !== cloudEpoch) return;
-      cloud = { conversations: directory.conversations || [], messages: page.messages || [] }; cloudError = "";
+      const nextConversations = directory.conversations || [];
+      const liveIds = new Set(nextConversations.map((row) => row.cid));
+      const removed = new Set(cloud.conversations.filter((row) => !liveIds.has(row.cid)).map((row) => row.cid));
+      // Persisted synced associations also cover a tab closed during deletion.
+      for (const device of devices.filter((item) => item.kind !== "web")) {
+        let entries = [];
+        try { entries = JSON.parse(LS.getItem(conversationKey(device.id)) || "[]"); } catch (_) { /* no mappings */ }
+        if (!Array.isArray(entries)) continue;
+        for (const entry of entries) if ((entry.synced || entry.shared) && !liveIds.has(entry.cloudCid || entry.sessionId)) removed.add(entry.cloudCid || entry.sessionId);
+      }
+      if (removed.size) {
+        detailGeneration++;
+        for (const device of devices.filter((item) => item.kind !== "web")) {
+          let entries = [];
+          try { entries = JSON.parse(LS.getItem(conversationKey(device.id)) || "[]"); } catch (_) { /* no mappings */ }
+          if (!Array.isArray(entries)) continue;
+          const keep = entries.filter((entry) => !removed.has(entry.cloudCid || entry.sessionId));
+          for (const entry of entries.filter((entry) => !keep.includes(entry))) {
+            const cache = historyKey(device.id, entry.id); chats.delete(cache); LS.removeItem(cache);
+          }
+          if (keep.length !== entries.length) LS.setItem(conversationKey(device.id), JSON.stringify(keep));
+        }
+        for (const cid of removed) cloudSnapshots.delete(cid);
+        if (removed.has(cloudSelected)) { cloudSelected = ""; LS.removeItem("nm.cloud.selected." + encodeURIComponent(hint)); clearInteractive(); }
+      }
+      cloud = { conversations: nextConversations, messages: page.messages || [] }; cloudError = "";
       reconcileWebConversations();
       if (cloudSelected && cloud.conversations.some((c) => c.cid === cloudSelected)) {
         selectCloudConversation(cloudSelected, false);
@@ -382,8 +407,10 @@
       let entries = [];
       try { entries = JSON.parse(LS.getItem(conversationKey(device.id)) || "[]"); } catch (_) { /* no local mappings */ }
       if (!Array.isArray(entries)) continue;
+      let changed = false;
       for (const entry of entries) {
         if (!entry.sessionId) continue;
+        if (!entry.synced && cloud.conversations.some((row) => row.cid === (entry.cloudCid || entry.sessionId))) { entry.synced = true; changed = true; }
         const c = chat(device.id, entry.id);
         if (c.busy) continue;
         const historyCid = entry.cloudCid || entry.sessionId;
@@ -394,6 +421,7 @@
         c.messages = rows.map((m) => ({ role: m.role === "user" ? "me" : "them", text: m.text, from: device.name, mid: m.mid }));
         persist(device.id, entry.id);
       }
+      if (changed) LS.setItem(conversationKey(device.id), JSON.stringify(entries));
     }
   }
   function persist(id, conversation = convId(id)) {

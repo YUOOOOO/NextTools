@@ -149,6 +149,7 @@ export function createConversationSync({
   encryptionAvailable,
   fetchImpl = directFetch,
   listSessions,
+  confirmSessionDeleted,
   onCall,
   WebSocketImpl = globalThis.WebSocket,
   deviceId = "desktop-local",
@@ -189,6 +190,15 @@ export function createConversationSync({
       rmSync(filePath, { force: true });
       return { signedIn: false };
     },
+    queueDeleted(sessionIds) {
+      const saved = readSaved();
+      if (!saved) return;
+      const scope = useScope(saved);
+      const ids = (Array.isArray(sessionIds) ? sessionIds : []).filter((id) => typeof id === "string" && ID.test(id));
+      const pendingDeletes = [...new Set([...(saved.pendingDeletes || []), ...ids])];
+      for (const id of ids) sharedSessions.get(scope)?.delete(id);
+      writeSaved({ ...saved, pendingDeletes });
+    },
     async push() {
       const saved = readSaved();
       if (!saved) throw Object.assign(new Error("Sign in first"), { code: "signed_out" });
@@ -200,9 +210,42 @@ export function createConversationSync({
           throw Object.assign(new Error("Sign-in changed during sync"), { code: "signed_out" });
         }
       };
+      // Explicit successful local deletion, never absence from a partial list.
+      if (saved.pendingDeletes?.length) {
+        const directory = await relay(saved, "/v1/sync/conversations");
+        stillSignedIn();
+        for (const cid of saved.pendingDeletes) {
+          const row = directory.conversations?.find((item) => item.cid === cid);
+          if (row && (row.execution_device || row.device) !== deviceId) {
+            throw Object.assign(new Error("Conversation belongs to another device"), { code: "sync_delete_owner" });
+          }
+          if (row) await relay(saved, "/v1/sync/conversations/" + encodeURIComponent(cid), { method: "DELETE" });
+          stillSignedIn();
+          const latest = readSaved();
+          writeSaved({ ...latest, pendingDeletes: (latest.pendingDeletes || []).filter((id) => id !== cid) });
+        }
+      }
       const sessions = await listSessions();
       stillSignedIn();
-      const changes = toSyncChanges(sessions, deviceId);
+      if (confirmSessionDeleted) {
+        const live = new Set(sessions.map((session) => session?.id));
+        const directory = await relay(saved, "/v1/sync/conversations");
+        stillSignedIn();
+        const confirmed = [];
+        for (const row of directory.conversations || []) {
+          if ((row.execution_device || row.device) !== deviceId || live.has(row.session_id || row.cid)) continue;
+          if (!ID.test(row.session_id || row.cid)) continue;
+          if (await confirmSessionDeleted(row.session_id || row.cid)) confirmed.push(row.cid);
+          stillSignedIn();
+        }
+        if (confirmed.length) {
+          const latest = readSaved();
+          writeSaved({ ...latest, pendingDeletes: [...new Set([...(latest.pendingDeletes || []), ...confirmed])] });
+          for (const id of confirmed) sharedSessions.get(scope)?.delete(id);
+        }
+      }
+      const pendingDeletes = new Set([...(saved.pendingDeletes || []), ...(readSaved()?.pendingDeletes || [])]);
+      const changes = toSyncChanges(sessions.filter((session) => !pendingDeletes.has(session?.id)), deviceId);
       let accepted = 0;
       for (let index = 0; index < Math.max(changes.conversations.length, changes.messages.length, 1); index += 200) {
         const body = {
@@ -234,7 +277,10 @@ export function createConversationSync({
     const result = await publicPost(baseUrl, path, { account, identifier: account, password });
     const token = String(result.token || result.api_key || "");
     if (!token) throw Object.assign(new Error("登录没有返回令牌"), { code: "bad_key" });
-    const saved = { baseUrl, token, account: accountLabel(result, account) };
+    const previous = readSaved();
+    const accountId = accountLabel(result, account);
+    const saved = { baseUrl, token, account: accountId,
+      pendingDeletes: previous?.baseUrl === baseUrl && previous.account === accountId ? previous.pendingDeletes || [] : [] };
     writeSaved(saved);
     closeHub(false);
     useScope(saved);
@@ -247,7 +293,7 @@ export function createConversationSync({
     try {
       const parsed = JSON.parse(readFileSync(filePath, "utf8"));
       if (!parsed?.baseUrl || !parsed?.tokenEncrypted) return null;
-      return { baseUrl: validateBaseUrl(parsed.baseUrl), token: decrypt(parsed.tokenEncrypted), account: String(parsed.account ?? "") };
+      return { baseUrl: validateBaseUrl(parsed.baseUrl), token: decrypt(parsed.tokenEncrypted), account: String(parsed.account ?? ""), pendingDeletes: Array.isArray(parsed.pendingDeletes) ? parsed.pendingDeletes.filter((id) => typeof id === "string" && ID.test(id)) : [] };
     } catch (error) {
       if (error && error.code === "ENOENT") return null;
       if (error && error.code === "bad_url") return null;
@@ -371,7 +417,7 @@ export function createConversationSync({
     if (!encryptionAvailable()) {
       throw Object.assign(new Error("This machine cannot store the access token"), { code: "encryption_unavailable" });
     }
-    const payload = JSON.stringify({ baseUrl: saved.baseUrl, account: saved.account ?? "", tokenEncrypted: encrypt(saved.token) });
+    const payload = JSON.stringify({ baseUrl: saved.baseUrl, account: saved.account ?? "", tokenEncrypted: encrypt(saved.token), pendingDeletes: saved.pendingDeletes || [] });
     const temporary = `${filePath}.tmp`;
     writeFileSync(temporary, payload, "utf8");
     renameSync(temporary, filePath);
@@ -382,6 +428,7 @@ export function createConversationSync({
       method: options.method ?? "GET",
       headers: {
         authorization: `Bearer ${saved.token}`,
+        "x-nanomuse-device": deviceId,
         ...(options.body ? { "content-type": "application/json" } : {}),
       },
       body: options.body ? JSON.stringify(options.body) : undefined,

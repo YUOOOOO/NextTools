@@ -18339,3 +18339,14 @@ by the local HTTP/Hub Chrome console fixture, without a real desktop/provider.
 - Desktop tests run the production broker and the registered Agent IPC handlers
   with external Host/sidecar fixtures. The console browser test runs real
   HTTP/Hub/Chrome with a simulated desktop boundary and no paid model requests.
+
+
+### E2E-CLOUD-explicit-desktop-deletion
+
+After syncing a desktop session and opening it in Web, delete it through the
+local session/project deletion handler. Its durable deletion outbox survives
+offline/restart and tombstones only that device's cloud record. Web removes the
+cloud row, linked browser entry, selected transcript and pending cards and does
+not restore it after reload. Other devices' records remain. A failed/partial
+Host transcript read never manufactures deletions. Covered by desktop client
+outbox tests and the real HTTP/Hub browser fixture.

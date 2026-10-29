@@ -225,3 +225,18 @@ truncation of display text therefore cannot change the selected answer. Card
 tokens retain their issuing Host/sidecar identities; backend replacement and
 TTL expiration are rechecked after asynchronous snapshot validation immediately
 before dispatching any decision.
+
+
+Successful local session/project deletion queues the explicit session ids in
+the encrypted-login file's account/server-scoped deletion outbox (ids only).
+The next automatic/manual sync verifies original-device ownership, submits cloud
+conversation tombstones, clears their text and notifies peers before uploading
+live rows. Failures retain the queue across restart; logout discards the login
+and its pending queue. Missing/partial Host reads never infer a deletion. Web
+removes previously known deleted directory rows, linked local browser histories,
+selected detail snapshots and cards. Other devices' rows are never tombstoned.
+
+For pre-fix orphan rows, only the owning device may enqueue cleanup after an
+explicit current Host session.get returns session null. Read failures or an
+undefined/incomplete response do not confirm deletion. Cleanup is retried by
+the same durable outbox on the following synchronization round.

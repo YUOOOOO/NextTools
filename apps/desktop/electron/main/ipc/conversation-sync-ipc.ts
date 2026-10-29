@@ -28,7 +28,7 @@ export function registerConversationSyncIpc({
   invoke: InternalInvoke;
   onSessionsChanged: () => void;
   currentTurn: (sessionId: string) => string | null;
-}): void {
+}): { sessionsDeleted(ids: string[]): void } {
   const tasks = createConversationTaskBridge({
     getHost, getSidecar,
     prompt: (request) => {
@@ -52,6 +52,13 @@ export function registerConversationSyncIpc({
     decrypt: (encoded: string) => safeStorage.decryptString(Buffer.from(encoded, "base64")),
     encryptionAvailable: () => safeStorage.isEncryptionAvailable(),
     listSessions: () => loadSessions(getHost),
+    confirmSessionDeleted: async (id: string) => {
+      const host = getHost();
+      if (!host) throw new Error("host unavailable");
+      const result = await host.call("session.get", { id, messageLimit: 1 }) as { session?: unknown };
+      if (getHost() !== host) throw new Error("host changed during deletion verification");
+      return result.session === null;
+    },
     onCall: (action: string, args: Record<string, unknown>, context: TaskCallContext) => {
       if (action === "task") {
         return tasks.task(args, context).finally(() => {
@@ -81,6 +88,7 @@ export function registerConversationSyncIpc({
   registrar.handle(IPC.invoke.conversationSyncRegister, async (input: unknown) => { const state = await sync.register(input); automatic.request(); return state; });
   registrar.handle(IPC.invoke.conversationSyncSignOut, () => { interactive.dispose(); return sync.signOut(); });
   registrar.handle(IPC.invoke.conversationSyncPush, () => sync.push());
+  return { sessionsDeleted(ids) { sync.queueDeleted(ids); automatic.request(); } };
 }
 
 async function runCall(

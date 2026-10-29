@@ -23,6 +23,7 @@ export function createConversationSync(options: {
   encryptionAvailable(): boolean;
   fetchImpl?: (url: string, init: FetchInit) => Promise<FetchResponse>;
   listSessions(): Promise<unknown[]>;
+  confirmSessionDeleted?(id: string): Promise<boolean>;
   onCall?: (action: string, args: Record<string, unknown>, context: TaskCallContext) => Promise<unknown>;
   WebSocketImpl?: typeof WebSocket;
   deviceId?: string;
@@ -31,5 +32,6 @@ export function createConversationSync(options: {
   register(input: unknown): Promise<ConversationSyncStatus>;
   signIn(input: unknown): Promise<ConversationSyncStatus>;
   signOut(): Promise<ConversationSyncStatus>;
+  queueDeleted(sessionIds: string[]): void;
   push(): Promise<ConversationSyncStatus>;
 };

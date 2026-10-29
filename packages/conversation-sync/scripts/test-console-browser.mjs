@@ -333,8 +333,15 @@ try {
     await until(() => evaluate("document.querySelector('.cloud-conversations')?.textContent.includes('Desktop cloud history')"), "Cloud history missing after reload");
     await evaluate("Array.from(document.querySelectorAll('.cloud-conversations button')).find(el => el.textContent.includes('Desktop cloud history')).click()");
     await until(() => evaluate("document.querySelector('.cloud-messages')?.textContent.includes('Persisted desktop answer')"), "History depended on localStorage");
+    cloudClient.queueDeleted(["browser-synced-session"]);
+    await cloudClient.push();
+    await until(()=>evaluate("!document.querySelector('[data-cloud-conversation=browser-synced-session]')"),"Deleted desktop session remained in cloud directory");
+    await until(()=>evaluate("!document.querySelector('.messages')?.textContent.includes('Persisted desktop answer')"),"Deleted desktop transcript remained open");
+    await cdp("Page.reload");
+    await until(()=>evaluate("!!document.querySelector('.cloud-conversations')"),"Directory missing after deletion reload");
+    assert.equal(await evaluate("!!document.querySelector('[data-cloud-conversation=browser-synced-session]')"),false);
     const page = await fetch(base + "/v1/sync/changes?since=0&tail=200", { headers: { authorization: `Bearer ${session.token}` } });
-    const saved = await page.json(); assert.equal(saved.messages.filter((m) => m.cid === "browser-synced-session").length, 2);
+    const saved = await page.json(); assert.equal(saved.messages.filter((m) => m.cid === "browser-synced-session").length, 0);
   } finally { automatic?.dispose(); await cloudClient?.signOut(); await rm(uploadRoot, { recursive: true, force: true }); }
   // Many sessions must not push account controls outside the sidebar.
   const secondDevice = new WebSocket(base.replace("http", "ws") + "/v1/hub");

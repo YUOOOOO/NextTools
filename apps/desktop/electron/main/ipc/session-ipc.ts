@@ -105,6 +105,7 @@ export type SessionIpcDependencies = {
   };
   forgetTranscriptRewriteHistory: (sessionId: string) => void;
   stripWinLongPrefix: (path: string) => string;
+  onSessionsDeleted?: (ids: string[]) => void;
 };
 
 export function registerSessionIpc({
@@ -123,6 +124,7 @@ export function registerSessionIpc({
   beginTranscriptRewrite,
   forgetTranscriptRewriteHistory,
   stripWinLongPrefix,
+  onSessionsDeleted,
 }: SessionIpcDependencies): void {
   let host: HostProcess | null = null;
   let sidecar: AgentSidecar | null = null;
@@ -392,6 +394,8 @@ export function registerSessionIpc({
     }
     if (!host) throw new Error("host unavailable");
     const res = await host.call("session.delete", { id });
+    // Queue before secondary cleanup can fail, after Host committed deletion.
+    if ((res as { ok?: boolean })?.ok === true) onSessionsDeleted?.([id]);
     await persistenceOutbox.dropSession(id);
     forgetTranscriptRewriteHistory(id);
     // Drop the session's pi-agent so a later session with the same id (or a

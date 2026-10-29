@@ -267,7 +267,9 @@ export function registerIpcHandlers(dependencies: RegisterIpcDependencies) {
     setViewingSessionId: setNotificationViewingSessionId,
     sendToRenderer,
   });
+  let syncSessionsDeleted: (ids: string[]) => void = () => undefined;
   registerSessionIpc({
+    onSessionsDeleted: (ids) => syncSessionsDeleted(ids),
     registrar,
     getHost,
     getSidecar,
@@ -309,7 +311,7 @@ export function registerIpcHandlers(dependencies: RegisterIpcDependencies) {
   });
   // Conversation sync is a local settings call; the channel must be in the
   // preload whitelist rebuilt with this main bundle.
-  registerConversationSyncIpc({
+  const conversationSync = registerConversationSyncIpc({
     registrar, getHost, getSidecar,
     onSessionsChanged: () => sendToRenderer(IPC.event.sessionsChanged, { reason: "conversation.task" }),
     currentTurn: (sessionId) => getAgentHostBridge()?.observeWorkTarget(sessionId) ?? null,
@@ -319,6 +321,7 @@ export function registerIpcHandlers(dependencies: RegisterIpcDependencies) {
       return handler(...args);
     },
   });
+  syncSessionsDeleted = conversationSync.sessionsDeleted;
   registerBackgroundTasksIpc({
     registrar,
     getHost,
@@ -384,6 +387,7 @@ export function registerIpcHandlers(dependencies: RegisterIpcDependencies) {
   });
   registerWorkbenchIpc({ registrar, getHost });
   registerWorkspaceIpc({
+    onSessionsDeleted: (ids) => syncSessionsDeleted(ids),
     registrar,
     getMainWindow,
     getHost,
