@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { Button } from "../components/ui";
 import { PluginViewTab } from "../components/workpanel/PluginViewTab";
-import { dispatchWorkbenchCommand, useWorkbenchSession } from "../features/workbench/workbench-session";
+import { useWorkbenchSession } from "../features/workbench/workbench-session";
 
 export function WorkbenchPage() {
   const { t } = useTranslation();
@@ -22,14 +21,6 @@ export function WorkbenchPage() {
     <main className="workbench-page">
       {active ? (
         <section className="workbench-page-panel">
-          <div className="workbench-page-panel-heading">
-            <h1>{label}</h1>
-            {active.id !== "overview" ? (
-              <Button type="button" onClick={() => dispatchWorkbenchCommand({ action: "close", id: active.id })}>
-                {t("workbench.closePage")}
-              </Button>
-            ) : null}
-          </div>
           {active.status === "ready" && active.available !== false && !showPluginView ? (
             <p>{t(active.id === "example" ? "workbench.exampleBody" : "workbench.empty")}</p>
           ) : null}
@@ -44,19 +35,6 @@ export function WorkbenchPage() {
               title={label}
               releaseOnUnmount
             />
-          ) : null}
-          {active.id !== "overview" ? (
-            <div className="workbench-page-actions">
-              <Button type="button" onClick={() => dispatchWorkbenchCommand({ action: "setStatus", id: active.id, status: "disabled" })}>
-                {t("workbench.disable")}
-              </Button>
-              <Button type="button" onClick={() => dispatchWorkbenchCommand({ action: "setStatus", id: active.id, status: "unavailable" })}>
-                {t("workbench.markUnavailable")}
-              </Button>
-              <Button type="button" onClick={() => dispatchWorkbenchCommand({ action: "setStatus", id: active.id, status: "ready" })}>
-                {t("workbench.restore")}
-              </Button>
-            </div>
           ) : null}
         </section>
       ) : (

@@ -2321,6 +2321,7 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
       "Write",
       "Glob",
       "Grep",
+      "Workbench",
       "asktool",
       "Skill",
       "EnterPlanMode",
@@ -2330,6 +2331,9 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
     ]);
     expect((runtime as any).deferredToolNames.has("Glob")).toBe(false);
     expect((runtime as any).deferredToolNames.has("Grep")).toBe(false);
+    // Inspect private activation state to verify the first-turn boundary.
+    const activationState = runtime as unknown as { deferredToolNames: Set<string> };
+    expect(activationState.deferredToolNames.has("Workbench")).toBe(false);
     expect(names).not.toContain("A2A");
     expect(names).not.toContain("Peer");
     expect(names).not.toContain("BrowserPreview");
@@ -2343,8 +2347,31 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
     // The skill catalog ships with the tool, so `Skill` is never a catalog row.
     expect(prompt).toContain("# Skills");
     expect(prompt).not.toMatch(/^- Skill:/m);
+    expect(prompt).not.toMatch(/^- Workbench:/m);
 
     await runtime.dispose();
+  });
+
+  it("allows a first-turn Workbench call without discovery and preserves host denial", async () => {
+    const host = {
+      call: vi.fn().mockResolvedValue({
+        ok: false,
+        content: "Workbench access denied",
+        denied: true,
+        errorCode: "PERMISSION_DENIED",
+      }),
+    };
+    const runtime = createRuntime({ host });
+    try {
+      const result = await runtimeTool(runtime, "Workbench").execute("workbench-first", {
+        action: "open",
+        id: "overview",
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content).toEqual([{ type: "text", text: "Workbench access denied" }]);
+    } finally {
+      await runtime.dispose();
+    }
   });
 
   it("pauses asktool until the renderer resolves every question", async () => {
@@ -2682,6 +2709,7 @@ describe("DesktopAgentRuntime mode and tool composition", () => {
     expect(planTools).not.toContain("plugin_demo_run");
     expect(planTools).not.toContain("EnterPlanMode");
     expect(planTools).not.toContain("SubmitGoal");
+    expect(planTools).not.toContain("Workbench");
     expect(agent.state.systemPrompt).toContain("SubmitPlan");
     expect(agent.state.systemPrompt).toContain("Do not use Write, Edit, Task");
     expect(agent.state.systemPrompt).toContain("plan-safe actions");
@@ -2722,6 +2750,7 @@ describe("DesktopAgentRuntime mode and tool composition", () => {
     expect(goalTools).not.toContain("plugin_demo_run");
     expect(goalTools).not.toContain("SubmitPlan");
     expect(goalTools).not.toContain("EnterGoalMode");
+    expect(goalTools).not.toContain("Workbench");
     expect(runtime.getStatus().planningState).toBe("planning");
     expect(agent.state.systemPrompt).toContain("SubmitGoal");
     expect(agent.state.systemPrompt).toContain("acceptance criteria");

@@ -103,13 +103,19 @@
   display: flex;
   width: 100%;
   align-items: center;
+  justify-content: center;
   padding: 6px 8px;
   color: var(--ds-text-secondary);
   background: transparent;
   border: 0;
   border-radius: var(--radius-md);
   cursor: pointer;
-  text-align: start;
+  text-align: center;
+}
+
+.workbench-menu-item:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 
 .workbench-menu-item[aria-current="page"] {
@@ -127,13 +133,6 @@
   padding: calc(46px + 16px) 16px 16px;
 }
 
-.workbench-page h1 {
-  margin: 0;
-  font-size: var(--text-xl);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--leading-tight);
-}
-
 .workbench-page p {
   margin: 0;
   color: var(--ds-text-muted);
@@ -142,16 +141,13 @@
 }
 
 .workbench-page-bar,
-.workbench-page-panel-heading,
-.workbench-page-actions,
 .workbench-page-tabs {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.workbench-page-bar,
-.workbench-page-panel-heading {
+.workbench-page-bar {
   justify-content: space-between;
 }
 

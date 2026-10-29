@@ -49,9 +49,12 @@
   an abort marker proves the page handler receives unload cancellation.
   `workbench-session.test.mjs` covers the page command/session journey.
 - **Rendered acceptance:** Open the contributed page in Workbench, invoke its
-  action and the equivalent Agent tool, then disable/close the page and unload
-  the plugin. Verify visible results and surface cleanup. This manual Electron
-  check is separate from the process tests and is not claimed by those results.
+  action and the equivalent Agent tool. The Workbench page renders no page-title
+  heading and offers no disable, restore, or close control: pages are switched
+  from the menu and status changes come from the Agent `Workbench` tool. Then
+  disable and close the page through that tool and unload the plugin. Verify
+  visible results and surface cleanup. This manual Electron check is separate
+  from the process tests and is not claimed by those results.
 
 ### E2E-QUEUE-send-now-wakes-subagents
 
