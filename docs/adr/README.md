@@ -377,6 +377,9 @@ Each ADR includes:
 | 0329 | [Isolate parallel sessions of one project in git worktrees](0329-session-worktree-isolation.md) | Accepted (Windows E2E pending) |
 | 0330 | [Open scoped HTML files in the work-panel Browser from plugins](0330-open-html-files-in-work-panel-browser-from-plugins.md) | Accepted |
 | 0331 | [Plugin session follow and host-owned work-panel reveal](0331-plugin-session-follow-and-work-panel-reveal.md) | Accepted |
+| 0332 | [Conversation sync store matches nanomuse save rules](0332-conversation-sync-store.md) | Accepted |
+| 0333 | [Cloud project groups route continuation to the original desktop](0333-cloud-project-session-continuation.md) | Accepted |
+| 0334 | [Resolve desktop interactive requests from the cloud console](0334-web-interactive-request-resolution.md) | Accepted |
 | plugin-fetch-redirect-policy | [Host-enforced plugin fetch redirect policy](plugin-fetch-redirect-policy.md) | Accepted (implementation candidate for #1475) |
 
 | local-agent-remote-workspace-tools | [Local Agent and model requests for remote workspaces](local-agent-remote-workspace-tools.md) | Accepted for implementation |
