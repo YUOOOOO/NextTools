@@ -9,14 +9,52 @@
   flex: 0 0 var(--ds-activity-bar-width);
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   width: var(--ds-activity-bar-width);
   min-height: 0;
-  padding: var(--ds-toolbar-height) 0 12px;
+  padding: 0 0 12px;
   background: var(--ds-bg-sidebar);
   border-right: 1px solid var(--ds-border-subtle);
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* The product mark opens the rail; the menu column beside it names the page. */
+.activity-bar-brand {
+  display: flex;
+  height: var(--ds-toolbar-height);
+  flex: 0 0 var(--ds-toolbar-height);
+  align-items: center;
+  justify-content: center;
+}
+
+.activity-bar-logo {
+  -webkit-app-region: no-drag;
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.activity-bar-logo:hover {
+  background: var(--ds-bg-hover);
+}
+
+.activity-bar-logo:focus-visible {
+  outline: 2px solid var(--ds-focus);
+  outline-offset: -2px;
+}
+
+/* macOS traffic lights own the window's top-left corner: the rail keeps the
+   row, so the first destination stays aligned with the menu header. */
+:root[data-platform="darwin"] .activity-bar-brand {
+  visibility: hidden;
 }
 
 .activity-bar-top,
@@ -25,6 +63,10 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
+}
+
+.activity-bar-top {
+  margin-top: 8px;
 }
 
 .activity-bar-bottom {
@@ -201,27 +243,39 @@
 }
 
 
-/* Unified brand row: rail and secondary menu start below this shared header. */
-.sidebar-brand-header {
+/* Header of the menu column: it starts to the right of the 48px rail, so the
+   rail keeps the product mark and this row names the active destination. */
+.sidebar-page-header {
   position: absolute;
-  inset: 0 auto auto 0;
+  inset: 0 auto auto 48px;
   z-index: 3;
   box-sizing: border-box;
-  width: calc(48px + var(--ds-sidebar-width));
+  width: var(--ds-sidebar-width);
   min-width: 0;
   background: var(--ds-bg-sidebar);
 }
 
-.sidebar-brand-header > .brand,
-.sidebar-brand-header > .sidebar-header-actions {
+.sidebar-page-header > .sidebar-header-actions {
   -webkit-app-region: no-drag;
 }
 
-.app-shell:has(> .sidebar-brand-header) .sidebar {
+.sidebar-page-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ds-text-primary);
+  font-size: var(--text-base-plus);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0;
+  line-height: var(--leading-tight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell:has(> .sidebar-page-header) .sidebar {
   box-sizing: border-box;
   padding-top: var(--ds-toolbar-height);
 }
 
-.app-shell:has(> .sidebar-brand-header) .sidebar-resize-handle {
+.app-shell:has(> .sidebar-page-header) .sidebar-resize-handle {
   top: var(--ds-toolbar-height);
 }

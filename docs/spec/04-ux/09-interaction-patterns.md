@@ -1749,13 +1749,15 @@ This does not prevent state changes — it makes them instant.
     (ADR 0033 / ADR 0151 / ADR 0238)
 
 
-### Unified navigation brand row
+### Rail mark and destination header
 
-In Chat and Workbench with the secondary sidebar expanded, one shell-owned
-brand row spans the 48px activity rail and the resizable secondary sidebar.
-The brand starts at the left window inset; collapse remains at the existing
-right edge of the secondary sidebar. Both navigation columns begin below the
-same toolbar-height row. The header owns dragging while its home/collapse
-buttons remain no-drag. Collapsed navigation retains the existing main-content
-expand action. macOS keeps the native traffic-light inset and brand visibility
-rules. Sidebar menus no longer render independent duplicate brand headers.
+In Chat and Workbench with the secondary sidebar expanded, the shell-owned
+toolbar-height row is split by column. The 48px activity rail opens with the
+product mark, which stays in place when the menu column collapses and returns
+to Agent when activated. The resizable secondary sidebar's header names the
+active destination (`Agent`, `Workbench`) and keeps collapse at the column's
+right edge; neither column repeats a product name. Both navigation columns'
+contents begin below the same row. The header owns dragging while the mark and
+collapse controls remain no-drag. Collapsed navigation retains the existing
+main-content expand action. macOS reserves the native traffic lights: the rail
+hides the mark and the destination name starts after the lead inset.

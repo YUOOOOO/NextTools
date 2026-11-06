@@ -1196,12 +1196,10 @@
   -webkit-app-region: drag;
 }
 
-:root[data-platform="darwin"] .sidebar-header {
-  padding-left: var(--ds-window-lead-inset);
-}
-
-:root[data-platform="darwin"] .sidebar-header > .brand {
-  display: none;
+/* macOS traffic lights sit left of the menu column's header: the destination
+   name starts after their reserved lead inset, not at the rail's right edge. */
+:root[data-platform="darwin"] .sidebar-page-header {
+  padding-left: max(8px, calc(var(--ds-window-lead-inset) - 48px));
 }
 
 .sidebar-header-actions {
@@ -1221,24 +1219,6 @@
   overflow: hidden;
 }
 
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  min-width: 0;
-  padding: 0 6px 0 4px;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-base-plus);
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: 0;
-  color: var(--ds-text-primary);
-  transition: background var(--motion-duration-fast) var(--motion-ease-out);
-}
-
-.brand:hover {
-  background: var(--ds-bg-hover);
-}
 
 .brand-logo {
   display: block;

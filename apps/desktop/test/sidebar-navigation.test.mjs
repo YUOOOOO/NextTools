@@ -38,16 +38,29 @@ test("activity bar owns the supported destination entries", () => {
   assert.doesNotMatch(sidebarSource, /data-nav="scheduled"/);
 });
 
-test("shared shell header keeps the original brand and has no divider", async () => {
-  const header = await readFile(new URL("../src/features/app/SidebarBrandHeader.tsx", import.meta.url), "utf8");
+test("the rail owns the product mark and the menu header names the destination", async () => {
+  const header = await readFile(new URL("../src/features/app/SidebarPageHeader.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(sidebarSource, /className="sidebar-header"/);
-  assert.match(appSource, /<SidebarBrandHeader/);
+  assert.match(appSource, /<SidebarPageHeader page=\{page\}/);
 
-  assert.match(header, /className="brand no-drag"/);
-  assert.match(header, /<BrandLogo size=\{20\}/);
+  // The mark opens the rail, above the destinations.
+  assert.match(activitySource, /className="activity-bar-brand"/);
+  assert.match(activitySource, /<BrandLogo size=\{20\}/);
+  assert.doesNotMatch(activitySource, /t\("app\.shellName"\)/);
+  assert.match(
+    globalStyles,
+    /\.activity-bar-brand\s*\{[^}]*height:\s*var\(--ds-toolbar-height\);/s,
+  );
+
+  // The menu column names the active page instead of repeating the product.
+  assert.match(header, /data-nav="page-title"/);
+  assert.match(header, /activityPageLabelKey\(page\)/);
   assert.match(header, /data-nav="toggle-sidebar"/);
+  assert.doesNotMatch(header, /BrandLogo|app\.shellName/);
+  assert.match(globalStyles, /\.sidebar-page-header\s*\{[^}]*inset:\s*0 auto auto 48px;/s);
+  assert.match(globalStyles, /\.sidebar-page-header\s*\{[^}]*width:\s*var\(--ds-sidebar-width\);/s);
+
   assert.doesNotMatch(sidebarSource, /sidebar-header-divider/);
-  assert.doesNotMatch(activitySource, /activity-bar-logo|BrandLogo/);
   assert.doesNotMatch(appSource, /HeaderBox/);
   assert.doesNotMatch(globalStyles, /\.sidebar-header-divider/);
 });
@@ -74,15 +87,15 @@ test("work panel collapse control is the viewport-fixed shell toggle", () => {
   );
 });
 
-test("macOS hides sidebar branding and keeps header actions beside traffic lights", () => {
+test("macOS hides the rail mark and keeps the page name clear of traffic lights", () => {
   assert.doesNotMatch(sidebarSource, /sidebar-macos-drag-row/);
   assert.match(
     globalStyles,
-    /:root\[data-platform="darwin"\] \.sidebar-header\s*\{[^}]*padding-left:\s*var\(--ds-window-lead-inset\);/s,
+    /:root\[data-platform="darwin"\] \.activity-bar-brand\s*\{[^}]*visibility:\s*hidden;/s,
   );
   assert.match(
     globalStyles,
-    /:root\[data-platform="darwin"\] \.sidebar-header > \.brand\s*\{[^}]*display:\s*none;/s,
+    /:root\[data-platform="darwin"\] \.sidebar-page-header\s*\{[^}]*padding-left:\s*max\(8px,\s*calc\(var\(--ds-window-lead-inset\) - 48px\)\);/s,
   );
   assert.match(
     globalStyles,

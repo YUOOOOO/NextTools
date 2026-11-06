@@ -18294,14 +18294,16 @@ Covered by conversation-sync's real HTTP/Hub Chrome browser fixture.
   `scripts/test-console-browser.mjs` with isolated local desktop fixture.
 
 
-### E2E-CHROME-unified-navigation-header
+### E2E-CHROME-rail-mark-and-destination-header
 
-At expanded Chat and Workbench routes, verify one shared title row covers both
-navigation columns, the brand is left-aligned and the collapse button stays at
-the previous secondary-sidebar right edge. Check both 240px and 360px sidebar
-widths, menu rows below the header, no overlapping drag/resize targets and
-keyboard-clickable home/collapse controls. Collapse then expand, switch routes
-and verify no duplicate brand row. Preserve the native macOS control inset.
+At expanded Chat and Workbench routes, verify the 48px activity rail opens with
+the product mark above the destinations while the menu column's header shows
+the active destination name and keeps the collapse button at the
+secondary-sidebar right edge. Check both 240px and 360px sidebar widths, menu
+rows below the header, no overlapping drag/resize targets and
+keyboard-clickable mark/collapse controls. Collapse then expand, switch routes
+and verify the name follows the destination and no product name is repeated.
+Preserve the native macOS control inset and the hidden rail mark.
 
 
 ### E2E-CLOUD-web-input-source-chip

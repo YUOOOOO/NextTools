@@ -16,25 +16,31 @@ const browserPath = process.env.SIDEBAR_TEST_BROWSER || [
   "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
 ].find((path) => existsSync(path));
 
-test("shared sidebar header spans the navigation columns and preserves collapse/home hit targets", { skip: !browserPath, timeout: 60000 }, async () => {
-  const temp = await mkdtemp(join(process.env.PI_SCRATCH_DIR || tmpdir(), "sidebar-header-browser-"));
+test("the rail keeps the product mark and the menu header names the active page", { skip: !browserPath, timeout: 60000 }, async () => {
+  const temp = await mkdtemp(join(process.env.PI_SCRATCH_DIR || tmpdir(), "page-header-browser-"));
   const fixture = `
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { catalogs, flattenCatalog } from '@pi-desktop/i18n';
-import { SidebarBrandHeader } from './SidebarBrandHeader';
+import { SidebarPageHeader } from './SidebarPageHeader';
 await i18n.use(initReactI18next).init({lng:'en',keySeparator:false,resources:{en:{translation:flattenCatalog(catalogs.en)}},interpolation:{escapeValue:false}});
 window.headerActions={home:0,toggle:0};
 function Fixture(){
  const [collapsed,setCollapsed]=useState(false),[page,setPage]=useState('chat');
  return <div className={'app-shell'+(collapsed?' sidebar-collapsed':'')} style={{'--ds-sidebar-width':'240px'}}>
-  {!collapsed && <SidebarBrandHeader sidebarToggleShortcut="Ctrl+B" onHome={()=>{window.headerActions.home++;setPage('chat')}} onToggleSidebar={()=>{window.headerActions.toggle++;setCollapsed(true)}}/>}
-  <nav className="activity-bar"><div className="activity-bar-top"><button className="activity-bar-button" data-route="chat" onClick={()=>setPage('chat')}>Chat</button><button className="activity-bar-button" data-route="workbench" onClick={()=>setPage('workbench')}>Work</button></div></nav>
+  {!collapsed && <SidebarPageHeader page={page} sidebarToggleShortcut="Ctrl+B" onToggleSidebar={()=>{window.headerActions.toggle++;setCollapsed(true)}}/>}
+  <nav className="activity-bar" style={{width:'48px'}}>
+   <div className="activity-bar-brand"><button className="activity-bar-logo" data-nav="home" onClick={()=>{window.headerActions.home++;setPage('chat')}}>Mark</button></div>
+   <div className="activity-bar-top">
+    <button className="activity-bar-button" data-route="chat" onClick={()=>setPage('chat')}>Agent</button>
+    <button className="activity-bar-button" data-route="workbench" onClick={()=>setPage('workbench')}>Workbench</button>
+   </div>
+  </nav>
   <div className="app-chat-shell">{!collapsed&&<aside className={'sidebar sidebar-surface'+(page==='workbench'?' workbench-menu':'')}><div className="sidebar-body"><button data-secondary="item">{page==='chat'?'Project conversations':'Workbench pages'}</button></div><div className="sidebar-resize-handle"/></aside>}
    <main className="main-pane">{collapsed&&<button data-nav="expand-sidebar" onClick={()=>setCollapsed(false)}>Expand</button>}</main></div>
- </div>
+ </div>;
 }
 createRoot(document.getElementById('root')).render(<Fixture/>);
 `;
@@ -44,7 +50,7 @@ createRoot(document.getElementById('root')).render(<Fixture/>);
     alias: { "@pi-desktop/i18n": join(root, "packages/i18n/src/index.ts"), "@pi-desktop/shared": join(root, "packages/shared/src/index.ts"),
       react: join(root,"apps/desktop/node_modules/react"),"react-dom":join(root,"apps/desktop/node_modules/react-dom"),
       i18next:join(root,"apps/desktop/node_modules/i18next"),"react-i18next":join(root,"apps/desktop/node_modules/react-i18next") } });
-  const css = (await Promise.all(["tokens.css","base.css","chrome.css","activity-bar.css","ui-kit.css","theme-overrides.css","responsive.css"].map((name)=>readFile(join(root,"apps/desktop/src/styles",name),"utf8")))).join("\n");
+  const css = (await Promise.all([ "tokens.css","base.css","chrome.css","activity-bar.css","ui-kit.css","theme-overrides.css","responsive.css"].map((name)=>readFile(join(root,"apps/desktop/src/styles",name),"utf8")))).join("\n");
   const javascript = await readFile(bundle);
   const html = '<!doctype html><html data-platform="win32" data-theme="light"><head><link rel="stylesheet" href="/fixture.css"></head><body><div id="root"></div><script type="module" src="/fixture.js"></script></body></html>';
   const server = createServer((req,res)=>{if(req.url==='/fixture.js'){res.setHeader('content-type','text/javascript');res.end(javascript);}else if(req.url==='/fixture.css'){res.setHeader('content-type','text/css');res.end(css);}else if(req.url==='/'){res.setHeader('content-type','text/html');res.end(html);}else{res.writeHead(404);res.end();}});
@@ -62,30 +68,40 @@ createRoot(document.getElementById('root')).render(<Fixture/>);
     socket.addEventListener('message',({data})=>{const msg=JSON.parse(String(data)),entry=pending.get(msg.id);if(!entry)return;clearTimeout(entry.timer);pending.delete(msg.id);if(msg.error)entry.reject(new Error(JSON.stringify(msg.error)));else entry.resolve(msg.result);});
     await call('Page.enable');await call('Emulation.setDeviceMetricsOverride',{width:1200,height:800,deviceScaleFactor:1,mobile:false});
     await call('Page.navigate',{url:`http://127.0.0.1:${server.address().port}/`});
-    await until(()=>evaluate("!!document.querySelector('.sidebar-brand-header')"),'Header missing');
+    await until(()=>evaluate("!!document.querySelector('.sidebar-page-header')"),'Header missing');
+    assert.equal(await evaluate("document.querySelector('.sidebar-page-title').textContent"),'Agent');
     for(const width of [240,360]){
       await evaluate(`document.querySelector('.app-shell').style.setProperty('--ds-sidebar-width','${width}px')`);
-      const geometry=await evaluate(`(()=>{const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};};return{header:rect('.sidebar-brand-header'),brand:rect('.brand'),toggle:rect('[data-nav=toggle-sidebar]'),rail:rect('.activity-bar'),item:rect('.activity-bar-button'),body:rect('.sidebar-body'),resize:rect('.sidebar-resize-handle'),drag:getComputedStyle(document.querySelector('.sidebar-brand-header')).webkitAppRegion,noDrag:getComputedStyle(document.querySelector('.brand')).webkitAppRegion,buttonHit:document.elementFromPoint(document.querySelector('[data-nav=toggle-sidebar]').getBoundingClientRect().x+10,20)?.closest('[data-nav=toggle-sidebar]')!==null}})()`);
-      assert.equal(geometry.header.x,0);assert.equal(geometry.header.width,48+width);
-      assert(geometry.brand.x<20,'Brand still starts after activity rail');
-      assert.equal(geometry.toggle.right,48+width-8,'Collapse button moved horizontally');
-      assert(geometry.item.y>=geometry.header.bottom,'Activity item overlaps header');
-      assert(geometry.body.y>=geometry.header.bottom,'Secondary menu overlaps header');
-      assert(geometry.resize.y>=geometry.header.bottom,'Resize hit target overlaps header');
+      const geometry=await evaluate(`(()=>{const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};};return{header:rect('.sidebar-page-header'),title:rect('.sidebar-page-title'),rail:rect('.activity-bar'),mark:rect('.activity-bar-logo'),item:rect('.activity-bar-button'),body:rect('.sidebar-body'),toggle:rect('[data-nav=toggle-sidebar]'),resize:rect('.sidebar-resize-handle'),drag:getComputedStyle(document.querySelector('.sidebar-page-header')).webkitAppRegion,noDrag:getComputedStyle(document.querySelector('[data-nav=toggle-sidebar]')).webkitAppRegion,buttonHit:document.elementFromPoint(document.querySelector('[data-nav=toggle-sidebar]').getBoundingClientRect().x+10,20)?.closest('[data-nav=toggle-sidebar]')!==null}})()`);
+      assert.ok(Math.abs(geometry.header.x-48)<1,'Header must start after the rail');
+      assert.ok(Math.abs(geometry.header.width-width)<1,'Header must own the menu column only');
+      assert.ok(Math.abs(geometry.header.right-(48+width))<1,'Header must end at the menu column edge');
+      assert.ok(geometry.title.x>=48+7,'Page name belongs to the menu column');
+      assert.ok(geometry.header.right-geometry.toggle.right<9.5,'Collapse stays at the column edge');
+      assert.ok(geometry.mark.x>=0&&geometry.mark.right<=48.5,'Product mark stays inside the rail');
+      assert.ok(geometry.mark.bottom<=geometry.item.y+0.5,'Product mark sits above the destinations');
+      assert.ok(geometry.item.y>=geometry.header.bottom-0.5,'Activity item overlaps header');
+      assert.ok(geometry.body.y>=geometry.header.bottom-0.5,'Secondary menu overlaps header');
+      assert.ok(geometry.resize.y>=geometry.header.bottom-0.5,'Resize hit target overlaps header');
       assert.equal(geometry.drag,'drag');assert.equal(geometry.noDrag,'no-drag');assert(geometry.buttonHit);
     }
     await evaluate("document.querySelector('[data-route=workbench]').click()");
     await until(()=>evaluate("document.querySelector('[data-secondary=item]')?.textContent === 'Workbench pages'"),'Route did not switch');
-    assert.equal(await evaluate("document.querySelectorAll('.sidebar-brand-header').length"),1);
+    assert.equal(await evaluate("document.querySelector('.sidebar-page-title').textContent"),'Workbench');
+    assert.equal(await evaluate("document.querySelectorAll('.sidebar-page-header').length"),1);
     await evaluate("document.querySelector('[data-nav=home]').click()");
     await until(()=>evaluate("document.querySelector('[data-secondary=item]')?.textContent === 'Project conversations'"),'Home failed');
+    assert.equal(await evaluate("document.querySelector('.sidebar-page-title').textContent"),'Agent');
     await evaluate("document.querySelector('[data-nav=toggle-sidebar]').click()");
-    await until(()=>evaluate("!document.querySelector('.sidebar-brand-header') && !!document.querySelector('[data-nav=expand-sidebar]')"),'Collapse failed');
+    await until(()=>evaluate("!document.querySelector('.sidebar-page-header') && !!document.querySelector('[data-nav=expand-sidebar]')"),'Collapse failed');
     await evaluate("document.querySelector('[data-nav=expand-sidebar]').click()");
-    await until(()=>evaluate("!!document.querySelector('.sidebar-brand-header')"),'Expand failed');
+    await until(()=>evaluate("!!document.querySelector('.sidebar-page-header')"),'Expand failed');
     assert.deepEqual(await evaluate('window.headerActions'),{home:1,toggle:1});
     await evaluate("document.documentElement.dataset.platform='darwin'");
-    assert.equal(await evaluate("getComputedStyle(document.querySelector('.brand')).display"),'none');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.activity-bar-brand')).visibility"),'hidden');
+    assert.equal(Math.round(await evaluate("parseFloat(getComputedStyle(document.querySelector('.sidebar-page-header')).paddingLeft)")),8);
+    await evaluate("document.documentElement.style.setProperty('--ds-traffic-light-edge','76px')");
+    assert.equal(Math.round(await evaluate("parseFloat(getComputedStyle(document.querySelector('.sidebar-page-header')).paddingLeft)")),40);
     if(process.env.SIDEBAR_TEST_SCREENSHOT){await evaluate("document.documentElement.dataset.platform='win32'");const image=await call('Page.captureScreenshot',{format:'png'});await writeFile(process.env.SIDEBAR_TEST_SCREENSHOT,Buffer.from(image.data,'base64'));}
   }finally{
     if(socket?.readyState===1){try{await call('Browser.close');}catch{}}

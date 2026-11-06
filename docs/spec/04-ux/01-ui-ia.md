@@ -35,14 +35,16 @@ destination, chat as the home surface, tools and permissions inline.
   running-task, and draft state while other destinations are active. Its
   expanded column is user-resizable from 240px to 520px (default 275px); dragging
   below 160px collapses it.
-- **Left HeaderBox**: a shared toolbar-height header spans the 48px Activity
+- **Left HeaderBox**: a shared toolbar-height row spans the 48px Activity
   Bar and the visible Agent menu column, or the Settings navigation column.
-  Windows/Linux show a non-interactive logo centered above the Activity Bar;
-  the Agent menu keeps its collapse control aligned to the right. Collapsing
-  the menu leaves the logo above the Activity Bar and preserves the existing
-  expand control in the conversation toolbar. There is no duplicate product
-  name or Home button in the menu header. macOS reserves its native traffic
-  lights and hides the logo. HeaderBox does not change the content width budget.
+  The Activity Bar's row carries the product mark, above the destinations. The
+  menu column's header names the active destination (`Agent` on the chat
+  route, `Workbench` on Workbench) and keeps the collapse control aligned to
+  the right. Collapsing the menu keeps the mark in the rail and preserves the
+  existing expand control in the conversation toolbar. The menu header never
+  repeats the product name. macOS reserves its native traffic lights, so the
+  rail hides the mark and the destination name starts after the lead inset.
+  HeaderBox does not change the content width budget.
   `PI-Desktop` remains the product name; `Codex` denotes an external source or
   design reference.
 - **Main pane**: exactly one destination at a time; destinations replace the

@@ -19,7 +19,6 @@ import { cx, TooltipButton } from "../../components/ui";
 import { WindowControls } from "../../components/WindowControls";
 import { useCopyTex } from "../../hooks/use-copy-tex";
 import { api } from "../../lib/api";
-import { useAppStore } from "../../stores/app-store";
 import { PortalVisibilityProvider } from "../../lib/portal-visibility";
 import { workPanelLayout } from "../../lib/work-panel-resize";
 import { LiveVoiceStatusHost } from "../voice/live/LiveVoiceStatusHost";
@@ -28,7 +27,7 @@ import { useAppShellRuntime } from "./useAppShellRuntime";
 import { hydrateWorkbenchFromHost, replaceWorkbenchSession } from "../workbench/workbench-session";
 import { WorkbenchMenu, WorkbenchToolBridge } from "../workbench/WorkbenchMenu";
 import { ActivityBar } from "./ActivityBar";
-import { SidebarBrandHeader } from "./SidebarBrandHeader";
+import { SidebarPageHeader } from "./SidebarPageHeader";
 
 const SettingsPage = lazy(() =>
   import("../../pages/SettingsPage").then((module) => ({
@@ -157,7 +156,7 @@ export function AppShell() {
         <WorkbenchToolBridge />
 
         {(page === "chat" || page === "workbench") && !sidebarCollapsed ? (
-          <SidebarBrandHeader onHome={() => useAppStore.getState().setPage("chat")}
+          <SidebarPageHeader page={page}
             onToggleSidebar={toggleSidebar} sidebarToggleShortcut={sidebarToggleShortcut} />
         ) : null}
         <ActivityBar />
