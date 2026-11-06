@@ -19,7 +19,17 @@
   -webkit-user-select: none;
 }
 
-/* The product mark owns the shell's top-left cell: the rail starts one
+/* The rail cell and the navigation column share one shell cell, so the overlay
+   hosts that render nothing in flow cannot seed them into separate flex
+   columns. */
+.activity-shell-column {
+  display: flex;
+  min-height: 0;
+  flex: 0 0 var(--ds-activity-bar-width, 48px);
+  flex-direction: column;
+}
+
+/* The product mark owns that cell's top row: the rail starts one
    toolbar-height row below it. Keeping the two as sibling flex items (rather
    than one nested column) leaves the mark in place while the menu column
    scrolls or disappears, as it does on Scheduled Tasks, Extensions and

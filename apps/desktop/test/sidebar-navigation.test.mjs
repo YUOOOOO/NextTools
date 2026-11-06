@@ -43,9 +43,12 @@ test("the rail owns the product mark and the menu header names the destination",
   assert.doesNotMatch(sidebarSource, /className="sidebar-header"/);
   assert.match(appSource, /<SidebarPageHeader page=\{page\}/);
 
-  // The mark is a sibling cell above the rail, not a child of the scrolling
-  // navigation column: Scheduled Tasks, Extensions and Settings keep it.
-  assert.match(appSource, /<ActivityBar \/>/);
+  // The mark and the rail share one shell cell above the scrolling navigation
+  // column: Scheduled Tasks, Extensions and Settings must keep the mark.
+  assert.match(
+    appSource,
+    /<div className="activity-shell-column">[\s\S]*?<ActivityBar \/>[\s\S]*?<\/div>/,
+  );
   assert.match(
     activitySource,
     /<div className="activity-bar-brand">[\s\S]*?<\/div>\s*<nav className="activity-bar"/,
