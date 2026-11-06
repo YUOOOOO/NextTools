@@ -19,13 +19,26 @@
   -webkit-user-select: none;
 }
 
-/* The product mark opens the rail; the menu column beside it names the page. */
+/* The product mark owns the shell's top-left cell: the rail starts one
+   toolbar-height row below it. Keeping the two as sibling flex items (rather
+   than one nested column) leaves the mark in place while the menu column
+   scrolls or disappears, as it does on Scheduled Tasks, Extensions and
+   Settings. */
 .activity-bar-brand {
+  --ds-activity-bar-width: 48px;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 2;
+  -webkit-app-region: drag;
   display: flex;
+  width: var(--ds-activity-bar-width);
   height: var(--ds-toolbar-height);
   flex: 0 0 var(--ds-toolbar-height);
   align-items: center;
   justify-content: center;
+  background: var(--ds-bg-sidebar);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .activity-bar-logo {
@@ -51,8 +64,7 @@
   outline-offset: -2px;
 }
 
-/* macOS traffic lights own the window's top-left corner: the rail keeps the
-   row, so the first destination stays aligned with the menu header. */
+/* macOS traffic lights own that corner: keep the cell, hide the mark. */
 :root[data-platform="darwin"] .activity-bar-brand {
   visibility: hidden;
 }

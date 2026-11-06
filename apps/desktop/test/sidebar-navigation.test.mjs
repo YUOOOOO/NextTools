@@ -43,13 +43,18 @@ test("the rail owns the product mark and the menu header names the destination",
   assert.doesNotMatch(sidebarSource, /className="sidebar-header"/);
   assert.match(appSource, /<SidebarPageHeader page=\{page\}/);
 
-  // The mark opens the rail, above the destinations.
-  assert.match(activitySource, /className="activity-bar-brand"/);
+  // The mark is a sibling cell above the rail, not a child of the scrolling
+  // navigation column: Scheduled Tasks, Extensions and Settings keep it.
+  assert.match(appSource, /<ActivityBar \/>/);
+  assert.match(
+    activitySource,
+    /<div className="activity-bar-brand">[\s\S]*?<\/div>\s*<nav className="activity-bar"/,
+  );
   assert.match(activitySource, /<BrandLogo size=\{20\}/);
   assert.doesNotMatch(activitySource, /t\("app\.shellName"\)/);
   assert.match(
     globalStyles,
-    /\.activity-bar-brand\s*\{[^}]*height:\s*var\(--ds-toolbar-height\);/s,
+    /\.activity-bar-brand\s*\{[^}]*flex:\s*0 0 var\(--ds-toolbar-height\);/s,
   );
 
   // The menu column names the active page instead of repeating the product.
