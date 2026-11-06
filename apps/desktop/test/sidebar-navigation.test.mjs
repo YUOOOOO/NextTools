@@ -16,6 +16,10 @@ const hoverHookSource = await readFile(
   new URL("../src/features/sessions/useSessionHoverCard.ts", import.meta.url),
   "utf8",
 );
+const activityBarCss = await readFile(
+  new URL("../src/styles/activity-bar.css", import.meta.url),
+  "utf8",
+);
 const globalStyles = await loadStyles();
 const appSource = await readAppSource();
 const panelSource = await readFile(
@@ -76,6 +80,17 @@ test("the rail owns the product mark and the menu header names the destination",
 test("work panel collapse control is the viewport-fixed shell toggle", () => {
   assert.match(appSource, /className="app-work-panel-toggle no-drag"/);
   assert.match(appSource, /collapseWorkPanel\(\)/);
+
+  // A stray unbalanced brace silently swallows every later rule in the sheet.
+  assert.equal(
+    (activityBarCss.match(/\{/g) ?? []).length,
+    (activityBarCss.match(/\}/g) ?? []).length,
+  );
+  // The menu header paints the sidebar surface, including a theme image.
+  assert.match(
+    activityBarCss,
+    /\.sidebar-page-header\s*\{[^}]*background-image:\s*var\(--ds-bg-sidebar-image, none\);/s,
+  );
   assert.doesNotMatch(panelSource, /onCollapse/);
   assert.doesNotMatch(panelSource, /work-panel-toolbar-collapse/);
   assert.doesNotMatch(panelSource, /work-panel-collapse/);

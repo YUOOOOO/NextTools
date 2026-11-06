@@ -25,7 +25,7 @@
 .activity-shell-column {
   display: flex;
   min-height: 0;
-  flex: 0 0 var(--ds-activity-bar-width, 48px);
+  flex: 0 0 48px;
   flex-direction: column;
 }
 
@@ -262,11 +262,14 @@
   position: absolute;
   left: 12px;
   pointer-events: auto;
+  pointer-events: auto;
 }
 
 
-/* Header of the menu column: it starts to the right of the 48px rail, so the
-   rail keeps the product mark and this row names the active destination. */
+/* Header of the menu column: it covers the top row of the secondary sidebar
+   while the rail beside it keeps the product mark. It paints the sidebar
+   surface exactly, so a theme image or a macOS glass tint cannot leave a
+   differently coloured band above the list. */
 .sidebar-page-header {
   position: absolute;
   inset: 0 auto auto 48px;
@@ -274,7 +277,10 @@
   box-sizing: border-box;
   width: var(--ds-sidebar-width);
   min-width: 0;
-  background: var(--ds-bg-sidebar);
+  background-color: var(--ds-bg-sidebar, var(--ds-bg-primary));
+  background-image: var(--ds-bg-sidebar-image, none);
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .sidebar-page-header > .sidebar-header-actions {
@@ -293,11 +299,11 @@
   white-space: nowrap;
 }
 
-.app-shell:has(> .sidebar-page-header) .sidebar {
+.app-shell:has(> .activity-shell-column > .sidebar-page-header) .sidebar {
   box-sizing: border-box;
   padding-top: var(--ds-toolbar-height);
 }
 
-.app-shell:has(> .sidebar-page-header) .sidebar-resize-handle {
+.app-shell:has(> .activity-shell-column > .sidebar-page-header) .sidebar-resize-handle {
   top: var(--ds-toolbar-height);
 }

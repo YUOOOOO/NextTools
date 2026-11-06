@@ -29,15 +29,17 @@ await i18n.use(initReactI18next).init({lng:'en',keySeparator:false,resources:{en
 window.headerActions={home:0,toggle:0};
 function Fixture(){
  const [collapsed,setCollapsed]=useState(false),[page,setPage]=useState('chat');
- return <div className={'app-shell'+(collapsed?' sidebar-collapsed':'')} style={{'--ds-sidebar-width':'240px'}}>
+ return <div className='app-shell' style={{'--ds-sidebar-width':collapsed?'0px':'240px'}}>
+ <div className="activity-shell-column">
   {!collapsed && <SidebarPageHeader page={page} sidebarToggleShortcut="Ctrl+B" onToggleSidebar={()=>{window.headerActions.toggle++;setCollapsed(true)}}/>}
-  <nav className="activity-bar" style={{width:'48px'}}>
+  <nav className="activity-bar">
    <div className="activity-bar-brand"><button className="activity-bar-logo" data-nav="home" onClick={()=>{window.headerActions.home++;setPage('chat')}}>Mark</button></div>
    <div className="activity-bar-top">
     <button className="activity-bar-button" data-route="chat" onClick={()=>setPage('chat')}>Agent</button>
     <button className="activity-bar-button" data-route="workbench" onClick={()=>setPage('workbench')}>Workbench</button>
    </div>
   </nav>
+ </div>
   <div className="app-chat-shell">{!collapsed&&<aside className={'sidebar sidebar-surface'+(page==='workbench'?' workbench-menu':'')}><div className="sidebar-body"><button data-secondary="item">{page==='chat'?'Project conversations':'Workbench pages'}</button></div><div className="sidebar-resize-handle"/></aside>}
    <main className="main-pane">{collapsed&&<button data-nav="expand-sidebar" onClick={()=>setCollapsed(false)}>Expand</button>}</main></div>
  </div>;
@@ -72,7 +74,7 @@ createRoot(document.getElementById('root')).render(<Fixture/>);
     assert.equal(await evaluate("document.querySelector('.sidebar-page-title').textContent"),'Agent');
     for(const width of [240,360]){
       await evaluate(`document.querySelector('.app-shell').style.setProperty('--ds-sidebar-width','${width}px')`);
-      const geometry=await evaluate(`(()=>{const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};};return{header:rect('.sidebar-page-header'),title:rect('.sidebar-page-title'),rail:rect('.activity-bar'),mark:rect('.activity-bar-logo'),item:rect('.activity-bar-button'),body:rect('.sidebar-body'),toggle:rect('[data-nav=toggle-sidebar]'),resize:rect('.sidebar-resize-handle'),drag:getComputedStyle(document.querySelector('.sidebar-page-header')).webkitAppRegion,noDrag:getComputedStyle(document.querySelector('[data-nav=toggle-sidebar]')).webkitAppRegion,buttonHit:document.elementFromPoint(document.querySelector('[data-nav=toggle-sidebar]').getBoundingClientRect().x+10,20)?.closest('[data-nav=toggle-sidebar]')!==null}})()`);
+      const geometry=await evaluate(`(()=>{const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};};return{header:rect('.sidebar-page-header'),title:rect('.sidebar-page-title'),rail:rect('.activity-bar'),mark:rect('.activity-bar-logo'),item:rect('.activity-bar-button'),body:rect('.sidebar-body'),toggle:rect('[data-nav=toggle-sidebar]'),resize:rect('.sidebar-resize-handle'),drag:getComputedStyle(document.querySelector('.sidebar-page-header')).webkitAppRegion,noDrag:getComputedStyle(document.querySelector('.sidebar-page-header .sidebar-header-actions')).webkitAppRegion,buttonHit:document.elementFromPoint(document.querySelector('[data-nav=toggle-sidebar]').getBoundingClientRect().x+4,12)?.closest('[data-nav=toggle-sidebar]')!==null,column:getComputedStyle(document.querySelector('.activity-shell-column')).width}})()`);
       assert.ok(Math.abs(geometry.header.x-48)<1,'Header must start after the rail');
       assert.ok(Math.abs(geometry.header.width-width)<1,'Header must own the menu column only');
       assert.ok(Math.abs(geometry.header.right-(48+width))<1,'Header must end at the menu column edge');
