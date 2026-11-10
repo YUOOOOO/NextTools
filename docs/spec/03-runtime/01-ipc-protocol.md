@@ -2063,8 +2063,8 @@ falls back, it sends `pi-desktop/window/event/lifecycleDialogDismiss` with the
 request ID so the renderer removes any stale overlay. Main validates the sender and
 pending request ID. A missing/unresponsive renderer falls back to the native dialog
 after a bounded timeout; if that fallback also fails, shutdown proceeds rather than
-remaining blocked. Tray Quit restores a hidden main
-window before showing its in-app confirmation. This does not change host RPC or storage.
+remaining blocked. Tray Quit directly enters ordered shutdown without restoring
+the main window or showing confirmation. This does not change host RPC or storage.
 Maximize/unmaximize changes also emit
 `window/event/maximized`. Unknown actions fail. These window-control channels
 remain Electron-only and do not change the host RPC protocol version.

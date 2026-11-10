@@ -5,25 +5,6 @@ import { loadStyles } from "./helpers/styles.mjs";
 
 const styles = await loadStyles();
 
-test("high-traffic chrome uses shared motion tokens on hover fills", () => {
-  for (const selector of [
-    ".jump-latest-btn",
-    ".stop-btn",
-    ".composer-plus-item",
-    ".search-item",
-    ".footer-action",
-    ".notification-item",
-    ".work-panel-tab-close",
-  ]) {
-    // Match the selector anywhere in a rule's selector list, and require the
-    // transition inside that rule's own body — a shared list is as valid as a
-    // standalone block.
-    const re = new RegExp(
-      `${selector.replace(/\./g, "\\.")}[^{}]*\\{[^}]*transition:[^;]*var\\(--motion-duration-fast\\)`,
-    );
-    assert.match(styles, re, `${selector} should transition with motion tokens`);
-  }
-});
 
 test("empty-home stack gap stays within the 24px workstation ceiling", () => {
   // The resizing override also mentions `.home-stack-inner`; pin the

@@ -57,7 +57,10 @@ fn source_by_id<'a>(sources: &'a [PageSource], id: &str) -> Option<&'a PageSourc
 
 fn durable(session: &Value) -> Value {
     let mut session = session.clone();
-    if let Some(pages) = session.get_mut("pages").and_then(|value| value.as_object_mut()) {
+    if let Some(pages) = session
+        .get_mut("pages")
+        .and_then(|value| value.as_object_mut())
+    {
         for page in pages.values_mut() {
             if let Some(object) = page.as_object_mut() {
                 object.remove("available");
@@ -97,7 +100,9 @@ fn view_title(contributes: &Map<String, Value>, view_id: &str, locale: &str) -> 
         .get("views")
         .and_then(Value::as_array)
         .and_then(|views| {
-            views.iter().find(|view| view.get("id").and_then(Value::as_str) == Some(view_id))
+            views
+                .iter()
+                .find(|view| view.get("id").and_then(Value::as_str) == Some(view_id))
         })
         .and_then(|view| view.get("title"))
         .and_then(|title| localized_title(title, locale))
@@ -327,7 +332,11 @@ pub fn import_if_empty(db: &Database, migrate: &Value) -> Result<bool> {
     import_if_empty_with(db, migrate, &[])
 }
 
-pub fn import_if_empty_with(db: &Database, migrate: &Value, sources: &[PageSource]) -> Result<bool> {
+pub fn import_if_empty_with(
+    db: &Database,
+    migrate: &Value,
+    sources: &[PageSource],
+) -> Result<bool> {
     if db.kv_get(KV_NS, KV_KEY)?.is_some() {
         return Ok(false);
     }
@@ -390,7 +399,10 @@ mod tests {
         )
         .unwrap();
         assert_eq!(disabled["ok"], true);
-        assert_eq!(disabled["session"]["pages"]["example"]["status"], "disabled");
+        assert_eq!(
+            disabled["session"]["pages"]["example"]["status"],
+            "disabled"
+        );
         let stored = db.kv_get(KV_NS, KV_KEY).unwrap().unwrap();
         assert_eq!(stored["pages"]["example"]["status"], "disabled");
         assert!(stored["pages"].get("example").is_some());
@@ -489,22 +501,41 @@ mod tests {
     fn contributed_page_disable_keeps_the_record_and_a_disabled_plugin_cannot_open() {
         let (_dir, db) = db();
         let sources = [board(true)];
-        let opened = apply_with(&db, &json!({"action":"open","id":"pi.demo/board"}), &sources).unwrap();
+        let opened = apply_with(
+            &db,
+            &json!({"action":"open","id":"pi.demo/board"}),
+            &sources,
+        )
+        .unwrap();
         assert_eq!(opened["ok"], true);
-        assert_eq!(opened["session"]["pages"]["pi.demo/board"]["viewId"], "board");
+        assert_eq!(
+            opened["session"]["pages"]["pi.demo/board"]["viewId"],
+            "board"
+        );
         let disabled = apply_with(
             &db,
             &json!({"action":"setStatus","id":"pi.demo/board","status":"disabled"}),
             &sources,
         )
         .unwrap();
-        assert_eq!(disabled["session"]["pages"]["pi.demo/board"]["status"], "disabled");
-        assert_eq!(disabled["session"]["pages"]["pi.demo/board"]["pluginId"], "pi.demo");
+        assert_eq!(
+            disabled["session"]["pages"]["pi.demo/board"]["status"],
+            "disabled"
+        );
+        assert_eq!(
+            disabled["session"]["pages"]["pi.demo/board"]["pluginId"],
+            "pi.demo"
+        );
         let stored = db.kv_get(KV_NS, KV_KEY).unwrap().unwrap();
         assert!(stored["pages"]["pi.demo/board"].get("available").is_none());
         assert_eq!(stored["pages"]["pi.demo/board"]["status"], "disabled");
 
-        let closed = apply_with(&db, &json!({"action":"close","id":"pi.demo/board"}), &sources).unwrap();
+        let closed = apply_with(
+            &db,
+            &json!({"action":"close","id":"pi.demo/board"}),
+            &sources,
+        )
+        .unwrap();
         assert!(closed["session"]["pages"].get("pi.demo/board").is_some());
         assert!(!closed["session"]["openIds"]
             .as_array()
@@ -514,10 +545,21 @@ mod tests {
 
         let retained = [board(false)];
         let loaded = load_with(&db, &retained).unwrap();
-        assert_eq!(loaded["session"]["pages"]["pi.demo/board"]["status"], "disabled");
-        assert_eq!(loaded["session"]["pages"]["pi.demo/board"]["available"], false);
+        assert_eq!(
+            loaded["session"]["pages"]["pi.demo/board"]["status"],
+            "disabled"
+        );
+        assert_eq!(
+            loaded["session"]["pages"]["pi.demo/board"]["available"],
+            false
+        );
         let before = db.kv_get(KV_NS, KV_KEY).unwrap();
-        let rejected = apply_with(&db, &json!({"action":"open","id":"pi.demo/board"}), &retained).unwrap();
+        let rejected = apply_with(
+            &db,
+            &json!({"action":"open","id":"pi.demo/board"}),
+            &retained,
+        )
+        .unwrap();
         assert_eq!(rejected, json!({"ok": false, "error": "unavailable"}));
         assert_eq!(db.kv_get(KV_NS, KV_KEY).unwrap(), before);
     }

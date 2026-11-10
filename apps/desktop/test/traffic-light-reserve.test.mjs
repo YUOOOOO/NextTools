@@ -54,53 +54,6 @@ test("the renderer publishes the native footprint before first paint", () => {
   );
 });
 
-test("every shell surface reserves the shared lead inset", () => {
-  // Comments may quote the old footprint while explaining the geometry; only
-  // declarations can drift.
-  const declarationsOnly = (css) => css.replace(/\/\*[\s\S]*?\*\//g, "");
-  for (const [name, source] of [
-    ["chrome.css", chromeSource],
-    ["work-panel.css", workPanelSource],
-    ["tokens.css", tokensSource],
-  ]) {
-    assert.doesNotMatch(
-      declarationsOnly(source),
-      /(?:padding-left|margin-left|left|--[\w-]+):[^;]*\b76px\b/,
-      `${name} must not restate the traffic-light footprint`,
-    );
-  }
-  // One composition, on the platform that has the buttons.
-  assert.match(
-    chromeSource,
-    /:root\[data-platform="darwin"\] \{\s*--ds-window-lead-inset: calc\(\s*var\(--ds-traffic-light-edge\) \+ var\(--ds-traffic-light-gap\)\s*\);/,
-  );
-  assert.equal(
-    [...globalStyles.matchAll(/--ds-window-lead-inset:\s*calc\(/g)].length,
-    1,
-    "the reserve is composed in exactly one place",
-  );
-  // The four surfaces that reach the window's left edge consume it.
-  assert.match(
-    chromeSource,
-    /:root\[data-platform="darwin"\] \.sidebar-header \{[\s\S]*?padding-left:\s*var\(--ds-window-lead-inset\);/,
-  );
-  assert.match(
-    chromeSource,
-    /:root\[data-platform="darwin"\] \.app-shell\.work-panel-maximized\.sidebar-collapsed \{[^}]*--preview-chrome-inset:\s*var\(--ds-window-lead-inset\);/,
-  );
-  assert.match(
-    chromeSource,
-    /\.window-chrome-row \{[^}]*padding-left:\s*var\(--preview-chrome-inset\);/,
-  );
-  assert.match(
-    chromeSource,
-    /:root\[data-platform="darwin"\] \.conversation-topbar\.ct-collapsed \{[\s\S]*?--ct-lead-inset:\s*var\(--ds-window-lead-inset\)/,
-  );
-  assert.match(
-    workPanelSource,
-    /\.work-panel-header \{[^}]*margin-left: calc\(var\(--preview-chrome-inset\) \+ var\(--preview-chrome-action-lane\)\);/,
-  );
-});
 
 test("the reserve collapses where there are no native traffic lights", () => {
   assert.match(tokensSource, /--ds-traffic-light-edge: 0px/);

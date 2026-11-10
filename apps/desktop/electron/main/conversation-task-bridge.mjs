@@ -1,7 +1,19 @@
 import { randomUUID } from "node:crypto";
-import { messageText } from "./conversation-sync-client.mjs";
 
 const failure = (code) => Object.assign(new Error(code), { code });
+
+/** Project an authoritative final Agent message for any remote caller. */
+function assistantMessageText(message) {
+  if (!message || typeof message !== "object") return "";
+  if (typeof message.text === "string") return message.text;
+  const content = message.content;
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((part) => part && typeof part.text === "string" && ["text", "input_text", "output_text"].includes(part.type))
+    .map((part) => part.text)
+    .join("\n");
+}
 
 /** Owns only sessions created for hub conversations. Execution goes through the
  * normal desktop Agent IPC handlers, never directly through agent.prompt. */
@@ -128,7 +140,7 @@ export function createConversationTaskBridge({ getHost, getSidecar, prompt, abor
               emit({ stage: "text", text: event.deltaText, interim: false, delta: true });
             }
           } else if (event?.type === "message_end" && event.message?.role === "assistant") {
-            finalText = messageText(event.message);
+            finalText = assistantMessageText(event.message);
             emit({ stage: "text", text: finalText, interim: false });
           } else if (event?.type === "error") {
             terminal = true;

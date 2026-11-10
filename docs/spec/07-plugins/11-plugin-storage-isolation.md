@@ -101,6 +101,12 @@ derives source identity from the active Agent tool invocation, persists the
 delivery and provenance ledger in host-core, and audits the plugin operation;
 plugin-private state is never treated as authorization or session identity.
 
+The separate `credentials.read` / `credentials.write` gateway permits only the
+calling plugin's own encrypted values. It does not expose the provider secret
+store or another plugin's namespace. `session.read.all` is an explicit additional
+grant for synchronization snapshots, not direct database access. Existing
+`session.read` and `session.read.own` scopes are unchanged.
+
 ## 8. Uninstall cleanup policy
 
 Default:

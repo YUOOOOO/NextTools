@@ -1,301 +1,125 @@
-import assert from "node:assert/strict";
-import { createServer } from "node:http";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import test from "node:test";
-import { createConversationSync, toSyncChanges, validateBaseUrl } from "../electron/main/conversation-sync-client.mjs";
+import assert from 'node:assert/strict';
+import { setImmediate as tick } from 'node:timers/promises';
+import test from 'node:test';
+import { createRequire } from 'node:module';
+import { cloudFixture } from './helpers/cloud-plugin-fixture.mjs';
+import { createConversationSync } from '../resources/plugins/pi.cloud-sync/client.cjs';
+import { toSyncChanges, validateBaseUrl } from '../resources/plugins/pi.cloud-sync/sync-data.cjs';
+const login = { baseUrl:'http://fixture.invalid', account:'alice', password:'password' };
+function setup(t, options) { const f=cloudFixture(options), sync=createConversationSync(f.pi); t.after(() => sync.dispose()); return { ...f, sync }; }
 
-test("conversation sync login accepts the server URL", () => {
-  assert.equal(validateBaseUrl("http://127.0.0.1:8788"), "http://127.0.0.1:8788");
-  assert.equal(validateBaseUrl("http://sync.example:8788"), "http://sync.example:8788");
-  assert.equal(validateBaseUrl("127.0.0.1:8788"), "http://127.0.0.1:8788");
-  assert.throws(() => validateBaseUrl("file:///tmp"), /server URL/);
+test('typed server URL is validated before transmission', () => {
+  assert.equal(validateBaseUrl('127.0.0.1:8788'),'http://127.0.0.1:8788');
+  for (const value of ['file:///private', 'https://user:pass@example.com', 'https://example.com/path']) assert.throws(() => validateBaseUrl(value));
+});
+test('text mapping excludes tools, streaming, attachments and remotely owned sessions', () => {
+  const changes=toSyncChanges([{ id:'local-session', createdAt:1, projectPath:'C:/Private/Project', messages:[
+    {id:'user-message',role:'user',content:[{type:'text',text:'hello'},{type:'image',data:'SECRET'}]},
+    {id:'tool-message',role:'tool',text:'SECRET'}, {id:'stream-message',role:'assistant',status:'streaming',text:'SECRET'}
+  ] }, {id:'remote-session',source:'remote'}], 'desktop-one');
+  assert.deepEqual(changes.messages.map(row=>row.text),['hello']);
+  assert.equal(changes.conversations.length,1); assert.equal(changes.conversations[0].project_name,'Project');
+  assert.doesNotMatch(JSON.stringify(changes),/Private|SECRET/);
+});
+test('login stores credentials asynchronously and idempotent pushes use persisted device identity', async t => {
+  const f=setup(t); assert.deepEqual(await f.sync.getState(),{signedIn:false}); assert.equal(f.requests.length,0);
+  assert.equal((await f.sync.signIn(login)).account,'alice'); await tick();
+  await f.sync.push(); await f.sync.push();
+  const bodies=f.requests.filter(row=>row.url.endsWith('/changes')).map(row=>JSON.parse(row.body));
+  assert.deepEqual(bodies[0],bodies[1]); assert.equal(bodies[0].device,'desktop-one');
+  assert.equal(bodies[0].messages[0].text,'hello');
+  assert.equal(f.frames.find(row=>row.type==='hello').device.id,'desktop-one');
+  assert.equal(JSON.parse(f.credentials.get('account')).token,'FIXTURE_TOKEN');
+  assert.doesNotMatch(JSON.stringify(await f.sync.getState()),/FIXTURE_TOKEN|password/);
+});
+test('signout during transcript loading prevents stale uploads', async t => {
+  let release, entered; const started=new Promise(resolve=>{entered=resolve;});
+  const f=setup(t,{list:()=>{entered();return new Promise(resolve=>{release=resolve;});}});
+  await f.sync.signIn(login); const pending=f.sync.push(); await started; const rejected=assert.rejects(pending,{code:'signed_out'});
+  await f.sync.signOut(); release([{id:'stale-session'}]); await rejected;
+  assert.equal(f.requests.filter(row=>row.url.endsWith('/changes')).length,0);
+  assert.equal(f.credentials.has('account'),false);
+});
+test('failed upload never grants remote access and account switching revokes successful grants', async t => {
+  let reject=true;
+  const f=setup(t,{fetch:async input=>input.url.includes('/auth/')?{token:'token',account:JSON.parse(input.body).account}:input.url.endsWith('/changes')?{accepted:1,rejected:reject?[{}]:[]}:{enabled:true}});
+  await f.sync.signIn(login); await tick(); await assert.rejects(f.sync.push(),{code:'sync_rejected'});
+  f.call('first'); await tick(); assert.deepEqual(f.calls.at(-1).sharedSessionIds,[]);
+  reject=false; await f.sync.push(); f.call('second'); await tick(); assert.deepEqual(f.calls.at(-1).sharedSessionIds,['local-session']);
+  await f.sync.signIn({...login,account:'bob'}); await tick(); f.call('third'); await tick(); assert.deepEqual(f.calls.at(-1).sharedSessionIds,[]);
+});
+test('tombstones persist across restart and cannot delete another device record', async t => {
+  const credentials=new Map(); let fail=true; const deleted=[];
+  const options={credentials,fetch:async input=>{
+    if(input.url.includes('/auth/'))return {token:'token',account:'alice'};
+    if(input.method==='DELETE'){if(fail)throw new Error('offline');deleted.push(input.url);return {};}
+    if(input.url.endsWith('/conversations'))return {conversations:[{cid:'local-session',execution_device:'desktop-one'}]};return {enabled:true};}};
+  const f=setup(t,options);await f.sync.signIn(login);await f.sync.queueDeleted(['local-session']);
+  await assert.rejects(f.sync.push(),/offline/);await f.sync.dispose();fail=false;
+  const restarted=setup(t,options);await restarted.sync.push();assert.equal(deleted.length,1);
+  assert.deepEqual(JSON.parse(credentials.get('account')).pendingDeletes,[]);
+  const other=setup(t,{fetch:async input=>input.url.includes('/auth/')?{token:'token',account:'alice'}:{conversations:[{cid:'other-session',execution_device:'desktop-two'}]}});
+  await other.sync.signIn(login);await other.sync.queueDeleted(['other-session']);await assert.rejects(other.sync.push(),{code:'sync_delete_owner'});
+});
+test('real entry wires service lifecycle, exact-call progress and signout cancellation', async t => {
+  const require=createRequire(import.meta.url), entryPath=require.resolve('../resources/plugins/pi.cloud-sync/main.js');
+  delete require.cache[entryPath]; const f=cloudFixture({invoke:()=>new Promise(()=>{})});globalThis.pi=f.pi;
+  const entry=require(entryPath);t.after(async()=>{await entry.onUnload();delete globalThis.pi;delete require.cache[entryPath];});
+  await entry.onLoad();assert.equal(f.requests.length,0);
+  await entry.onPanelInvoke('register',login);await tick();f.call('task-one');await tick();
+  f.emit('remote-session:event',{requestId:'unrelated',event:{stage:'text',text:'wrong'}});
+  f.emit('remote-session:event',{requestId:'task-one',event:{stage:'text',text:'answer'}});await tick();
+  assert.deepEqual(f.frames.filter(row=>row.type==='event').map(row=>[row.id,row.body.text]),[['task-one','answer']]);
+  await entry.onPanelInvoke('signOut');assert.deepEqual(f.cancelled,['task-one']);assert.equal(f.sockets.size,0);
+  const count=f.frames.length;f.emit('remote-session:event',{requestId:'task-one',event:{stage:'text'}});await tick();assert.equal(f.frames.length,count);
 });
 
-test("conversation sync maps user and assistant text and signs in", async () => {
-  const changes = toSyncChanges([{
-    id: "11111111-1111-4111-8111-111111111111",
-    title: "Home",
-    createdAt: "2026-01-01T00:00:00.000Z",
-    messages: [
-      { id: "22222222-2222-4222-8222-222222222222", role: "user", content: [{ type: "text", text: "hello" }] },
-      { id: "tool-call", role: "tool", text: "skip" },
-    ],
-  }]);
-  assert.equal(changes.conversations.length, 1);
-  assert.equal(changes.messages[0].text, "hello");
-  assert.equal(changes.messages.length, 1);
-
-  const dir = mkdtempSync(join(tmpdir(), "conversation-sync-"));
-  const seen = [];
-  const sync = createConversationSync({
-    filePath: join(dir, "session.json"),
-    encrypt: (plain) => `enc:${plain}`,
-    decrypt: (encoded) => encoded.slice(4),
-    encryptionAvailable: () => true,
-    listSessions: async () => [{
-      id: "11111111-1111-4111-8111-111111111111",
-      title: "Home",
-      messages: [{ id: "22222222-2222-4222-8222-222222222222", role: "user", text: "hello" }],
-    }],
-    fetchImpl: async (url, init) => {
-      seen.push({ url, authorization: init.headers.authorization, body: init.body });
-      if (String(url).endsWith("/v1/auth/login")) {
-        return { ok: true, json: async () => ({ token: "issued-token", account: "alice" }) };
-      }
-      return {
-        ok: true,
-        json: async () => url.endsWith("/v1/sync/state")
-          ? { enabled: true, cursor: 2, counts: { conversations: 1, messages: 1 } }
-          : { accepted: 2, cursor: 2 },
-      };
-    },
-  });
-  const signed = await sync.signIn({ baseUrl: "http://127.0.0.1:8788/", account: "alice", password: "secret1" });
-  assert.equal(signed.account, "alice");
-  const pushed = await sync.push();
-  assert.equal(pushed.accepted, 2);
-  const pushedBody = seen.map((item) => item.body).filter(Boolean).at(-1);
-  assert.equal(JSON.parse(pushedBody).messages[0].text, "hello");
-  rmSync(dir, { recursive: true, force: true });
+test('disabled accounts do not inspect transcripts or upload data', async t => {
+  let listed = false;
+  const f = setup(t, { list: async () => { listed = true; return []; }, fetch: async input => input.url.includes('/auth/') ? { token: 'token', account: 'alice' } : { enabled: false } });
+  await f.sync.signIn(login);
+  const result = await f.sync.push();
+  assert.equal(result.state.enabled, false);
+  assert.equal(listed, false);
+  assert.equal(f.requests.some(input => input.url.endsWith('/changes') || input.url.endsWith('/conversations')), false);
 });
 
-test("desktop login dials the typed server and reads api_key", async () => {
-  const server = createServer((req, res) => {
-    const chunks = [];
-    req.on("data", (chunk) => chunks.push(chunk));
-    req.on("end", () => {
-      const raw = Buffer.concat(chunks).toString("utf8");
-      if (req.url === "/v1/auth/login") {
-        const body = JSON.parse(raw);
-        assert.equal(body.identifier, "alice");
-        res.writeHead(200, { "content-type": "application/json" });
-        res.end(JSON.stringify({ api_key: "issued-token", account: { id: "alice", hint: "alice" } }));
-        return;
-      }
-      assert.equal(req.headers.authorization, "Bearer issued-token");
-      res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ enabled: true, cursor: 0, counts: { conversations: 0, messages: 0 } }));
-    });
-  });
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const address = server.address();
-  const dir = mkdtempSync(join(tmpdir(), "conversation-sync-direct-"));
-  try {
-    const sync = createConversationSync({
-      filePath: join(dir, "session.json"),
-      encrypt: (plain) => `enc:${plain}`,
-      decrypt: (encoded) => encoded.slice(4),
-      encryptionAvailable: () => true,
-      listSessions: async () => [],
-    });
-    const signed = await sync.signIn({
-      baseUrl: `127.0.0.1:${address.port}`,
-      account: "alice",
-      password: "secret1",
-    });
-    assert.equal(signed.signedIn, true);
-    assert.equal(signed.account, "alice");
-  } finally {
-    server.close();
-    rmSync(dir, { recursive: true, force: true });
-  }
+test('service failures remain observable as sanitized public state', async t => {
+  const require = createRequire(import.meta.url), entryPath = require.resolve('../resources/plugins/pi.cloud-sync/main.js');
+  delete require.cache[entryPath];
+  let fail = false;
+  const f = cloudFixture({ fetch: async input => {
+    if (fail) throw new Error('SECRET_TRANSPORT_DETAIL');
+    return input.url.includes('/auth/') ? { token: 'FIXTURE_TOKEN', account: 'alice' } : { enabled: true };
+  } });
+  globalThis.pi = f.pi; const entry = require(entryPath);
+  t.after(async () => { await entry.onUnload(); delete globalThis.pi; delete require.cache[entryPath]; });
+  await entry.onLoad(); await entry.onPanelInvoke('signIn', login); fail = true;
+  const state = await entry.onPanelInvoke('getState');
+  assert.equal(state.signedIn, true); assert.equal(state.lastError, 'sync_failed');
+  assert.doesNotMatch(JSON.stringify(state), /SECRET|FIXTURE_TOKEN/);
 });
 
-
-test("signout during transcript loading prevents any stale upload", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "conversation-sync-stale-"));
-  let resolveSessions;
-  const bodies = [];
-  const sync = createConversationSync({
-    filePath: join(dir, "session.json"), encrypt: (x) => x, decrypt: (x) => x, encryptionAvailable: () => true,
-    listSessions: () => new Promise((resolve) => { resolveSessions = resolve; }),
-    fetchImpl: async (url, init) => {
-      if (url.endsWith("/v1/auth/login")) return { ok: true, json: async () => ({ token: "token", account: "alice" }) };
-      if (init.method === "POST") bodies.push(init.body);
-      return { ok: true, json: async () => ({ enabled: true }) };
-    },
-  });
-  try {
-    await sync.signIn({ baseUrl: "http://127.0.0.1:8788", account: "alice", password: "secret1" });
-    const pending = sync.push();
-    await sync.signOut();
-    resolveSessions([{ id: "session-stale", messages: [{ id: "message-stale", role: "user", content: "do not upload" }] }]);
-    await assert.rejects(pending, { code: "signed_out" });
-    assert.equal(bodies.length, 0);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
-});
-
-
-test("streaming assistant checkpoints are uploaded only after becoming final", () => {
-  const session = { id: "stream-session", messages: [{ id: "stream-message", role: "assistant", status: "streaming", content: "partial" }] };
-  assert.equal(toSyncChanges([session]).messages.length, 0);
-  session.messages[0] = { ...session.messages[0], status: "complete", content: "final answer" };
-  assert.equal(toSyncChanges([session]).messages[0].text, "final answer");
-});
-
-test("server-rejected messages are observable sync failures", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "conversation-sync-rejected-"));
-  const sync = createConversationSync({
-    filePath: join(dir, "session.json"), encrypt: (x) => x, decrypt: (x) => x, encryptionAvailable: () => true,
-    listSessions: async () => [{ id: "test-session", messages: [{ id: "test-message", role: "user", content: "hello" }] }],
-    fetchImpl: async (url) => ({ ok: true, json: async () => url.endsWith("/v1/auth/login") ? { token: "token", account: "alice" }
-      : url.endsWith("/v1/sync/changes") ? { accepted: 0, rejected: [{ mid: "test-message", reason: "conversation_limit" }] } : { enabled: true } }),
-  });
-  try {
-    await sync.signIn({ baseUrl: "http://127.0.0.1:8788", account: "alice", password: "secret1" });
-    await assert.rejects(sync.push(), { code: "sync_rejected" });
-  } finally { rmSync(dir, { recursive: true, force: true }); }
-});
-
-
-test("project metadata is opaque, stable and labelled for Windows and POSIX; remote sessions stay local to their owner", () => {
-  const sessions = [
-    { id: "local-windows", projectPath: "C:\\Users\\alice\\Project\\" },
-    { id: "local-posix", projectPath: "/home/alice/Project/" },
-    { id: "native-session", source: "pi-native" },
-    { id: "native-alias", source: "native-pi" },
-    { id: "remote-session", source: "remote" },
-    { id: "remote-host", remoteHostKey: "host" },
-    { id: "remote-workspace", remoteWorkspace: { hostKey: "host", path: "/private" } },
-  ];
-  const changes = toSyncChanges(sessions, "desktop-one");
-  assert.equal(changes.conversations.length, 2);
-  for (const row of changes.conversations) {
-    assert.match(row.project_id, /^[a-f0-9]{64}$/);
-    assert.equal(row.project_name, "Project");
-    assert.equal(row.session_id, row.cid);
-    assert.equal(row.execution_device, "desktop-one");
-  }
-  assert.equal(changes.conversations[0].project_id, toSyncChanges([{ ...sessions[0], projectPath: "C:/Users/alice/Project" }], "desktop-one").conversations[0].project_id);
-  assert.equal(changes.conversations[1].project_id, toSyncChanges([{ ...sessions[1], projectPath: "/home/alice/Project" }], "desktop-one").conversations[0].project_id);
-  assert.ok(!JSON.stringify(changes).includes("alice"));
-  assert.equal(toSyncChanges([{ id: "legacy-local" }]).conversations[0].execution_device, undefined);
-});
-
-test("shared-session grants follow successful uploads and current server/account, survive reconnect, and revoke old contexts", async () => {
-  class Socket {
-    static instances = [];
-    readyState = 1;
-    listeners = new Map();
-    constructor() { Socket.instances.push(this); }
-    addEventListener(type, fn) { if (!this.listeners.has(type)) this.listeners.set(type, new Set()); this.listeners.get(type).add(fn); }
-    removeEventListener(type, fn) { this.listeners.get(type)?.delete(fn); }
-    send() {}
-    close() { this.readyState = 3; this.fire("close", {}); }
-    fire(type, event) { for (const fn of [...(this.listeners.get(type) ?? [])]) fn(event); }
-  }
-  const dir = mkdtempSync(join(tmpdir(), "conversation-sync-grants-"));
-  let rejectPush = true;
-  let context;
-  let pushed;
-  const sync = createConversationSync({
-    filePath: join(dir, "session.json"), encrypt: (x) => x, decrypt: (x) => x, encryptionAvailable: () => true,
-    deviceId: "desktop-one", WebSocketImpl: Socket,
-    listSessions: async () => [{ id: "local-session", projectPath: "/home/user/Project" }],
-    onCall: async (_action, _args, value) => { context = value; return {}; },
-    fetchImpl: async (url, init) => {
-      if (url.endsWith("/v1/auth/login")) { const input = JSON.parse(init.body); return { ok: true, json: async () => ({ token: `token-${input.account}`, account: input.account }) }; }
-      if (url.endsWith("/v1/sync/changes")) {
-        pushed = JSON.parse(init.body);
-        return { ok: true, json: async () => ({ accepted: rejectPush ? 0 : 1, rejected: rejectPush ? [{ cid: "local-session", reason: "limit" }] : [] }) };
-      }
-      return { ok: true, json: async () => ({ enabled: true }) };
-    },
-  });
-  const credentials = { baseUrl: "http://127.0.0.1:8788", account: "alice", password: "secret1" };
-  let callId = 0;
-  async function call() {
-    Socket.instances.at(-1).fire("message", { data: JSON.stringify({ type: "call", id: `call-${++callId}`, action: "info" }) });
-    await new Promise((resolve) => setImmediate(resolve));
-    return context;
-  }
-  try {
-    await sync.signIn(credentials);
-    const first = await call();
-    assert.equal(first.isSessionShared("local-session"), false);
-    await assert.rejects(sync.push(), { code: "sync_rejected" });
-    assert.equal(first.isSessionShared("local-session"), false);
-    rejectPush = false;
-    await sync.push();
-    assert.equal(pushed.conversations[0].execution_device, "desktop-one");
-    assert.equal(first.isSessionShared("local-session"), true);
-    assert.equal(first.isSessionShared("unknown-session"), false);
-    Socket.instances.at(-1).close();
-    await sync.getState();
-    const reconnected = await call();
-    assert.equal(first.isSessionShared("local-session"), false);
-    assert.equal(reconnected.isSessionShared("local-session"), true);
-    await sync.signIn({ ...credentials, account: "bob" });
-    assert.equal(reconnected.isSessionShared("local-session"), false);
-    assert.equal((await call()).isSessionShared("local-session"), false);
-    await sync.push();
-    await sync.signIn({ ...credentials, account: "bob", baseUrl: "http://127.0.0.1:8789" });
-    assert.equal((await call()).isSessionShared("local-session"), false);
-    await sync.signIn(credentials);
-    const returned = await call();
-    assert.equal(returned.isSessionShared("local-session"), false);
-    await sync.push();
-    assert.equal(returned.isSessionShared("local-session"), true);
-    await sync.signOut();
-    assert.equal(returned.isSessionShared("local-session"), false);
-  } finally { await sync.signOut(); rmSync(dir, { recursive: true, force: true }); }
-});
-
-
-test("explicit deletion survives restart/offline, revokes grants and deletes only the original device's record", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "sync-deletions-")), filePath = join(dir, "login.json");
-  let failDelete = true; const deleted = [], posted = [];
-  let directory = [{ cid: "owned-session", execution_device: "desktop-one" }, { cid: "other-session", execution_device: "desktop-two" }];
-  const options = { filePath, encrypt: (x) => x, decrypt: (x) => x, encryptionAvailable: () => true, deviceId: "desktop-one", listSessions: async () => [],
-    fetchImpl: async (url, init) => {
-      if (url.endsWith("/v1/auth/login")) return { ok: true, json: async () => ({ token: "test", account: "alice" }) };
-      if (url.endsWith("/v1/sync/conversations")) return { ok: true, json: async () => ({ conversations: directory }) };
-      if (init.method === "DELETE") {
-        if (failDelete) throw new Error("offline");
-        const cid = url.split("/").at(-1); deleted.push(cid); directory = directory.filter((r) => r.cid !== cid);
-        assert.equal(init.headers["x-nanomuse-device"], "desktop-one");
-        return { ok: true, json: async () => ({ deleted: true }) };
-      }
-      if (init.method === "POST") posted.push(init.body);
-      return { ok: true, json: async () => ({ enabled: true, accepted: 0 }) };
-    },
-  };
-  try {
-    const first = createConversationSync(options);
-    await first.signIn({ baseUrl: "http://127.0.0.1:8788", account: "alice", password: "secret1" });
-    first.queueDeleted(["owned-session"]); await assert.rejects(first.push(), /offline/);
-    const reopened = createConversationSync(options); failDelete = false;
-    await reopened.signIn({ baseUrl: "http://127.0.0.1:8788", account: "alice", password: "secret1" });
-    await reopened.push(); assert.deepEqual(deleted, ["owned-session"]);
-    await reopened.push(); assert.equal(deleted.length, 1);
-    reopened.queueDeleted(["other-session"]);
-    await assert.rejects(reopened.push(), { code: "sync_delete_owner" });
-    assert.deepEqual(deleted, ["owned-session"]); assert.equal(posted.length, 0);
-    await reopened.signOut();
-  } finally { rmSync(dir, { recursive: true, force: true }); }
-});
-
-test("partial transcript failures never manufacture deletion requests", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "sync-no-inferred-delete-")), seen = [];
-  const sync = createConversationSync({ filePath: join(dir,"login.json"), encrypt:x=>x, decrypt:x=>x,encryptionAvailable:()=>true,
-    listSessions: async () => { throw new Error("Host temporarily unavailable"); },
-    fetchImpl: async (url, init) => {seen.push(init.method);return {ok:true,json:async()=>url.endsWith("/v1/auth/login")?{token:"t",account:"alice"}:{enabled:true}};},
-  });
-  try {await sync.signIn({baseUrl:"http://127.0.0.1:8788",account:"alice",password:"secret1"});await assert.rejects(sync.push());assert.equal(seen.includes("DELETE"),false);}finally{rmSync(dir,{recursive:true,force:true});}
-});
-
-
-test("legacy orphan cleanup requires explicit Host not-found and never deletes other device history", async () => {
-  const dir=mkdtempSync(join(tmpdir(),"sync-orphan-")), checked=[], deleted=[];
-  const rows=[{cid:"orphan-session",execution_device:"desktop-one",session_id:"orphan-session"},{cid:"other-session",execution_device:"desktop-two",session_id:"other-session"}];
-  const sync=createConversationSync({filePath:join(dir,"login.json"),encrypt:x=>x,decrypt:x=>x,encryptionAvailable:()=>true,deviceId:"desktop-one",listSessions:async()=>[],
-    confirmSessionDeleted:async(id)=>{checked.push(id);return true;},
-    fetchImpl:async(url,init)=>{
-      if(url.endsWith("/v1/auth/login"))return {ok:true,json:async()=>({token:"test",account:"alice"})};
-      if(init.method==="DELETE"){const id=url.split("/").at(-1);deleted.push(id);const i=rows.findIndex(row=>row.cid===id);if(i>=0)rows.splice(i,1);return {ok:true,json:async()=>({deleted:true})};}
-      return {ok:true,json:async()=>url.endsWith("/v1/sync/conversations")?{conversations:rows}:{enabled:true}};
-    }});
-  try{await sync.signIn({baseUrl:"http://127.0.0.1:8788",account:"alice",password:"secret1"});await sync.push();assert.deepEqual(checked,["orphan-session"]);assert.deepEqual(deleted,[]);await sync.push();assert.deepEqual(deleted,["orphan-session"]);assert.equal(rows[0].cid,"other-session");}finally{rmSync(dir,{recursive:true,force:true});}
+test('a successful tombstone is never reuploaded from the same round stale snapshot', async t => {
+  const deleted = new Set(), uploads = [];
+  const f = setup(t, { fetch: async input => {
+    if (input.url.includes('/auth/')) return { token: 'token', account: 'alice' };
+    if (input.url.endsWith('/conversations')) return { conversations: deleted.size ? [] : [{ cid: 'local-session', execution_device: 'desktop-one' }] };
+    if (input.method === 'DELETE') { deleted.add('local-session'); return { deleted: true }; }
+    if (input.url.endsWith('/changes')) {
+      const body = JSON.parse(input.body); uploads.push(body);
+      return { accepted: body.conversations.length + body.messages.length,
+        rejected: body.conversations.filter(row => deleted.has(row.cid)).map(row => ({ cid: row.cid, reason: 'conversation_deleted' })) };
+    }
+    return { enabled: true };
+  } });
+  await f.sync.signIn(login); await f.sync.push(); await tick();
+  await f.sync.queueDeleted(['local-session']);
+  const result = await f.sync.push();
+  assert.equal(result.accepted, 0);
+  assert.deepEqual([...deleted], ['local-session']);
+  assert.equal(uploads.length, 1, 'the unchanged stale transcript must not be submitted again');
+  assert.deepEqual(JSON.parse(f.credentials.get('account')).pendingDeletes, []);
+  f.call('after-delete'); await tick();
+  assert.deepEqual(f.calls.at(-1).sharedSessionIds, []);
 });

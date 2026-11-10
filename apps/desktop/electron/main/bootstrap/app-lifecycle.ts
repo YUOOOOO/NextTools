@@ -243,7 +243,14 @@ export function createApplicationLifecycle({
       Menu.buildFromTemplate([
         ...template,
         { type: "separator" },
-        { label: labels.quit, click: () => app.quit() },
+        {
+          label: labels.quit,
+          click: () => {
+            // Tray Quit is already an explicit exit choice; keep the ordered shutdown.
+            state.quitConfirmed = true;
+            app.quit();
+          },
+        },
       ]),
     );
   }

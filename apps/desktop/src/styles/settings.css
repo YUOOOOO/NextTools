@@ -271,6 +271,22 @@
   margin: 0;
 }
 
+/* Native plugin content fills the remaining settings pane; its own document
+   owns scrolling and cannot overlap the navigation or titlebar. */
+.settings-content-plugin,
+.settings-content-plugin .settings-content-inner,
+.settings-content-plugin .settings-content-enter,
+.settings-cloud-plugin {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.settings-content-plugin {
+  overflow: hidden;
+}
+
 /* The renderer owns this sandboxed iframe. It stays in normal Settings flow,
    so it cannot cover the titlebar, native controls, rail, or resize edges. */
 .plugin-settings-destination {

@@ -2312,7 +2312,7 @@ async fn handle_request(
                 json!({
                     "defaultMode": "agent",
                     "defaultCommandShell": tools::shell::default_shell_id(),
-                    "theme": "dark",
+                    "theme": "system",
                     "enterToSend": true,
                     "largePasteThreshold": DEFAULT_LARGE_PASTE_THRESHOLD,
                     "contextCompaction": {
@@ -3826,7 +3826,9 @@ async fn handle_request(
                 let st = state.lock().await;
                 workbench_rpc::handle(&st, method, params)?
             };
-            if method == "workbench.apply" && result.get("ok").and_then(|v| v.as_bool()) == Some(true) {
+            if method == "workbench.apply"
+                && result.get("ok").and_then(|v| v.as_bool()) == Some(true)
+            {
                 emit_notification(
                     &tx,
                     "workbench.changed",
@@ -7671,6 +7673,57 @@ mod tests {
         .await
         .unwrap();
         assert!(cleared.get("promptEnhancementUserTemplate").is_none());
+    }
+
+    #[tokio::test]
+    async fn settings_get_defaults_to_system_theme_without_persisting_a_choice() {
+        let data_dir = tempfile::tempdir().unwrap();
+        let mut app_state = AppState::open(data_dir.path()).unwrap();
+        app_state.handshook = true;
+        let state = Arc::new(Mutex::new(app_state));
+        let tx = mpsc::unbounded_channel().0;
+
+        let settings = handle_request(state.clone(), "settings.get", json!({}), tx)
+            .await
+            .unwrap();
+
+        assert_eq!(settings["theme"], "system");
+        assert!(state.lock().await.db.get_setting("app").unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn settings_preserve_saved_theme_choices_across_unrelated_updates() {
+        let data_dir = tempfile::tempdir().unwrap();
+        let mut app_state = AppState::open(data_dir.path()).unwrap();
+        app_state.handshook = true;
+        let state = Arc::new(Mutex::new(app_state));
+        let tx = mpsc::unbounded_channel().0;
+
+        for theme in ["light", "dark", "plugin:demo.theme:midnight"] {
+            state
+                .lock()
+                .await
+                .db
+                .set_setting("app", &json!({ "theme": theme }))
+                .unwrap();
+            let settings = handle_request(state.clone(), "settings.get", json!({}), tx.clone())
+                .await
+                .unwrap();
+            assert_eq!(settings["theme"], theme);
+
+            handle_request(
+                state.clone(),
+                "settings.set",
+                json!({ "enterToSend": false }),
+                tx.clone(),
+            )
+            .await
+            .unwrap();
+
+            let stored = state.lock().await.db.get_setting("app").unwrap().unwrap();
+            assert_eq!(stored["theme"], theme);
+            assert_eq!(stored["enterToSend"], false);
+        }
     }
 
     #[tokio::test]

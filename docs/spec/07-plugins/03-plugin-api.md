@@ -16,6 +16,24 @@ selectors, images, fonts, or arbitrary property names.
 4. Auditable
 5. Do not expose host internal objects
 
+### Private credentials and remote session broker
+
+`pi.credentials.get(key)`, `set(key, value)` and `remove(key)` are asynchronous,
+bounded, plugin-scoped secret operations. Reads require `credentials.read`;
+writes/removals require `credentials.write`. The host derives plugin identity,
+encrypts at rest with OS protection and never includes values in audits.
+
+`pi.remoteSessions.getDevice()`, `list()` and `isDeleted(sessionId)` require
+`session.read.all`, independently of the existing current-context and owned-import
+permissions. They expose local device metadata and authoritative snapshots, not
+database files. `invoke(request)`, `cancel(requestId)` and `reset()` require
+`remote.control`. A request names an opaque request id, server/account scope,
+caller identity, allowlisted action, arguments and shared session ids. Those
+values cannot override host approval state or another plugin's request owner.
+Task progress arrives through `remote-session:event` as `{requestId, event}` only
+in the invoking plugin. Unload/crash/reset aborts calls and invalidates cards.
+These APIs do not grant raw IPC, provider-secret or cross-plugin access.
+
 ## 2. Runtime-injected object
 
 Inside the plugin runtime, a global is available:

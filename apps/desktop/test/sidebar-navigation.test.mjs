@@ -16,6 +16,10 @@ const hoverHookSource = await readFile(
   new URL("../src/features/sessions/useSessionHoverCard.ts", import.meta.url),
   "utf8",
 );
+const activityBarCss = await readFile(
+  new URL("../src/styles/activity-bar.css", import.meta.url),
+  "utf8",
+);
 const globalStyles = await loadStyles();
 const appSource = await readAppSource();
 const panelSource = await readFile(
@@ -38,23 +42,16 @@ test("activity bar owns the supported destination entries", () => {
   assert.doesNotMatch(sidebarSource, /data-nav="scheduled"/);
 });
 
-test("shared shell header keeps the original brand and has no divider", async () => {
-  const header = await readFile(new URL("../src/features/app/SidebarBrandHeader.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(sidebarSource, /className="sidebar-header"/);
-  assert.match(appSource, /<SidebarBrandHeader/);
-
-  assert.match(header, /className="brand no-drag"/);
-  assert.match(header, /<BrandLogo size=\{20\}/);
-  assert.match(header, /data-nav="toggle-sidebar"/);
-  assert.doesNotMatch(sidebarSource, /sidebar-header-divider/);
-  assert.doesNotMatch(activitySource, /activity-bar-logo|BrandLogo/);
-  assert.doesNotMatch(appSource, /HeaderBox/);
-  assert.doesNotMatch(globalStyles, /\.sidebar-header-divider/);
-});
 
 test("work panel collapse control is the viewport-fixed shell toggle", () => {
   assert.match(appSource, /className="app-work-panel-toggle no-drag"/);
   assert.match(appSource, /collapseWorkPanel\(\)/);
+
+  // A stray unbalanced brace silently swallows every later rule in the sheet.
+  assert.equal(
+    (activityBarCss.match(/\{/g) ?? []).length,
+    (activityBarCss.match(/\}/g) ?? []).length,
+  );
   assert.doesNotMatch(panelSource, /onCollapse/);
   assert.doesNotMatch(panelSource, /work-panel-toolbar-collapse/);
   assert.doesNotMatch(panelSource, /work-panel-collapse/);
@@ -74,15 +71,15 @@ test("work panel collapse control is the viewport-fixed shell toggle", () => {
   );
 });
 
-test("macOS hides sidebar branding and keeps header actions beside traffic lights", () => {
+test("macOS hides the rail mark and keeps the page name clear of traffic lights", () => {
   assert.doesNotMatch(sidebarSource, /sidebar-macos-drag-row/);
   assert.match(
     globalStyles,
-    /:root\[data-platform="darwin"\] \.sidebar-header\s*\{[^}]*padding-left:\s*var\(--ds-window-lead-inset\);/s,
+    /:root\[data-platform="darwin"\] \.activity-bar-brand\s*\{[^}]*visibility:\s*hidden;/s,
   );
   assert.match(
     globalStyles,
-    /:root\[data-platform="darwin"\] \.sidebar-header > \.brand\s*\{[^}]*display:\s*none;/s,
+    /:root\[data-platform="darwin"\] \.sidebar-page-header\s*\{[^}]*padding-left:\s*max\(8px,\s*calc\(var\(--ds-window-lead-inset\) - 48px\)\);/s,
   );
   assert.match(
     globalStyles,

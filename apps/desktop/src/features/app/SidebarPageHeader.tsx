@@ -1,22 +1,26 @@
 import { useTranslation } from "react-i18next";
-import { BrandLogo } from "../../components/BrandLogo";
 import { IconSidebar } from "../../components/icons";
 import { TooltipButton } from "../../components/ui";
+import type { AppState } from "../../stores/app-state";
+import { activityPageLabelKey } from "./activity-navigation";
 
-/** One drag/title row spanning both navigation columns. */
-export function SidebarBrandHeader({ onHome, onToggleSidebar, sidebarToggleShortcut }: {
-  onHome: () => void;
+/**
+ * Header of the menu column beside the activity rail: the active destination's
+ * name, then the collapse control at the column's right edge. The product mark
+ * lives in the rail itself, so this row never repeats it.
+ */
+export function SidebarPageHeader({ page, onToggleSidebar, sidebarToggleShortcut }: {
+  page: AppState["page"];
   onToggleSidebar: () => void;
   sidebarToggleShortcut: string;
 }) {
   const { t } = useTranslation();
+  const labelKey = activityPageLabelKey(page);
   return (
-    <div className="sidebar-header sidebar-brand-header">
-      <TooltipButton type="button" className="brand no-drag" data-nav="home"
-        tooltip={t("nav.home")} ariaLabel={t("nav.home")} onClick={onHome}>
-        <BrandLogo size={20} />
-        <span>{t("app.shellName")}</span>
-      </TooltipButton>
+    <div className="sidebar-header sidebar-page-header">
+      <span className="sidebar-page-title" data-nav="page-title">
+        {labelKey ? t(labelKey) : null}
+      </span>
       <div className="sidebar-header-actions no-drag">
         <TooltipButton type="button" className="icon-btn icon-btn-square"
           tooltip={sidebarToggleShortcut ? `${t("nav.collapseSidebar")} (${sidebarToggleShortcut})` : t("nav.collapseSidebar")}

@@ -10,8 +10,6 @@ import {
 const read = (relativePath) =>
   readFile(new URL(relativePath, import.meta.url), "utf8");
 
-const settingsPage = await read("../src/features/settings/SettingsPage.tsx");
-const settingsIndex = await read("../src/lib/settings-search.ts");
 const syncPage = await read("../src/components/settings/ConfigSyncPage.tsx");
 const connectionFields = await read("../src/components/settings/ConfigSyncConnectionFields.tsx");
 const syncPreferences = await read(
@@ -30,14 +28,6 @@ const syncError = await read(
   "../src/components/settings/ConfigSyncError.tsx",
 );
 
-test("cloud sync is Experimental and available in packaged Settings", () => {
-  assert.match(settingsPage, /tab === "sync" && !tabHidden && <ConfigSyncPage \/>/);
-  assert.match(settingsIndex, /id: "sync"/);
-  assert.doesNotMatch(settingsIndex, /id: "sync"[\s\S]{0,400}developmentOnly: true/);
-  assert.match(settingsIndex, /experimentalBadgeKey: "settings\.configSync\.experimental"/);
-  assert.match(settingsIndex, /settings\.configSync\.connectionTitle/);
-  assert.match(settingsIndex, /"settings\.configSync\.experimental"/);
-});
 
 test("cloud sync keeps credentials and vault operations on the host boundary", () => {
   assert.match(syncPage, /api\.configSyncConfigure\(/);

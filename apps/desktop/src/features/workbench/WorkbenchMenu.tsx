@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../stores/app-store";
 import {
@@ -21,7 +21,7 @@ export function WorkbenchToolBridge() {
 }
 
 
-export function WorkbenchMenu() {
+export function WorkbenchMenu({ header }: { header: ReactNode }) {
   const { t } = useTranslation();
   const session = useWorkbenchSession();
   const closedPages = Object.values(session.pages).filter(
@@ -29,6 +29,7 @@ export function WorkbenchMenu() {
   );
   return (
     <aside className="sidebar sidebar-surface workbench-menu" aria-label={t("workbench.menu")}>
+      {header}
       <nav className="sidebar-body workbench-menu-body">
         {session.openIds.map((id) => {
           const page = session.pages[id];

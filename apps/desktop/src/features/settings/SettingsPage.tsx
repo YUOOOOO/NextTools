@@ -59,7 +59,7 @@ import { AgentInstructionsSection, UpdatesRow } from "./agent-sections";
 import { CloseBehaviorSection, DeveloperSection } from "./developer-sections";
 import { PluginScenicThemesDestination } from "../../components/settings/PluginScenicThemesDestination";
 import { ConfigSyncPage } from "../../components/settings/ConfigSyncPage";
-import { ConversationSyncCard } from "../../components/settings/ConversationSyncCard";
+import { PluginViewTab } from "../../components/workpanel/PluginViewTab";
 import { StorageSettingsSection } from "./StorageSettingsSection";
 
 type SettingsTab = ReturnType<typeof useAppStore.getState>["settingsTab"];
@@ -239,6 +239,7 @@ export function SettingsPage() {
       subagents: <IconBot size={14} />,
       projects: <IconArchive size={14} />,
       sync: <IconCloudDown size={14} />,
+      backup: <IconArchive size={14} />,
       remoteHosts: <IconGlobe size={14} />,
       voice: <IconMic size={14} />,
       about: <IconInfo size={14} />,
@@ -358,7 +359,7 @@ export function SettingsPage() {
         </div>
       </aside>
 
-      <div className="settings-content" ref={contentRef}>
+      <div className={cx("settings-content", tab === "sync" && !activeExtension && "settings-content-plugin")} ref={contentRef}>
         <div className="settings-content-inner">
           <div className="settings-content-enter">
           <h1 className="settings-section-title">
@@ -601,11 +602,12 @@ export function SettingsPage() {
           {tab === "projects" && <ProjectsPage />}
 
           {tab === "sync" && !tabHidden && (
-            <div className="settings-stack">
-              <ConversationSyncCard />
-              <ConfigSyncPage />
+            <div className="settings-cloud-plugin">
+              <PluginViewTab pluginId="pi.cloud-sync" viewId="settings" title={t("settings.nav.sync")} releaseOnUnmount />
             </div>
           )}
+
+          {tab === "backup" && !tabHidden && <ConfigSyncPage />}
 
           {tab === "remoteHosts" && !tabHidden && <RemoteHostsPage />}
 

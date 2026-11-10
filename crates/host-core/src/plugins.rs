@@ -31,6 +31,7 @@ mod renderer;
 mod resolve;
 pub(crate) mod reviews;
 mod validation;
+mod workbench_validation;
 
 pub use manifest::PluginManifest;
 pub use marketplace::{market_channel_from_settings, MarketChannel, OFFICIAL_CHANNEL_CATALOG_URL};

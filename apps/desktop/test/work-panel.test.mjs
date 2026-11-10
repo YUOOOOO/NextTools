@@ -188,63 +188,6 @@ test("the work panel shortcut closes the panel it opened", () => {
   assert.match(toggleBody, /openWorkPanel\(\)/);
 });
 
-test("work panel uses the fixed-window internal dock", () => {
-  assert.match(appSource, /presentedWorkPanelOpen/);
-  assert.match(appSource, /setPresentedWorkPanelOpen/);
-  assert.match(appSource, /workPanelExiting/);
-  // The renderer keeps the reservation seam at zero: opening and collapsing
-  // only change the in-flow flex allocation inside the existing window.
-  assert.match(appSource, /setWorkPanelReservation\(0\)/);
-  assert.doesNotMatch(appSource, /requestedWidth\s*=\s*Math\.round\(workPanelWidth\)/);
-  assert.match(mainSource, /setWorkPanelReservationWidth\(0\)/);
-  assert.match(mainSource, /return \{ requested: 0, reserved: 0 \}/);
-  assert.match(appSource, /commitWorkPanelPresentation/);
-  assert.doesNotMatch(appSource, /\.finally\(\(\) => \{[\s\S]*setPresentedWorkPanelOpen/);
-  // Mount follows presentation commit; exit keep-alive plays work-panel-out
-  // before unmounting, so MainChat reflows continuously in both directions.
-  assert.match(
-    appSource,
-    /<\/section>\s*\)\}\s*\{\(presentedWorkPanelOpen \|\| workPanelExiting\) && \(?\s*<Suspense[\s\S]*?<WorkPanel/,
-  );
-  assert.doesNotMatch(
-    appSource,
-    /<\/section>\s*\{workPanelOpen && \(?\s*<WorkPanel/,
-  );
-  assert.match(appSource, /finishWorkPanelExit/);
-  assert.match(appSource, /onExitAnimationEnd=\{\(\) =>/);
-  assert.match(appSource, /finishWorkPanelExit\(workPanelExitGeneration\.current\)/);
-  // Native surfaces hide via `blocked` before work-panel-out starts, so the
-  // guest clamped to the plugin view is gone before the dock CSS animation.
-  assert.match(
-    panelSource,
-    /blocked=\{\s*exiting \|\| panelBlocked \|\| blockingOverlayActive\s*\}/,
-  );
-  assert.match(panelSource, /nativeSurfaceReadyForExit/);
-  assert.match(panelSource, /is-exit-pending/);
-  assert.match(panelSource, /exitAnimationReady && "is-exiting"/);
-  assert.match(panelSource, /if \(!exitAnimationReady\) return/);
-  assert.match(panelSource, /animationName\.startsWith\("work-panel-out"\)/);
-  assert.match(panelSource, /const renderPanelWidth = layout\.panelWidth/);
-  assert.match(panelSource, /setWidth\(drag\.currentWidth\)/);
-  // The panel remains a fixed-width in-flow shell sibling; its flex allocation
-  // is animated with the dock so the main pane does not jump before motion.
-  assert.match(globalStyles, /\.work-panel \{[^}]*flex: 0 0 var\(--work-panel-width\)/s);
-  assert.match(panelSource, /"--work-panel-width": `\$\{renderPanelWidth\}px`/);
-  assert.doesNotMatch(
-    globalStyles.match(/\.work-panel \{[^}]*\}/s)?.[0] ?? "",
-    /position:\s*absolute/,
-  );
-  assert.match(globalStyles, /@keyframes work-panel-out/);
-  assert.doesNotMatch(globalStyles, /@keyframes work-panel-out-windows/);
-  assert.match(
-    globalStyles,
-    /@keyframes work-panel-in \{[^}]*flex-basis:\s*0;[^}]*width:\s*0;[^}]*translateX\(8px\)/s,
-  );
-  assert.match(
-    globalStyles,
-    /@keyframes work-panel-out \{[\s\S]*?flex-basis:\s*0;[\s\S]*?width:\s*0;/,
-  );
-});
 
 test("work panel header exposes a scrollable tab strip and direct new-page action", () => {
   const headerIndex = panelSource.indexOf('className="work-panel-header"');

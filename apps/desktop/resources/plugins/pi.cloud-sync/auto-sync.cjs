@@ -1,5 +1,5 @@
 /** Serial, bounded-rate uploads. No desktop/provider execution is triggered. */
-export function createConversationAutoSync({ sync, onError, intervalMs = 15000,
+function createConversationAutoSync({ sync, onError, intervalMs = 15000,
   setTimer = setTimeout, clearTimer = clearTimeout }) {
   let disposed = false, started = false, timer = null, running = false, requested = false;
   function schedule(delay) {
@@ -23,3 +23,5 @@ export function createConversationAutoSync({ sync, onError, intervalMs = 15000,
     dispose() { disposed = true; if (timer !== null) clearTimer(timer); timer = null; },
   };
 }
+
+module.exports = { createConversationAutoSync };

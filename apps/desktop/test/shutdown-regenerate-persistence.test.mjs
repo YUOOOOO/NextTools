@@ -5,19 +5,29 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-// Only Electron is replaced; event persistence, the disk outbox and the quit
-// handler use their production wiring. No user profile is opened by this test.
+// Electron and unused window construction are replaced; persistence and shutdown
+// use production wiring. No user profile is opened by this test.
 registerHooks({
   resolve(specifier, context, next) {
     if (specifier === "electron") return { url: "test:electron", shortCircuit: true };
     return next(specifier, context);
   },
   load(url, context, next) {
+    if (url.endsWith("/bootstrap/window.ts")) return {
+      format: "module", shortCircuit: true,
+      source: `export function createWindow() { throw new Error("Unexpected window creation"); }`,
+    };
     if (url === "test:electron") return {
       format: "module", shortCircuit: true,
       source: `import { EventEmitter } from "node:events";
         export const app = new EventEmitter();
         app.quit = () => {};
+        export const Menu = { buildFromTemplate: (template) => template };
+        export const BrowserWindow = {};
+        export const nativeImage = {};
+        export const nativeTheme = {};
+        export const powerSaveBlocker = {};
+        export class Tray {}
         export const globalShortcut = { unregister() {} };`,
     };
     return next(url, context);
@@ -29,6 +39,7 @@ const { app } = await import("electron");
 const { createEventPersistence } = await import("../electron/main/runtime/event-persistence.ts");
 const { PersistenceOutbox } = await import("../electron/main/persistence-outbox.ts");
 const { registerShutdownHandlers } = await import("../electron/main/bootstrap/shutdown.ts");
+const { createApplicationLifecycle } = await import("../electron/main/bootstrap/app-lifecycle.ts");
 const transcriptRewrite = {
   beginTranscriptRewrite: () => ({ commit() {}, rollback: () => [] }),
   deferTranscriptEvent: () => false,
@@ -219,4 +230,89 @@ test("a repeated before-quit cannot bypass the pending renderer confirmation", a
   assert.ok(state.shutdownPromise);
   await state.shutdownPromise;
   assert.equal(state.shutdownComplete, true);
+});
+
+test("tray Quit bypasses confirmation and waits for ordered persistence teardown", async (t) => {
+  app.removeAllListeners();
+  const originalQuit = app.quit;
+  const probeKeys = ["PI_DESKTOP_BOOT_PROBE", "PI_DESKTOP_SUPERVISION_PROBE", "PI_DESKTOP_CAPTURE"];
+  const originalProbeValues = probeKeys.map((key) => process.env[key]);
+  for (const key of probeKeys) delete process.env[key];
+  const persistenceStarted = Promise.withResolvers();
+  const releasePersistence = Promise.withResolvers();
+  const calls = [];
+  const preventedQuits = [];
+  let menu;
+  let confirmationCount = 0;
+  const state = {
+    shutdownComplete: false, shutdownPromise: null, quitting: false,
+    quitConfirmed: false, closeBehavior: "tray", mainWindow: null,
+    tray: {
+      setContextMenu: (template) => { menu = template; },
+      destroy: () => calls.push("tray"),
+    },
+    pluginLauncherAccelerator: null, toggleWindowAccelerator: null,
+  };
+  const dispose = () => undefined;
+  const logger = { app() {} };
+  const host = { dispose: async () => { calls.push("host"); } };
+  app.quit = () => {
+    let prevented = false;
+    app.emit("before-quit", { preventDefault() { prevented = true; } });
+    preventedQuits.push(prevented);
+  };
+  t.after(async () => {
+    releasePersistence.resolve();
+    await state.shutdownPromise;
+    app.removeAllListeners();
+    app.quit = originalQuit;
+    for (let index = 0; index < probeKeys.length; index += 1) {
+      const value = originalProbeValues[index];
+      if (value === undefined) delete process.env[probeKeys[index]];
+      else process.env[probeKeys[index]] = value;
+    }
+  });
+  registerShutdownHandlers({
+    hasSingleInstanceLock: true, state, getHost: () => host,
+    getSidecar: () => ({ dispose: async () => { calls.push("sidecar"); } }),
+    getMcpControl: () => null, activeTurns: new Map(),
+    persistenceOutbox: { flush: async () => { calls.push("outbox"); }, size: () => 0 },
+    inflightCheckpointer: { flushAll: async () => { calls.push("checkpoint"); }, dispose },
+    flushEventPersistence: async () => {
+      persistenceStarted.resolve();
+      await releasePersistence.promise;
+      calls.push("persistence");
+    },
+    pluginPanels: { closeAll: async () => { calls.push("panels"); } },
+    pluginViews: { dispose: async () => { calls.push("views"); } },
+    plugins: { disposeAll: async () => { calls.push("plugins"); } },
+    userMcp: { disposeAll: dispose }, browserHost: { dispose },
+    updater: { dispose, isInstallingUpdate: () => false }, logger,
+    confirmQuitDialog: async () => { confirmationCount += 1; return false; },
+    disposePowerSaveBlockers: dispose,
+  });
+  const lifecycle = createApplicationLifecycle({
+    state, appState: {}, appearanceState: { updaterLocale: "en" },
+    getHost: () => host, getRunningSessionIds: () => [], logger,
+  });
+  lifecycle.updateTrayMenu("en");
+  const quitItem = menu.at(-1);
+  assert.equal(typeof quitItem.click, "function");
+  quitItem.click();
+  assert.equal(confirmationCount, 0);
+  assert.equal(state.quitting, true);
+  assert.equal(state.closeBehavior, "tray", "explicit tray quit must not rewrite window-close preferences");
+  await persistenceStarted.promise;
+  assert.equal(calls.includes("host"), false, "host must survive until pending event writes finish");
+  assert.deepEqual(preventedQuits, [true], "Electron must wait for orderly shutdown");
+  releasePersistence.resolve();
+  await state.shutdownPromise;
+  assert.equal(confirmationCount, 0);
+  assert.equal(state.shutdownComplete, true);
+  assert.deepEqual(preventedQuits, [true, false], "only the post-cleanup quit may exit");
+  assert.ok(calls.indexOf("sidecar") < calls.indexOf("persistence"));
+  assert.ok(calls.lastIndexOf("outbox") < calls.indexOf("host"));
+  assert.ok(calls.indexOf("persistence") < calls.indexOf("host"));
+  assert.ok(calls.indexOf("panels") < calls.indexOf("plugins"));
+  assert.ok(calls.indexOf("views") < calls.indexOf("plugins"));
 });

@@ -26,7 +26,7 @@ The desktop shell targets a 1:1 visual match with the local Codex desktop client
 |---|---|
 | **Clarity over decoration** | No ornamental borders, gradients, or hero images. Every visual element carries information. |
 | **Developer density** | Compact spacing, small-but-readable type, minimal marketing whitespace. Information-rich, not sparse. |
-| **Dark-base defaults** | Dark theme is the primary theme for a coding agent. Light must be fully supported but is secondary. |
+| **System theme by default** | New and unset preferences follow the operating system. Explicit light, dark, and plugin-theme choices remain authoritative. |
 | **Restraint** | One accent color family. No rainbow status colors — use semantic token names (success, warning, error). |
 | **Motion as feedback** | Animations convey state change (streaming, loading, expand/collapse). Never decorative. |
 | **Keyboard-first** | Focus rings, tab order, and shortcut labels are primary UX, not afterthoughts. |
@@ -115,6 +115,9 @@ Codex as a visual reference. The identity contract is deliberately small:
   (ADR 0125). `BrandLogo` imports those
   through Vite so the renderer bundle, development Dock, and packaged
   application all use the same visual asset.
+  The canonical mark is the original black P on a light tile, with its matching
+  dark-theme variant. Windows taskbar, tray, and renderer chrome use this P
+  identity, not the blue N artwork.
 - On macOS, both development and packaged launches expose `PI-Desktop` as the
   native application-menu name. The native About panel uses the PI-Desktop
   name, version, and canonical icon; no stock Electron name or icon is visible.
@@ -292,7 +295,7 @@ The following CSS custom properties stub is the canonical bridge between spec to
 
 ```css
 /* === Design System Token Bridge (spec reference, not runtime file) === */
-/* Dark theme (default) */
+/* Dark theme (used when selected or when the system is dark) */
 :root[data-theme="dark"] {
   --color-bg-primary:       #181818;
   --color-bg-secondary:     #212121;

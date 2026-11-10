@@ -9,14 +9,60 @@
   flex: 0 0 var(--ds-activity-bar-width);
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   width: var(--ds-activity-bar-width);
+  height: 100%;
   min-height: 0;
-  padding: var(--ds-toolbar-height) 0 12px;
+  padding: 0 0 12px;
   background: var(--ds-bg-sidebar);
   border-right: 1px solid var(--ds-border-subtle);
   user-select: none;
   -webkit-user-select: none;
+}
+
+.activity-bar-brand {
+  --ds-activity-bar-width: 48px;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 2;
+  -webkit-app-region: drag;
+  display: flex;
+  width: var(--ds-activity-bar-width);
+  height: var(--ds-toolbar-height);
+  flex: 0 0 var(--ds-toolbar-height);
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.activity-bar-logo {
+  -webkit-app-region: no-drag;
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.activity-bar-logo:hover {
+  background: var(--ds-bg-hover);
+}
+
+.activity-bar-logo:focus-visible {
+  outline: 2px solid var(--ds-focus);
+  outline-offset: -2px;
+}
+
+/* macOS traffic lights own that corner: keep the cell, hide the mark. */
+:root[data-platform="darwin"] .activity-bar-brand {
+  visibility: hidden;
 }
 
 .activity-bar-top,
@@ -25,6 +71,10 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
+}
+
+.activity-bar-top {
+  margin-top: 8px;
 }
 
 .activity-bar-bottom {
@@ -198,30 +248,33 @@
   position: absolute;
   left: 12px;
   pointer-events: auto;
+  pointer-events: auto;
 }
 
 
-/* Unified brand row: rail and secondary menu start below this shared header. */
-.sidebar-brand-header {
-  position: absolute;
-  inset: 0 auto auto 0;
-  z-index: 3;
+/* The page header stays in its sidebar's normal flex flow and shares the
+   sidebar surface instead of painting a separate cross-column overlay. */
+.sidebar-page-header {
   box-sizing: border-box;
-  width: calc(48px + var(--ds-sidebar-width));
   min-width: 0;
-  background: var(--ds-bg-sidebar);
 }
 
-.sidebar-brand-header > .brand,
-.sidebar-brand-header > .sidebar-header-actions {
+.sidebar-page-header > .sidebar-header-actions {
   -webkit-app-region: no-drag;
 }
 
-.app-shell:has(> .sidebar-brand-header) .sidebar {
-  box-sizing: border-box;
-  padding-top: var(--ds-toolbar-height);
+.sidebar-page-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ds-text-primary);
+  font-size: var(--text-base-plus);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0;
+  line-height: var(--leading-tight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.app-shell:has(> .sidebar-brand-header) .sidebar-resize-handle {
+.sidebar:has(> .sidebar-page-header) > .sidebar-resize-handle {
   top: var(--ds-toolbar-height);
 }

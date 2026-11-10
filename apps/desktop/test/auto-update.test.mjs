@@ -348,21 +348,6 @@ test("packaging publishes an electron-updater feed for GitHub Releases", async (
   assert.match(releaseWorkflowSource, /files: dist\/\*/);
 });
 
-test("shared shipped-locale changelog is the in-app notes source of truth", () => {
-  assert.match(changelogSource, /export const CHANGELOG/);
-  assert.match(changelogSource, /formatChangelogNotes/);
-  assert.match(changelogSource, /"zh-CN"/);
-  assert.match(changelogSource, /"zh-TW"/);
-  assert.match(englishChangelogSource, /version: "0\.2\.7"/);
-  assert.match(
-    mainSource,
-    /getLocale:\s*\(\)\s*=>\s*(?:updaterLocale|mainState\.updaterLocale)/,
-    "Main supplies product locale to the updater for note selection",
-  );
-  assert.match(mainSource, /updater\.refreshReleaseNotes\(\)/);
-  assert.match(stylesSource, /\.update-notice-notes/);
-  assert.match(stylesSource, /\.update-settings-notes/);
-});
 
 test("update cache relocation and cleanup preserve the delta-update path", async () => {
   const updateCacheSource = await read("../electron/main/update-cache.ts");

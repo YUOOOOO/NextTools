@@ -149,9 +149,10 @@ recency only breaks ties between equally relevant matches.
   the window under that same tray icon, whose click restores the window; `quit` exits the app.
   Close behavior never creates or destroys the tray — D216 owns it, so the icon is resident under
   either choice. The choice is persisted, revisitable in Settings → General, and applied by both
-  the close button and the close shortcut. Explicit quit (Cmd+Q, application-menu Quit, tray Quit)
-  is a separate themed confirmation step (D363): a tray-hidden main window is restored first;
-  Escape, backdrop click, or Cancel leaves the app running, while Confirm runs the ordered shutdown.
+  the close button and the close shortcut. Cmd+Q and application-menu Quit use
+  a separate themed confirmation (D363), restoring a hidden main window first;
+  Escape, backdrop click, or Cancel leaves the app running. Tray Quit directly
+  starts ordered shutdown without restoring the window or showing a confirmation.
   A D230 window-close Quit does not ask again. Automated boot, supervision, and capture probes skip
   the dialog, as does the restart that installs an already-downloaded update — its installer is
   already running and gives up when the app stays alive. macOS keeps the native Dock lifecycle
@@ -1749,13 +1750,20 @@ This does not prevent state changes — it makes them instant.
     (ADR 0033 / ADR 0151 / ADR 0238)
 
 
-### Unified navigation brand row
+### Rail mark and destination header
 
-In Chat and Workbench with the secondary sidebar expanded, one shell-owned
-brand row spans the 48px activity rail and the resizable secondary sidebar.
-The brand starts at the left window inset; collapse remains at the existing
-right edge of the secondary sidebar. Both navigation columns begin below the
-same toolbar-height row. The header owns dragging while its home/collapse
-buttons remain no-drag. Collapsed navigation retains the existing main-content
-expand action. macOS keeps the native traffic-light inset and brand visibility
-rules. Sidebar menus no longer render independent duplicate brand headers.
+In Chat and Workbench with the secondary sidebar expanded, each column owns its
+toolbar-height row. The full-height 48px activity rail contains the product
+mark at its top, which stays in place when the menu column collapses and returns
+to Agent when activated. The resizable secondary sidebar's header names the
+active destination (`Agent`, `Workbench`) and keeps collapse at the column's
+right edge; neither column repeats a product name. Both navigation columns'
+contents begin below the same row. The header owns dragging while the mark and
+collapse controls remain no-drag. Collapsed navigation retains the existing
+main-content expand action. macOS reserves the native traffic lights: the rail
+hides the mark and the destination name starts after the lead inset.
+The destination header is a normal-flow child of the sidebar inside
+`app-chat-shell`, not an absolutely positioned overlay from the activity rail.
+The rail paints one continuous sidebar background behind its mark and all
+destinations. Notifications and Settings stay pinned inside its bottom group
+with a 12px bottom inset on every destination, including Settings.

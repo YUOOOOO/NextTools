@@ -164,6 +164,14 @@ Plugins cannot access:
   only to the callback's own declared provider credential
 - The host's full session database (unless a controlled API exists in the future)
 
+The plugin-private `credentials.read` / `credentials.write` API is not access to
+host/provider secrets: identity comes from the loaded plugin, keys and values
+are bounded, storage is atomic and OS-encrypted, and no plaintext fallback or
+secret audit payload is allowed. `session.read.all` separately authorizes
+transport-independent synchronization snapshots. `remote.control` owns requests
+per plugin, targets progress only to that process, and aborts on unload/crash;
+remote payloads never bypass host tool approvals or native remote-action consent.
+
 ## 5.1 Inter-plugin message bus
 
 The bus is the only channel between two plugins, and it is deliberately narrow:

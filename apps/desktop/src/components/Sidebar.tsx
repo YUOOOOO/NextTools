@@ -13,6 +13,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from "react";
 import { TooltipButton, cx } from "./ui";
 
@@ -232,6 +233,7 @@ function compareOptionalDate(
 }
 
 export function Sidebar({
+  header,
   sidebarWidth,
   widthMax = SIDEBAR_WIDTH_MAX,
   onWidthChange,
@@ -240,6 +242,7 @@ export function Sidebar({
   className,
   onAnimationEnd,
 }: {
+  header: ReactNode;
   sidebarWidth: number;
   widthMax?: number;
   onWidthChange: (width: number) => void;
@@ -2522,6 +2525,7 @@ export function Sidebar({
       data-window-blur={windowFocused ? undefined : "true"}
       onAnimationEnd={onAnimationEnd}
     >
+      {header}
       <div className="sidebar-body no-drag">
 
         {pinnedSessions.length > 0 ? (

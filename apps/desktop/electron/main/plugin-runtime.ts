@@ -63,6 +63,7 @@ import {
   type PluginNativeNotificationResult,
   type PluginNotificationPermission,
   type PluginNetEgressGrant,
+  type PluginRemoteSessionRequest,
   type PluginProviderOAuthEvent,
   type PluginProviderOAuthPrompt,
   type PluginProviderOAuthRequest,
@@ -302,6 +303,20 @@ export type PluginDesktopConsentRequest = {
 };
 
 export type PluginHostServices = {
+  credentials?: {
+    get: (pluginId: string, key: string) => Promise<string | null>;
+    set: (pluginId: string, key: string, value: string) => Promise<void>;
+    remove: (pluginId: string, key: string) => Promise<void>;
+  };
+  remoteSessions?: {
+    getDevice: (pluginId: string) => Promise<{ id: string; name: string; os: string }>;
+    list: (pluginId: string) => Promise<unknown[]>;
+    isDeleted: (pluginId: string, sessionId: string) => Promise<boolean>;
+    invoke: (pluginId: string, input: PluginRemoteSessionRequest) => Promise<unknown>;
+    cancel: (pluginId: string, requestId: string) => void | Promise<void>;
+    reset: (pluginId: string) => void | Promise<void>;
+    dispose: (pluginId: string) => void | Promise<void>;
+  };
   getWorkspacePath: () => string | null;
   /**
    * The workspace plus the project group behind it, when the caller can supply
@@ -533,8 +548,55 @@ export type PluginOAuthProvider = {
   isSubscription: boolean;
 };
 
+const REMOTE_SESSION_ACTIONS: Record<string, true> = {
+  task: true, stop: true, "interactive.list": true, "interactive.resolve": true,
+  info: true, "sessions.list": true, "chat.send": true, shell: true, files: true,
+  "file.get": true, "file.put": true, open: true, screen: true,
+};
+
+function remoteIdentifier(value: unknown, field: string, maxLength = 256): string {
+  if (typeof value !== "string" || !value.trim() || value.length > maxLength || /[\u0000-\u001f\u007f]/.test(value)) {
+    throw apiError("INVALID_ARGUMENT", `${field} must be a bounded nonempty identifier`);
+  }
+  return value;
+}
+
+function isRemoteRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+}
+
+function validateRemoteSessionRequest(value: unknown): PluginRemoteSessionRequest {
+  if (!isRemoteRecord(value) || !isRemoteRecord(value.caller) || !isRemoteRecord(value.args)) {
+    throw apiError("INVALID_ARGUMENT", "remote request, caller and args must be records");
+  }
+  const requestId = remoteIdentifier(value.requestId, "requestId");
+  const scope = remoteIdentifier(value.scope, "scope", 128);
+  const callerId = remoteIdentifier(value.caller.id, "caller.id");
+  const kind = value.caller.kind;
+  if (kind !== "web" && kind !== "computer" && kind !== "phone") {
+    throw apiError("INVALID_ARGUMENT", "invalid remote caller kind");
+  }
+  const action = remoteIdentifier(value.action, "action", 64);
+  if (!Object.hasOwn(REMOTE_SESSION_ACTIONS, action)) throw apiError("INVALID_ARGUMENT", "unknown remote action");
+  if (!Array.isArray(value.sharedSessionIds) || value.sharedSessionIds.length > 10_000) {
+    throw apiError("INVALID_ARGUMENT", "sharedSessionIds must contain at most 10000 identifiers");
+  }
+  const sharedSessionIds = value.sharedSessionIds.map((id) => remoteIdentifier(id, "sharedSessionIds"));
+  return { requestId, scope, caller: { id: callerId, kind }, action, args: value.args, sharedSessionIds };
+}
+
 /** Host APIs a plugin process may reach. Anything else does not exist (spec 04 §2). */
 const HOST_API_ALLOWLIST = new Set([
+  "credentials.get",
+  "credentials.set",
+  "credentials.remove",
+  "remoteSessions.getDevice",
+  "remoteSessions.list",
+  "remoteSessions.isDeleted",
+  "remoteSessions.invoke",
+  "remoteSessions.cancel",
+  "remoteSessions.reset",
   "app.getVersion",
   "app.getLocale",
   "app.getAppearance",
@@ -2184,6 +2246,7 @@ export class PluginRuntime {
     const loaded = this.loaded.get(pluginId);
     if (loaded) {
       loaded.disposing = true;
+      this.disposeRemoteSessions(pluginId);
       this.toolInvocations.cancelOwner(loaded, "Plugin unloaded");
       // An explicit stop ends supervision; a supervisor-driven reload keeps it.
       if (!this.restarting.has(pluginId)) this.cancelRestarts(pluginId);
@@ -2281,6 +2344,7 @@ export class PluginRuntime {
     // stopping must already be covered by the guard in `handleChildExit`.
     for (const loaded of loadedPlugins) {
       loaded.disposing = true;
+      this.disposeRemoteSessions(loaded.manifest.id);
       this.toolInvocations.cancelOwner(loaded, "Application shutting down");
       this.cancelRestarts(loaded.manifest.id);
     }
@@ -2690,6 +2754,53 @@ export class PluginRuntime {
   ): Promise<unknown> {
     const pluginId = loaded.manifest.id;
     switch (api) {
+      case "credentials.get":
+      case "credentials.set":
+      case "credentials.remove": {
+        this.assertPermission(loaded, api === "credentials.get" ? "credentials.read" : "credentials.write");
+        const key = args[0];
+        if (typeof key !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(key)) {
+          throw apiError("INVALID_ARGUMENT", "credential key must be a safe identifier of at most 128 characters");
+        }
+        const service = this.services.credentials;
+        if (!service) throw apiError("UNSUPPORTED", "credential storage is unavailable");
+        if (api === "credentials.get") return service.get(pluginId, key);
+        if (api === "credentials.remove") return service.remove(pluginId, key);
+        const value = args[1];
+        if (typeof value !== "string" || Buffer.byteLength(value, "utf8") > 1_048_576) {
+          throw apiError("INVALID_ARGUMENT", "credential value must be a string of at most 1 MiB");
+        }
+        return service.set(pluginId, key, value);
+      }
+      case "remoteSessions.getDevice":
+      case "remoteSessions.list":
+      case "remoteSessions.isDeleted":
+      case "remoteSessions.invoke":
+      case "remoteSessions.cancel":
+      case "remoteSessions.reset": {
+        this.assertPermission(loaded,
+          api === "remoteSessions.getDevice" || api === "remoteSessions.list" || api === "remoteSessions.isDeleted"
+            ? "session.read.all" : "remote.control");
+        if (this.loaded.get(pluginId) !== loaded || (loaded.disposing && api !== "remoteSessions.cancel" && api !== "remoteSessions.reset")) {
+          throw apiError("PLUGIN_UNLOADED", "remote session owner is no longer active");
+        }
+        const service = this.services.remoteSessions;
+        if (!service) throw apiError("UNSUPPORTED", "remote sessions are unavailable");
+        switch (api) {
+          case "remoteSessions.getDevice": return service.getDevice(pluginId);
+          case "remoteSessions.list": return service.list(pluginId);
+          case "remoteSessions.isDeleted": return service.isDeleted(pluginId, remoteIdentifier(args[0], "sessionId"));
+          case "remoteSessions.cancel": return service.cancel(pluginId, remoteIdentifier(args[0], "requestId"));
+          case "remoteSessions.reset": return service.reset(pluginId);
+          default: {
+            const input = validateRemoteSessionRequest(args[0]);
+            if (input.action === "sessions.list" || input.sharedSessionIds.length > 0 || Object.hasOwn(input.args, "sessionId")) {
+              this.assertPermission(loaded, "session.read.all");
+            }
+            return service.invoke(pluginId, input);
+          }
+        }
+      }
       case "commands.register": {
         const descriptor = (args[0] ?? {}) as {
           id?: string;
@@ -3273,6 +3384,7 @@ export class PluginRuntime {
     if (loaded.disposing) return;
     if (this.loaded.get(loaded.manifest.id) !== loaded) return;
     const pluginId = loaded.manifest.id;
+    this.disposeRemoteSessions(pluginId);
     // The exit code is the diagnosis for a crash report: a Windows hard fault
     // (0xC0000005 and friends) and a plugin's own process.exit(1) are different
     // bugs. Do not copy plugin stdout/stderr into user-visible errors or crash
@@ -4453,6 +4565,31 @@ export class PluginRuntime {
         ? `host not in manifest.net.domains: ${host}`
         : `plugin declares no manifest.net.domains; ${host} is unreachable`,
     );
+  }
+
+  /** Abort owner-scoped remote work before awaiting any plugin shutdown hook. */
+  private disposeRemoteSessions(pluginId: string): void {
+    try {
+      const pending = this.services.remoteSessions?.dispose(pluginId);
+      if (pending) void pending.catch(() => this.auditRemoteDisposalFailure(pluginId));
+    } catch {
+      this.auditRemoteDisposalFailure(pluginId);
+    }
+  }
+
+  private auditRemoteDisposalFailure(pluginId: string): void {
+    this.services.audit?.({ pluginId, api: "remoteSessions.dispose", ok: false, errorCode: "DISPOSE_FAILED", ts: Date.now() });
+  }
+
+  /** Deliver private host progress only to its live owning process. */
+  emitPluginEvent(pluginId: string, event: string, args: unknown[]): void {
+    const loaded = this.loaded.get(pluginId);
+    if (!loaded?.child || loaded.disposing) return;
+    try {
+      loaded.child.postMessage({ t: "event", event, args });
+    } catch {
+      this.services.audit?.({ pluginId, api: "plugin.event.deliver", ok: false, errorCode: "PLUGIN_UNREACHABLE", ts: Date.now() });
+    }
   }
 
   /**

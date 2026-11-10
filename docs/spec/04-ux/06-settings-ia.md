@@ -56,17 +56,18 @@ Settings is a **full-window page** that replaces the app sidebar + main chrome (
   7. **MCP** — Lucide `Server` (agent connections)
   8. **Subagents / 子智能体** — Lucide `Bot` (built-in and personal parallel agents)
   9. **Projects / 项目** — Lucide `Archive` (durable project index)
-  10. **Cloud sync / 云同步** — Lucide `CloudDownload` (encrypted portable configuration backup and bidirectional sync; Experimental, all builds)
-  11. **Remote Hosts / 远程主机** — Lucide `Globe` (experimental SSH hosts, sessions, and explicit model copy)
-  12. **Info / 信息** — Lucide `Info` (versions, logs, updates, developer)
+  10. **Cloud sync / 云同步** — Lucide `CloudDownload` (account-based conversation server sign-in and synchronization; Experimental, all builds)
+  11. **Backup / 备份** — Lucide `Archive` (the existing encrypted S3 configuration backup, restore history, and bidirectional configuration-sync mode; Experimental, all builds)
+  12. **Remote Hosts / 远程主机** — Lucide `Globe` (experimental SSH hosts, sessions, and explicit model copy)
+  13. **Info / 信息** — Lucide `Info` (versions, logs, updates, developer)
   Icons are decorative (`aria-hidden` via the SVG default) and stay monochrome
   with the rail label; do not reuse refresh/rotate glyphs here.
 - The directory remains a flat searchable list in the same exact order. For
   scanability, the destinations are shown in four titled visual clusters:
   `Preferences` / `偏好` (General, AI, Shortcuts), `Agent` / `智能体`
   (Instructions, Models, Skills, MCP, Subagents), `Workspace` / `工作区`
-  (Projects), and `System` / `系统` (Cloud sync, Remote Hosts, Info; Cloud sync
-  and Remote Hosts are Experimental destinations available in all builds). Headings are
+  (Projects), and `System` / `系统` (Cloud sync, Backup, Remote Hosts, Info; Cloud
+  sync, Backup and Remote Hosts are Experimental destinations available in all builds). Headings are
   muted, non-interactive labels and use whitespace for separation; no divider
   lines are rendered. These are visual landmarks only, not a second navigation
   level.

@@ -13,6 +13,12 @@ export const ACTIVITY_NAVIGATION: readonly ActivityNavigationItem[] = [
   { page: "plugins", labelKey: "nav.plugins", icon: "plugins" },
 ];
 
+/** Destination name shown where the shell names the active page. */
+export function activityPageLabelKey(
+  page: ActivityNavigationItem["page"],
+): ActivityNavigationItem["labelKey"] | null {
+  return ACTIVITY_NAVIGATION.find((item) => item.page === page)?.labelKey ?? null;
+}
 export function selectActivityPage(
   current: import("../../stores/app-state").AppState["page"],
   next: import("../../stores/app-state").AppState["page"],

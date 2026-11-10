@@ -98,8 +98,8 @@ export function registerShutdownHandlers({
     event.preventDefault();
     if (state.shutdownPromise || quitConfirmationPending) return;
 
-    // Show a confirmation dialog on the first explicit quit (Cmd+Q, tray quit,
-    // application-menu Quit). The data-saving shutdown runs after confirmation.
+    // Confirm unconfirmed quit requests (Cmd+Q and application-menu Quit).
+    // Tray Quit and window-close Quit already opted into the data-saving shutdown.
     // Skip confirmation in automated probe/capture modes where no human is
     // present to interact with the dialog.
     const isAutomatedMode =

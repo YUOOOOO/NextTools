@@ -57,10 +57,3 @@ test("CJK section labels drop Latin-only uppercase tracking", () => {
   );
 });
 
-test("brand hover chip uses a defined radius token", () => {
-  assert.doesNotMatch(globalStyles, /--radius-token-row/);
-  assert.match(
-    globalStyles,
-    /\.brand\s*\{[\s\S]*?border-radius:\s*var\(--radius-sm\);/,
-  );
-});

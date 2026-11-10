@@ -352,6 +352,19 @@ function buildApi() {
     models: {
       list: () => call("models.list"),
     },
+    credentials: {
+      get: (key) => call("credentials.get", [key]),
+      set: (key, value) => call("credentials.set", [key, value]),
+      remove: (key) => call("credentials.remove", [key]),
+    },
+    remoteSessions: {
+      getDevice: () => call("remoteSessions.getDevice"),
+      list: () => call("remoteSessions.list"),
+      isDeleted: (sessionId) => call("remoteSessions.isDeleted", [sessionId]),
+      invoke: (input) => call("remoteSessions.invoke", [input]),
+      cancel: (requestId) => call("remoteSessions.cancel", [requestId]),
+      reset: () => call("remoteSessions.reset"),
+    },
     session: {
       // The selected session, as the shell shows it. A snapshot is a value: a
       // plugin compares `sessionId` rather than assuming the session still holds.

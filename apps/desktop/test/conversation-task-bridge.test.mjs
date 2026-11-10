@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { setImmediate as tick } from "node:timers/promises";
 import test from "node:test";
-import { createConversationSync } from "../electron/main/conversation-sync-client.mjs";
+import { createConversationSync } from "../resources/plugins/pi.cloud-sync/client.cjs";
+import { cloudFixture } from "./helpers/cloud-plugin-fixture.mjs";
 import { createConversationTaskBridge } from "../electron/main/conversation-task-bridge.mjs";
 
 function deferred() {
@@ -218,22 +216,40 @@ class SocketFixture extends EventTarget {
 }
 
 async function connected(t, f = runtime()) {
-  const dir = mkdtempSync(join(tmpdir(), "conversation-task-test-"));
-  const sync = createConversationSync({
-    filePath: join(dir, "login.json"), encrypt: (s) => s, decrypt: (s) => s, encryptionAvailable: () => true,
-    listSessions: async () => [], WebSocketImpl: SocketFixture,
-    fetchImpl: async () => ({ ok: true, json: async () => ({ token: "FIXTURE_TOKEN", account: "fixture-account" }) }),
-    onCall(action, args, context) {
-      if (action === "task") return f.bridge.task(args, context);
-      if (action === "stop") return f.bridge.stop(args, context);
-      if (action === "info") return { name: "Pilot" };
-      throw new Error("unknown action");
+  const controllers = new Map();
+  const fixture = cloudFixture({
+    list: async () => [],
+    async invoke(input, emit) {
+      const controller = new AbortController(); controllers.set(input.requestId, controller);
+      const context = { scope: input.scope, caller: input.caller, signal: controller.signal,
+        isSessionShared: id => input.sharedSessionIds.includes(id),
+        emit: event => emit('remote-session:event', { requestId: input.requestId, event }) };
+      try {
+        if (input.action === 'task') return await f.bridge.task(input.args, context);
+        if (input.action === 'stop') return await f.bridge.stop(input.args, context);
+        if (input.action === 'info') return { name: 'Pilot' };
+        throw new Error('unknown action');
+      } finally { controllers.delete(input.requestId); }
     },
+    cancel(id) { controllers.get(id)?.abort(); },
+    reset() { for (const controller of controllers.values()) controller.abort(); },
   });
-  t.after(async () => { await sync.signOut(); rmSync(dir, { recursive: true, force: true }); });
-  await sync.signIn({ baseUrl: "http://fixture.invalid", account: "fixture-account", password: "fixture-password" });
-  const socket = SocketFixture.sockets.at(-1);
-  socket.open();
+  const sockets = new Map();
+  fixture.pi.net.websocket = {
+    async connect({ url }) {
+      const socket = new SocketFixture(url), socketId = `socket-${SocketFixture.sockets.length}`;
+      sockets.set(socketId, socket);
+      for (const type of ['open', 'message', 'close', 'error']) socket.addEventListener(type, event => fixture.emit('net:websocket:' + type, { socketId, data: event.data }));
+      return { socketId };
+    },
+    async send({ socketId, data }) { sockets.get(socketId).send(data); },
+    async close({ socketId }) { sockets.get(socketId)?.close(); },
+  };
+  const sync = createConversationSync(fixture.pi);
+  t.after(async () => { await sync.dispose(); });
+  await sync.signIn({ baseUrl: 'http://fixture.invalid', account: 'fixture-account', password: 'fixture-password' });
+  await tick();
+  const socket = SocketFixture.sockets.at(-1); socket.open(); await tick();
   return { ...f, sync, socket };
 }
 
@@ -352,10 +368,12 @@ test("socket reconnect preserves its conversation mapping; signout cancels a sch
   f.socket.close();
   const oldCount = SocketFixture.sockets.length;
   t.mock.timers.tick(2000);
+  await tick();
   const next = SocketFixture.sockets.at(-1);
   assert.notEqual(next, f.socket);
   assert.equal(SocketFixture.sockets.length, oldCount + 1);
   next.open();
+  await tick();
   next.call("second", "task", { text: "Two", conversation: "same" });
   await tick();
   assert.equal(f.admissions[1].request.sessionId, f.admissions[0].request.sessionId);
