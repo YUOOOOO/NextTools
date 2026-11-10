@@ -3,5 +3,5 @@ export function remoteSummary(action: string, args?: Record<string, unknown>): s
 export function runRemoteAction(
   action: string,
   args?: Record<string, unknown>,
-  deps?: { capture?: () => Promise<unknown>; open?: (path: string) => Promise<string> },
+  deps?: { signal?: AbortSignal; capture?: () => Promise<unknown>; open?: (path: string) => Promise<string> },
 ): Promise<unknown>;

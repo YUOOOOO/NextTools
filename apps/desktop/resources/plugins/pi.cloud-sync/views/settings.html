@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cloud Sync</title><link rel="stylesheet" href="settings.css"></head>
+<body><main>
+  <h1 data-text="title">Cloud Sync</h1>
+  <p data-text="scope">Only conversation text and metadata are synced. Attachments and provider credentials stay on this device. Remote sensitive actions still require local consent.</p>
+  <form id="account-form">
+    <label for="server" data-text="server">Server</label><input id="server" type="url" value="http://127.0.0.1:8788" required autocomplete="url" spellcheck="false">
+    <label for="account" data-text="account">Account</label><input id="account" required autocomplete="username" spellcheck="false">
+    <label for="password" data-text="password">Password</label><input id="password" type="password" required autocomplete="current-password">
+    <div class="buttons"><button id="login" type="submit" data-text="login">Sign in</button><button id="register" type="button" class="secondary" data-text="register">Register</button></div>
+  </form>
+  <section id="signed-in" hidden aria-label="Sync status">
+    <dl><dt data-text="server">Server</dt><dd id="saved-server"></dd><dt data-text="account">Account</dt><dd id="saved-account"></dd><dt data-text="status">Status</dt><dd id="status"></dd><dt data-text="counts">Synced</dt><dd id="counts"></dd></dl>
+    <div class="buttons"><button id="push" type="button" data-text="push">Sync now</button><button id="logout" type="button" class="secondary" data-text="logout">Sign out</button></div>
+  </section>
+  <div class="buttons"><button id="console" type="button" class="secondary" data-text="console">Open web console</button><button id="clear-error" type="button" class="secondary" hidden data-text="clear">Clear error</button></div>
+  <p id="feedback" role="status" aria-live="polite"></p><p id="error" role="alert" hidden></p>
+</main><script src="settings.js"></script></body>
+</html>

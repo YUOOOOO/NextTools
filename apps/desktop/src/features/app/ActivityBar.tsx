@@ -23,11 +23,8 @@ export function ActivityBar() {
   const { t } = useTranslation();
   const page = useAppStore((state) => state.page);
   const onPageChange = useAppStore((state) => state.setPage);
-  // The mark stays above the scrolling column so it survives every
-  // destination: the menu column scrolls away on the long pages (Scheduled
-  // Tasks, Extensions) and is hidden entirely on Settings.
   return (
-    <>
+    <nav className="activity-bar" style={{ width: ACTIVITY_BAR_WIDTH }} aria-label={t("nav.primaryNavigation")}>
       <div className="activity-bar-brand">
         <TooltipButton
           className="activity-bar-logo"
@@ -41,7 +38,6 @@ export function ActivityBar() {
           <BrandLogo size={20} />
         </TooltipButton>
       </div>
-      <nav className="activity-bar" style={{ width: ACTIVITY_BAR_WIDTH }} aria-label={t("nav.primaryNavigation")}>
         <div className="activity-bar-top">
           {ACTIVITY_NAVIGATION.map((item) => {
             const Icon = icons[item.icon];
@@ -83,6 +79,5 @@ export function ActivityBar() {
           </TooltipButton>
         </div>
       </nav>
-    </>
   );
 }

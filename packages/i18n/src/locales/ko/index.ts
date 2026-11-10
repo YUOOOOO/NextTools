@@ -946,6 +946,7 @@ sklm: {
       subagents: "서브에이전트",
       projects: "프로젝트",
       sync: "클라우드 동기화",
+      backup: "백업",
       remoteHosts: "원격 호스트",
       info: "정보",
       voice: "음성",

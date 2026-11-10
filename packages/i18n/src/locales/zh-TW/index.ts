@@ -937,6 +937,7 @@ sklm: {
       subagents: "子智慧體",
       projects: "專案",
       sync: "雲端同步",
+      backup: "備份",
       remoteHosts: "遠端主機",
       info: "資訊",
       voice: "語音",

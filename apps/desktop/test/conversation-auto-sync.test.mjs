@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createConversationAutoSync } from "../electron/main/conversation-auto-sync.mjs";
+import { createConversationAutoSync } from "../resources/plugins/pi.cloud-sync/auto-sync.cjs";
 
 function fixture() {
   const timers = new Map(); let next = 0; const calls = []; const errors = [];

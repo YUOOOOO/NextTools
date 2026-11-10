@@ -1181,7 +1181,31 @@ export type PluginThemeSummary = {
   base: "light" | "dark";
 };
 
+/** Host-brokered remote action; native consent remains authoritative. */
+export type PluginRemoteSessionRequest = {
+  requestId: string;
+  scope: string;
+  caller: { id: string; kind: "web" | "computer" | "phone" };
+  action: string;
+  args: Record<string, unknown>;
+  sharedSessionIds: string[];
+};
+
 export type PluginHostApi = {
+  /** Encrypted host storage, isolated to the calling plugin. */
+  credentials: {
+    get: (key: string) => Promise<string | null>;
+    set: (key: string, value: string) => Promise<void>;
+    remove: (key: string) => Promise<void>;
+  };
+  remoteSessions: {
+    getDevice: () => Promise<{ id: string; name: string; os: string }>;
+    list: () => Promise<unknown[]>;
+    isDeleted: (sessionId: string) => Promise<boolean>;
+    invoke: (input: PluginRemoteSessionRequest) => Promise<unknown>;
+    cancel: (requestId: string) => Promise<void>;
+    reset: () => Promise<void>;
+  };
   app: {
     getVersion: () => Promise<string>;
     /** Active app language. Plugin-owned UI localizes from this (ADR 0280). */
@@ -1510,6 +1534,10 @@ export const MAX_AGENT_EXTENSIONS_PER_PLUGIN = 8;
 export const MAX_GLOBAL_SHORTCUTS_PER_PLUGIN = 8;
 
 export const PLUGIN_PERMISSIONS = [
+  "credentials.read",
+  "credentials.write",
+  "remote.control",
+  "session.read.all",
   "ui.panel",
   "ui.view",
   "ui.microphone",

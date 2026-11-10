@@ -308,19 +308,25 @@ try {
   computer.addEventListener("open", helloComputer); computer.addEventListener("message", computerMessage);
   await until(() => evaluate("document.querySelector('.composer textarea')?.disabled === false"), "Reconnect did not enable same-session continuation");
   // Real desktop client + automatic scheduler upload to the real cloud store.
-  const uploadRoot = await mkdtemp(join(process.env.PI_SCRATCH_DIR || tmpdir(), "cloud-upload-"));
   let cloudClient, automatic;
   try {
-    const { createConversationSync } = await import("../../../apps/desktop/electron/main/conversation-sync-client.mjs");
-    const { createConversationAutoSync } = await import("../../../apps/desktop/electron/main/conversation-auto-sync.mjs");
+    const { createConversationSync } = await import("../../../apps/desktop/resources/plugins/pi.cloud-sync/client.cjs");
+    const { createConversationAutoSync } = await import("../../../apps/desktop/resources/plugins/pi.cloud-sync/auto-sync.cjs");
+    const { cloudFixture } = await import("../../../apps/desktop/test/helpers/cloud-plugin-fixture.mjs");
     const jobs = new Map(); let nextJob = 0;
-    cloudClient = createConversationSync({
-      deviceId: "browser-fixture", filePath: join(uploadRoot, "session.json"), encrypt: (x) => x, decrypt: (x) => x, encryptionAvailable: () => true,
-      listSessions: async () => [{ id: "browser-synced-session", title: "Desktop cloud history", messages: [
+    const boundary = cloudFixture({
+      fetch: async input => {
+        const response = await fetch(input.url, input);
+        if (!response.ok) throw new Error(`Cloud fixture HTTP ${response.status}`);
+        return response.json();
+      },
+      list: async () => [{ id: "browser-synced-session", title: "Desktop cloud history", messages: [
         { id: "browser-cloud-user", role: "user", content: "Persist this desktop question", createdAt: "2026-01-01T00:00:00Z" },
         { id: "browser-cloud-assistant", role: "assistant", content: "Persisted desktop answer", createdAt: "2026-01-01T00:00:01Z" },
       ] }],
     });
+    boundary.pi.remoteSessions.getDevice = async () => ({ id: 'browser-fixture', name: 'Browser fixture', os: 'test' });
+    cloudClient = createConversationSync(boundary.pi);
     await cloudClient.signIn({ baseUrl: base, account: "browser-user", password: "fixture-password" });
     automatic = createConversationAutoSync({ sync: cloudClient, onError: (e) => { throw e; },
       setTimer(fn) { const id = ++nextJob; jobs.set(id, fn); return id; }, clearTimer(id) { jobs.delete(id); } });
@@ -333,7 +339,7 @@ try {
     await until(() => evaluate("document.querySelector('.cloud-conversations')?.textContent.includes('Desktop cloud history')"), "Cloud history missing after reload");
     await evaluate("Array.from(document.querySelectorAll('.cloud-conversations button')).find(el => el.textContent.includes('Desktop cloud history')).click()");
     await until(() => evaluate("document.querySelector('.cloud-messages')?.textContent.includes('Persisted desktop answer')"), "History depended on localStorage");
-    cloudClient.queueDeleted(["browser-synced-session"]);
+    await cloudClient.queueDeleted(["browser-synced-session"]);
     await cloudClient.push();
     await until(()=>evaluate("!document.querySelector('[data-cloud-conversation=browser-synced-session]')"),"Deleted desktop session remained in cloud directory");
     await until(()=>evaluate("!document.querySelector('.messages')?.textContent.includes('Persisted desktop answer')"),"Deleted desktop transcript remained open");
@@ -342,7 +348,7 @@ try {
     assert.equal(await evaluate("!!document.querySelector('[data-cloud-conversation=browser-synced-session]')"),false);
     const page = await fetch(base + "/v1/sync/changes?since=0&tail=200", { headers: { authorization: `Bearer ${session.token}` } });
     const saved = await page.json(); assert.equal(saved.messages.filter((m) => m.cid === "browser-synced-session").length, 0);
-  } finally { automatic?.dispose(); await cloudClient?.signOut(); await rm(uploadRoot, { recursive: true, force: true }); }
+  } finally { automatic?.dispose(); await cloudClient?.signOut(); await cloudClient?.dispose(); }
   // Many sessions must not push account controls outside the sidebar.
   const secondDevice = new WebSocket(base.replace("http", "ws") + "/v1/hub");
   const secondWelcome = new Promise(resolve => secondDevice.addEventListener("message", ({data}) => { if (JSON.parse(String(data)).type === "welcome") resolve(); }));

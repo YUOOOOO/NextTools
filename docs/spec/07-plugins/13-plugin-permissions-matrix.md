@@ -47,6 +47,10 @@ Provide a permission–capability–risk–default-policy reference table for re
 | `models.list` | medium | `pi.models.list` | Confirm at install | Ready provider/model rows only; no secrets |
 | `project.create` | high | `pi.project.create` and explicit `projectId` on session import | Confirm at install | Creates or reuses a durable project row without activating the workspace; imported sessions remain unbound unless the id is supplied |
 | `session.read` | high | `pi.session.getLlmContext` | Confirm at install | In-flight tool session only; compaction-aware projection (D019 / D336) |
+| `session.read.all` | high | `pi.remoteSessions.getDevice`, `list`, `isDeleted` | Explicit grant | Local conversation snapshots for synchronization; never database files; does not widen existing `session.read` |
+| `remote.control` | high | `pi.remoteSessions.invoke`, `cancel`, `reset` | Explicit grant | Host-brokered tasks/interactive cards; native remote-action consent and tool approvals remain mandatory; owner teardown cancels work |
+| `credentials.read` | high | `pi.credentials.get` | Explicit grant | Calling plugin's encrypted namespace only; excludes providers and other plugins |
+| `credentials.write` | high | `pi.credentials.set`, `remove` | Explicit grant | Atomic OS-encrypted storage; refuses plaintext fallback |
 | `session.autoTitle` | high | `pi.session.getAutoTitleContext`, `pi.session.setAutoTitle` | Confirm at install | First user prompt (≤1,000 chars) and first assistant reply (≤500 chars) only, for default-titled sessions; title writes are compare-and-set. It does not grant transcript reads |
 | `session.import` | high | `pi.session.import`, `pi.session.importBatch` | Confirm at install | Imports only into the calling plugin's declared session sources; bounded and rate-limited |
 | `session.read.own` | medium | `pi.session.list`, `pi.session.get`, `pi.session.listMessages` | Confirm at install | Reads only sessions imported by the calling plugin; no cross-plugin access |

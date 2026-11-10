@@ -4,6 +4,35 @@
 converge. It is not the host-core transcript and not the transient
 project-control relay.
 
+## Bundled desktop plugin
+
+`pi.cloud-sync` owns account login, HTTP/WebSocket protocol, incremental uploads,
+reconnection and the automatic uploader. Settings → Cloud sync hosts the plugin's
+isolated `settings` view; Backup remains the independent S3 configuration page.
+Disabling the plugin stops its timers and sockets and aborts its remote calls.
+No provider request occurs merely because the plugin loads or synchronizes.
+
+Electron exposes transport-independent, permission-checked capabilities only:
+`credentials.read` / `credentials.write` address encrypted values in the calling
+plugin's namespace; `session.read.all` grants explicit local snapshot reads;
+`remote.control` invokes the existing task and interactive-request brokers.
+The existing `session.read` grant remains current-LLM-context-only and
+`session.read.own` remains imported-session-only. No plugin receives a database
+handle, arbitrary IPC access, provider credentials or another plugin's secrets.
+
+The original encrypted `conversation-sync.json` account migrates once to the
+`pi.cloud-sync` private account credential without losing pending deletions or
+device identity. Migration failure preserves the original state. Plaintext
+credential fallback is refused when OS encryption is unavailable. Remote
+progress is delivered only to the requesting plugin and request id; sign-out,
+plugin unload, crashes and account changes cancel owned requests. Tool approval,
+asktool validation, native remote-action consent and Web input provenance remain
+host-authoritative. The cloud continues storing text, not end-to-end ciphertext.
+
+The server and nanoMuse-derived web console stay independently deployable. This
+mode mirrors desktop history and continues work on the online original computer;
+it does not merge remote histories into another desktop's Host transcript.
+
 ## Save effect
 
 `POST /v1/sync/changes` accepts `{device, conversations, messages}`.

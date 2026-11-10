@@ -22,10 +22,11 @@ export function remoteSummary(action, args = {}) {
 }
 
 export async function runRemoteAction(action, args = {}, deps = {}) {
-  if (action === "shell") return shell(args);
-  if (action === "files") return files(args);
-  if (action === "file.get") return fileGet(args);
-  if (action === "file.put") return filePut(args);
+  deps.signal?.throwIfAborted();
+  if (action === "shell") return shell(args, deps.signal);
+  if (action === "files") return files(args, deps.signal);
+  if (action === "file.get") return fileGet(args, deps.signal);
+  if (action === "file.put") return filePut(args, deps.signal);
   if (action === "open") return openPath(args, deps);
   if (action === "screen") {
     if (typeof deps.capture !== "function") throw new Error("screen_unavailable");
@@ -34,7 +35,7 @@ export async function runRemoteAction(action, args = {}, deps = {}) {
   throw new Error(`unknown action ${action}`);
 }
 
-async function shell(args) {
+async function shell(args, signal) {
   const command = typeof args.command === "string" ? args.command : "";
   if (!command.trim()) throw new Error("a command is required");
   const requested = Number(args.timeout);
@@ -46,7 +47,8 @@ async function shell(args) {
   return new Promise((done) => {
     let child;
     try {
-      child = spawn(file, argv, { cwd, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+      signal?.throwIfAborted();
+      child = spawn(file, argv, { cwd, windowsHide: true, detached: process.platform !== "win32", stdio: ["ignore", "pipe", "pipe"] });
     } catch (error) {
       done({ exit_code: 127, stdout: "", stderr: error instanceof Error ? error.message : String(error), timed_out: false, duration_ms: 0 });
       return;
@@ -60,35 +62,54 @@ async function shell(args) {
       bytes += kept.length;
     };
     let timedOut = false;
+    const terminate = () => {
+      if (!child.pid || child.exitCode !== null) return;
+      if (process.platform === "win32") {
+        // Kill the owned shell tree, not just cmd.exe and leave its child running.
+        const killer = spawn("taskkill.exe", ["/pid", String(child.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" });
+        killer.once("error", () => child.kill());
+        killer.once("exit", (code) => { if (code !== 0) child.kill(); });
+      } else {
+        try { process.kill(-child.pid, "SIGKILL"); }
+        catch { child.kill("SIGKILL"); }
+      }
+    };
+    signal?.addEventListener("abort", terminate, { once: true });
+    if (signal?.aborted) terminate();
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill();
+      terminate();
     }, timeoutS * 1000);
     child.stdout?.on("data", push);
     child.stderr?.on("data", push);
     child.on("close", (code) => {
       clearTimeout(timer);
+      signal?.removeEventListener("abort", terminate);
       const text = Buffer.concat(chunks).toString("utf8");
       done({ exit_code: timedOut ? 124 : (code ?? 1), stdout: text, stderr: "", timed_out: timedOut, duration_ms: Date.now() - started });
     });
     child.on("error", (error) => {
       clearTimeout(timer);
+      signal?.removeEventListener("abort", terminate);
       done({ exit_code: 127, stdout: "", stderr: error.message, timed_out: false, duration_ms: Date.now() - started });
     });
   });
 }
 
-async function files(args) {
+async function files(args, signal) {
   const path = expand(args.path);
   const info = await stat(path).catch(() => null);
+  signal?.throwIfAborted();
   if (!info) throw new Error(`${path} does not exist`);
   if (!info.isDirectory()) {
     return { path, entries: [{ name: basename(path), type: "file", size: info.size, mtime: Math.floor(info.mtimeMs / 1000) }] };
   }
   const names = await readdir(path);
+  signal?.throwIfAborted();
   const entries = [];
   for (const name of names.slice(0, ENTRY_LIMIT)) {
     const child = await stat(join(path, name)).catch(() => null);
+    signal?.throwIfAborted();
     if (!child) continue;
     entries.push({
       name,
@@ -101,26 +122,29 @@ async function files(args) {
   return { path, entries, truncated: names.length > ENTRY_LIMIT };
 }
 
-async function fileGet(args) {
+async function fileGet(args, signal) {
   const path = expand(args.path);
   const info = await stat(path);
+  signal?.throwIfAborted();
   if (!info.isFile()) throw new Error(`${path} is not a file`);
   if (info.size > FILE_LIMIT) throw new Error("file is larger than 8 MB");
-  const body = await readFile(path);
+  const body = await readFile(path, { signal });
   return { path, size: body.length, encoding: "base64", content: body.toString("base64") };
 }
 
-async function filePut(args) {
+async function filePut(args, signal) {
   const path = expand(args.path);
   const content = Buffer.from(String(args.content ?? ""), args.encoding === "base64" ? "base64" : "utf8");
   if (content.length > FILE_LIMIT) throw new Error("file is larger than 8 MB");
   await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, content);
+  signal?.throwIfAborted();
+  await writeFile(path, content, { signal });
   return { path, size: content.length };
 }
 
 async function openPath(args, deps) {
   const path = expand(args.path);
+  deps.signal?.throwIfAborted();
   if (typeof deps.open === "function") {
     const error = await deps.open(path);
     if (error) throw new Error(String(error));

@@ -278,14 +278,15 @@ window.settingsInlineMcpImportProbe = async () => {
   const scanCalls = calls.filter((call) => call.channel === IPC.invoke.mcpImportScan);
   const visibleRow = [...document.querySelectorAll(".agent-capability-row")]
     .find((row) => row.querySelector(".agent-capability-name")?.textContent.trim() === candidate.label);
+  const visibleToast = [...document.querySelectorAll(".toast-message")]
+    .map((node) => node.textContent.trim())
+    .find((message) => message.startsWith("Import done:"));
   return {
     builtinToggleState,
     scanCountBeforeExplicitClick,
     scanCalls,
     runCall,
-    visibleToast: [...document.querySelectorAll(".toast-message")]
-      .map((node) => node.textContent.trim())
-      .find((message) => message.startsWith("Import done:")),
+    visibleToast,
     visibleImportedServer: Boolean(visibleRow),
     importedServerDisabled: visibleRow?.classList.contains("is-off") ?? false,
   };

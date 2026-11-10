@@ -924,6 +924,7 @@ export const ptBR = {
       subagents: "Subagentes",
       projects: "Projetos",
       sync: "Sincronização",
+      backup: "Backup",
       remoteHosts: "Hosts remotos",
       info: "Sobre",
       voice: "Voz"

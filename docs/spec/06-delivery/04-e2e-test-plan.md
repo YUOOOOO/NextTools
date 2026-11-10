@@ -31,6 +31,26 @@
   reconnect and stale-result suppression. This fixture browser journey does
   not by itself claim real Electron/provider execution or Docker verification.
 
+### E2E-CLOUD-bundled-plugin-lifecycle
+
+- Load bundled `pi.cloud-sync` through the real PluginRuntime permission gateway.
+  Open Settings → Cloud sync and verify its native isolated view has nonzero
+  bounds and is visible. Register/sign in against an isolated local server;
+  verify local text uploads automatically and appears in the nanoMuse console.
+- Continue the uploaded conversation on its original online desktop, observe
+  safe progress and the final answer, stop a second task, and exercise permission
+  and asktool cards through the host brokers. No paid provider is used: substitute
+  only the external model boundary, not plugin RPC or ownership checks.
+- Sign out during a pending request: no stale upload/result is published. Disable
+  the plugin and crash its process separately: timers, sockets, pending tasks
+  and card tokens are released. Re-enable and restore the encrypted account.
+- Upgrade a profile with the original encrypted login/deletion outbox and verify
+  one-time migration preserves account, device identity and pending tombstones.
+  Denied credential/all-history/remote-control grants fail before host services
+  execute; one plugin never reads another plugin's credential or progress.
+- S3 Backup and the cloud server protocol remain unchanged. Offline computers
+  retain readable cloud history but do not execute queued tasks.
+
 
 ### E2E-WORKBENCH-shared-plugin-service
 
@@ -5707,8 +5727,8 @@ must keep splitting are covered by `markdown-blocks.test.mjs`.
 
 - **Preconditions**: A normal interactive session is running (not a boot,
   supervision, or capture probe). The main window may be visible or tray-hidden.
-- **Steps**: 1) Choose Quit from the tray menu, or press Cmd+Q / the
-  application-menu Quit item. If tray-hidden, confirm the main window is restored.
+- **Steps**: 1) Press Cmd+Q or choose the application-menu Quit item. If
+  tray-hidden, confirm the main window is restored.
   2) Verify the themed in-app confirmation, Cancel as initial focus, and distinct
   title/body. While it is open, issue a second Quit request and verify the same
   decision remains pending: no duplicate dialog and no shutdown bypass. Exercise
@@ -5721,12 +5741,12 @@ must keep splitting are covered by `markdown-blocks.test.mjs`.
   dialog. 6) On packaged Windows NSIS or Linux AppImage, restart to install an
   update; confirm no quit warning appears and the installer completes upgrade
   and relaunch.
-- **Expected**: Accidental explicit quit is cancellable. Repeated quit requests
-  cannot duplicate or bypass an outstanding confirmation; Cancel clears the
-  pending decision so a later quit asks again. Tray Quit presents the dialog
-  even when the main window was hidden. A D230 Quit is not re-confirmed. When the
-  renderer is unavailable, crashes, or fails to answer, the bounded native
-  fallback is used; failure to show it does not hold shutdown. Probes never
+- **Expected**: Cmd+Q and application-menu Quit are cancellable. Repeated quit
+  requests cannot duplicate or bypass an outstanding confirmation; Cancel clears
+  the pending decision so a later quit asks again. Tray Quit instead starts
+  ordered teardown directly, including when the main window is hidden. A D230
+  Quit is not re-confirmed. For entry points requiring confirmation, an unavailable
+  renderer uses the bounded native fallback; failure to show it does not hold shutdown. Probes never
   block on the warning. An in-app update restart is never deferred: the installer
   is spawned before `app.quit()` and aborts if the app stays alive past its wait
   window, so that quit goes directly into ordered shutdown.
@@ -18304,6 +18324,39 @@ rows below the header, no overlapping drag/resize targets and
 keyboard-clickable mark/collapse controls. Collapse then expand, switch routes
 and verify the name follows the destination and no product name is repeated.
 Preserve the native macOS control inset and the hidden rail mark.
+In light and dark themes at 600px and 800px window heights, verify the rail's
+background reaches the window bottom, matches the mark cell, and contains all
+destination buttons. Notifications and Settings remain bottom-aligned. The
+rendered `sidebar-page-header.test.mjs` regression covers height, background,
+item containment and the bottom Settings position.
+The product mark is the top child of the activity rail; the destination header
+is inside the secondary sidebar in `app-chat-shell`, in normal flex flow.
+Switch Agent, Workbench, Scheduled Tasks, Extensions and Settings; the bottom
+group remains 12px above the window bottom and all rail surfaces retain the P
+brand. Restart on Windows and check the taskbar and notification-area icons
+also show the original P artwork rather than a blue N.
+
+### E2E-CHROME-tray-direct-quit-and-system-theme-default
+
+With a fresh profile on light and dark systems, verify the default appearance
+is Follow system; switch the OS scheme and observe the shell follow it. Save
+an explicit light/dark/plugin preference and restart: that choice is retained.
+Right-click the Windows notification-area icon and choose Quit with the main
+window visible, then repeat with it hidden. No renderer/native confirmation is
+shown; normal ordered session persistence and runtime shutdown still complete.
+Other quit entry points and the window-close preference remain unchanged.
+
+### E2E-SETTINGS-cloud-and-backup-destinations
+
+Open Settings and select Cloud sync: only the account-based conversation-server
+form is shown. Select Backup: only the existing encrypted S3 configuration,
+history, and restore controls are shown. Switch back; neither form leaks into
+the other destination. Global settings search for a conversation server opens
+Cloud sync, while a configuration endpoint opens Backup. Verify English and
+Simplified Chinese labels; existing account, S3 modes and saved configuration
+are unchanged. `settings-inline-import-user-path.test.mjs` exercises the real
+SettingsPage navigation and `settings-developer-only-destinations.test.mjs`
+covers search routing.
 
 
 ### E2E-CLOUD-web-input-source-chip

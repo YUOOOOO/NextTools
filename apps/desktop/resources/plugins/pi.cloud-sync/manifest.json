@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "pi.cloud-sync",
+  "name": "Cloud Sync",
+  "version": "1.0.0",
+  "description": "Sync conversation text and metadata to your account and securely relay remote requests through the desktop host.",
+  "i18n": {
+    "en": {
+      "name": "Cloud Sync",
+      "description": "Sync conversation text and metadata to your account and securely relay remote requests through the desktop host."
+    },
+    "zh-CN": {
+      "name": "云同步",
+      "description": "同步会话文本与元数据，通过桌面宿主安全转发远程请求。"
+    }
+  },
+  "author": "NextTools",
+  "main": "main.js",
+  "activationEvents": [
+    "onStartup"
+  ],
+  "contributes": {
+    "services": [
+      {
+        "id": "sync",
+        "autoRestart": true
+      }
+    ],
+    "views": [
+      {
+        "id": "settings",
+        "title": {
+          "en": "Cloud Sync",
+          "zh-CN": "云同步"
+        },
+        "icon": "server",
+        "entry": "views/settings.html",
+        "order": 50
+      }
+    ]
+  },
+  "permissions": [
+    "ui.view",
+    "background.service",
+    "net.fetch",
+    "net.websocket",
+    "net.anyHost",
+    "session.read.all",
+    "remote.control",
+    "credentials.read",
+    "credentials.write",
+    "shell.openExternal"
+  ],
+  "engines": {
+    "piDesktop": ">=0.8.0"
+  }
+}

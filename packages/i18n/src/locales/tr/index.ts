@@ -946,6 +946,7 @@ sklm: {
       subagents: "Alt ajanlar",
       projects: "Projeler",
       sync: "Bulut senkronizasyonu",
+      backup: "Yedekleme",
       remoteHosts: "Uzak ana bilgisayarlar",
       info: "Bilgi",
       voice: "Ses",

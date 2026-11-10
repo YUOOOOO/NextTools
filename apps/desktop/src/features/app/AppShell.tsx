@@ -155,16 +155,7 @@ export function AppShell() {
       <>
         <WorkbenchToolBridge />
 
-        {/* One shell cell for the rail cell and the navigation column: the
-            overlay hosts below render nothing in flow, so an unwrapped pair
-            would be seeded into different flex columns. */}
-        <div className="activity-shell-column">
-          {(page === "chat" || page === "workbench") && !sidebarCollapsed ? (
-            <SidebarPageHeader page={page}
-              onToggleSidebar={toggleSidebar} sidebarToggleShortcut={sidebarToggleShortcut} />
-          ) : null}
-          <ActivityBar />
-        </div>
+        <ActivityBar />
         <PortalVisibilityProvider visible={page !== "settings"}>
           <div
             className="app-chat-shell"
@@ -173,6 +164,8 @@ export function AppShell() {
           >
             {page === "chat" && (!sidebarCollapsed || sidebarExiting) ? (
               <Sidebar
+                header={<SidebarPageHeader page={page}
+                  onToggleSidebar={toggleSidebar} sidebarToggleShortcut={sidebarToggleShortcut} />}
                 className={cx(sidebarEntering && "is-entering", sidebarExiting && "is-exiting")}
                 onAnimationEnd={handleSidebarAnimationEnd}
                 sidebarWidth={sidebarWidth}
@@ -184,7 +177,8 @@ export function AppShell() {
             ) : null}
 
             {page === "workbench" && !sidebarCollapsed ? (
-              <WorkbenchMenu />
+              <WorkbenchMenu header={<SidebarPageHeader page={page}
+                onToggleSidebar={toggleSidebar} sidebarToggleShortcut={sidebarToggleShortcut} />} />
             ) : null}
 
             {page === "chat" && workPanelMaximized && (

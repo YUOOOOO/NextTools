@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { setImmediate as tick } from 'node:timers/promises';
+import { cloudFixture } from './helpers/cloud-plugin-fixture.mjs';
 import test from "node:test";
-import { createConversationSync } from "../electron/main/conversation-sync-client.mjs";
+import { createConversationSync } from '../resources/plugins/pi.cloud-sync/client.cjs';
 import { desktopDeviceName, desktopOsLabel } from "../electron/main/device-identity.mjs";
 
 test("device identity shows the computer name and a readable OS", () => {
@@ -22,52 +21,19 @@ test("device identity shows the computer name and a readable OS", () => {
   assert.equal(desktopOsLabel("freebsd", ""), "freebsd");
 });
 
-test("hub hello registers the computer name, not the platform id", async () => {
-  class RecordingSocket {
-    static instances = [];
-    readyState = 1;
-    sent = [];
-    listeners = new Map();
-    constructor() { RecordingSocket.instances.push(this); }
-    addEventListener(type, fn) {
-      if (!this.listeners.has(type)) this.listeners.set(type, new Set());
-      this.listeners.get(type).add(fn);
-    }
-    removeEventListener(type, fn) { this.listeners.get(type)?.delete(fn); }
-    send(data) { this.sent.push(JSON.parse(String(data))); }
-    close() { this.readyState = 3; this.fire("close", {}); }
-    fire(type, event) { for (const fn of [...(this.listeners.get(type) ?? [])]) fn(event); }
-  }
-  const dir = mkdtempSync(join(tmpdir(), "device-identity-"));
-  const sync = createConversationSync({
-    filePath: join(dir, "session.json"),
-    encrypt: (value) => value,
-    decrypt: (value) => value,
-    encryptionAvailable: () => true,
-    deviceId: "desktop-identity",
-    WebSocketImpl: RecordingSocket,
-    listSessions: async () => [],
-    onCall: async () => ({}),
-    fetchImpl: async (url) => {
-      if (url.endsWith("/v1/auth/login")) return { ok: true, json: async () => ({ token: "token-1", account: "alice" }) };
-      return { ok: true, json: async () => ({ enabled: true }) };
-    },
-  });
+test('hub hello registers the persisted identity before advertising the computer', async () => {
+  const fixture = cloudFixture();
+  fixture.pi.remoteSessions.getDevice = async () => ({ id: 'desktop-identity', name: desktopDeviceName(), os: desktopOsLabel() });
+  const sync = createConversationSync(fixture.pi);
   try {
-    await sync.signIn({ baseUrl: "http://127.0.0.1:8788", account: "alice", password: "secret1" });
-    const socket = RecordingSocket.instances.at(-1);
-    socket.fire("open", {});
-    const hello = socket.sent.find((frame) => frame.type === "hello");
-    assert.ok(hello, "hello frame is sent once the hub socket opens");
+    await sync.signIn({ baseUrl: 'http://127.0.0.1:8788', account: 'alice', password: 'secret1' });
+    await tick();
+    const hello = fixture.frames.find(frame => frame.type === 'hello');
+    assert.ok(hello);
+    assert.equal(hello.device.id, 'desktop-identity');
     assert.equal(hello.device.name, desktopDeviceName());
-    assert.equal(hello.device.name.includes("win32"), false);
-    assert.equal(hello.device.kind, "computer");
+    assert.equal(hello.device.kind, 'computer');
     assert.equal(hello.device.os, desktopOsLabel());
-    if (["win32", "darwin", "linux"].includes(process.platform)) {
-      assert.notEqual(hello.device.os, process.platform);
-    }
-  } finally {
-    await sync.signOut();
-    rmSync(dir, { recursive: true, force: true });
-  }
+    if (['win32', 'darwin', 'linux'].includes(process.platform)) assert.notEqual(hello.device.os, process.platform);
+  } finally { await sync.signOut(); await sync.dispose(); }
 });

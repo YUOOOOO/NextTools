@@ -11,6 +11,7 @@
   align-items: center;
   justify-content: flex-start;
   width: var(--ds-activity-bar-width);
+  height: 100%;
   min-height: 0;
   padding: 0 0 12px;
   background: var(--ds-bg-sidebar);
@@ -19,21 +20,6 @@
   -webkit-user-select: none;
 }
 
-/* The rail cell and the navigation column share one shell cell, so the overlay
-   hosts that render nothing in flow cannot seed them into separate flex
-   columns. */
-.activity-shell-column {
-  display: flex;
-  min-height: 0;
-  flex: 0 0 48px;
-  flex-direction: column;
-}
-
-/* The product mark owns that cell's top row: the rail starts one
-   toolbar-height row below it. Keeping the two as sibling flex items (rather
-   than one nested column) leaves the mark in place while the menu column
-   scrolls or disappears, as it does on Scheduled Tasks, Extensions and
-   Settings. */
 .activity-bar-brand {
   --ds-activity-bar-width: 48px;
   box-sizing: border-box;
@@ -46,7 +32,7 @@
   flex: 0 0 var(--ds-toolbar-height);
   align-items: center;
   justify-content: center;
-  background: var(--ds-bg-sidebar);
+  background: transparent;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -266,21 +252,11 @@
 }
 
 
-/* Header of the menu column: it covers the top row of the secondary sidebar
-   while the rail beside it keeps the product mark. It paints the sidebar
-   surface exactly, so a theme image or a macOS glass tint cannot leave a
-   differently coloured band above the list. */
+/* The page header stays in its sidebar's normal flex flow and shares the
+   sidebar surface instead of painting a separate cross-column overlay. */
 .sidebar-page-header {
-  position: absolute;
-  inset: 0 auto auto 48px;
-  z-index: 3;
   box-sizing: border-box;
-  width: var(--ds-sidebar-width);
   min-width: 0;
-  background-color: var(--ds-bg-sidebar, var(--ds-bg-primary));
-  background-image: var(--ds-bg-sidebar-image, none);
-  background-repeat: no-repeat;
-  background-size: cover;
 }
 
 .sidebar-page-header > .sidebar-header-actions {
@@ -299,11 +275,6 @@
   white-space: nowrap;
 }
 
-.app-shell:has(> .activity-shell-column > .sidebar-page-header) .sidebar {
-  box-sizing: border-box;
-  padding-top: var(--ds-toolbar-height);
-}
-
-.app-shell:has(> .activity-shell-column > .sidebar-page-header) .sidebar-resize-handle {
+.sidebar:has(> .sidebar-page-header) > .sidebar-resize-handle {
   top: var(--ds-toolbar-height);
 }

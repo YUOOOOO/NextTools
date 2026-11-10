@@ -42,40 +42,6 @@ test("activity bar owns the supported destination entries", () => {
   assert.doesNotMatch(sidebarSource, /data-nav="scheduled"/);
 });
 
-test("the rail owns the product mark and the menu header names the destination", async () => {
-  const header = await readFile(new URL("../src/features/app/SidebarPageHeader.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(sidebarSource, /className="sidebar-header"/);
-  assert.match(appSource, /<SidebarPageHeader page=\{page\}/);
-
-  // The mark and the rail share one shell cell above the scrolling navigation
-  // column: Scheduled Tasks, Extensions and Settings must keep the mark.
-  assert.match(
-    appSource,
-    /<div className="activity-shell-column">[\s\S]*?<ActivityBar \/>[\s\S]*?<\/div>/,
-  );
-  assert.match(
-    activitySource,
-    /<div className="activity-bar-brand">[\s\S]*?<\/div>\s*<nav className="activity-bar"/,
-  );
-  assert.match(activitySource, /<BrandLogo size=\{20\}/);
-  assert.doesNotMatch(activitySource, /t\("app\.shellName"\)/);
-  assert.match(
-    globalStyles,
-    /\.activity-bar-brand\s*\{[^}]*flex:\s*0 0 var\(--ds-toolbar-height\);/s,
-  );
-
-  // The menu column names the active page instead of repeating the product.
-  assert.match(header, /data-nav="page-title"/);
-  assert.match(header, /activityPageLabelKey\(page\)/);
-  assert.match(header, /data-nav="toggle-sidebar"/);
-  assert.doesNotMatch(header, /BrandLogo|app\.shellName/);
-  assert.match(globalStyles, /\.sidebar-page-header\s*\{[^}]*inset:\s*0 auto auto 48px;/s);
-  assert.match(globalStyles, /\.sidebar-page-header\s*\{[^}]*width:\s*var\(--ds-sidebar-width\);/s);
-
-  assert.doesNotMatch(sidebarSource, /sidebar-header-divider/);
-  assert.doesNotMatch(appSource, /HeaderBox/);
-  assert.doesNotMatch(globalStyles, /\.sidebar-header-divider/);
-});
 
 test("work panel collapse control is the viewport-fixed shell toggle", () => {
   assert.match(appSource, /className="app-work-panel-toggle no-drag"/);
@@ -85,11 +51,6 @@ test("work panel collapse control is the viewport-fixed shell toggle", () => {
   assert.equal(
     (activityBarCss.match(/\{/g) ?? []).length,
     (activityBarCss.match(/\}/g) ?? []).length,
-  );
-  // The menu header paints the sidebar surface, including a theme image.
-  assert.match(
-    activityBarCss,
-    /\.sidebar-page-header\s*\{[^}]*background-image:\s*var\(--ds-bg-sidebar-image, none\);/s,
   );
   assert.doesNotMatch(panelSource, /onCollapse/);
   assert.doesNotMatch(panelSource, /work-panel-toolbar-collapse/);

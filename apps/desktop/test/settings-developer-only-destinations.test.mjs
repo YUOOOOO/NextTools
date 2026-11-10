@@ -80,10 +80,10 @@ test("Cloud sync is Experimental and available in every build", () => {
         .some((entry) => entry.id === "sync"));
       assert.equal(isSettingsDestinationHidden("sync", developerMode, includeDevelopmentOnly), false);
       for (const query of [
-        "configSync.experimental",
-        "configSync.connectionTitle",
-        "configSync.endpoint",
-        "configSync.syncNow",
+        "conversationSync.title",
+        "conversationSync.server",
+        "conversationSync.account",
+        "conversationSync.syncNow",
       ]) {
         assert.ok(searchSettings(query, identity, {
           developerMode,
@@ -96,6 +96,15 @@ test("Cloud sync is Experimental and available in every build", () => {
   assert.equal(sync?.developerOnly, undefined);
   assert.equal(sync?.developmentOnly, undefined);
   assert.equal(sync?.experimentalBadgeKey, "settings.configSync.experimental");
+});
+
+test("Backup is separate from account-based cloud sync in navigation and search", () => {
+  for (const includeDevelopmentOnly of [false, true]) {
+    const options = { developerMode: false, includeDevelopmentOnly };
+    assert.ok(visibleSettingsNav(false, includeDevelopmentOnly).some(entry => entry.id === "backup"));
+    assert.deepEqual(searchSettings("configSync.endpoint", identity, options).map(hit => hit.tab), ["backup"]);
+    assert.deepEqual(searchSettings("conversationSync.server", identity, options).map(hit => hit.tab), ["sync"]);
+  }
 });
 
 test("Remote Hosts is Experimental and available in every build", () => {
@@ -151,7 +160,7 @@ test("settings search mirrors developer and packaged visibility", () => {
   for (const options of [{ developerMode: false }, { developerMode: true }]) {
     assert.ok(
       searchSettings("configSync.connectionTitle", identity, options)
-        .some((hit) => hit.tab === "sync"),
+        .some((hit) => hit.tab === "backup"),
     );
   }
 
@@ -161,7 +170,7 @@ test("settings search mirrors developer and packaged visibility", () => {
   ]) {
     assert.ok(
       searchSettings("configSync.connectionTitle", identity, options)
-        .some((hit) => hit.tab === "sync"),
+        .some((hit) => hit.tab === "backup"),
     );
   }
 
@@ -179,7 +188,6 @@ test("settings routes, global search, and composer use build visibility", () => 
   assert.match(settingsPage, /visibleSettingsNav\(developerMode, includeDevelopmentOnly\)/);
   assert.match(settingsPage, /isSettingsDestinationHidden\([\s\S]*includeDevelopmentOnly/);
   assert.match(settingsPage, /setSettingsTab\("general"\)/);
-  assert.match(settingsPage, /tab === "sync" && !tabHidden && <ConfigSyncPage \/>/);
   assert.match(settingsPage, /tab === "remoteHosts" && !tabHidden && <RemoteHostsPage \/>/);
   assert.match(searchDialog, /includeDevelopmentOnly: import\.meta\.env\.DEV/);
   assert.match(composer, /useVoiceInput/);

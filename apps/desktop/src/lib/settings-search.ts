@@ -16,6 +16,7 @@ export type SettingsTabId =
   | "subagents"
   | "projects"
   | "sync"
+  | "backup"
   | "remoteHosts"
   | "voice"
   | "about";
@@ -272,7 +273,21 @@ export const SETTINGS_NAV: SettingsNavEntry[] = [
   {
     id: "sync",
     labelKey: "settings.nav.sync",
-    titleKey: "settings.configSync.title",
+    titleKey: "settings.nav.sync",
+    group: "system",
+    experimentalBadgeKey: "settings.configSync.experimental",
+    keywordKeys: [
+      "settings.conversationSync.title",
+      "settings.conversationSync.server",
+      "settings.conversationSync.account",
+      "settings.conversationSync.signIn",
+      "settings.conversationSync.syncNow",
+    ],
+  },
+  {
+    id: "backup",
+    labelKey: "settings.nav.backup",
+    titleKey: "settings.nav.backup",
     group: "system",
     experimentalBadgeKey: "settings.configSync.experimental",
     keywordKeys: [

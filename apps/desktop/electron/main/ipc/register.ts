@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { dialog, shell, type BrowserWindow, type IpcMain, type IpcMainInvokeEvent } from "electron";
+import { app, safeStorage, dialog, shell, type BrowserWindow, type IpcMain, type IpcMainInvokeEvent } from "electron";
 import { err, ErrorCodes, IPC, ok, type LifecycleDialogChoice, type Result } from "@pi-desktop/shared";
 import type { AgentHostBridge } from "../agent-host-bridge";
 import type { AgentSidecar } from "../agent-sidecar";
@@ -25,7 +25,12 @@ import { registerSessionIpc } from "./session-ipc";
 import { registerSettingsIpc } from "./settings-ipc";
 import { registerStorageIpc } from "../storage/ipc";
 import { registerConfigSyncIpc } from "./config-sync-ipc";
-import { registerConversationSyncIpc } from "./conversation-sync-ipc";
+import { loadSessions, runCall } from "./plugin-remote-session-actions";
+import { createPluginCredentials } from "../plugin-credentials";
+import { createPluginRemoteSessions } from "../plugin-remote-sessions";
+import { loadOrCreateSyncDeviceId } from "../conversation-sync-device-id.mjs";
+import { desktopDeviceName, desktopOsLabel } from "../device-identity.mjs";
+import { redactValue } from "../logger";
 import { registerBackgroundTasksIpc } from "./background-tasks-ipc";
 import { registerSkillsIpc } from "./skills-ipc";
 import { registerAgentImportIpc } from "./agent-import-ipc";
@@ -309,19 +314,29 @@ export function registerIpcHandlers(dependencies: RegisterIpcDependencies) {
     getHost,
     sendToRenderer,
   });
-  // Conversation sync is a local settings call; the channel must be in the
-  // preload whitelist rebuilt with this main bundle.
-  const conversationSync = registerConversationSyncIpc({
-    registrar, getHost, getSidecar,
+  const remoteSessions = createPluginRemoteSessions({
+    getHost, getSidecar,
     onSessionsChanged: () => sendToRenderer(IPC.event.sessionsChanged, { reason: "conversation.task" }),
     currentTurn: (sessionId) => getAgentHostBridge()?.observeWorkTarget(sessionId) ?? null,
     invoke: async (channel, args) => {
       const handler = ipcHandlers.get(channel);
-      if (!handler) throw new Error("conversation task handler unavailable");
+      if (!handler) throw new Error("remote session handler unavailable");
       return handler(...args);
     },
+    getDevice: () => ({
+      id: loadOrCreateSyncDeviceId(join(app.getPath("userData"), "conversation-sync-device-id")),
+      name: desktopDeviceName(), os: desktopOsLabel(),
+    }),
+    listSessions: () => loadSessions(getHost),
+    runCall: (action, args, _fromWeb, signal) => runCall(getHost, getSidecar, action, args, signal),
+    emit: (pluginId, event, payload) => plugins.emitPluginEvent(pluginId, event, [payload]),
+    redact: redactValue,
   });
-  syncSessionsDeleted = conversationSync.sessionsDeleted;
+  plugins.setServices({
+    credentials: createPluginCredentials({ userData: app.getPath("userData"), encryption: safeStorage }),
+    remoteSessions,
+  });
+  syncSessionsDeleted = (ids) => plugins.emitPluginEvent("pi.cloud-sync", "session:deleted", [{ ids }]);
   registerBackgroundTasksIpc({
     registrar,
     getHost,

@@ -190,11 +190,12 @@ Outer frame that positions Topbar, Sidebar, MainChat, and WorkPanel. Owns resize
   the macOS traffic light/Window menu role remains tray-resident. Clicking a
   focused Windows taskbar button also uses native minimize; a second click
   restores/focuses the same window, while clicking a covered window brings it
-  to the front. Tray activation restores and focuses tray-hidden windows; Quit
-  remains explicit and, except for automated probes, restores a tray-hidden main
-  window before showing a themed confirmation with Cancel focused. Escape or a
-  backdrop click cancels. If the main renderer is unavailable, a native warning
-  is the bounded fallback before shutdown (D363). On macOS the tray uses a
+  to the front. Tray activation restores and focuses tray-hidden windows. The
+  tray menu's explicit Quit immediately starts ordered shutdown without a
+  confirmation dialog. Other explicit quit entry points retain their themed
+  confirmation with Cancel focused; Escape or a backdrop click cancels. If
+  the main renderer is unavailable, a native warning is the bounded fallback
+  for those entry points (D363). On macOS the tray uses a
   transparent monochrome template of the PI mark rather than the rounded
   application tile, so it remains readable in the menu bar.
 - Windows/Linux do not render File/Edit/View/Window/Help in the titlebar and
