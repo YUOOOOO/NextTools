@@ -104,6 +104,11 @@ const shared = load(new URL("../src/features/chat/transcript/shared.tsx", import
   "../../../stores/app-store": { useAppStore },
 });
 
+const userMessageSource = load(new URL("../src/features/chat/transcript/UserMessageSource.tsx", import.meta.url), {
+  "react/jsx-runtime": jsxRuntime,
+  "react-i18next": { useTranslation: () => ({ t }) },
+});
+
 const { MessageRow } = load(new URL("../src/features/chat/transcript/MessageRow.tsx", import.meta.url), {
   react: React,
   "react/jsx-runtime": jsxRuntime,
@@ -128,6 +133,7 @@ const { MessageRow } = load(new URL("../src/features/chat/transcript/MessageRow.
   "./menu-items": { userMessageMenuItems: () => [] },
   "./ActionBarSlots": { ActionSlotSide: () => null },
   "./SessionMessageOrigin": { SessionMessageOrigin: () => null },
+  "./UserMessageSource": userMessageSource,
   "./extra-attachments": { getExtraMessageAttachments },
   "./TranscriptMenu": {
     useTranscriptMenu: () => () => {},
